@@ -17,14 +17,23 @@ class BaseGPT(nn.Module, ABC):
         self,
         block_size: int,
         vocab_size: int,
+        n_embd: int,
+        n_head: int,
+        n_layer: int,
     ) -> None:
         super().__init__()
         self.block_size = block_size
         self.vocab_size = vocab_size
+        self.n_embd = n_embd
+        self.n_head = n_head
+        self.n_layer = n_layer
 
     @abstractmethod
     def forward(
-        self, idx: torch.Tensor, targets: torch.Tensor | None = None
+        self,
+        idx: torch.Tensor,
+        targets: torch.Tensor | None = None,
+        kv_cache: KVCache | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         pass
 
@@ -59,6 +68,9 @@ class GPT(BaseGPT):
         super().__init__(
             block_size=block_size,
             vocab_size=vocab_size,
+            n_embd=n_embd,
+            n_head=n_head,
+            n_layer=n_layer,
         )
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.blocks = nn.ModuleList(
