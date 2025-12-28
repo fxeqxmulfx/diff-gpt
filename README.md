@@ -11,7 +11,6 @@ Links:
 - [github.com: gpt-oss](https://github.com/openai/gpt-oss)
 - [github.com: gemma_pytorch](https://github.com/google/gemma_pytorch)
 - [github.com: schedule_free](https://github.com/facebookresearch/schedule_free)
-- [github.com: labml-nn](https://github.com/labmlai/annotated_deep_learning_paper_implementations)
 - [github.com: nanochat](https://github.com/karpathy/nanochat)
 - [arxiv.org: Attention Is All You Need](https://arxiv.org/abs/1706.03762)
 - [arxiv.org: Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467)
