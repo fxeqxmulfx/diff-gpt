@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from diff_gpt.sampling import Sampler
+from diff_gpt.sampler.sampler import Sampler
 from diff_gpt.model.block import Block
 from diff_gpt.model.rope import precompute_freqs_cis
 from diff_gpt.model.rms_norm import rms_norm

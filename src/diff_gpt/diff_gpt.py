@@ -3,7 +3,7 @@ import pandas as pd
 import torch
 
 from diff_gpt.model.gpt import BaseGPT
-from diff_gpt.sampling import Sampler
+from diff_gpt.sampler.sampler import Sampler
 from diff_gpt.train import train
 from diff_gpt.encoder_decoder import decode, encode, np_to_decimal
 
