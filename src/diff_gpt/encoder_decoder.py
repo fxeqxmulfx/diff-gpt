@@ -122,6 +122,8 @@ def encode(
     )
     residual = np.diff(residual, axis=0)
     encoded_data = trunced_scaled_diff + vocab_size // 2 + residual
+    encoded_data[encoded_data < 0] = 0
+    encoded_data[encoded_data > vocab_size] = vocab_size - 1
     result = start, scale, encoded_data.astype(np.int64)
     return result
 
