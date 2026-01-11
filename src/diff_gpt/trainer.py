@@ -149,7 +149,7 @@ def train(
         loader.close()
         model.eval()
         optimizer.eval()
-        if step > 0:
+        if len(loss_history) > 0:
             torch.save(model.state_dict(), model_path)
             with open(model_path + ".history_loss", "wb") as f:
                 f.write(pickle.dumps(loss_history))
