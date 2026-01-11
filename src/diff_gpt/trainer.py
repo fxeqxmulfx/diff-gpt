@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import torch
 import gc
@@ -102,6 +103,7 @@ def train(
     optimizer.train()
     pbar = tqdm(range(max_iters))
     step = 0
+    loss_history = []
     try:
         for step in pbar:
             step_completed = False
@@ -122,6 +124,7 @@ def train(
                     pbar.set_description(
                         f"Loss: {accum_loss:.4f} | MBS: {mini_batch_size}"
                     )
+                    loss_history.append(accum_loss)
                 except RuntimeError as e:
                     if "out of memory" in str(e):
                         optimizer.zero_grad()
@@ -148,4 +151,6 @@ def train(
         optimizer.eval()
         if step > 0:
             torch.save(model.state_dict(), model_path)
+            with open(model_path + ".history_loss", "wb") as f:
+                f.write(pickle.dumps(loss_history))
             print(f"Model saved to {model_path}")
