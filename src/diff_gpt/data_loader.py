@@ -173,7 +173,7 @@ class DiffSQLiteDataLoader:
             data_idx = int(
                 torch.randint(
                     low=0,
-                    high=data_len - block_size - 1,
+                    high=data_len - block_size,
                     size=(1,),
                     generator=rng,
                 )
