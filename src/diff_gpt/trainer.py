@@ -17,7 +17,9 @@ def get_hardware_constraints(device_type: str) -> float:
 
 
 def auto_tune_params(
-    model: BaseGPT, vram_gb: float, use_checkpointing: bool
+    model: BaseGPT,
+    vram_gb: float,
+    use_checkpoint: bool,
 ) -> tuple[int, int, int]:
     params = sum(p.numel() for p in model.parameters())
     L = model.block_size
@@ -27,7 +29,7 @@ def auto_tune_params(
     available_mem = (vram_gb - reserved) * (1024**3)
     static_mem = params * 20
     ATTN_HEURISTIC_FACTOR = 14
-    if use_checkpointing:
+    if use_checkpoint:
         dynamic_mem_per_seq = (2 * N + ATTN_HEURISTIC_FACTOR) * H * L
     else:
         dynamic_mem_per_seq = ATTN_HEURISTIC_FACTOR * N * H * L
@@ -40,10 +42,8 @@ def auto_tune_params(
     target_tokens = max(32_000, int(params * 0.003))
     target_seqs = target_tokens // L
     grad_accum_size = max(1, target_seqs // mini_batch_size)
-    total_tokens = params * 20
     tokens_per_step = mini_batch_size * grad_accum_size * L
-    max_iters = max(1000, int(total_tokens / tokens_per_step))
-    return mini_batch_size, grad_accum_size, max_iters
+    return mini_batch_size, grad_accum_size, tokens_per_step
 
 
 def train(
@@ -71,14 +71,15 @@ def train(
         use_checkpoint=use_checkpoint,
     ).to(device)
     vram = get_hardware_constraints(device)
-    mini_batch_size, grad_accum_size, max_iters = auto_tune_params(
-        model, vram, use_checkpoint
+    mini_batch_size, grad_accum_size, tokens_per_step = auto_tune_params(
+        model=model,
+        vram_gb=vram,
+        use_checkpoint=use_checkpoint,
     )
     if mini_batch_size == 1 and grad_accum_size < 1:
         print("Warning: Very constrained memory, training may be slow")
     print(f"--- Config ({vram:.1f}GB GPU) ---")
     print(f"Micro-Batch: {mini_batch_size} | Grad Accum: {grad_accum_size}")
-    print(f"Max Iters: {max_iters}")
     loader = DiffSQLiteDataLoader(
         block_size=model.block_size,
         batch_size=mini_batch_size,
@@ -89,6 +90,9 @@ def train(
         device=device,
         database=db_path,
     )
+    total_tokens = sum(loader.tables_tokens_len.values())
+    max_iters = max(1000, int(total_tokens / tokens_per_step))
+    print(f"Max Iters: {max_iters}")
     optimizer = AdamWScheduleFree(
         model.parameters(),
         lr=lr,
