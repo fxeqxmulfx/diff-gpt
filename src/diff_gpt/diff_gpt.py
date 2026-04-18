@@ -42,6 +42,7 @@ class DiffGPT:
         use_early_stopping: bool = True,
         grad_accum_steps: int = 1,
         grad_clip_norm: float | None = None,
+        save_best: bool = True,
     ) -> tuple[float, int]:
         """
         Train the underlying GPT against batches produced by `loader`.
@@ -64,6 +65,7 @@ class DiffGPT:
             use_early_stopping=use_early_stopping,
             grad_accum_steps=grad_accum_steps,
             grad_clip_norm=grad_clip_norm,
+            save_best=save_best,
         )
 
     @torch.inference_mode()

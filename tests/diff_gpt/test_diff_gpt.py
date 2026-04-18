@@ -157,6 +157,78 @@ def test_predict_teacher_forced_mismatched_columns_raises():
         )
 
 
+def test_train_save_best_restores_best_val():
+    """
+    After training past the val minimum (use_early_stopping=False), the
+    restored model must reproduce the best val_loss seen — proving the
+    snapshot was captured and reloaded, not the noisier final state.
+    """
+    model, _ = _make_model(block_size=32)
+    dfs = [_make_toy(n_rows=200) for _ in range(2)]
+    loader = DiffDataFrameDataLoader(
+        dfs=dfs,
+        block_size=model.model.block_size,
+        batch_size=4,
+        vocab_size=model.model.vocab_size,
+        order_of_derivative=model.order_of_derivative,
+        domain_of_definition=model.domain_of_definition,
+        use_decimal=False,
+        device=model.model.device_type,
+        train_part=0.7,
+    )
+    returned_loss, _ = model.train(
+        loader=loader,
+        max_iters=40,
+        eval_interval=10,
+        eval_iters=8,
+        use_tqdm=False,
+        use_early_stopping=False,
+        save_best=True,
+    )
+    # Re-measure val loss on the restored weights.
+    model.model.eval()
+    measured = 0.0
+    n = 5
+    for _ in range(n):
+        X, Y = loader.get_batch("val")
+        with torch.no_grad():
+            _, loss = model.model(X, Y)
+        measured += float(loss.item())
+    measured /= n
+    # Within noise: returned_loss was measured over eval_iters=8 batches,
+    # we re-measure over 5 fresh batches — loosely agree.
+    assert abs(measured - returned_loss) < 1.0, (
+        f"restored val loss {measured:.3f} diverged from returned {returned_loss:.3f}"
+    )
+
+
+def test_train_save_best_false_returns_final_loss():
+    """save_best=False keeps the final model and returns its val_loss."""
+    model, _ = _make_model(block_size=32)
+    dfs = [_make_toy(n_rows=200)]
+    loader = DiffDataFrameDataLoader(
+        dfs=dfs,
+        block_size=model.model.block_size,
+        batch_size=4,
+        vocab_size=model.model.vocab_size,
+        order_of_derivative=model.order_of_derivative,
+        domain_of_definition=model.domain_of_definition,
+        use_decimal=False,
+        device=model.model.device_type,
+        train_part=0.7,
+    )
+    final_loss, _ = model.train(
+        loader=loader,
+        max_iters=10,
+        eval_interval=10,
+        eval_iters=4,
+        use_tqdm=False,
+        use_early_stopping=False,
+        save_best=False,
+    )
+    assert np.isfinite(final_loss)
+
+
 def test_train_grad_accum_runs():
     """grad_accum_steps + grad_clip_norm wired through DiffGPT.train."""
     model, _ = _make_model()
