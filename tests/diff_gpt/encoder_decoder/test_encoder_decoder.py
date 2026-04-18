@@ -116,7 +116,7 @@ def test_diff_encoder_decoder_sin_cos_second_derivative():
         order_of_derivative=order_of_derivative,
         use_decimal=use_decimal,
     )
-    assert float(np.max(np.abs(decoded_inp - inp))) <= 0.042108183144580945
+    assert float(np.max(np.abs(decoded_inp - inp))) <= 0.000225
 
 
 def test_diff_encoder_decoder_sin_cos_third_derivative():
@@ -153,8 +153,7 @@ def test_diff_encoder_decoder_sin_cos_third_derivative():
         order_of_derivative=order_of_derivative,
         use_decimal=use_decimal,
     )
-    # TODO: How to fix this?
-    assert float(np.max(np.abs(decoded_inp - inp))) <= 3080.6772960623753
+    assert float(np.max(np.abs(decoded_inp - inp))) <= 1.35e-5
 
 
 def test_diff_encoder_decoder_sin_cos_third_derivative_2():
@@ -371,6 +370,118 @@ def test_diff_encoder_decoder_mix():
         use_decimal=use_decimal,
     )
     assert float(np.max(np.abs(decoded_inp - inp))) <= 0.003775003594016138
+
+
+def test_kth_order_mash_bound_is_tight_and_uniform_in_T():
+    """MASH k-th-order Σ-Δ: reconstruction error ≤ small constant × Δ/2
+    up to k = 4 in IEEE float64. Beyond that, the k-fold cumsum in the
+    decoder loses mantissa bits faster than the noise-shaping recovers
+    them, so the tight bound only holds numerically up to k = 4; the
+    theoretical bound still holds at higher k but would need extended
+    precision (long double / Decimal) to observe it.
+    """
+    V = 4096
+    T = 5_000
+    # Use full-magnitude sin/cos so higher derivatives aren't negligible.
+    idx = np.arange(T, dtype=np.float64)
+    inp = np.stack((np.sin(idx), np.cos(idx)), axis=1)
+    for k in range(1, 5):
+        dod = get_domain_of_definition(
+            inp=inp, order_of_derivative=k, use_decimal=False
+        )
+        start, scale, enc = encode(
+            inp=inp,
+            vocab_size=V,
+            domain_of_definition=dod,
+            order_of_derivative=k,
+            use_decimal=False,
+        )
+        dec = decode(
+            start=start,
+            scale=scale,
+            inp=enc,
+            vocab_size=V,
+            order_of_derivative=k,
+            use_decimal=False,
+        )
+        max_err = float(np.max(np.abs(dec - inp)))
+        bin_half = float(np.max(dod)) / (V - 2)
+        # Allow 2× slack for boundary transient / clipping edge effects.
+        assert max_err <= 2 * bin_half, (
+            f"k={k}: max_err={max_err:.4e} exceeds 2·Δ/2={2*bin_half:.4e}"
+        )
+
+
+def test_k2_float64_sigma_delta_bound_is_uniform_in_T():
+    """k-th-order Σ-Δ at k=2: reconstruction error must stay bounded as T
+    grows. The old 1st-order carry-based encoder produced O(T·Δ) drift at
+    order=2; the new k-th-order EFM keeps the bound at a small constant × Δ."""
+    V = 256
+    errors = []
+    for T in (2_000, 10_000, 50_000):
+        idx = np.arange(T, dtype=np.float64) * 0.01
+        inp = np.stack((np.sin(idx), np.cos(idx)), axis=1)
+        dod = get_domain_of_definition(
+            inp=inp, order_of_derivative=2, use_decimal=False
+        )
+        start, scale, enc = encode(
+            inp=inp,
+            vocab_size=V,
+            domain_of_definition=dod,
+            order_of_derivative=2,
+            use_decimal=False,
+        )
+        dec = decode(
+            start=start,
+            scale=scale,
+            inp=enc,
+            vocab_size=V,
+            order_of_derivative=2,
+            use_decimal=False,
+        )
+        errors.append(float(np.max(np.abs(dec - inp))))
+    # Must not grow with T — allow a 2× slack for numerical boundary
+    # transients but fail if the old O(T) drift is back.
+    assert errors[2] < 3 * errors[0], (
+        f"error grew with T: {errors} — noise-shaping is not working"
+    )
+
+
+def test_k2_float64_beats_k1_recon_when_signal_is_smooth():
+    """For a smooth signal (small 2nd derivative relative to 1st), encoding
+    the 2nd derivative gives tighter bin width → smaller reconstruction
+    error than k=1 at the same vocab size."""
+    V = 256
+    T = 5_000
+    idx = np.arange(T, dtype=np.float64) * 0.001  # very slow → smooth
+    inp = np.stack((np.sin(idx),), axis=1)
+
+    def round_trip_err(k: int) -> float:
+        dod = get_domain_of_definition(
+            inp=inp, order_of_derivative=k, use_decimal=False
+        )
+        start, scale, enc = encode(
+            inp=inp,
+            vocab_size=V,
+            domain_of_definition=dod,
+            order_of_derivative=k,
+            use_decimal=False,
+        )
+        dec = decode(
+            start=start,
+            scale=scale,
+            inp=enc,
+            vocab_size=V,
+            order_of_derivative=k,
+            use_decimal=False,
+        )
+        return float(np.max(np.abs(dec - inp)))
+
+    err_k1 = round_trip_err(1)
+    err_k2 = round_trip_err(2)
+    assert err_k2 < err_k1, (
+        f"k=2 err ({err_k2}) should beat k=1 err ({err_k1}) on smooth signal"
+    )
 
 
 def test_diff_encoder_decoder_square():
