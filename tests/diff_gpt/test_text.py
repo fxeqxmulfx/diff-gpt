@@ -16,6 +16,7 @@ max_iters=5000):
     # ADD KQ norm and Gated Attention:  val_loss=1.67  train_time=43.0
     # CLR project:                      val_loss=1.68  train_time=37.33
     # ADD AMSGrad default (1 run):      val_loss=1.73  train_time=~110 (CPU)
+    # ADD Block AttnRes, 1 layer/block:  val_loss=1.72  train_time=~155 (CPU)
 
 The test below uses a reduced scale for CI friendliness; the assertions are
 loose enough to accommodate machine variance but tight enough to catch a
