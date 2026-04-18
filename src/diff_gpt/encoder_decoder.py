@@ -29,55 +29,127 @@ def np_is_float64(inp: np.ndarray) -> bool:
 ufunc_round = np.frompyfunc(round, 1, 1)
 
 
+def _is_scalar_order(order_of_derivative) -> bool:
+    return isinstance(order_of_derivative, (int, np.integer))
+
+
 def differentiate(
     inp: np.ndarray,
-    order_of_derivative: int,
+    order_of_derivative: "int | np.ndarray",
     use_decimal: bool,
 ) -> tuple[np.ndarray, np.ndarray]:
-    assert order_of_derivative >= 0
-    assert order_of_derivative <= inp.shape[0]
+    """Per-column k-th finite differences.
+
+    `order_of_derivative` is either a scalar (applied uniformly) or a 1D
+    array of shape (F,) giving per-column orders.
+
+    When all columns share the same k, returns the classical form:
+    `start` is the k-row stack of each order's first value,
+    `diff` is the uniformly differenced (T - k, F) array.
+
+    When orders differ, returns:
+    `start` as the raw prefix inp[:max_k] (length max_k),
+    `diff` with per-column trimming so all columns share length T - max_k.
+    (`integrate` detects which form it received and inverts accordingly.)
+    """
+    if _is_scalar_order(order_of_derivative):
+        k = int(order_of_derivative)
+        assert k >= 0
+        assert k <= inp.shape[0]
+        if use_decimal:
+            assert np_is_decimal(inp)
+        else:
+            assert np_is_float64(inp)
+        diff = inp
+        start = np.zeros((0, inp.shape[1]), dtype=inp.dtype)
+        for _ in range(k):
+            start = np.concat((start, np.expand_dims(diff[0], axis=0)), axis=0)
+            diff = np.diff(diff, axis=0)
+        return start, diff
+
+    order = np.asarray(order_of_derivative, dtype=np.int64)
+    assert order.ndim == 1 and order.shape[0] == inp.shape[1]
+    assert (order >= 0).all()
+    max_k = int(order.max())
+    assert max_k <= inp.shape[0]
     if use_decimal:
         assert np_is_decimal(inp)
     else:
         assert np_is_float64(inp)
-    diff = inp
-    start = np.zeros((0, inp.shape[1]), dtype=inp.dtype)
-    for _ in range(order_of_derivative):
-        start = np.concat((start, np.expand_dims(diff[0], axis=0)), axis=0)
-        diff = np.diff(diff, axis=0)
+    # Raw prefix of length max_k is the universal start for the array path.
+    start = inp[:max_k].copy()
+    F = inp.shape[1]
+    N = inp.shape[0] - max_k
     if use_decimal:
-        assert np_is_decimal(start)
-        assert np_is_decimal(diff)
+        diff = np_to_decimal(np.zeros((N, F), dtype=np.float64))
     else:
-        assert np_is_float64(start)
-        assert np_is_float64(diff)
-    result = start, diff
-    return result
+        diff = np.zeros((N, F), dtype=inp.dtype)
+    for c in range(F):
+        k_c = int(order[c])
+        d = inp[:, c]
+        for _ in range(k_c):
+            d = np.diff(d)
+        # d has length T - k_c ≥ N. Take last N values.
+        diff[:, c] = d[-N:] if N > 0 else d[:0]
+    return start, diff
 
 
 def integrate(
     start: np.ndarray,
     diff: np.ndarray,
-    order_of_derivative: int,
+    order_of_derivative: "int | np.ndarray",
     use_decimal: bool,
 ) -> np.ndarray:
-    assert order_of_derivative == start.shape[0]
+    """Inverse of `differentiate`, supporting scalar or per-column orders."""
+    if _is_scalar_order(order_of_derivative):
+        k = int(order_of_derivative)
+        assert k == start.shape[0]
+        if use_decimal:
+            assert np_is_decimal(start)
+            assert np_is_decimal(diff)
+        else:
+            assert np_is_float64(start)
+            assert np_is_float64(diff)
+        result = diff
+        for i in range(k):
+            _start = start[-i - 1]
+            result = np.concat((np.expand_dims(_start, axis=0), result), axis=0)
+            result = np.cumsum(result, axis=0)
+        return result
+
+    order = np.asarray(order_of_derivative, dtype=np.int64)
+    assert order.ndim == 1 and order.shape[0] == diff.shape[1]
+    max_k = start.shape[0]
+    assert (order <= max_k).all()
+    F = diff.shape[1]
+    N = diff.shape[0]
+    T = N + max_k
     if use_decimal:
-        assert np_is_decimal(start)
-        assert np_is_decimal(diff)
+        out = np_to_decimal(np.zeros((T, F), dtype=np.float64))
     else:
-        assert np_is_float64(start)
-        assert np_is_float64(diff)
-    result = diff
-    for i in range(order_of_derivative):
-        _start = start[-i - 1]
-        result = np.concat((np.expand_dims(_start, axis=0), result), axis=0)
-        result = np.cumsum(result, axis=0)
-    if use_decimal:
-        assert np_is_decimal(result)
-    else:
-        assert np_is_float64(result)
-    return result
+        out = np.zeros((T, F), dtype=diff.dtype)
+    for c in range(F):
+        k_c = int(order[c])
+        # Derivative starts for column c are derived on the fly from the raw
+        # prefix. raw_c[0..k_c] suffices: (i)-th-diff first value =
+        # (np.diff^i(raw_c))[0] for i = 0, ..., k_c-1.
+        raw_c = start[max_k - k_c : max_k, c] if k_c > 0 else start[:0, c]
+        der_starts = []
+        d = raw_c
+        for _ in range(k_c):
+            der_starts.append(d[0])
+            d = np.diff(d)
+        result_c = diff[:, c]
+        for i in range(k_c):
+            _start_val = der_starts[k_c - 1 - i]
+            _start_arr = np.array([_start_val], dtype=result_c.dtype)
+            result_c = np.concat([_start_arr, result_c])
+            result_c = np.cumsum(result_c)
+        # result_c has length N + k_c; pad to T with the raw prefix head.
+        if max_k > k_c:
+            result_c = np.concat([start[: max_k - k_c, c], result_c])
+        out[:, c] = result_c
+    return out
 
 
 def _sigma_delta_k(
@@ -154,51 +226,38 @@ def _sigma_delta_k(
     return tokens
 
 
-def encode(
-    inp: np.ndarray,
+def _encode_column_tokens(
+    scaled_col: np.ndarray,
+    k: int,
     vocab_size: int,
-    domain_of_definition: np.ndarray,
-    order_of_derivative: int,
     use_decimal: bool,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    assert vocab_size % 2 == 0
-    assert vocab_size >= 4
-    assert domain_of_definition.shape[0] == inp.shape[1]
-    assert order_of_derivative >= 0
-    if use_decimal:
-        assert np_is_decimal(inp)
-        assert np_is_decimal(domain_of_definition)
+) -> np.ndarray:
+    """Apply the appropriate Σ-Δ variant to one column's scaled diffs.
 
-    else:
-        assert np_is_float64(inp)
-        assert np_is_float64(domain_of_definition)
-    scale = np.ones(shape=domain_of_definition.shape, dtype=np.float64)
-    if use_decimal:
-        scale = np_to_decimal(scale)
-    _filter = np.abs(domain_of_definition) > np.finfo(np.float64).eps
-    # MASH (k ≥ 2) produces combined = y + Δ^k ε_k with |Δ^k ε_k| ≤ 2^{k-1}.
-    # To keep combined in the quantizer range we need |y| ≤ (V − 2 − 2^k)/2;
-    # when V is too small for that, fall back to the 1st-order carry scheme
-    # (which drifts as T^{k-1} at k ≥ 2 but at least fits in the vocabulary).
-    use_mash = order_of_derivative >= 2 and vocab_size > 2 ** order_of_derivative + 2
-    if use_mash:
-        headroom = 2 ** order_of_derivative
-        _scale = (vocab_size - 2 - headroom) / domain_of_definition[_filter] / 2
-    else:
-        _scale = (vocab_size - 2) / domain_of_definition[_filter] / 2
-    scale[_filter] = _scale
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    scaled_diff = diff * scale
+    - k = 0: plain quantization (round, shift, clip).
+    - k = 1 or insufficient V: legacy carry-based 1st-order scheme.
+    - k ≥ 2 with sufficient V: MASH cascade (tight uniform bound).
+
+    Returns shape (N, 1) int64 token array.
+    """
+    N = scaled_col.shape[0]
+    use_mash = k >= 2 and vocab_size > 2 ** k + 2
+    if k == 0:
+        # No noise-shaping needed (no integration at decode).
+        rounded = ufunc_round(scaled_col) if use_decimal else np.rint(scaled_col)
+        if use_decimal:
+            tokens = np.array(
+                [[int(v) for v in row] for row in rounded], dtype=np.int64
+            )
+        else:
+            tokens = rounded.astype(np.int64)
+        tokens = tokens + vocab_size // 2
+        np.clip(tokens, 0, vocab_size - 1, out=tokens)
+        return tokens
     if not use_mash:
-        # k ∈ {0, 1} or V too small: use the original carry-based 1st-order
-        # Σ-Δ. Mathematically equivalent to the MASH k=1 case at k=1, and the
-        # only option when V ≤ 2^k + 2 (no headroom for MASH corrections).
-        trunced_scaled_diff = np.trunc(scaled_diff)
-        residual = scaled_diff - trunced_scaled_diff
+        # Legacy carry-based Σ-Δ.
+        trunced = np.trunc(scaled_col)
+        residual = scaled_col - trunced
         residual = np.cumsum(residual, axis=0)
         residual = ufunc_round(residual) if use_decimal else np.rint(residual)
         residual = np.concat(
@@ -209,21 +268,106 @@ def encode(
             axis=0,
         )
         residual = np.diff(residual, axis=0)
-        encoded_data = trunced_scaled_diff + vocab_size // 2 + residual
-        encoded_data[encoded_data < 0] = 0
-        encoded_data[encoded_data >= vocab_size] = vocab_size - 1
-        result = start, scale, encoded_data.astype(np.int64)
+        encoded = trunced + vocab_size // 2 + residual
+        encoded[encoded < 0] = 0
+        encoded[encoded >= vocab_size] = vocab_size - 1
+        return encoded.astype(np.int64)
+    return _sigma_delta_k(scaled_col, k, vocab_size, use_decimal)
+
+
+def encode(
+    inp: np.ndarray,
+    vocab_size: int,
+    domain_of_definition: np.ndarray,
+    order_of_derivative: "int | np.ndarray",
+    use_decimal: bool,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Encode multivariate signal to tokens.
+
+    `order_of_derivative` can be scalar (uniform k for all columns) or a 1D
+    array (per-column k). In the per-column case, each column's scale is
+    sized by its own k (headroom for MASH if applicable).
+    """
+    assert vocab_size % 2 == 0
+    assert vocab_size >= 4
+    assert domain_of_definition.shape[0] == inp.shape[1]
+    F = inp.shape[1]
+    if use_decimal:
+        assert np_is_decimal(inp)
+        assert np_is_decimal(domain_of_definition)
     else:
-        # k ≥ 2: use MASH cascade so that after k decoder integrations the
-        # reconstruction error stays uniformly bounded in T (1st-order Σ-Δ
-        # would drift as T^{k-1}). Supports both float64 (fast) and Decimal
-        # (arbitrary precision — required for k ≥ 5 where float64 cumsum
-        # roundoff swamps the Δ/2 bound).
-        encoded_data = _sigma_delta_k(
-            scaled_diff, order_of_derivative, vocab_size, use_decimal
+        assert np_is_float64(inp)
+        assert np_is_float64(domain_of_definition)
+    # Normalize order to per-column array for uniform scale computation.
+    if _is_scalar_order(order_of_derivative):
+        scalar_k = int(order_of_derivative)
+        assert scalar_k >= 0
+        order_arr = np.full(F, scalar_k, dtype=np.int64)
+    else:
+        order_arr = np.asarray(order_of_derivative, dtype=np.int64)
+        assert order_arr.shape == (F,)
+        assert (order_arr >= 0).all()
+
+    scale = np.ones(shape=domain_of_definition.shape, dtype=np.float64)
+    if use_decimal:
+        scale = np_to_decimal(scale)
+    _filter = np.abs(domain_of_definition) > np.finfo(np.float64).eps
+    # Per-column scale: for MASH columns include headroom 2^{k_c}, else use
+    # the standard (V − 2)/2 formula.
+    for c in range(F):
+        if not _filter[c]:
+            continue
+        k_c = int(order_arr[c])
+        use_mash_c = k_c >= 2 and vocab_size > 2 ** k_c + 2
+        if use_mash_c:
+            scale[c] = (vocab_size - 2 - 2 ** k_c) / domain_of_definition[c] / 2
+        else:
+            scale[c] = (vocab_size - 2) / domain_of_definition[c] / 2
+
+    start, diff = differentiate(
+        inp=inp,
+        order_of_derivative=order_of_derivative,
+        use_decimal=use_decimal,
+    )
+    scaled_diff = diff * scale
+
+    if _is_scalar_order(order_of_derivative):
+        # Same k for all columns → existing vectorized path.
+        scalar_k = int(order_of_derivative)
+        use_mash = scalar_k >= 2 and vocab_size > 2 ** scalar_k + 2
+        if not use_mash:
+            trunced = np.trunc(scaled_diff)
+            residual = scaled_diff - trunced
+            residual = np.cumsum(residual, axis=0)
+            residual = ufunc_round(residual) if use_decimal else np.rint(residual)
+            residual = np.concat(
+                (
+                    np.zeros(shape=(1, residual.shape[1]), dtype=residual.dtype),
+                    residual,
+                ),
+                axis=0,
+            )
+            residual = np.diff(residual, axis=0)
+            encoded_data = trunced + vocab_size // 2 + residual
+            encoded_data[encoded_data < 0] = 0
+            encoded_data[encoded_data >= vocab_size] = vocab_size - 1
+            encoded_data = encoded_data.astype(np.int64)
+        else:
+            encoded_data = _sigma_delta_k(
+                scaled_diff, scalar_k, vocab_size, use_decimal
+            )
+        return start, scale, encoded_data
+
+    # Per-column path.
+    N = scaled_diff.shape[0]
+    encoded_data = np.zeros((N, F), dtype=np.int64)
+    for c in range(F):
+        k_c = int(order_arr[c])
+        col_tokens = _encode_column_tokens(
+            scaled_diff[:, c : c + 1], k_c, vocab_size, use_decimal
         )
-        result = start, scale, encoded_data
-    return result
+        encoded_data[:, c] = col_tokens[:, 0]
+    return start, scale, encoded_data
 
 
 def decode(
@@ -231,12 +375,11 @@ def decode(
     scale: np.ndarray,
     inp: np.ndarray,
     vocab_size: int,
-    order_of_derivative: int,
+    order_of_derivative: "int | np.ndarray",
     use_decimal: bool,
 ) -> np.ndarray:
     assert vocab_size % 2 == 0
     assert vocab_size >= 4
-    assert order_of_derivative >= 0
     if use_decimal:
         assert np_is_decimal(start)
         assert np_is_decimal(scale)
@@ -244,10 +387,10 @@ def decode(
         assert np_is_float64(start)
         assert np_is_float64(scale)
     assert inp.dtype == np.int64
-    inp = (inp - vocab_size // 2) / scale
+    inp_diff = (inp - vocab_size // 2) / scale
     result = integrate(
         start=start,
-        diff=inp,
+        diff=inp_diff,
         order_of_derivative=order_of_derivative,
         use_decimal=use_decimal,
     )
@@ -256,14 +399,29 @@ def decode(
 
 def get_domain_of_definition(
     inp: np.ndarray,
-    order_of_derivative: int,
+    order_of_derivative: "int | np.ndarray",
     use_decimal: bool,
 ) -> np.ndarray:
-    assert order_of_derivative >= 0
     if use_decimal:
         assert np_is_decimal(inp)
     else:
         assert np_is_float64(inp)
-    diff = np.diff(inp, n=order_of_derivative, axis=0)
-    result = np.max(np.abs(diff), axis=0)
+    if _is_scalar_order(order_of_derivative):
+        k = int(order_of_derivative)
+        assert k >= 0
+        diff = np.diff(inp, n=k, axis=0)
+        return np.max(np.abs(diff), axis=0)
+    order = np.asarray(order_of_derivative, dtype=np.int64)
+    assert order.ndim == 1 and order.shape[0] == inp.shape[1]
+    assert (order >= 0).all()
+    F = inp.shape[1]
+    if use_decimal:
+        result = np_to_decimal(np.zeros(F, dtype=np.float64))
+    else:
+        result = np.zeros(F, dtype=np.float64)
+    for c in range(F):
+        k_c = int(order[c])
+        diff_c = np.diff(inp[:, c], n=k_c)
+        if len(diff_c) > 0:
+            result[c] = np.max(np.abs(diff_c))
     return result

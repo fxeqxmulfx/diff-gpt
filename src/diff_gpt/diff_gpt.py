@@ -20,10 +20,14 @@ class DiffGPT:
     def __init__(
         self,
         model: BaseGPT,
-        order_of_derivative: int,
+        order_of_derivative: "int | np.ndarray",
         domain_of_definition: np.ndarray,
         use_decimal: bool,
     ) -> None:
+        """
+        `order_of_derivative`: scalar for uniform k across columns, or a
+        length-F array for per-column k.
+        """
         self.model = model
         self.order_of_derivative = order_of_derivative
         self.domain_of_definition = domain_of_definition
@@ -192,10 +196,16 @@ class DiffGPT:
         ctx_len = len(context_df)
         pred_len = len(future_covariates_df)
         order = self.order_of_derivative
+        # With per-column k the encoder aligns all columns to the shortest
+        # valid window, which is (T - max_k). Treat `order` as scalar or
+        # take its max for the token-count calculus.
+        max_order = int(order) if isinstance(order, (int, np.integer)) else int(
+            np.asarray(order).max()
+        )
 
-        total_tokens = (ctx_len + pred_len - order) * n_features
+        total_tokens = (ctx_len + pred_len - max_order) * n_features
         assert total_tokens <= self.model.block_size, (
-            f"ctx={ctx_len} pred={pred_len} cols={n_features} (order={order}) "
+            f"ctx={ctx_len} pred={pred_len} cols={n_features} (max_order={max_order}) "
             f"need {total_tokens} tokens but block_size={self.model.block_size}"
         )
 
@@ -221,11 +231,11 @@ class DiffGPT:
         )
         encoded_flat = encoded_full.reshape(-1).astype(np.int64).copy()
 
-        # First (ctx_len - order) token rows depend only on the observed
+        # First (ctx_len - max_order) token rows depend only on the observed
         # history — that's the prefill prompt. The remaining positions are
         # driven step-by-step via a force_schedule: None at target-column
         # positions (sample), the known covariate token otherwise.
-        ctx_token_count = (ctx_len - order) * n_features
+        ctx_token_count = (ctx_len - max_order) * n_features
         prompt_tokens = encoded_flat[:ctx_token_count].tolist()
         force_schedule: list[int | None] = [
             None if (p % n_features) in target_set else int(encoded_flat[p])
@@ -249,7 +259,7 @@ class DiffGPT:
             scale=scale,
             inp=encoded_final,
             vocab_size=self.model.vocab_size,
-            order_of_derivative=order,
+            order_of_derivative=self.order_of_derivative,
             use_decimal=self.use_decimal,
         )
         return pd.DataFrame(decoded, columns=columns_list)

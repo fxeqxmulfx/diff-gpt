@@ -484,6 +484,90 @@ def test_k2_float64_beats_k1_recon_when_signal_is_smooth():
     )
 
 
+def test_per_column_order_of_derivative_round_trip():
+    """Mixed per-column k: column A with k=0 (raw), column B with k=1,
+    column C with k=2. Each column is tokenized with its own derivative
+    order; encode/decode must round-trip all three within the tight bound
+    given by each column's own (D_c, V, k_c)."""
+    V = 256
+    T = 5_000
+    idx = np.arange(T, dtype=np.float64)
+    inp = np.stack(
+        (
+            # k=0 target: roughly constant series with small drift.
+            0.1 * idx,
+            # k=1 target: sinusoid.
+            np.sin(idx * 0.1),
+            # k=2 target: quadratic — 2nd diff is constant.
+            0.001 * idx ** 2,
+        ),
+        axis=1,
+    )
+    order = np.array([0, 1, 2], dtype=np.int64)
+    dod = get_domain_of_definition(
+        inp=inp, order_of_derivative=order, use_decimal=False
+    )
+    start, scale, enc = encode(
+        inp=inp,
+        vocab_size=V,
+        domain_of_definition=dod,
+        order_of_derivative=order,
+        use_decimal=False,
+    )
+    assert np.all((enc >= 0) & (enc < V))
+    dec = decode(
+        start=start,
+        scale=scale,
+        inp=enc,
+        vocab_size=V,
+        order_of_derivative=order,
+        use_decimal=False,
+    )
+    # Each column's reconstruction should be bounded by its own Δ/2.
+    for c in range(3):
+        err_c = float(np.max(np.abs(dec[:, c] - inp[:, c])))
+        k_c = int(order[c])
+        # Accommodate per-column scale (MASH shrinks bin width for k≥2).
+        headroom = 2 ** k_c if k_c >= 2 and V > 2 ** k_c + 2 else 0
+        bin_half = float(dod[c]) / (V - 2 - headroom)
+        assert err_c <= 2 * bin_half, (
+            f"col {c} (k={k_c}): err={err_c:.4e} > 2·Δ/2={2*bin_half:.4e}"
+        )
+
+
+def test_per_column_order_scalar_fallback_equivalence():
+    """Passing order as a length-F array of identical values must produce
+    the same reconstruction as passing the scalar, to within float64
+    precision — confirms the array path correctly handles the uniform-k
+    case."""
+    V = 256
+    T = 2_000
+    idx = np.arange(T, dtype=np.float64)
+    inp = np.stack((np.sin(idx * 0.1), np.cos(idx * 0.1)), axis=1)
+    k_scalar = 1
+    k_array = np.array([k_scalar, k_scalar], dtype=np.int64)
+    # Scalar path
+    dod_s = get_domain_of_definition(
+        inp=inp, order_of_derivative=k_scalar, use_decimal=False
+    )
+    _, _, enc_s = encode(
+        inp=inp, vocab_size=V, domain_of_definition=dod_s,
+        order_of_derivative=k_scalar, use_decimal=False,
+    )
+    # Array path with uniform values
+    dod_a = get_domain_of_definition(
+        inp=inp, order_of_derivative=k_array, use_decimal=False
+    )
+    _, _, enc_a = encode(
+        inp=inp, vocab_size=V, domain_of_definition=dod_a,
+        order_of_derivative=k_array, use_decimal=False,
+    )
+    # Tokens must be identical (or very nearly — same arithmetic).
+    assert np.array_equal(enc_s, enc_a), (
+        "uniform-order array path must match scalar path"
+    )
+
+
 def test_diff_encoder_decoder_square():
     vocab_size = 4
     idx = np.arange(1_000_000, dtype=np.float64)
