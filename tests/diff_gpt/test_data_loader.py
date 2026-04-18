@@ -330,6 +330,76 @@ def test_get_batch_structure(complex_db_path):
     loader.close()
 
 
+def test_split_defaults_to_train_only(linear_db_path):
+    """Without train_part, the SQLite loader exposes no val split."""
+    loader = DiffSQLiteDataLoader(
+        block_size=10,
+        batch_size=2,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=linear_db_path,
+        encode_data=pass_through_encode,
+    )
+    assert loader.has_val() is False
+    with pytest.raises(RuntimeError, match="no val split"):
+        loader.get_batch("val")
+    loader.close()
+
+
+def test_unknown_split_raises(linear_db_path):
+    loader = DiffSQLiteDataLoader(
+        block_size=10,
+        batch_size=2,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=linear_db_path,
+        encode_data=pass_through_encode,
+    )
+    with pytest.raises(ValueError, match="unknown split"):
+        loader.get_batch("test")
+    loader.close()
+
+
+def test_sqlite_train_val_split_disjoint(linear_db_path):
+    """
+    With train_part=0.7 on the linear DB (100 rows × 2 cols = 200 tokens),
+    train samples come from tokens [0, 140) and val from [140, 200).
+    Because values are row-indexed (row i → [i, 2i]), we can check that
+    train tokens always fall below the boundary value and val always above.
+    """
+    torch.manual_seed(0)
+    block_size = 20
+    loader = DiffSQLiteDataLoader(
+        block_size=block_size,
+        batch_size=8,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=linear_db_path,
+        encode_data=pass_through_encode,
+        train_part=0.7,
+    )
+    assert loader.has_val() is True
+    # Train window start range is [0, 140 - 20) → last accessible token index 139
+    # maps to row 69 col 1 = value 138. So train values ≤ 138.
+    # Val window start range is [140, 200 - 20) → first token index 140 maps
+    # to row 70 col 0 = value 70; so val values ≥ 70.
+    for _ in range(15):
+        x_tr, _ = loader.get_batch("train")
+        assert x_tr.max().item() <= 138
+        x_val, _ = loader.get_batch("val")
+        assert x_val.min().item() >= 70
+    loader.close()
+
+
 def test_stress_random_access(complex_db_path):
     """Run a loop to check for stability in random access."""
     loader = DiffSQLiteDataLoader(
