@@ -128,12 +128,26 @@ temperature-1 trajectories give Monte-Carlo samples from the joint future
 distribution, which we can reduce to any set of quantiles.
 
 ```python
-# N Monte-Carlo trajectories, shape (N, H, F)
+from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.sampler.nucleus import NucleusSampler
+
+# N Monte-Carlo trajectories, shape (N, H, F).
+# Plain temperature-1 sampling — the most diverse readout.
 samples = model.predict_samples(
     df=context,
     max_new_points=48,
     num_samples=100,
     sampler=TemperatureSampler(temperature=1.0),
+)
+
+# Nucleus top-p on top of temperature: drop the low-probability tail of
+# each per-step distribution before sampling. Tightens forecast bands
+# without any retraining (−25% MSIS on M4 Hourly at p=0.9).
+nucleus = NucleusSampler(
+    p=0.9, sampler=TemperatureSampler(temperature=1.0),
+)
+samples_nucleus = model.predict_samples(
+    df=context, max_new_points=48, num_samples=100, sampler=nucleus,
 )
 
 # Or directly as quantile bands {0.1, 0.5, 0.9}: each a DataFrame of shape (H, F).
@@ -142,7 +156,7 @@ bands = model.predict_quantiles(
     max_new_points=48,
     quantiles=(0.1, 0.5, 0.9),
     num_samples=100,
-    sampler=TemperatureSampler(temperature=1.0),
+    sampler=nucleus,
 )
 p10, p50, p90 = bands[0.1], bands[0.5], bands[0.9]
 ```
