@@ -112,10 +112,11 @@ def encode(
     trunced_scaled_diff = np.trunc(scaled_diff)
     residual = scaled_diff - trunced_scaled_diff
     residual = np.cumsum(residual, axis=0)
-    residual = ufunc_round(residual)
+    # Decimal objects don't support np.rint, so fall back to the per-element ufunc.
+    residual = ufunc_round(residual) if use_decimal else np.rint(residual)
     residual = np.concat(
         (
-            np.zeros(shape=(1, residual.shape[1]), dtype=np.int64),
+            np.zeros(shape=(1, residual.shape[1]), dtype=residual.dtype),
             residual,
         ),
         axis=0,

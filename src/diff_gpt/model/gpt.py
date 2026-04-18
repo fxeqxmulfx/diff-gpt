@@ -43,6 +43,7 @@ class BaseGPT(nn.Module, ABC):
         idx: torch.Tensor,
         max_new_tokens: int,
         sampler: Sampler | None,
+        seed: int | None = None,
     ) -> torch.Tensor:
         pass
 
@@ -139,9 +140,14 @@ class GPT(BaseGPT):
         idx: torch.Tensor,
         max_new_tokens: int,
         sampler: Sampler | None,
+        seed: int | None = None,
     ) -> torch.Tensor:
         block_size = self.block_size
         device = idx.device
+        rng: torch.Generator | None = None
+        if seed is not None:
+            rng = torch.Generator(device=device)
+            rng.manual_seed(seed)
         B, T = idx.shape
         all_tokens = torch.full(
             (B, T + max_new_tokens),
@@ -156,10 +162,12 @@ class GPT(BaseGPT):
             logits, _ = self(idx_cond)
             logits = logits[:, -1]  # (B, C)
             if sampler is not None:
-                idx_next = sampler(logits)
+                idx_next = sampler(logits, rng=rng)
             else:
                 probs = F.softmax(logits, dim=-1)  # (B, C)
-                idx_next = torch.multinomial(probs, num_samples=1)  # (B, 1)
+                idx_next = torch.multinomial(
+                    probs, num_samples=1, generator=rng
+                )  # (B, 1)
             all_tokens[:, current_pos] = idx_next.squeeze()
         return all_tokens
 

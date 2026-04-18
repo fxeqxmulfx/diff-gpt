@@ -115,6 +115,27 @@ def test_generation_output_len():
     assert out_idx.shape == (B, T + N_new)
 
 
+def test_generate_seed_determinism():
+    """
+    Passing the same `seed` must yield identical outputs; different seeds differ.
+    """
+    from diff_gpt.sampler.temperature import TemperatureSampler
+
+    B, T, V = 1, 5, 64
+    model = GPT(vocab_size=V, n_embd=32, block_size=16, n_layer=1)
+    model.eval()
+    idx = torch.randint(0, V, (B, T))
+    # High temperature flattens the distribution so different seeds actually diverge.
+    sampler = TemperatureSampler(temperature=20.0)
+
+    a = model.generate(idx, max_new_tokens=8, sampler=sampler, seed=7)
+    b = model.generate(idx, max_new_tokens=8, sampler=sampler, seed=7)
+    c = model.generate(idx, max_new_tokens=8, sampler=sampler, seed=99)
+
+    assert torch.equal(a, b)
+    assert not torch.equal(a, c)
+
+
 def test_overfitting_capability():
     r"""
     Sanity check: Model capacity.

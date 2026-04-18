@@ -12,16 +12,12 @@ class RowState:
     __slots__ = (
         "current_tokens",
         "forced_tokens",
-        "completed",
     )
 
     # Per-row state tracking during generation
     def __init__(self, current_tokens: list[int] | None = None) -> None:
-        self.current_tokens = (
-            current_tokens or list()
-        )  # Current token sequence for this row
+        self.current_tokens = current_tokens or list()
         self.forced_tokens = deque()  # Queue of tokens to force inject
-        self.completed = False  # Whether this row has completed generation
 
 
 class Engine:
@@ -39,10 +35,22 @@ class Engine:
         sampler: Sampler | None = None,
         seed: int = 42,
     ) -> Generator[tuple[list[int], list[int]], None, None]:
-        """Same as generate, but does single prefill and then clones the KV cache."""
-        assert isinstance(tokens, list) and isinstance(tokens[0], int), (
-            "expecting tuple of ints"
-        )
+        """Streaming generation: single prefill, then clone the KV cache for each sample."""
+        assert isinstance(tokens, list), "tokens must be a list of ints"
+        assert len(tokens) > 0, "tokens must be non-empty"
+        assert all(isinstance(t, int) for t in tokens), "tokens must be a list of ints"
+
+        # Compute effective token budget (RoPE ceiling is block_size * 2).
+        block_size = self.model.block_size
+        prompt_len = len(tokens)
+        hard_ceiling = max(0, block_size * 2 - prompt_len)
+        if max_tokens is not None:
+            effective_max_tokens = min(max_tokens, hard_ceiling)
+        else:
+            effective_max_tokens = hard_ceiling
+        if effective_max_tokens == 0:
+            return  # nothing to generate; skip expensive prefill+alloc
+
         device = self.model.device_type
         rng = torch.Generator(device=device)
         rng.manual_seed(seed)
@@ -64,10 +72,7 @@ class Engine:
         logits = logits[:, -1, :].expand(num_samples, -1)  # (num_samples, vocab_size)
 
         # 2) Replicate the KV cache for each sample/row
-        block_size = self.model.block_size
-        kv_length_hint = (
-            (len(tokens) + max_tokens) if max_tokens is not None else block_size
-        )
+        kv_length_hint = prompt_len + effective_max_tokens
         kv_cache_decode = KVCache(
             batch_size=num_samples,
             seq_len=kv_length_hint,
@@ -81,17 +86,7 @@ class Engine:
 
         # 4) Main generation loop
         num_generated = 0
-        while True:
-            # Stop condition: we've reached max tokens
-            if (
-                max_tokens is not None
-                and num_generated >= max_tokens
-                or num_generated >= block_size
-            ):
-                for state in row_states:
-                    state.completed = True
-                break
-
+        while num_generated < effective_max_tokens:
             # Sample the next token for each row
             if sampler is not None:
                 next_ids = sampler(logits, rng=rng)  # (B, 1)
@@ -100,7 +95,7 @@ class Engine:
                 next_ids = torch.multinomial(
                     probs, num_samples=1, generator=rng
                 )  # (B, 1)
-            sampled_tokens = tuple(next_ids[:, 0].tolist())
+            sampled_tokens = next_ids[:, 0].tolist()
 
             # Process each row: choose the next token, update state, optional tool use
             token_column = []  # contains the next token id along each row
@@ -135,18 +130,12 @@ class Engine:
     ) -> tuple[list[list[int]], list[list[int]]]:
         """
         Non-streaming batch generation that just returns the final token sequences.
-        Returns a list of token sequences (list of lists of ints).
-        Terminal tokens (assistant_end, bos) are not included in the results.
+        Returns (results, masks): each a list of `num_samples` lists of ints.
         """
         results = [tokens.copy() for _ in range(num_samples)]
         masks = [[0] * len(tokens) for _ in range(num_samples)]
-        completed = [False] * num_samples
         for token_column, token_masks in self.generate(tokens, num_samples, **kwargs):
             for i, (token, mask) in enumerate(zip(token_column, token_masks)):
-                if not completed[i]:
-                    results[i].append(token)
-                    masks[i].append(mask)
-            # Stop if all rows are completed
-            if all(completed):
-                break
+                results[i].append(token)
+                masks[i].append(mask)
         return results, masks

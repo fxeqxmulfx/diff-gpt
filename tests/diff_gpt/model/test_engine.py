@@ -74,7 +74,6 @@ def test_generate_batch_output_shape(gpt_model: GPT) -> None:
 def test_generate_determinism(gpt_model):
     """
     Verifies that with the same seed, the generation is deterministic.
-    Проверяет, что при одинаковом seed генерация детерминирована.
     Let G(x_0, s) be the generation function with prompt x_0 and seed s.
     We verify:
     G(x_0, s_1) = G(x_0, s_1)
@@ -171,14 +170,87 @@ def greedy_sampler(logits: torch.Tensor, rng: torch.Generator | None) -> torch.T
     return torch.argmax(logits, dim=-1, keepdim=True)
 
 
+def test_generate_rejects_empty_prompt(gpt_model: GPT) -> None:
+    """Empty prompts must raise a clear AssertionError instead of IndexError."""
+    engine = Engine(model=gpt_model)
+    with pytest.raises(AssertionError, match="non-empty"):
+        _ = engine.generate_batch(tokens=[], num_samples=1, max_tokens=2)
+
+
+def test_generate_rejects_mixed_type_tokens(gpt_model: GPT) -> None:
+    """All elements must be ints — a rogue float/str in the middle must fail."""
+    engine = Engine(model=gpt_model)
+    with pytest.raises(AssertionError, match="list of ints"):
+        _ = engine.generate_batch(
+            tokens=[1, 2, 3.0],  # type: ignore[list-item]
+            num_samples=1,
+            max_tokens=2,
+        )
+
+
+def test_generate_early_return_when_prompt_at_rope_ceiling(gpt_model: GPT) -> None:
+    """
+    If prompt already fills the RoPE ceiling, effective_max_tokens is 0.
+    The generator must short-circuit (no yields, no alloc of decode cache).
+    """
+    engine = Engine(model=gpt_model)
+    ceiling = gpt_model.block_size * 2
+    prompt = list(range(ceiling))  # exactly at the limit
+    results, masks = engine.generate_batch(
+        tokens=prompt, num_samples=2, max_tokens=10
+    )
+    assert len(results) == 2
+    # No generation happened — each row is just the prompt.
+    for row, mask in zip(results, masks):
+        assert row == prompt
+        assert mask == [0] * len(prompt)
+
+
+def test_generate_respects_small_max_tokens(gpt_model: GPT) -> None:
+    """max_tokens below the hard ceiling must be honored exactly."""
+    engine = Engine(model=gpt_model)
+    prompt = [1, 2, 3]
+    max_tokens = 4
+    results, _ = engine.generate_batch(
+        tokens=prompt, num_samples=1, max_tokens=max_tokens
+    )
+    assert len(results[0]) == len(prompt) + max_tokens
+
+
+def test_generate_clamps_max_tokens_to_rope_ceiling(gpt_model: GPT) -> None:
+    """
+    RoPE frequencies are precomputed for block_size * 2 positions,
+    so total context (prompt + generated) cannot exceed that.
+    An oversized max_tokens must be clamped; previously the engine
+    either stopped at block_size generated (ignoring max_tokens) or
+    would have asserted inside forward.
+    """
+    engine = Engine(model=gpt_model)
+    block_size = gpt_model.block_size
+    prompt = [1, 2, 3]
+    hard_ceiling = block_size * 2 - len(prompt)
+    # Ask for way more than supported
+    results, _ = engine.generate_batch(
+        tokens=prompt, num_samples=1, max_tokens=hard_ceiling + 50
+    )
+    assert len(results[0]) == len(prompt) + hard_ceiling
+
+
+def test_generate_no_max_tokens_uses_hard_ceiling(gpt_model: GPT) -> None:
+    """Without max_tokens, generation fills up to the RoPE ceiling."""
+    engine = Engine(model=gpt_model)
+    block_size = gpt_model.block_size
+    prompt = [1, 2, 3, 4]
+    hard_ceiling = block_size * 2 - len(prompt)
+    results, _ = engine.generate_batch(tokens=prompt, num_samples=1)
+    assert len(results[0]) == len(prompt) + hard_ceiling
+
+
 def test_prefill_clone_equivalence(gpt_model):
     """
     Crucial test: Verifies that the "prefill once, then clone KV cache"
     optimization yields the same result as running N independent generations.
     We use a deterministic sampler (argmax) to isolate the test to the KV cache logic.
-    Ключевой тест: проверяет, что оптимизация "prefill один раз, затем клонировать KV кэш"
-    даёт тот же результат, что и N независимых генераций.
-    Мы используем детерминированный семплер (argmax), чтобы изолировать тест на логике KV кэша.
     Let f(x_0, B) be the generation with num_samples=B.
     Let S_greedy be the argmax sampler.
     We verify:
@@ -191,7 +263,6 @@ def test_prefill_clone_equivalence(gpt_model):
     seed = 42
 
     # Deterministic sampler: always picks the token with the highest logit.
-    # Детерминированный семплер: всегда выбирает токен с наибольшим логитом.
     # S_greedy(l) = argmax(l)
 
     # --- 1. Engine's optimized batch generation (Prefill & Clone) ---
@@ -217,10 +288,8 @@ def test_prefill_clone_equivalence(gpt_model):
     results_naive = single_result * num_samples
 
     # With a greedy sampler, all samples in the batch must be identical.
-    # С жадным семплером все семплы в батче должны быть идентичны.
     for i in range(1, num_samples):
         assert results_engine[0] == results_engine[i]
 
     # The result of the optimized batch must be the same as N naive runs.
-    # Результат оптимизированного батча должен совпадать с N наивными запусками.
     assert results_engine == results_naive

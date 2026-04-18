@@ -5,6 +5,7 @@ import numpy as np
 from typing import Tuple
 
 from diff_gpt.data_loader import DiffSQLiteDataLoader
+from diff_gpt.encoder_decoder import encode
 
 
 # =============================================================================
@@ -347,4 +348,191 @@ def test_stress_random_access(complex_db_path):
         x, y = loader.get_batch()
         assert x.shape == (16, 10)
 
+    loader.close()
+
+
+# =============================================================================
+# 6. REGRESSION: real encoder with multi-feature + order_of_derivative > 0
+# =============================================================================
+
+
+@pytest.fixture
+def wide_only_db_path(tmp_path):
+    """DB with a single 4-feature table, used for real-encoder tests."""
+    db_file = tmp_path / "wide_only.db"
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute(
+        "CREATE TABLE wide (dt INTEGER PRIMARY KEY, c1 REAL, c2 REAL, c3 REAL, c4 REAL)"
+    )
+    wide_data = [
+        (100 + i * 10, i + 0.1, i + 0.2, i + 0.3, i + 0.4) for i in range(200)
+    ]
+    cursor.executemany("INSERT INTO wide VALUES (?, ?, ?, ?, ?)", wide_data)
+    conn.commit()
+    conn.close()
+    return str(db_file)
+
+
+def test_get_data_with_real_encoder_multi_feature(wide_only_db_path):
+    """
+    Regression test for the `encoded.flatten()` fix in get_data.
+    The real `encode` returns a 2D array (n_rows - order, n_features);
+    without flattening, slicing by a 1D offset is wrong.
+    """
+    block_size = 8
+    vocab_size = 256
+    loader = DiffSQLiteDataLoader(
+        block_size=block_size,
+        batch_size=1,
+        vocab_size=vocab_size,
+        order_of_derivative=1,
+        domain_of_definition=np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float64),
+        use_decimal=False,
+        device="cpu",
+        database=wide_only_db_path,
+        encode_data=encode,
+    )
+
+    data = loader.get_data("wide", 0, block_size + 1)
+    assert len(data) == block_size + 1
+    assert all(isinstance(v, int) for v in data)
+    assert all(0 <= v < vocab_size for v in data)
+    loader.close()
+
+
+def test_get_batch_with_real_encoder(wide_only_db_path):
+    """End-to-end sanity with the real encoder."""
+    block_size = 8
+    batch_size = 4
+    loader = DiffSQLiteDataLoader(
+        block_size=block_size,
+        batch_size=batch_size,
+        vocab_size=256,
+        order_of_derivative=1,
+        domain_of_definition=np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float64),
+        use_decimal=False,
+        device="cpu",
+        database=wide_only_db_path,
+        encode_data=encode,
+    )
+    for _ in range(10):
+        x, y = loader.get_batch()
+        assert x.shape == (batch_size, block_size)
+        assert y.shape == (batch_size, block_size)
+        assert x.dtype == torch.int64
+    loader.close()
+
+
+# =============================================================================
+# 7. REGRESSION: get_batch does not recurse and tolerates short reads
+# =============================================================================
+
+
+def test_default_rng_is_not_shared_between_instances(linear_db_path):
+    """
+    Regression: the default `rng` parameter used to be evaluated once at import time
+    (mutable default argument), causing two loaders to draw from the same stream.
+    """
+    a = DiffSQLiteDataLoader(
+        block_size=4,
+        batch_size=2,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=linear_db_path,
+        encode_data=pass_through_encode,
+    )
+    b = DiffSQLiteDataLoader(
+        block_size=4,
+        batch_size=2,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=linear_db_path,
+        encode_data=pass_through_encode,
+    )
+    # Different instances, but each seeded with 42 internally → both must
+    # produce the same first batch, proving they own independent generators.
+    xa, _ = a.get_batch()
+    xb, _ = b.get_batch()
+    assert torch.equal(xa, xb)
+    # And the second draw of `a` should differ from its first — i.e. its state
+    # advances independently of `b`.
+    xa2, _ = a.get_batch()
+    assert not torch.equal(xa, xa2)
+    a.close()
+    b.close()
+
+
+def test_sql_identifier_quoting_for_weird_table_name(tmp_path):
+    """Tables whose names contain punctuation must not break the loader."""
+    db_file = tmp_path / "weird.db"
+    conn = sqlite3.connect(str(db_file))
+    cursor = conn.cursor()
+    weird_name = 'weird"name'
+    quoted = '"' + weird_name.replace('"', '""') + '"'
+    cursor.execute(f"CREATE TABLE {quoted} (dt INTEGER PRIMARY KEY, v REAL)")
+    cursor.executemany(
+        f"INSERT INTO {quoted} VALUES (?, ?)",
+        [(i, float(i)) for i in range(50)],
+    )
+    conn.commit()
+    conn.close()
+
+    loader = DiffSQLiteDataLoader(
+        block_size=4,
+        batch_size=1,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1.0]),
+        use_decimal=False,
+        device="cpu",
+        database=str(db_file),
+        encode_data=pass_through_encode,
+    )
+    assert weird_name in loader.tables
+    data = loader.get_data(weird_name, 0, 3)
+    assert len(data) == 3
+    loader.close()
+
+
+def test_get_batch_tolerates_short_reads_without_recursion(complex_db_path):
+    """
+    Previously, get_batch called itself recursively when a short read occurred,
+    which could overflow the stack. It now loops instead — verify by forcing
+    short reads for the first few attempts and ensuring we still get a full batch.
+    """
+    block_size = 5
+    batch_size = 4
+    call_counter = {"n": 0}
+
+    class FlakyLoader(DiffSQLiteDataLoader):
+        def get_data(self, table, start, end):
+            call_counter["n"] += 1
+            if call_counter["n"] <= 3:
+                return tuple()
+            return super().get_data(table, start, end)
+
+    loader = FlakyLoader(
+        block_size=block_size,
+        batch_size=batch_size,
+        vocab_size=100,
+        order_of_derivative=0,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=complex_db_path,
+        encode_data=pass_through_encode,
+    )
+
+    x, y = loader.get_batch()
+    assert x.shape == (batch_size, block_size)
+    assert y.shape == (batch_size, block_size)
+    # Loop must have re-tried past the forced short reads
+    assert call_counter["n"] > batch_size
     loader.close()

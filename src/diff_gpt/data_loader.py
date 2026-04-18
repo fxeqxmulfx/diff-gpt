@@ -6,7 +6,21 @@ import torch
 from diff_gpt.encoder_decoder import encode
 
 
+def _quote_ident(name: str) -> str:
+    """Safely quote a SQLite identifier (table or column name)."""
+    return '"' + name.replace('"', '""') + '"'
+
+
 class DiffSQLiteDataLoader:
+    """
+    Reads uniformly-sampled time series from a SQLite database.
+
+    Contract: each table has an integer `dt` primary key whose values are
+    evenly spaced — the step is reconstructed as floor((max-min) / (rows-1)).
+    Non-uniform or non-integer `dt` will cause `get_data` to query wrong row
+    ranges and is not supported.
+    """
+
     __slots__ = (
         "block_size",
         "batch_size",
@@ -38,7 +52,7 @@ class DiffSQLiteDataLoader:
         device: str,
         database: str,
         encode_data: Callable = encode,
-        rng: torch.Generator = torch.Generator().manual_seed(42),
+        rng: torch.Generator | None = None,
     ) -> None:
         self.block_size = block_size
         self.batch_size = batch_size
@@ -48,7 +62,9 @@ class DiffSQLiteDataLoader:
         self.use_decimal = use_decimal
         self.encode_data = encode_data
         self.device = device
-        self.rng = rng
+        # Construct a fresh generator per instance. Using a mutable default here
+        # would share state across loaders in the same process.
+        self.rng = rng if rng is not None else torch.Generator().manual_seed(42)
         self.connection = sqlite3.connect(database)
         self.cursor = self.connection.cursor()
         tables = tuple(
@@ -61,7 +77,7 @@ class DiffSQLiteDataLoader:
             (
                 table,
                 self.cursor.execute(
-                    f'SELECT MIN(dt), MAX(dt) FROM "{table}"'
+                    f"SELECT MIN(dt), MAX(dt) FROM {_quote_ident(table)}"
                 ).fetchone(),
             )
             for table in tables
@@ -71,7 +87,7 @@ class DiffSQLiteDataLoader:
             (
                 table,
                 self.cursor.execute(
-                    f"SELECT ncol FROM pragma_table_list WHERE name = '{table}'"
+                    "SELECT ncol FROM pragma_table_list WHERE name = ?", (table,)
                 ).fetchone()[0],
             )
             for table in tables
@@ -80,7 +96,9 @@ class DiffSQLiteDataLoader:
         tables_row_count = dict(
             (
                 table,
-                self.cursor.execute(f"SELECT count(*) FROM {table};").fetchone()[0],
+                self.cursor.execute(
+                    f"SELECT count(*) FROM {_quote_ident(table)};"
+                ).fetchone()[0],
             )
             for table in tables
         )
@@ -128,7 +146,10 @@ class DiffSQLiteDataLoader:
         dt_step = self.tables_dt_diff[table]
         t_start = min_dt + (raw_start_row * dt_step)
         t_end = min_dt + (raw_end_row * dt_step)
-        query = f'SELECT * FROM "{table}" WHERE dt BETWEEN ? AND ? ORDER BY dt ASC'
+        query = (
+            f"SELECT * FROM {_quote_ident(table)} "
+            "WHERE dt BETWEEN ? AND ? ORDER BY dt ASC"
+        )
         self.cursor.execute(query, (t_start, t_end))
         rows = self.cursor.fetchall()
         if not rows:
@@ -143,6 +164,7 @@ class DiffSQLiteDataLoader:
             order_of_derivative=self.order_of_derivative,
             use_decimal=self.use_decimal,
         )
+        encoded = encoded.flatten()
         local_offset = effective_start % n_features
         req_length = end - start
         if len(encoded) < local_offset + req_length:
@@ -159,7 +181,8 @@ class DiffSQLiteDataLoader:
         x = torch.zeros(size=(batch_size, block_size), dtype=torch.int64)
         y = torch.zeros(size=(batch_size, block_size), dtype=torch.int64)
         rng = self.rng
-        for i in range(batch_size):
+        i = 0
+        while i < batch_size:
             table_idx = int(
                 torch.randint(
                     low=0,
@@ -187,9 +210,10 @@ class DiffSQLiteDataLoader:
                 dtype=torch.int64,
             )
             if temp.size(0) != block_size + 1:
-                return self.get_batch()
+                continue
             x[i] = temp[:-1]
             y[i] = temp[1:]
+            i += 1
         device = self.device
         x, y = x.to(device=device), y.to(device=device)
         return x, y
