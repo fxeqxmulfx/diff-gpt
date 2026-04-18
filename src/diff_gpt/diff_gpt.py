@@ -20,7 +20,7 @@ class DiffGPT:
     def __init__(
         self,
         model: BaseGPT,
-        order_of_derivative: "int | np.ndarray",
+        order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
         use_decimal: bool,
     ) -> None:
@@ -131,11 +131,24 @@ class DiffGPT:
         sampler: Sampler | None,
     ) -> pd.DataFrame:
         columns = df.shape[1]
-        total_positions = (df.shape[0] + max_new_points - 1) * columns
+        order = self.order_of_derivative
+        if isinstance(order, (int, np.integer)):
+            max_order = int(order)
+        else:
+            order_arr = np.asarray(order)
+            assert order_arr.shape == (columns,), (
+                f"order_of_derivative shape {order_arr.shape} must match columns {columns}"
+            )
+            max_order = int(order_arr.max())
+        assert max_order <= df.shape[0], (
+            f"max order {max_order} > context length {df.shape[0]}: "
+            f"not enough history to compute the k-th derivative prefix"
+        )
+        total_positions = (df.shape[0] + max_new_points - max_order) * columns
         assert total_positions <= self.model.block_size, (
             f"prompt rows ({df.shape[0]}) + new points ({max_new_points}) with "
-            f"{columns} columns require {total_positions} context positions, "
-            f"but block_size is {self.model.block_size}"
+            f"{columns} columns (max_order={max_order}) require {total_positions} "
+            f"context positions, but block_size is {self.model.block_size}"
         )
         vocab_size = self.model.vocab_size
         inp = df.to_numpy(dtype=np.float64)
@@ -199,8 +212,17 @@ class DiffGPT:
         # With per-column k the encoder aligns all columns to the shortest
         # valid window, which is (T - max_k). Treat `order` as scalar or
         # take its max for the token-count calculus.
-        max_order = int(order) if isinstance(order, (int, np.integer)) else int(
-            np.asarray(order).max()
+        if isinstance(order, (int, np.integer)):
+            max_order = int(order)
+        else:
+            order_arr = np.asarray(order)
+            assert order_arr.shape == (n_features,), (
+                f"order_of_derivative shape {order_arr.shape} must match n_features {n_features}"
+            )
+            max_order = int(order_arr.max())
+        assert max_order <= ctx_len, (
+            f"max order {max_order} > context length {ctx_len}: "
+            f"not enough history to compute the k-th derivative prefix"
         )
 
         total_tokens = (ctx_len + pred_len - max_order) * n_features

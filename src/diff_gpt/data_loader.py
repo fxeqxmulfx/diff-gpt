@@ -31,6 +31,7 @@ class DiffSQLiteDataLoader:
         "batch_size",
         "vocab_size",
         "order_of_derivative",
+        "_max_order",
         "domain_of_definition",
         "use_decimal",
         "encode_data",
@@ -54,7 +55,7 @@ class DiffSQLiteDataLoader:
         block_size: int,
         batch_size: int,
         vocab_size: int,
-        order_of_derivative: int,
+        order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
         use_decimal: bool,
         device: str,
@@ -67,6 +68,13 @@ class DiffSQLiteDataLoader:
         self.batch_size = batch_size
         self.vocab_size = vocab_size
         self.order_of_derivative = order_of_derivative
+        # Single scalar max for internal row/token-offset arithmetic; the
+        # encoder handles per-column orders downstream.
+        self._max_order = (
+            int(order_of_derivative)
+            if isinstance(order_of_derivative, (int, np.integer))
+            else int(np.asarray(order_of_derivative).max())
+        )
         self.domain_of_definition = domain_of_definition
         self.use_decimal = use_decimal
         self.encode_data = encode_data
@@ -123,7 +131,7 @@ class DiffSQLiteDataLoader:
         tables_tokens_len = dict(
             (
                 table,
-                (tables_row_count[table] - order_of_derivative)
+                (tables_row_count[table] - self._max_order)
                 * (tables_columns_count[table] - 1),
             )
             for table in tables
@@ -157,11 +165,11 @@ class DiffSQLiteDataLoader:
     def get_data(self, table: str, start: int, end: int) -> tuple[int, ...]:
         n_columns = self.tables_columns_count[table]
         n_features = n_columns - 1
-        effective_start = start + (self.order_of_derivative * n_features)
-        effective_end = end + (self.order_of_derivative * n_features)
+        effective_start = start + (self._max_order * n_features)
+        effective_end = end + (self._max_order * n_features)
         start_row_idx = effective_start // n_features
         end_row_idx = (effective_end - 1) // n_features
-        raw_start_row = start_row_idx - self.order_of_derivative
+        raw_start_row = start_row_idx - self._max_order
         raw_end_row = end_row_idx
         min_dt = self.tables_range[table][0]
         dt_step = self.tables_dt_diff[table]
@@ -382,7 +390,7 @@ class DiffDataFrameDataLoader:
         block_size: int,
         batch_size: int,
         vocab_size: int,
-        order_of_derivative: "int | np.ndarray",
+        order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
         use_decimal: bool,
         device: str,
