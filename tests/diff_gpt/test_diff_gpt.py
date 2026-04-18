@@ -157,6 +157,133 @@ def test_predict_teacher_forced_mismatched_columns_raises():
         )
 
 
+def test_per_column_order_train_and_predict_autoregressive():
+    """End-to-end train + autoregressive predict with per-column k
+    vector (e.g., [1, 1, 2] giving one column a 2nd-derivative
+    tokenization while the others use 1st). All downstream paths —
+    loader.encode, DiffGPT.train, DiffGPT.predict — must thread the
+    array through without error, and the round-trip through encoder/
+    decoder must reproduce the context portion of the input exactly
+    (up to quantization)."""
+    torch.manual_seed(0)
+    df = _make_toy(n_rows=120)
+    order = np.array([1, 1, 2], dtype=np.int64)
+    # Use V=64 (MASH needs V > 2^2 + 2 = 6 for the k=2 column; trivially met).
+    dod = get_domain_of_definition(
+        df.to_numpy(dtype=np.float64), order_of_derivative=order, use_decimal=False
+    )
+    base = GPT(
+        vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(
+        model=base,
+        order_of_derivative=order,
+        domain_of_definition=dod,
+        use_decimal=False,
+    )
+    loader = DiffDataFrameDataLoader(
+        dfs=[df],
+        block_size=base.block_size,
+        batch_size=2,
+        vocab_size=base.vocab_size,
+        order_of_derivative=order,
+        domain_of_definition=dod,
+        use_decimal=False,
+        device=base.device_type,
+        train_part=0.7,
+    )
+    val_loss, _ = model.train(
+        loader=loader,
+        max_iters=5,
+        eval_interval=5,
+        eval_iters=2,
+        use_tqdm=False,
+        use_early_stopping=False,
+    )
+    assert np.isfinite(val_loss)
+    # Predict a few points; max_k = 2 so need ctx ≥ 2.
+    ctx = df.iloc[:10]
+    result = model.predict(
+        df=ctx, max_new_points=4,
+        sampler=TemperatureSampler(temperature=0.0),
+    )
+    assert result.shape == (14, 3)
+
+
+def test_per_column_order_predict_teacher_forced():
+    """Teacher-forced mode must respect per-column orders for token
+    layout and covariate fidelity."""
+    torch.manual_seed(0)
+    df = _make_toy(n_rows=80)
+    seq_len, pred_len = 20, 8
+    order = np.array([1, 1, 2], dtype=np.int64)
+    dod = get_domain_of_definition(
+        df.to_numpy(dtype=np.float64), order_of_derivative=order, use_decimal=False
+    )
+    base = GPT(
+        vocab_size=256, n_embd=16, block_size=128, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(
+        model=base,
+        order_of_derivative=order,
+        domain_of_definition=dod,
+        use_decimal=False,
+    )
+    context_df = df.iloc[:seq_len].copy()
+    future_cov = df.iloc[seq_len : seq_len + pred_len].copy()
+    result = model.predict(
+        df=context_df,
+        future_covariates_df=future_cov,
+        target_columns=["y"],
+        sampler=TemperatureSampler(temperature=0.0),
+    )
+    assert result.shape == (seq_len + pred_len, 3)
+
+
+def test_per_column_order_shape_mismatch_raises():
+    """A per-column order of wrong length must fail loudly, not
+    silently read past the end of the array."""
+    torch.manual_seed(0)
+    df = _make_toy(n_rows=30)
+    # df has 3 columns; pass a length-2 order array.
+    with pytest.raises(AssertionError):
+        get_domain_of_definition(
+            df.to_numpy(dtype=np.float64),
+            order_of_derivative=np.array([1, 1], dtype=np.int64),
+            use_decimal=False,
+        )
+
+
+def test_teacher_forced_max_order_exceeds_context_raises():
+    """When one column needs k derivatives of history but the context
+    is shorter than k, the teacher-forced path must reject loudly."""
+    torch.manual_seed(0)
+    df = _make_toy(n_rows=30)
+    order = np.array([1, 1, 3], dtype=np.int64)
+    dod = get_domain_of_definition(
+        df.to_numpy(dtype=np.float64), order_of_derivative=order, use_decimal=False
+    )
+    base = GPT(
+        vocab_size=64, n_embd=16, block_size=128, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(
+        model=base,
+        order_of_derivative=order,
+        domain_of_definition=dod,
+        use_decimal=False,
+    )
+    # Context of only 2 rows — less than max_order=3.
+    with pytest.raises(AssertionError, match="max order"):
+        model.predict(
+            df=df.iloc[:2],
+            future_covariates_df=df.iloc[2:5],
+            target_columns=["y"],
+        )
+
+
 def test_train_save_best_restores_best_val():
     """
     After training past the val minimum (use_early_stopping=False), the

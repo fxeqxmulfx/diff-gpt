@@ -29,13 +29,13 @@ def np_is_float64(inp: np.ndarray) -> bool:
 ufunc_round = np.frompyfunc(round, 1, 1)
 
 
-def _is_scalar_order(order_of_derivative) -> bool:
+def _is_scalar_order(order_of_derivative: int | np.ndarray) -> bool:
     return isinstance(order_of_derivative, (int, np.integer))
 
 
 def differentiate(
     inp: np.ndarray,
-    order_of_derivative: "int | np.ndarray",
+    order_of_derivative: int | np.ndarray,
     use_decimal: bool,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Per-column k-th finite differences.
@@ -97,7 +97,7 @@ def differentiate(
 def integrate(
     start: np.ndarray,
     diff: np.ndarray,
-    order_of_derivative: "int | np.ndarray",
+    order_of_derivative: int | np.ndarray,
     use_decimal: bool,
 ) -> np.ndarray:
     """Inverse of `differentiate`, supporting scalar or per-column orders."""
@@ -279,7 +279,7 @@ def encode(
     inp: np.ndarray,
     vocab_size: int,
     domain_of_definition: np.ndarray,
-    order_of_derivative: "int | np.ndarray",
+    order_of_derivative: int | np.ndarray,
     use_decimal: bool,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Encode multivariate signal to tokens.
@@ -375,7 +375,7 @@ def decode(
     scale: np.ndarray,
     inp: np.ndarray,
     vocab_size: int,
-    order_of_derivative: "int | np.ndarray",
+    order_of_derivative: int | np.ndarray,
     use_decimal: bool,
 ) -> np.ndarray:
     assert vocab_size % 2 == 0
@@ -399,7 +399,7 @@ def decode(
 
 def get_domain_of_definition(
     inp: np.ndarray,
-    order_of_derivative: "int | np.ndarray",
+    order_of_derivative: int | np.ndarray,
     use_decimal: bool,
 ) -> np.ndarray:
     if use_decimal:

@@ -535,6 +535,49 @@ def test_per_column_order_of_derivative_round_trip():
         )
 
 
+def test_per_column_order_decimal_round_trip():
+    """Decimal path must also support per-column k without precision loss."""
+    V = 256
+    T = 500
+    idx = np.arange(T, dtype=np.float64)
+    inp = np.stack(
+        (np.sin(idx * 0.1), np.cos(idx * 0.05), 0.001 * idx ** 2),
+        axis=1,
+    )
+    inp_dec = np_to_decimal(inp)
+    order = np.array([0, 1, 2], dtype=np.int64)
+    dod = get_domain_of_definition(
+        inp=inp_dec, order_of_derivative=order, use_decimal=True
+    )
+    start, scale, enc = encode(
+        inp=inp_dec,
+        vocab_size=V,
+        domain_of_definition=dod,
+        order_of_derivative=order,
+        use_decimal=True,
+    )
+    assert np.all((enc >= 0) & (enc < V))
+    dec = decode(
+        start=start,
+        scale=scale,
+        inp=enc,
+        vocab_size=V,
+        order_of_derivative=order,
+        use_decimal=True,
+    )
+    # Per-column Δ/2 (Decimal is exact; no float cumsum floor).
+    for c in range(3):
+        k_c = int(order[c])
+        headroom = 2 ** k_c if k_c >= 2 and V > 2 ** k_c + 2 else 0
+        bin_half = float(dod[c]) / (V - 2 - headroom)
+        col_err = float(
+            np.max(np.abs(np.array([float(v) for v in dec[:, c]]) - inp[:, c]))
+        )
+        assert col_err <= 2 * bin_half, (
+            f"col {c} (k={k_c}): Decimal err {col_err} > 2·Δ/2={2*bin_half}"
+        )
+
+
 def test_per_column_order_scalar_fallback_equivalence():
     """Passing order as a length-F array of identical values must produce
     the same reconstruction as passing the scalar, to within float64
