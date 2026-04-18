@@ -138,6 +138,98 @@ def test_weight_decay_application():
     assert new_norm < prev_norm
 
 
+def test_amsgrad_state_and_monotonic_max():
+    """
+    With amsgrad=True the optimizer must allocate `max_exp_avg_sq` and it
+    must be a non-decreasing element-wise max of `exp_avg_sq` across steps.
+    """
+    torch.manual_seed(0)
+    param = torch.randn(4, requires_grad=True)
+    opt = AdamWScheduleFree([param], lr=0.01, amsgrad=True, foreach=False)
+    opt.train()
+
+    # Feed deliberately varying-magnitude gradients; exp_avg_sq will not
+    # be monotonic, but max_exp_avg_sq must be.
+    grad_magnitudes = [5.0, 0.1, 3.0, 0.05, 7.0, 0.2]
+    prev_max = None
+    for g in grad_magnitudes:
+        param.grad = torch.full_like(param, g)
+        opt.step()
+        state = opt.state[param]
+        assert "max_exp_avg_sq" in state
+        current_max = state["max_exp_avg_sq"].clone()
+        if prev_max is not None:
+            # Element-wise: max must be >= previous max.
+            assert (current_max >= prev_max - 1e-7).all()
+        # And must dominate the current exp_avg_sq.
+        assert (current_max >= state["exp_avg_sq"] - 1e-7).all()
+        prev_max = current_max
+
+
+def test_amsgrad_no_state_when_disabled():
+    """amsgrad=False must not allocate max_exp_avg_sq state."""
+    param = torch.randn(4, requires_grad=True)
+    opt = AdamWScheduleFree([param], lr=0.01, amsgrad=False, foreach=False)
+    opt.train()
+    param.grad = torch.ones_like(param)
+    opt.step()
+    assert "max_exp_avg_sq" not in opt.state[param]
+
+
+def test_amsgrad_default_is_true():
+    """Default should now allocate max_exp_avg_sq state (amsgrad on by default)."""
+    param = torch.randn(4, requires_grad=True)
+    opt = AdamWScheduleFree([param], lr=0.01, foreach=False)
+    opt.train()
+    param.grad = torch.ones_like(param)
+    opt.step()
+    assert "max_exp_avg_sq" in opt.state[param]
+
+
+def test_amsgrad_foreach_parity():
+    """foreach and loop paths must agree when amsgrad=True."""
+    torch.manual_seed(0)
+    params_a = [torch.randn(10, 10, requires_grad=True) for _ in range(3)]
+    params_b = [p.clone().detach().requires_grad_(True) for p in params_a]
+    grads = [torch.randn_like(p) for p in params_a]
+
+    opt_a = AdamWScheduleFree(params_a, lr=0.01, amsgrad=True, foreach=True)
+    opt_b = AdamWScheduleFree(params_b, lr=0.01, amsgrad=True, foreach=False)
+    opt_a.train()
+    opt_b.train()
+
+    # Two steps so amsgrad's running-max actually diverges from exp_avg_sq.
+    for _ in range(2):
+        for i in range(len(params_a)):
+            params_a[i].grad = grads[i].clone()
+            params_b[i].grad = grads[i].clone()
+        opt_a.step()
+        opt_b.step()
+
+    for pa, pb in zip(params_a, params_b):
+        assert_close(pa, pb, atol=1e-6, rtol=1e-6)
+    for pa, pb in zip(params_a, params_b):
+        assert_close(
+            opt_a.state[pa]["max_exp_avg_sq"],
+            opt_b.state[pb]["max_exp_avg_sq"],
+            atol=1e-6,
+            rtol=1e-6,
+        )
+
+
+def test_amsgrad_converges_on_quadratic():
+    """Sanity: amsgrad variant still minimizes a simple convex target."""
+    theta = torch.tensor([10.0, -10.0], requires_grad=True)
+    opt = AdamWScheduleFree([theta], lr=1.0, warmup_steps=10, amsgrad=True)
+    opt.train()
+    for _ in range(100):
+        loss = (theta**2).sum()
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+    assert torch.norm(theta) < 1.0
+
+
 def test_foreach_parity():
     r"""
     Verify implementation consistency.

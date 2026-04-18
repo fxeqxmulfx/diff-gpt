@@ -43,6 +43,11 @@ class AdamWScheduleFree(torch.optim.Optimizer):
         foreach (bool): Use a foreach-backed implementation of the optimizer.
             Should be significantly faster, but will have higher peak memory
             usage (default True if supported in your PyTorch version).
+        amsgrad (bool): If True, use the AMSGrad variant — track the running
+            maximum of the second-moment estimate and use that in the
+            denominator. Guarantees the effective per-coord learning rate is
+            non-increasing (Reddi et al., 2018). Costs one extra tensor per
+            parameter. Default True.
     """
 
     def __init__(
@@ -56,6 +61,7 @@ class AdamWScheduleFree(torch.optim.Optimizer):
         r: float = 0.0,
         weight_lr_power: float = 2.0,
         foreach: Optional[bool] = hasattr(torch, "_foreach_mul_"),
+        amsgrad: bool = True,
     ):
         defaults = dict(
             lr=lr,
@@ -71,6 +77,7 @@ class AdamWScheduleFree(torch.optim.Optimizer):
             weight_lr_power=weight_lr_power,
             weight_decay=weight_decay,
             foreach=foreach,
+            amsgrad=amsgrad,
         )
         super().__init__(params, defaults)
 
@@ -128,6 +135,7 @@ class AdamWScheduleFree(torch.optim.Optimizer):
             r = group["r"]
             warmup_steps = group["warmup_steps"]
             weight_lr_power = group["weight_lr_power"]
+            amsgrad = group["amsgrad"]
 
             if k < warmup_steps:
                 sched = (k + 1) / warmup_steps
@@ -158,6 +166,10 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                     self.state[p]["exp_avg_sq"] = torch.zeros_like(
                         p, memory_format=torch.preserve_format
                     )
+                if amsgrad and "max_exp_avg_sq" not in self.state[p]:
+                    self.state[p]["max_exp_avg_sq"] = torch.zeros_like(
+                        p, memory_format=torch.preserve_format
+                    )
 
             if group["foreach"] and len(active_p) > 0:
                 y, grad, exp_avg_sq, z = zip(
@@ -170,7 +182,17 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                 # Decay the first and second moment running average coefficient
                 torch._foreach_mul_(exp_avg_sq, beta2)
                 torch._foreach_addcmul_(exp_avg_sq, grad, grad, value=1 - beta2)
-                denom = torch._foreach_div(exp_avg_sq, bias_correction2)
+                if amsgrad:
+                    # AMSGrad: track the running max of exp_avg_sq and use it
+                    # in place of exp_avg_sq for the denominator. Keeps the
+                    # effective learning rate non-increasing per coord.
+                    max_exp_avg_sq = tuple(
+                        self.state[p]["max_exp_avg_sq"] for p in active_p
+                    )
+                    torch._foreach_maximum_(max_exp_avg_sq, exp_avg_sq)
+                    denom = torch._foreach_div(max_exp_avg_sq, bias_correction2)
+                else:
+                    denom = torch._foreach_div(exp_avg_sq, bias_correction2)
                 torch._foreach_sqrt_(denom)
                 torch._foreach_add_(denom, eps)
 
@@ -199,7 +221,12 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                     exp_avg_sq = state["exp_avg_sq"]
 
                     exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
-                    denom = exp_avg_sq.div(bias_correction2).sqrt_().add_(eps)
+                    if amsgrad:
+                        max_exp_avg_sq = state["max_exp_avg_sq"]
+                        torch.maximum(max_exp_avg_sq, exp_avg_sq, out=max_exp_avg_sq)
+                        denom = max_exp_avg_sq.div(bias_correction2).sqrt_().add_(eps)
+                    else:
+                        denom = exp_avg_sq.div(bias_correction2).sqrt_().add_(eps)
 
                     # Reuse grad buffer for memory efficiency
                     grad_normalized = grad.div_(denom)
