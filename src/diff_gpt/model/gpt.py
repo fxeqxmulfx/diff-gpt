@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from torch.profiler import record_function
 from torch.utils.checkpoint import checkpoint
 
 from diff_gpt.sampler.sampler import Sampler
@@ -67,6 +68,7 @@ class GPT(BaseGPT):
         use_checkpoint: bool = True,
         logit_softcap: float = 15.0,
         pad_vocab_size_to: int = 64,
+        attn_res_layers_per_block: int = 1,
     ) -> None:
         super().__init__(
             block_size=block_size,
@@ -77,6 +79,9 @@ class GPT(BaseGPT):
         )
         assert logit_softcap >= 0, "logit_softcap must be non-negative (0 disables it)"
         assert pad_vocab_size_to >= 1, "pad_vocab_size_to must be >= 1"
+        assert attn_res_layers_per_block >= 1, (
+            "attn_res_layers_per_block must be >= 1"
+        )
         # GPT does not pad — the encoder owns vocab_size, so the caller is
         # responsible for choosing a tensor-core-friendly multiple.
         assert vocab_size % pad_vocab_size_to == 0, (
@@ -91,6 +96,7 @@ class GPT(BaseGPT):
                 swiglu_alpha=swiglu_alpha,
                 swiglu_limit=swiglu_limit,
                 layer_idx=i,
+                layers_per_block=attn_res_layers_per_block,
             )
             for i in range(n_layer)
         )
@@ -118,36 +124,51 @@ class GPT(BaseGPT):
             self.freqs_cis[T_start:T_end]  # pyright: ignore[reportIndexIssue]
         )  # (T, hs/2)
         freqs_cis = freqs_cis.view(1, T, 1, -1)
-        x = self.token_embedding_table(idx)  # (B, T, C)
-        x = rms_norm(x)
-        for block in self.blocks:
-            if self.training and self.use_checkpoint:
-                x = checkpoint(
-                    block,
-                    x,
-                    freqs_cis=freqs_cis,
-                    kv_cache=kv_cache,
-                    use_reentrant=False,
-                )  # (B, T, C)
-            else:
-                x = block(
-                    x,
-                    freqs_cis=freqs_cis,
-                    kv_cache=kv_cache,
-                )
-        x = rms_norm(x)  # (B, T, C) # pyright: ignore[reportArgumentType]
-        logits = self.lm_head(x)  # (B, T, vocab_size)
+        with record_function("gpt.embed"):
+            x = self.token_embedding_table(idx)  # (B, T, C)
+            x = rms_norm(x)
+        # Block AttnRes state: the normalized embedding is committed as block 0
+        # (v₀ = h₁ in paper notation); partial_block starts as the same embed
+        # so each sub-layer's cross-block attention has at least one key.
+        blocks: tuple[torch.Tensor, ...] = (x,)
+        partial_block: torch.Tensor = x
+        for i, block in enumerate(self.blocks):
+            with record_function(f"gpt.layer[{i}]"):
+                if self.training and self.use_checkpoint:
+                    out = checkpoint(
+                        block,
+                        blocks,
+                        partial_block,
+                        freqs_cis=freqs_cis,
+                        kv_cache=kv_cache,
+                        use_reentrant=False,
+                    )
+                    blocks, partial_block = out  # type: ignore[misc]
+                else:
+                    blocks, partial_block = block(
+                        blocks,
+                        partial_block,
+                        freqs_cis=freqs_cis,
+                        kv_cache=kv_cache,
+                    )
+        with record_function("gpt.final_norm"):
+            # Final residual-stream value is the current block's partial sum.
+            x = rms_norm(partial_block)  # (B, T, C) # pyright: ignore[reportArgumentType]
+        with record_function("gpt.lm_head"):
+            logits = self.lm_head(x)  # (B, T, vocab_size)
         if self.logit_softcap > 0:
-            # Smoothly bound logits to [-softcap, softcap]; stabilizes training and
-            # reduces sampling temperature collapse (Gemma-style).
-            cap = self.logit_softcap
-            logits = cap * torch.tanh(logits / cap)
+            with record_function("gpt.softcap"):
+                # Smoothly bound logits to [-softcap, softcap]; stabilizes training
+                # and reduces sampling temperature collapse (Gemma-style).
+                cap = self.logit_softcap
+                logits = cap * torch.tanh(logits / cap)
         loss = None
         if targets is not None:
-            B, T, C = logits.shape
-            _logits = logits.view(B * T, C)
-            targets = targets.view(B * T)
-            loss = F.cross_entropy(_logits, targets)
+            with record_function("gpt.loss"):
+                B, T, C = logits.shape
+                _logits = logits.view(B * T, C)
+                targets = targets.view(B * T)
+                loss = F.cross_entropy(_logits, targets)
         return logits, loss
 
     @torch.inference_mode()

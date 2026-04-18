@@ -136,6 +136,41 @@ def test_generate_seed_determinism():
     assert not torch.equal(a, c)
 
 
+def test_gpt_attn_res_projections_receive_gradient():
+    """
+    End-to-end: the per-layer AttnRes pseudo-queries must receive gradient
+    through the full forward/backward.
+
+    Caveat (paper eq. 4): at layer 0, the cross-block attention has only
+    v_0=embedding as its unique key (the pseudocode's partial_block=embed
+    just duplicates it), so the softmax over a single effective key is
+    degenerate and attn_res_proj at layer 0 can't receive signal. All other
+    sub-layers have distinct keys and must get gradient.
+    """
+    B, T, V = 2, 6, 64
+    model = GPT(
+        vocab_size=V,
+        n_embd=16,
+        block_size=12,
+        n_layer=4,
+        n_head=2,
+        attn_res_layers_per_block=2,
+    )
+    idx = torch.randint(0, V, (B, T))
+    targets = torch.randint(0, V, (B, T))
+    _, loss = model(idx, targets)
+    loss.backward()
+    # mlp_res_proj is exercised with distinct keys at every layer (since by
+    # then the attn output has been added to the partial sum).
+    for block in model.blocks:
+        assert block.mlp_res_proj.weight.grad is not None
+        assert torch.norm(block.mlp_res_proj.weight.grad) > 0
+    # attn_res_proj gets gradient for every layer except the very first.
+    for block in list(model.blocks)[1:]:
+        assert block.attn_res_proj.weight.grad is not None
+        assert torch.norm(block.attn_res_proj.weight.grad) > 0
+
+
 def test_vocab_size_must_be_aligned_to_pad():
     """GPT asserts the caller supplies a pre-padded vocab_size."""
     import pytest
