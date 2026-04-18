@@ -2,7 +2,8 @@
 Char-level GPT training on tinyshakespeare. Verifies that the full training
 loop actually optimizes and stays within speed and loss budgets.
 
-Historical ledger (average over 3 runs, benchmark config, max_iters=5000):
+Historical ledger (average over 3 runs unless noted, benchmark config,
+max_iters=5000):
     # INIT:                            val_loss=1.82  train_time=188
     # ADD torch.compile:                val_loss=1.83  train_time=49.67
     # UPD eval_interval = 5_000:        val_loss=1.82  train_time=40.67
@@ -14,6 +15,7 @@ Historical ledger (average over 3 runs, benchmark config, max_iters=5000):
     # ADD AdamWScheduleFree:            val_loss=1.68  train_time=28.0
     # ADD KQ norm and Gated Attention:  val_loss=1.67  train_time=43.0
     # CLR project:                      val_loss=1.68  train_time=37.33
+    # ADD AMSGrad default (1 run):      val_loss=1.73  train_time=~110 (CPU)
 
 The test below uses a reduced scale for CI friendliness; the assertions are
 loose enough to accommodate machine variance but tight enough to catch a
@@ -77,8 +79,10 @@ def test_char_encoder_decode_drops_padded_ids():
 @pytest.mark.skipif(not DATA_PATH.exists(), reason=f"{DATA_PATH} not available")
 def test_text_training_speed_and_loss():
     """
-    End-to-end regression guard against the historical benchmark:
-      val_loss ≈ 1.68 on the full tinyshakespeare run (5_000 iters).
+    End-to-end regression guard against the current benchmark:
+      val_loss ≈ 1.73 on the full tinyshakespeare run (5_000 iters) with
+      AMSGrad on by default (was 1.68 with plain Adam — AMSGrad pays a
+      small accuracy cost for its non-increasing effective-LR guarantee).
     A drift in either direction beyond the tolerance means something in the
     training stack changed — intentional or not. Update the tolerance and
     the ledger above together when the architecture changes deliberately.
@@ -112,10 +116,10 @@ def test_text_training_speed_and_loss():
         use_tqdm=False,
     )
 
-    # Historical baseline (averaged over 3 runs) is 1.68. Allow ±0.05 for
-    # single-run / hardware variance.
-    assert abs(val_loss - 1.68) < 0.05, (
-        f"val_loss {val_loss:.3f} drifted from historical 1.68 baseline"
+    # Current baseline is 1.73 with AMSGrad on. Allow ±0.05 for single-run
+    # / hardware variance.
+    assert abs(val_loss - 1.73) < 0.05, (
+        f"val_loss {val_loss:.3f} drifted from 1.73 baseline"
     )
     # Historical wall-clock was ~37s on the reference GPU; leave generous
     # headroom for CPU / slower hardware without making the test useless.
