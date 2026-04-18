@@ -34,7 +34,9 @@ from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 
-M4_DIR = Path(__file__).resolve().parents[1] / "all_datasets" / "m4"
+M4_DIR = (
+    Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
+)
 
 HORIZONS = {
     "Yearly": 6,
@@ -111,16 +113,18 @@ def main() -> None:
         f"| train_part={train_part}"
     )
 
+    order_of_derivative = int(os.environ.get("M4_ORDER", "1"))
     # Global domain_of_definition over the union of normalized training data.
     all_tokens = np.concatenate(series_norm, axis=0).reshape(-1, 1)
     domain_of_definition = get_domain_of_definition(
-        all_tokens, order_of_derivative=1, use_decimal=False
+        all_tokens, order_of_derivative=order_of_derivative, use_decimal=False
     )
 
     # Small model: ~130k params. At ~280k training tokens (414 series * ~850 *
     # train_part=0.8), this gives ~2 tokens/param — a compromise between
     # Chinchilla-optimal (~20) and capacity needed for Hourly's daily +
     # weekly patterns. Tiny (n_embd=32) underfits; big (n_embd=128) overfits.
+    label_smoothing_sigma = float(os.environ.get("M4_LABEL_SMOOTHING_SIGMA", "0.0"))
     base = GPT(
         vocab_size=256,
         n_embd=64,
@@ -128,12 +132,13 @@ def main() -> None:
         n_head=4,
         n_layer=2,
         use_checkpoint=False,
+        label_smoothing_sigma=label_smoothing_sigma,
     ).to(device=device)
     if device == "cuda":
         base.compile(mode="max-autotune-no-cudagraphs")
     model = DiffGPT(
         model=base,
-        order_of_derivative=1,
+        order_of_derivative=order_of_derivative,
         domain_of_definition=domain_of_definition,
         use_decimal=False,
     )
@@ -146,7 +151,7 @@ def main() -> None:
         block_size=block_size,
         batch_size=32,
         vocab_size=256,
-        order_of_derivative=1,
+        order_of_derivative=order_of_derivative,
         domain_of_definition=domain_of_definition,
         use_decimal=False,
         device=device,
