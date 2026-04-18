@@ -382,7 +382,7 @@ class DiffDataFrameDataLoader:
         block_size: int,
         batch_size: int,
         vocab_size: int,
-        order_of_derivative: int,
+        order_of_derivative: "int | np.ndarray",
         domain_of_definition: np.ndarray,
         use_decimal: bool,
         device: str,
