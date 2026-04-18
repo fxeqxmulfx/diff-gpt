@@ -10,7 +10,7 @@ from diff_gpt.sampler.temperature import TemperatureSampler
 def model_config() -> dict[str, int]:
     """Provides a shared, small model configuration for tests."""
     return {
-        "vocab_size": 50,
+        "vocab_size": 64,
         "n_embd": 32,
         "block_size": 16,
         "n_head": 4,

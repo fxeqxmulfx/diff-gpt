@@ -8,7 +8,12 @@ from diff_gpt.model.rms_norm import rms_norm
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, n_embd: int, n_head: int, layer_idx: int) -> None:
+    def __init__(
+        self,
+        n_embd: int,
+        n_head: int,
+        layer_idx: int,
+    ) -> None:
         super().__init__()
         assert n_embd % n_head == 0
         # RoPE requires head_dim to be even (pairs of dims are rotated as complex).
@@ -29,7 +34,7 @@ class MultiHeadAttention(nn.Module):
         freqs_cis: torch.Tensor,
         kv_cache: KVCache,
     ) -> torch.Tensor:
-        B, T, C = x.size()
+        B, T, _ = x.size()
         # Project the input to get queries, keys, and values
         q = self.c_q(x).view(B, T, self.n_head, self.head_dim)
         k = self.c_k(x).view(B, T, self.n_head, self.head_dim)

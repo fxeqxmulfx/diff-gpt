@@ -11,7 +11,7 @@ def test_gpt_initialization_and_shapes():
     1. Weight Tying: $W_{emb} \equiv W_{head}$
     2. Output Shape: $x \in \mathbb{Z}^{B \times T} \implies \text{logits} \in \mathbb{R}^{B \times T \times V}$
     """
-    B, T, V, C = 2, 10, 100, 32
+    B, T, V, C = 2, 10, 128, 32
 
     model = GPT(vocab_size=V, n_embd=C, block_size=20, n_layer=2, n_head=4)
 
@@ -42,7 +42,7 @@ def test_gpt_kv_cache_consistency():
     This validates correct RoPE slicing:
     $\text{freqs} = \mathbf{F}[S_{pos} : S_{pos}+1]$
     """
-    B, T, V, C = 1, 5, 50, 16
+    B, T, V, C = 1, 5, 64, 16
     H = 2
 
     model = GPT(
@@ -80,7 +80,7 @@ def test_gradient_checkpointing_flow():
     Verify backward pass with Activation Checkpointing.
     $\frac{\partial \mathcal{L}}{\partial \theta} \neq \mathbf{0}$
     """
-    B, T, V = 2, 8, 100
+    B, T, V = 2, 8, 128
 
     # Enable checkkpointing
     model = GPT(vocab_size=V, n_embd=32, n_layer=2, use_checkpoint=True)
@@ -103,7 +103,7 @@ def test_generation_output_len():
     Verify autoregressive loop termination.
     $T_{out} = T_{in} + T_{new}$
     """
-    B, T, V, N_new = 1, 5, 50, 3
+    B, T, V, N_new = 1, 5, 64, 3
     model = GPT(vocab_size=V, n_embd=32, block_size=10, n_layer=1)
     model.eval()
 
@@ -136,12 +136,58 @@ def test_generate_seed_determinism():
     assert not torch.equal(a, c)
 
 
+def test_vocab_size_must_be_aligned_to_pad():
+    """GPT asserts the caller supplies a pre-padded vocab_size."""
+    import pytest
+
+    with pytest.raises(AssertionError, match="multiple of"):
+        GPT(vocab_size=70, n_embd=16, block_size=8, n_layer=1, n_head=2)
+
+    # pad=1 disables the check (any vocab_size accepted)
+    GPT(
+        vocab_size=70, n_embd=16, block_size=8, n_layer=1, n_head=2, pad_vocab_size_to=1
+    )
+
+
+def test_logit_softcap_bounds_output():
+    """Default softcap = 15 bounds logits to |x| <= softcap (saturating at tanh=±1)."""
+    B, T, V = 2, 6, 64
+    model = GPT(vocab_size=V, n_embd=16, block_size=12, n_layer=2, n_head=2)
+    model.eval()
+    # Blow up lm_head so raw logits would otherwise be enormous.
+    with torch.no_grad():
+        model.lm_head.weight.mul_(100.0)
+    idx = torch.randint(0, V, (B, T))
+    with torch.no_grad():
+        logits, _ = model(idx)
+    cap = model.logit_softcap
+    assert logits.abs().max().item() <= cap + 1e-5
+    # And the clamp actually did something — max reached the ceiling.
+    assert logits.abs().max().item() >= cap - 1e-3
+
+
+def test_logit_softcap_disabled_when_zero():
+    """softcap=0 must be a no-op — large logits survive unclamped."""
+    B, T, V = 1, 4, 64
+    model = GPT(
+        vocab_size=V, n_embd=16, block_size=8, n_layer=1, n_head=2, logit_softcap=0.0
+    )
+    model.eval()
+    with torch.no_grad():
+        model.lm_head.weight.mul_(100.0)
+    idx = torch.randint(0, V, (B, T))
+    with torch.no_grad():
+        logits, _ = model(idx)
+    # Without softcap, scaling weights by 100 must push max logit well past 15.
+    assert logits.abs().max().item() > 15.0
+
+
 def test_overfitting_capability():
     r"""
     Sanity check: Model capacity.
     $\lim_{i \to \infty} \mathcal{L}(\theta_i) \to 0$ on a single batch.
     """
-    B, T, V = 1, 4, 20
+    B, T, V = 1, 4, 64
     model = GPT(vocab_size=V, n_embd=32, n_layer=2, n_head=4)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2)
 
