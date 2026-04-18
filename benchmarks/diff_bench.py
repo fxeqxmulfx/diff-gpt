@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import torch
 
-from diff_gpt.model.gpt import GPT
-from diff_gpt.encoder_decoder import get_domain_of_definition
+from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
+from diff_gpt.encoder_decoder import get_domain_of_definition
+from diff_gpt.model.gpt import GPT
 
 
 def mae(x: np.ndarray, y: np.ndarray) -> float:
@@ -75,16 +76,25 @@ def main() -> None:
             domain_of_definition=domain_of_definition,
             use_decimal=False,
         )
+        loader = DiffDataFrameDataLoader(
+            dfs=[inp],
+            block_size=base_model.block_size,
+            batch_size=batch_size,
+            vocab_size=vocab_size,
+            order_of_derivative=1,
+            domain_of_definition=domain_of_definition,
+            use_decimal=False,
+            device=device,
+            train_part=train_part,
+        )
         val_loss, train_time = model.train(
-            df=inp,
+            loader=loader,
             learning_rate=learning_rate,
             betas=betas,
             weight_decay=weight_decay,
             max_iters=max_iters,
             eval_interval=eval_interval,
             eval_iters=eval_iters,
-            batch_size=batch_size,
-            train_part=train_part,
             use_tqdm=use_tqdm,
         )
         result_df = model.predict(

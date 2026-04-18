@@ -28,6 +28,7 @@ from pathlib import Path
 import pytest
 import torch
 
+from diff_gpt.data_loader import TokenSequenceDataLoader
 from diff_gpt.model.gpt import GPT
 from diff_gpt.train import train
 
@@ -103,17 +104,22 @@ def test_text_training_speed_and_loss():
         n_head=4,
         n_layer=4,
     )
+    loader = TokenSequenceDataLoader(
+        tokens=encoded,
+        block_size=model.block_size,
+        batch_size=16,
+        device=model.device_type,
+        train_part=0.9,
+    )
     val_loss, train_time_s = train(
         mut_model=model,
-        encoded_data=encoded,
+        loader=loader,
         learning_rate=1e-2,
         betas=(0.9, 0.95),
         weight_decay=0.1,
         max_iters=5_000,
         eval_interval=5_000,
         eval_iters=200,
-        batch_size=16,
-        train_part=0.9,
         use_tqdm=False,
     )
 
