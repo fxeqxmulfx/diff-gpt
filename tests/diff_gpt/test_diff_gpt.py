@@ -256,6 +256,297 @@ def test_per_column_order_shape_mismatch_raises():
         )
 
 
+def test_predict_samples_shape_and_distinct_trajectories():
+    """predict_samples returns (num_samples, H, F) and at positive
+    temperature the trajectories are actually distinct (not all mode
+    collapse). At temperature=0, all trajectories must collapse to the
+    same argmax path."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20)
+    N = 8
+    # Temperature 1: samples should differ.
+    samples_stoch = model.predict_samples(
+        df=df.iloc[:10],
+        max_new_points=5,
+        num_samples=N,
+        sampler=TemperatureSampler(temperature=1.0),
+    )
+    assert samples_stoch.shape == (N, 5, 3)
+    # At least one pair of trajectories must differ (with overwhelming
+    # probability for a sane model on ≥1 of 8 samples).
+    pairwise_diff = np.any(samples_stoch[0] != samples_stoch[1])
+    assert pairwise_diff, "stochastic sampling produced identical trajectories"
+
+    # Temperature 0 argmax → all trajectories identical.
+    samples_det = model.predict_samples(
+        df=df.iloc[:10],
+        max_new_points=5,
+        num_samples=N,
+        sampler=TemperatureSampler(temperature=0.0),
+    )
+    assert samples_det.shape == (N, 5, 3)
+    for s in range(1, N):
+        assert np.array_equal(samples_det[0], samples_det[s]), (
+            f"temperature=0 trajectory {s} differs from trajectory 0"
+        )
+
+
+def test_predict_quantiles_shape_and_ordering():
+    """predict_quantiles returns a dict keyed by quantile level, each a
+    DataFrame with the right shape. P10 ≤ P50 ≤ P90 must hold per step
+    (empirical quantiles are monotone in α)."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20)
+    quantile_bands = model.predict_quantiles(
+        df=df.iloc[:10],
+        max_new_points=5,
+        quantiles=[0.1, 0.5, 0.9],
+        num_samples=32,
+        sampler=TemperatureSampler(temperature=1.0),
+    )
+    assert set(quantile_bands.keys()) == {0.1, 0.5, 0.9}
+    for q, qdf in quantile_bands.items():
+        assert qdf.shape == (5, 3)
+        assert list(qdf.columns) == list(df.columns)
+    p10 = quantile_bands[0.1].to_numpy()
+    p50 = quantile_bands[0.5].to_numpy()
+    p90 = quantile_bands[0.9].to_numpy()
+    assert np.all(p10 <= p50 + 1e-9), "P10 must not exceed P50"
+    assert np.all(p50 <= p90 + 1e-9), "P50 must not exceed P90"
+
+
+def test_predict_quantiles_rejects_out_of_range_quantile():
+    """Quantiles in (0, 1). Boundary or out-of-range values rejected."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20)
+    for bad_q in (0.0, 1.0, -0.1, 1.5):
+        with pytest.raises(AssertionError, match="quantile"):
+            model.predict_quantiles(
+                df=df.iloc[:10],
+                max_new_points=3,
+                quantiles=[0.5, bad_q],
+                num_samples=4,
+                sampler=TemperatureSampler(temperature=1.0),
+            )
+
+
+def test_predict_samples_matches_predict_when_n_equals_one_at_argmax():
+    """N=1 + temperature=0 must yield the same future rows as predict()
+    with the same argmax sampler — the two paths share _generate_future_samples."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20).iloc[:10]
+    sampler = TemperatureSampler(temperature=0.0)
+
+    samples = model.predict_samples(
+        df=df, max_new_points=4, num_samples=1, sampler=sampler,
+    )
+    point = model.predict(df=df, max_new_points=4, sampler=sampler)
+    point_future = point.iloc[-4:].to_numpy()
+    assert np.allclose(samples[0], point_future, atol=1e-10)
+
+
+def test_anomaly_scores_shape_and_nan_positions():
+    """anomaly_scores returns (T, F) with NaN at (a) the first max_order
+    prefix rows and (b) column 0 of the first encoded row (which has no
+    preceding token to condition on). Everywhere else must be finite."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=256)
+    df = _make_toy(n_rows=40)
+    scores = model.anomaly_scores(df)
+    assert scores.shape == (40, 3)
+    assert list(scores.columns) == list(df.columns)
+    # max_order=1 → first 1 rows are prefix → all-NaN.
+    assert scores.iloc[0].isna().all()
+    # Column 0 of row 1 corresponds to the very first token in the encoded
+    # sequence, which has no previous token — NaN. Columns 1, 2 of row 1
+    # are scored.
+    assert np.isnan(scores.iloc[1, 0])
+    assert scores.iloc[1, 1:].notna().all()
+    # Tail rows must be fully scored.
+    assert scores.iloc[-5:].notna().all().all()
+
+
+def test_anomaly_scores_spike_is_higher_than_baseline_after_training():
+    """After a brief training run on clean data, injecting an out-of-
+    distribution spike raises that row's NLL above the median baseline.
+    (Untrained models produce near-uniform output and cannot detect
+    anomalies — the test sanity-checks that learning calibrated per-step
+    distributions actually enables detection.)"""
+    torch.manual_seed(0)
+    df_clean = _make_toy(n_rows=100)
+    dod = get_domain_of_definition(
+        df_clean.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+    )
+    base = GPT(
+        vocab_size=64, n_embd=16, block_size=256, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(
+        model=base,
+        order_of_derivative=1,
+        domain_of_definition=dod,
+        use_decimal=False,
+    )
+    # Brief training on the clean signal so the model learns the
+    # typical derivative distribution.
+    loader = DiffDataFrameDataLoader(
+        dfs=[df_clean],
+        block_size=base.block_size,
+        batch_size=2,
+        vocab_size=base.vocab_size,
+        order_of_derivative=1,
+        domain_of_definition=dod,
+        use_decimal=False,
+        device=base.device_type,
+        train_part=0.9,
+    )
+    model.train(
+        loader=loader, max_iters=200, eval_interval=200, eval_iters=2,
+        use_tqdm=False, use_early_stopping=False,
+    )
+    # Inject a large spike at a known row, then score.
+    df_spiked = df_clean.copy()
+    df_spiked.iloc[50, 2] = df_clean.iloc[50, 2] + 5.0
+    scores = model.anomaly_scores(df_spiked.iloc[:70])
+    row_scores = scores.sum(axis=1, skipna=True).to_numpy()
+    # Skip prefix rows (NaN summed → 0) and the first encoded row (partial NaN).
+    baseline_median = np.median(row_scores[2:50])
+    assert row_scores[50] > baseline_median, (
+        f"spiked row NLL {row_scores[50]:.3f} should exceed clean median "
+        f"{baseline_median:.3f}"
+    )
+
+
+def _train_and_prob_predict(
+    df: pd.DataFrame,
+    ctx_len: int,
+    pred_len: int,
+    num_samples: int,
+    max_iters: int = 500,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Helper: train briefly on df then return (samples, truth) pair
+    for the last pred_len rows. Used by probabilistic-calibration tests."""
+    dod = get_domain_of_definition(
+        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+    )
+    base = GPT(
+        vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(
+        model=base,
+        order_of_derivative=1,
+        domain_of_definition=dod,
+        use_decimal=False,
+    )
+    loader = DiffDataFrameDataLoader(
+        dfs=[df.iloc[: -pred_len]],
+        block_size=base.block_size,
+        batch_size=2,
+        vocab_size=base.vocab_size,
+        order_of_derivative=1,
+        domain_of_definition=dod,
+        use_decimal=False,
+        device=base.device_type,
+        train_part=0.9,
+    )
+    model.train(
+        loader=loader, max_iters=max_iters, eval_interval=max_iters,
+        eval_iters=2, use_tqdm=False, use_early_stopping=False,
+    )
+    context = df.iloc[-ctx_len - pred_len : -pred_len]
+    truth = df.iloc[-pred_len:].to_numpy()
+    samples = model.predict_samples(
+        df=context,
+        max_new_points=pred_len,
+        num_samples=num_samples,
+        sampler=TemperatureSampler(temperature=1.0),
+    )
+    return samples, truth
+
+
+def test_probabilistic_sharpness_grows_with_horizon():
+    """Interval width must grow monotonically with forecast horizon.
+    Derivative tokenization integrates random-walk uncertainty, so
+    Var[Ĥ_{T+h}] ∝ h."""
+    torch.manual_seed(0)
+    idx = np.arange(160, dtype=np.float64)
+    df = pd.DataFrame(
+        {"y": np.sin(idx / 5.0) + 0.05 * np.random.default_rng(0).normal(size=160)}
+    )
+    samples, _ = _train_and_prob_predict(
+        df=df, ctx_len=30, pred_len=20, num_samples=80,
+    )
+    # samples: (80, 20, 1) — take the target column.
+    widths = np.quantile(samples[..., 0], 0.9, axis=0) - np.quantile(
+        samples[..., 0], 0.1, axis=0
+    )
+    # Monotone growth on average: compare early to late steps.
+    early = float(np.mean(widths[:4]))
+    late = float(np.mean(widths[-4:]))
+    assert late > early, f"late width {late} should exceed early {early}"
+
+
+def test_probabilistic_argmax_inside_median_band():
+    """The argmax (temperature-0) forecast should lie inside the
+    corresponding interval predicted by temperature-1 samples — a weak
+    calibration check that mode and median aren't wildly divergent."""
+    torch.manual_seed(0)
+    from diff_gpt.metrics import empirical_coverage
+
+    idx = np.arange(160, dtype=np.float64)
+    df = pd.DataFrame({"y": np.sin(idx / 5.0)})
+    dod = get_domain_of_definition(
+        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+    )
+    base = GPT(
+        vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(
+        model=base, order_of_derivative=1,
+        domain_of_definition=dod, use_decimal=False,
+    )
+    loader = DiffDataFrameDataLoader(
+        dfs=[df],
+        block_size=base.block_size, batch_size=2, vocab_size=base.vocab_size,
+        order_of_derivative=1, domain_of_definition=dod,
+        use_decimal=False, device=base.device_type, train_part=0.9,
+    )
+    model.train(
+        loader=loader, max_iters=500, eval_interval=500, eval_iters=2,
+        use_tqdm=False, use_early_stopping=False,
+    )
+    ctx = df.iloc[-50:-20]
+    argmax_pred = model.predict(
+        df=ctx, max_new_points=20, sampler=TemperatureSampler(temperature=0.0),
+    ).iloc[-20:].to_numpy()
+    samples = model.predict_samples(
+        df=ctx, max_new_points=20, num_samples=80,
+        sampler=TemperatureSampler(temperature=1.0),
+    )
+    # Argmax-prediction coverage inside 80% band should be high on a
+    # well-calibrated model — it's the mode, which is near the median.
+    cov = empirical_coverage(samples[..., 0], argmax_pred[..., 0], level=0.8)
+    assert cov > 0.5, (
+        f"argmax outside the 80% band too often: coverage={cov:.2f}"
+    )
+
+
+def test_anomaly_scores_signal_longer_than_block_size_raises():
+    """anomaly_scores runs a single forward pass; sequences longer than
+    block_size must error rather than silently truncating or looping."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=32)  # very small
+    df = _make_toy(n_rows=40)  # 40 * 3 = 120 tokens ≫ 32
+    with pytest.raises(AssertionError, match="block_size"):
+        model.anomaly_scores(df)
+
+
 def test_teacher_forced_max_order_exceeds_context_raises():
     """When one column needs k derivatives of history but the context
     is shorter than k, the teacher-forced path must reject loudly."""

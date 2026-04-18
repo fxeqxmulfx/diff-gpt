@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as F
 
 from diff_gpt.model.engine import Engine
 from diff_gpt.model.gpt import BaseGPT
@@ -124,12 +125,22 @@ class DiffGPT:
             sampler=sampler,
         )
 
-    def _predict_autoregressive(
+    def _generate_future_samples(
         self,
         df: pd.DataFrame,
         max_new_points: int,
         sampler: Sampler | None,
-    ) -> pd.DataFrame:
+        num_samples: int,
+    ) -> np.ndarray:
+        """Generate `num_samples` parallel future trajectories.
+
+        Returns ndarray of shape (num_samples, max_new_points, n_features)
+        containing only the predicted future rows (no context).
+
+        Use `sampler=TemperatureSampler(temperature=0.0)` for argmax (mode);
+        `temperature=1.0` for proper samples from the learned distribution.
+        """
+        assert num_samples >= 1
         columns = df.shape[1]
         order = self.order_of_derivative
         if isinstance(order, (int, np.integer)):
@@ -162,25 +173,174 @@ class DiffGPT:
             use_decimal=self.use_decimal,
         )
         context_tokens = encoded_data.reshape(-1).astype(np.int64).tolist()
-        # Use Engine for KV-cache-accelerated decoding (O(T) vs O(T²) for the
-        # naive model.generate path).
+        # Engine.generate_batch natively expands one prompt into num_samples
+        # parallel trajectories (KV-cache-accelerated).
         engine = Engine(model=self.model)
         results, _ = engine.generate_batch(
             tokens=context_tokens,
-            num_samples=1,
+            num_samples=num_samples,
             max_tokens=max_new_points * columns,
             sampler=sampler,
         )
-        generated = np.asarray(results[0], dtype=np.int64).reshape(-1, columns)
-        decoded = decode(
-            start=start,
-            scale=scale,
-            inp=generated,
-            vocab_size=vocab_size,
+        futures = np.empty(
+            (num_samples, max_new_points, columns), dtype=np.float64
+        )
+        for s in range(num_samples):
+            generated = np.asarray(results[s], dtype=np.int64).reshape(-1, columns)
+            decoded = decode(
+                start=start,
+                scale=scale,
+                inp=generated,
+                vocab_size=vocab_size,
+                order_of_derivative=self.order_of_derivative,
+                use_decimal=self.use_decimal,
+            )
+            futures[s] = np.asarray(
+                decoded[df.shape[0] : df.shape[0] + max_new_points],
+                dtype=np.float64,
+            )
+        return futures
+
+    def _predict_autoregressive(
+        self,
+        df: pd.DataFrame,
+        max_new_points: int,
+        sampler: Sampler | None,
+    ) -> pd.DataFrame:
+        future = self._generate_future_samples(
+            df=df,
+            max_new_points=max_new_points,
+            sampler=sampler,
+            num_samples=1,
+        )[0]
+        full = np.concatenate([df.to_numpy(dtype=np.float64), future], axis=0)
+        return pd.DataFrame(full, columns=df.columns)
+
+    @torch.inference_mode()
+    def predict_samples(
+        self,
+        df: pd.DataFrame,
+        max_new_points: int,
+        num_samples: int,
+        sampler: Sampler | None = None,
+    ) -> np.ndarray:
+        """Probabilistic forecasting: return `num_samples` future trajectories.
+
+        Each trajectory is an independent sample from the model's learned
+        joint distribution over the `max_new_points`-step future. Use a
+        temperature-1 sampler (or nucleus top-p) to get proper samples;
+        temperature-0 collapses all trajectories to the mode and is only
+        useful as a smoke test.
+
+        Returns ndarray of shape (num_samples, max_new_points, n_features).
+        """
+        return self._generate_future_samples(
+            df=df,
+            max_new_points=max_new_points,
+            sampler=sampler,
+            num_samples=num_samples,
+        )
+
+    @torch.inference_mode()
+    def anomaly_scores(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Per-(time, channel) anomaly scores via conditional negative
+        log-likelihood.
+
+        Encodes the signal to tokens, runs a single forward pass, and
+        returns −log p(token_t | ctx) at every position — a strictly
+        proper score under the model's learned distribution. Higher
+        values mean "more surprising given the preceding context" and
+        are the natural calibrated anomaly signal.
+
+        Shape: (T, F), same columns and index as `df`. Positions that
+        cannot be scored are NaN: the first `max_k` rows are the start
+        prefix (no derivative available), and the very first encoded
+        token has no preceding context to condition on.
+        """
+        columns = df.shape[1]
+        T = df.shape[0]
+        order = self.order_of_derivative
+        if isinstance(order, (int, np.integer)):
+            max_order = int(order)
+        else:
+            order_arr = np.asarray(order)
+            assert order_arr.shape == (columns,), (
+                f"order_of_derivative shape {order_arr.shape} must match columns {columns}"
+            )
+            max_order = int(order_arr.max())
+        assert max_order <= T, (
+            f"max order {max_order} > signal length {T}"
+        )
+
+        inp = df.to_numpy(dtype=np.float64)
+        if self.use_decimal:
+            inp = np_to_decimal(inp)
+        _, _, encoded = encode(
+            inp=inp,
+            vocab_size=self.model.vocab_size,
+            domain_of_definition=self.domain_of_definition,
             order_of_derivative=self.order_of_derivative,
             use_decimal=self.use_decimal,
         )
-        return pd.DataFrame(decoded, columns=df.columns)
+        N = encoded.size
+        assert N <= self.model.block_size, (
+            f"signal has {N} tokens but block_size is {self.model.block_size}; "
+            f"chunk the input manually for longer sequences"
+        )
+        device = torch.device(self.model.device_type)
+        tokens = torch.as_tensor(
+            encoded.reshape(-1).astype(np.int64), dtype=torch.int64, device=device
+        ).unsqueeze(0)  # (1, N)
+        was_training = self.model.training
+        self.model.eval()
+        logits, _ = self.model.forward(tokens)  # (1, N, V)
+        if was_training:
+            self.model.train()
+        # logits[i] predicts the token at position i+1.
+        log_probs = F.log_softmax(logits[0, :-1], dim=-1)  # (N-1, V)
+        nll = -log_probs.gather(
+            -1, tokens[0, 1:].unsqueeze(-1)
+        ).squeeze(-1)  # (N-1,)
+        nll_np = nll.detach().cpu().numpy().astype(np.float64)
+
+        flat = np.full(N, np.nan, dtype=np.float64)
+        flat[1:] = nll_np
+        scores_encoded = flat.reshape(encoded.shape[0], columns)
+
+        out = np.full((T, columns), np.nan, dtype=np.float64)
+        out[max_order:] = scores_encoded
+        return pd.DataFrame(out, columns=df.columns, index=df.index)
+
+    @torch.inference_mode()
+    def predict_quantiles(
+        self,
+        df: pd.DataFrame,
+        max_new_points: int,
+        quantiles: "list[float] | tuple[float, ...]" = (0.1, 0.5, 0.9),
+        num_samples: int = 100,
+        sampler: Sampler | None = None,
+    ) -> dict[float, pd.DataFrame]:
+        """Empirical quantile forecasts from `num_samples` Monte-Carlo trajectories.
+
+        Returns a dict mapping each requested quantile α ∈ (0, 1) to a
+        DataFrame of shape (max_new_points, n_features) containing the
+        per-step empirical α-quantile across the samples. Defaults produce
+        the standard P10/P50/P90 bands for probabilistic forecasting.
+        """
+        for q in quantiles:
+            assert 0.0 < q < 1.0, f"quantile {q} must be in (0, 1)"
+        futures = self._generate_future_samples(
+            df=df,
+            max_new_points=max_new_points,
+            sampler=sampler,
+            num_samples=num_samples,
+        )
+        # futures: (N, H, F). Reduce across samples axis.
+        out: dict[float, pd.DataFrame] = {}
+        for q in quantiles:
+            q_vals = np.quantile(futures, q, axis=0)  # (H, F)
+            out[float(q)] = pd.DataFrame(q_vals, columns=df.columns)
+        return out
 
     def _predict_teacher_forced(
         self,
