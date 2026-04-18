@@ -13,6 +13,29 @@ from diff_gpt.model.rms_norm import rms_norm
 from diff_gpt.model.kv_cache import KVCache
 
 
+def _gaussian_soft_ce(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    sigma: float,
+    ignore_index: int = -100,
+) -> torch.Tensor:
+    """CE with Gaussian soft targets over bin indices — respects ordinality.
+
+    p_soft[i] ∝ exp(-(i - y)^2 / (2σ²)); σ in bin units. σ→0 → one-hot (plain CE).
+    """
+    mask = targets != ignore_index
+    if not mask.any():
+        return logits.sum() * 0.0
+    valid_logits = logits[mask]
+    valid_targets = targets[mask]
+    C = logits.shape[-1]
+    bins = torch.arange(C, device=logits.device, dtype=valid_logits.dtype)
+    diff = bins.unsqueeze(0) - valid_targets.unsqueeze(1).to(valid_logits.dtype)
+    soft = F.softmax(-diff.pow(2) / (2.0 * sigma * sigma), dim=-1)
+    log_probs = F.log_softmax(valid_logits, dim=-1)
+    return -(soft * log_probs).sum(dim=-1).mean()
+
+
 class BaseGPT(nn.Module, ABC):
     def __init__(
         self,
@@ -69,6 +92,7 @@ class GPT(BaseGPT):
         logit_softcap: float = 15.0,
         pad_vocab_size_to: int = 64,
         attn_res_layers_per_block: int = 1,
+        label_smoothing_sigma: float = 0.0,
     ) -> None:
         super().__init__(
             block_size=block_size,
@@ -78,6 +102,9 @@ class GPT(BaseGPT):
             n_layer=n_layer,
         )
         assert logit_softcap >= 0, "logit_softcap must be non-negative (0 disables it)"
+        assert label_smoothing_sigma >= 0, (
+            "label_smoothing_sigma must be non-negative (0 disables it)"
+        )
         assert pad_vocab_size_to >= 1, "pad_vocab_size_to must be >= 1"
         assert attn_res_layers_per_block >= 1, (
             "attn_res_layers_per_block must be >= 1"
@@ -109,6 +136,7 @@ class GPT(BaseGPT):
         )
         self.use_checkpoint = use_checkpoint
         self.logit_softcap = logit_softcap
+        self.label_smoothing_sigma = label_smoothing_sigma
 
     def forward(
         self,
@@ -167,8 +195,15 @@ class GPT(BaseGPT):
             with record_function("gpt.loss"):
                 B, T, C = logits.shape
                 _logits = logits.view(B * T, C)
-                targets = targets.view(B * T)
-                loss = F.cross_entropy(_logits, targets)
+                _targets = targets.view(B * T)
+                if self.label_smoothing_sigma > 0:
+                    loss = _gaussian_soft_ce(
+                        logits=_logits,
+                        targets=_targets,
+                        sigma=self.label_smoothing_sigma,
+                    )
+                else:
+                    loss = F.cross_entropy(_logits, _targets)
         return logits, loss
 
     @torch.inference_mode()

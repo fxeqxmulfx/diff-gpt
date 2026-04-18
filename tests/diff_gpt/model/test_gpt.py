@@ -1,7 +1,8 @@
 import torch
+import torch.nn.functional as F
 from torch.testing import assert_close
 
-from diff_gpt.model.gpt import GPT
+from diff_gpt.model.gpt import GPT, _gaussian_soft_ce
 from diff_gpt.model.kv_cache import KVCache
 
 
@@ -215,6 +216,102 @@ def test_logit_softcap_disabled_when_zero():
         logits, _ = model(idx)
     # Without softcap, scaling weights by 100 must push max logit well past 15.
     assert logits.abs().max().item() > 15.0
+
+
+def test_soft_ce_matches_plain_ce_when_sigma_is_tiny():
+    """σ→0 makes the soft-target Gaussian collapse to a one-hot at `target`,
+    so the soft-CE loss must match F.cross_entropy up to float precision."""
+    torch.manual_seed(0)
+    N, C = 32, 64
+    logits = torch.randn(N, C)
+    targets = torch.randint(0, C, (N,))
+    plain = F.cross_entropy(logits, targets)
+    soft = _gaussian_soft_ce(logits, targets, sigma=1e-3)
+    assert_close(soft, plain, atol=1e-5, rtol=1e-5)
+
+
+def test_soft_ce_penalizes_near_miss_less_than_far_miss():
+    """Core ordinal property: given two predictions equally confident but
+    one is close to the true bin and the other far, soft-CE must prefer the
+    near miss. Plain CE is blind to this."""
+    C = 64
+    target_bin = 32
+    targets = torch.tensor([target_bin])
+    # Two one-hot-like logit configurations; identical peak height, different locations.
+    near = torch.full((1, C), -10.0)
+    far = torch.full((1, C), -10.0)
+    near[0, target_bin + 2] = 10.0  # off by 2 bins
+    far[0, target_bin + 20] = 10.0  # off by 20 bins
+    loss_near = _gaussian_soft_ce(near, targets, sigma=2.0)
+    loss_far = _gaussian_soft_ce(far, targets, sigma=2.0)
+    assert loss_near < loss_far, f"near={loss_near} should be < far={loss_far}"
+    # Plain CE gives identical loss for both — it's distance-blind.
+    plain_near = F.cross_entropy(near, targets)
+    plain_far = F.cross_entropy(far, targets)
+    assert_close(plain_near, plain_far)
+
+
+def test_soft_ce_respects_ignore_index():
+    """Positions with target=-100 must be skipped (required for column-masked
+    TimeXer-style training where non-target channels are marked -100)."""
+    torch.manual_seed(0)
+    N, C = 16, 64
+    logits = torch.randn(N, C)
+    targets = torch.randint(0, C, (N,))
+    # Mask half; their logits become irrelevant.
+    mask = torch.arange(N) < N // 2
+    targets_masked = targets.clone()
+    targets_masked[~mask] = -100
+    loss_with_junk = _gaussian_soft_ce(
+        logits.clone(), targets_masked, sigma=1.0
+    )
+    # Ground truth: only the unmasked half.
+    loss_half = _gaussian_soft_ce(logits[mask], targets[mask], sigma=1.0)
+    assert_close(loss_with_junk, loss_half)
+
+
+def test_soft_ce_all_masked_returns_zero_with_gradient():
+    """If every position is ignored, loss must be 0 but still backprop-safe
+    (so training loops that occasionally see a fully-masked micro-batch
+    don't blow up)."""
+    torch.manual_seed(0)
+    logits = torch.randn(8, 64, requires_grad=True)
+    targets = torch.full((8,), -100)
+    loss = _gaussian_soft_ce(logits, targets, sigma=1.0)
+    assert loss.item() == 0.0
+    loss.backward()  # must not raise
+    assert logits.grad is not None
+    assert torch.all(logits.grad == 0)
+
+
+def test_gpt_with_soft_ce_trains():
+    """End-to-end: GPT configured with label_smoothing_sigma>0 still
+    produces a finite scalar loss and gradient flow."""
+    torch.manual_seed(0)
+    B, T, V = 2, 6, 64
+    model = GPT(
+        vocab_size=V,
+        n_embd=16,
+        block_size=12,
+        n_layer=2,
+        n_head=2,
+        label_smoothing_sigma=1.5,
+    )
+    idx = torch.randint(0, V, (B, T))
+    targets = torch.randint(0, V, (B, T))
+    _, loss = model(idx, targets)
+    assert loss.dim() == 0
+    assert torch.isfinite(loss)
+    loss.backward()
+    assert model.token_embedding_table.weight.grad is not None
+    assert torch.norm(model.token_embedding_table.weight.grad) > 0
+
+
+def test_gpt_rejects_negative_sigma():
+    import pytest
+
+    with pytest.raises(AssertionError, match="label_smoothing_sigma"):
+        GPT(vocab_size=64, n_embd=16, n_layer=1, n_head=2, label_smoothing_sigma=-0.1)
 
 
 def test_overfitting_capability():
