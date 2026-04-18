@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from torch.profiler import record_function
 
 from diff_gpt.model.mha import MultiHeadAttention
 from diff_gpt.model.feed_forward import FeedForward
@@ -28,28 +27,20 @@ def block_attn_res(
     if len(blocks) == 1 and partial_block is blocks[0]:
         return partial_block
 
-    with record_function("block_attn_res"):
-        with record_function("attn_res.stack"):
-            V = torch.stack([*blocks, partial_block], dim=0)  # (N+1, B, T, D)
-        with record_function("attn_res.norm"):
-            # RMSNorm inside ϕ(·) — prevents large-magnitude blocks from
-            # dominating the attention weights (paper §3.1). A single fused
-            # kernel on the stacked V beats per-block caching because the
-            # extra stack needed for a pre-normed K costs more than the
-            # repeated norm work it would save.
-            K = rms_norm(V)
-        with record_function("attn_res.logits"):
-            # logits: K @ w via matmul broadcast over the leading (N+1, B, T)
-            # dims. Equivalent to einsum("d,nbtd->nbt", w, K) but lands on a
-            # native GEMV.
-            w = proj.weight.view(-1)  # (D,)
-            logits = K.matmul(w)  # (N+1, B, T)
-        with record_function("attn_res.softmax"):
-            weights = logits.softmax(dim=0).unsqueeze(-1)  # (N+1, B, T, 1)
-        with record_function("attn_res.weighted_sum"):
-            # unsqueeze + mul + sum beats a batched matmul here: for tiny N+1
-            # the per-(B,T) bmm pays too much dispatch overhead on CPU.
-            h = (weights * V).sum(dim=0)  # (B, T, D)
+    V = torch.stack([*blocks, partial_block], dim=0)  # (N+1, B, T, D)
+    # RMSNorm inside ϕ(·) — prevents large-magnitude blocks from dominating
+    # the attention weights (paper §3.1). A single fused kernel on the
+    # stacked V beats per-block caching because the extra stack needed for a
+    # pre-normed K costs more than the repeated norm work it would save.
+    K = rms_norm(V)
+    # logits: K @ w via matmul broadcast over the leading (N+1, B, T) dims.
+    # Equivalent to einsum("d,nbtd->nbt", w, K) but lands on a native GEMV.
+    w = proj.weight.view(-1)  # (D,)
+    logits = K.matmul(w)  # (N+1, B, T)
+    weights = logits.softmax(dim=0).unsqueeze(-1)  # (N+1, B, T, 1)
+    # unsqueeze + mul + sum beats a batched matmul here: for tiny N+1 the
+    # per-(B,T) bmm pays too much dispatch overhead on CPU.
+    h = (weights * V).sum(dim=0)  # (B, T, D)
     return h
 
 
@@ -103,16 +94,14 @@ class Block(nn.Module):
         # 1) Cross-block attn residual → attn sub-layer.
         h = block_attn_res(blocks, partial_block, self.attn_res_proj)
         blocks, partial_block = self._commit_if_boundary(blocks, partial_block)
-        with record_function("sublayer.attn"):
-            attn_out = self.sa(rms_norm(h), freqs_cis=freqs_cis, kv_cache=kv_cache)
+        attn_out = self.sa(rms_norm(h), freqs_cis=freqs_cis, kv_cache=kv_cache)
         partial_block = (
             attn_out if partial_block is None else partial_block + attn_out
         )
 
         # 2) Cross-block attn residual → MLP sub-layer.
         h = block_attn_res(blocks, partial_block, self.mlp_res_proj)
-        with record_function("sublayer.mlp"):
-            mlp_out = self.ffwd(rms_norm(h))
+        mlp_out = self.ffwd(rms_norm(h))
         partial_block = partial_block + mlp_out
 
         return blocks, partial_block

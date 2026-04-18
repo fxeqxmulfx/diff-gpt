@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from torch.profiler import record_function
 from torch.utils.checkpoint import checkpoint
 
 from diff_gpt.sampler.sampler import Sampler
@@ -152,58 +151,52 @@ class GPT(BaseGPT):
             self.freqs_cis[T_start:T_end]  # pyright: ignore[reportIndexIssue]
         )  # (T, hs/2)
         freqs_cis = freqs_cis.view(1, T, 1, -1)
-        with record_function("gpt.embed"):
-            x = self.token_embedding_table(idx)  # (B, T, C)
-            x = rms_norm(x)
+        x = self.token_embedding_table(idx)  # (B, T, C)
+        x = rms_norm(x)
         # Block AttnRes state: the normalized embedding is committed as block 0
         # (v₀ = h₁ in paper notation); partial_block starts as the same embed
         # so each sub-layer's cross-block attention has at least one key.
         blocks: tuple[torch.Tensor, ...] = (x,)
         partial_block: torch.Tensor = x
-        for i, block in enumerate(self.blocks):
-            with record_function(f"gpt.layer[{i}]"):
-                if self.training and self.use_checkpoint:
-                    out = checkpoint(
-                        block,
-                        blocks,
-                        partial_block,
-                        freqs_cis=freqs_cis,
-                        kv_cache=kv_cache,
-                        use_reentrant=False,
-                    )
-                    blocks, partial_block = out  # type: ignore[misc]
-                else:
-                    blocks, partial_block = block(
-                        blocks,
-                        partial_block,
-                        freqs_cis=freqs_cis,
-                        kv_cache=kv_cache,
-                    )
-        with record_function("gpt.final_norm"):
-            # Final residual-stream value is the current block's partial sum.
-            x = rms_norm(partial_block)  # (B, T, C) # pyright: ignore[reportArgumentType]
-        with record_function("gpt.lm_head"):
-            logits = self.lm_head(x)  # (B, T, vocab_size)
+        for block in self.blocks:
+            if self.training and self.use_checkpoint:
+                out = checkpoint(
+                    block,
+                    blocks,
+                    partial_block,
+                    freqs_cis=freqs_cis,
+                    kv_cache=kv_cache,
+                    use_reentrant=False,
+                )
+                blocks, partial_block = out  # type: ignore[misc]
+            else:
+                blocks, partial_block = block(
+                    blocks,
+                    partial_block,
+                    freqs_cis=freqs_cis,
+                    kv_cache=kv_cache,
+                )
+        # Final residual-stream value is the current block's partial sum.
+        x = rms_norm(partial_block)  # (B, T, C) # pyright: ignore[reportArgumentType]
+        logits = self.lm_head(x)  # (B, T, vocab_size)
         if self.logit_softcap > 0:
-            with record_function("gpt.softcap"):
-                # Smoothly bound logits to [-softcap, softcap]; stabilizes training
-                # and reduces sampling temperature collapse (Gemma-style).
-                cap = self.logit_softcap
-                logits = cap * torch.tanh(logits / cap)
+            # Smoothly bound logits to [-softcap, softcap]; stabilizes training
+            # and reduces sampling temperature collapse (Gemma-style).
+            cap = self.logit_softcap
+            logits = cap * torch.tanh(logits / cap)
         loss = None
         if targets is not None:
-            with record_function("gpt.loss"):
-                B, T, C = logits.shape
-                _logits = logits.view(B * T, C)
-                _targets = targets.view(B * T)
-                if self.label_smoothing_sigma > 0:
-                    loss = _gaussian_soft_ce(
-                        logits=_logits,
-                        targets=_targets,
-                        sigma=self.label_smoothing_sigma,
-                    )
-                else:
-                    loss = F.cross_entropy(_logits, _targets)
+            B, T, C = logits.shape
+            _logits = logits.view(B * T, C)
+            _targets = targets.view(B * T)
+            if self.label_smoothing_sigma > 0:
+                loss = _gaussian_soft_ce(
+                    logits=_logits,
+                    targets=_targets,
+                    sigma=self.label_smoothing_sigma,
+                )
+            else:
+                loss = F.cross_entropy(_logits, _targets)
         return logits, loss
 
     @torch.inference_mode()
