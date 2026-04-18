@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from diff_gpt.model.engine import Engine
 from diff_gpt.model.gpt import BaseGPT
 from diff_gpt.sampler.sampler import Sampler
 from diff_gpt.train import DataLoader, train
@@ -131,7 +132,6 @@ class DiffGPT:
             f"but block_size is {self.model.block_size}"
         )
         vocab_size = self.model.vocab_size
-        device = self.model.device_type
         inp = df.to_numpy(dtype=np.float64)
         if self.use_decimal:
             inp = np_to_decimal(inp)
@@ -142,18 +142,17 @@ class DiffGPT:
             order_of_derivative=self.order_of_derivative,
             use_decimal=self.use_decimal,
         )
-        encoded_data = np.expand_dims(encoded_data.reshape(-1), axis=0)
-        context = torch.from_numpy(encoded_data).to(device=device)
-        generated = (
-            self.model.generate(
-                context,
-                max_new_tokens=max_new_points * columns,
-                sampler=sampler,
-            )
-            .cpu()
-            .numpy()[0]
-            .reshape(-1, columns)
+        context_tokens = encoded_data.reshape(-1).astype(np.int64).tolist()
+        # Use Engine for KV-cache-accelerated decoding (O(T) vs O(T²) for the
+        # naive model.generate path).
+        engine = Engine(model=self.model)
+        results, _ = engine.generate_batch(
+            tokens=context_tokens,
+            num_samples=1,
+            max_tokens=max_new_points * columns,
+            sampler=sampler,
         )
+        generated = np.asarray(results[0], dtype=np.int64).reshape(-1, columns)
         decoded = decode(
             start=start,
             scale=scale,
@@ -191,7 +190,6 @@ class DiffGPT:
         ctx_len = len(context_df)
         pred_len = len(future_covariates_df)
         order = self.order_of_derivative
-        device = self.model.device_type
 
         total_tokens = (ctx_len + pred_len - order) * n_features
         assert total_tokens <= self.model.block_size, (
@@ -200,8 +198,9 @@ class DiffGPT:
         )
 
         # Build the full concatenated input; zero out target columns in the
-        # future portion so their encoded tokens are placeholders that we'll
-        # overwrite during sampling.
+        # future portion so their encoded tokens are placeholders. Covariate
+        # entries in encoded_full are correct (both endpoints known); target
+        # entries are bogus but we'll overwrite them during generation.
         full_df = pd.concat(
             [context_df, future_covariates_df], ignore_index=True
         ).copy()
@@ -221,54 +220,28 @@ class DiffGPT:
         encoded_flat = encoded_full.reshape(-1).astype(np.int64).copy()
 
         # First (ctx_len - order) token rows depend only on the observed
-        # history, so they're teacher-forced directly.
+        # history — that's the prefill prompt. The remaining positions are
+        # driven step-by-step via a force_schedule: None at target-column
+        # positions (sample), the known covariate token otherwise.
         ctx_token_count = (ctx_len - order) * n_features
-        tokens = torch.tensor(
-            encoded_flat[:ctx_token_count], dtype=torch.int64, device=device
-        ).unsqueeze(0)
+        prompt_tokens = encoded_flat[:ctx_token_count].tolist()
+        force_schedule: list[int | None] = [
+            None if (p % n_features) in target_set else int(encoded_flat[p])
+            for p in range(ctx_token_count, total_tokens)
+        ]
+        max_tokens = total_tokens - ctx_token_count
 
-        # Walk the remaining positions: teacher-force runs of covariate
-        # tokens, then sample at each target-column position.
-        p = ctx_token_count
-        while p < total_tokens:
-            next_target = None
-            for q in range(p, total_tokens):
-                if (q % n_features) in target_set:
-                    next_target = q
-                    break
-            if next_target is None:
-                if p < total_tokens:
-                    tail = torch.tensor(
-                        encoded_flat[p:total_tokens],
-                        dtype=torch.int64,
-                        device=device,
-                    ).unsqueeze(0)
-                    tokens = torch.cat([tokens, tail], dim=1)
-                break
-            if next_target > p:
-                run = torch.tensor(
-                    encoded_flat[p:next_target], dtype=torch.int64, device=device
-                ).unsqueeze(0)
-                tokens = torch.cat([tokens, run], dim=1)
-            logits, _ = self.model.forward(tokens)
-            next_logit = logits[:, -1]
-            if sampler is not None:
-                next_id = sampler(next_logit)
-            else:
-                probs = torch.softmax(next_logit, dim=-1)
-                next_id = torch.multinomial(probs, num_samples=1)
-            token_int = int(next_id.item())
-            encoded_flat[next_target] = token_int
-            tokens = torch.cat(
-                [
-                    tokens,
-                    torch.tensor([[token_int]], dtype=torch.int64, device=device),
-                ],
-                dim=1,
-            )
-            p = next_target + 1
-
-        encoded_final = encoded_flat.reshape(-1, n_features)
+        engine = Engine(model=self.model)
+        results, _ = engine.generate_batch(
+            tokens=prompt_tokens,
+            num_samples=1,
+            max_tokens=max_tokens,
+            sampler=sampler,
+            force_schedule=force_schedule,
+        )
+        encoded_final = np.asarray(results[0], dtype=np.int64).reshape(
+            -1, n_features
+        )
         decoded = decode(
             start=start,
             scale=scale,

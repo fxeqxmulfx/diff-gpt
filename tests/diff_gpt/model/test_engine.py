@@ -246,6 +246,58 @@ def test_generate_no_max_tokens_uses_hard_ceiling(gpt_model: GPT) -> None:
     assert len(results[0]) == len(prompt) + hard_ceiling
 
 
+def test_force_schedule_interleaves_forced_and_sampled(gpt_model: GPT) -> None:
+    """
+    force_schedule controls per-step forcing: `None` samples, an int forces.
+    An alternating schedule must produce exactly the forced tokens at the
+    forced positions and sampled (non-None, in-range) tokens elsewhere.
+    """
+    engine = Engine(model=gpt_model)
+    prompt = [1, 2, 3]
+    # Alternate: force 7, sample, force 11, sample, force 13, sample.
+    schedule: list[int | None] = [7, None, 11, None, 13, None]
+    results, masks = engine.generate_batch(
+        tokens=prompt,
+        num_samples=2,
+        max_tokens=len(schedule),
+        force_schedule=schedule,
+    )
+    for row, mask in zip(results, masks):
+        tail = row[len(prompt):]
+        assert tail[0] == 7
+        assert tail[2] == 11
+        assert tail[4] == 13
+        # Forced positions' masks should be 0; sampled ones 1.
+        tail_mask = mask[len(prompt):]
+        assert tail_mask == [0, 1, 0, 1, 0, 1]
+
+
+def test_force_schedule_all_forced_matches_schedule(gpt_model: GPT) -> None:
+    """If every slot is forced, both samples reproduce the schedule exactly."""
+    engine = Engine(model=gpt_model)
+    prompt = [1, 2]
+    schedule = [5, 6, 7, 8]
+    results, _ = engine.generate_batch(
+        tokens=prompt,
+        num_samples=3,
+        max_tokens=len(schedule),
+        force_schedule=schedule,
+    )
+    for row in results:
+        assert row[len(prompt):] == schedule
+
+
+def test_force_schedule_too_short_raises(gpt_model: GPT) -> None:
+    engine = Engine(model=gpt_model)
+    with pytest.raises(AssertionError, match="force_schedule must cover"):
+        engine.generate_batch(
+            tokens=[1, 2, 3],
+            num_samples=1,
+            max_tokens=10,
+            force_schedule=[1, 2, 3],  # only 3 entries
+        )
+
+
 def test_prefill_clone_equivalence(gpt_model):
     """
     Crucial test: Verifies that the "prefill once, then clone KV cache"
