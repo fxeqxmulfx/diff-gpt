@@ -160,7 +160,13 @@ forecasting sweet spot.
 ETTh1 is data-limited (~2 tokens/parameter), not loss-limited. Soft targets help
 most in data-starved regimes.
 
-## Install & test
+## Install
+
+```bash
+pip install git+https://github.com/fxeqxmulfx/diff-gpt
+```
+
+## Develop & test
 
 ```bash
 uv sync
