@@ -48,6 +48,7 @@ def train(
     use_early_stopping: bool = True,
     grad_accum_steps: int = 1,
     grad_clip_norm: float | None = None,
+    save_best: bool = True,
 ) -> tuple[float, int]:
     """
     Train `mut_model` against batches produced by `loader`.
@@ -59,6 +60,12 @@ def train(
 
     `grad_accum_steps` enables gradient accumulation for memory-constrained
     GPUs; `grad_clip_norm` clips the global gradient norm before each step.
+
+    `save_best` (default True, only meaningful when `has_val`): keep an
+    in-memory snapshot of model weights whenever a new best val_loss is
+    seen and restore it before returning. Lets training run past the val
+    optimum without losing the best model (useful when val is noisy).
+    Returns the best val_loss instead of the final one when active.
     """
     assert grad_accum_steps >= 1, "grad_accum_steps must be >= 1"
     optimizer = AdamWScheduleFree(
@@ -72,6 +79,9 @@ def train(
     pbar = tqdm(range(max_iters)) if use_tqdm else range(max_iters)
     last_reported_loss: torch.Tensor = torch.tensor(float("inf"))
     last_val_loss = torch.inf
+    best_val_loss = float("inf")
+    best_state_dict: dict[str, torch.Tensor] | None = None
+    best_step = -1
     mut_model.train()
     optimizer.train()
     for iter in pbar:
@@ -82,9 +92,20 @@ def train(
             if has_val:
                 val_loss = _estimate_loss(mut_model, loader, eval_iters, "val")
                 last_reported_loss = val_loss
+                current_val = float(val_loss)
+                improved = ""
+                if save_best and current_val < best_val_loss:
+                    best_val_loss = current_val
+                    # Clone to CPU-agnostic detached copies so resumed
+                    # training doesn't mutate the snapshot.
+                    best_state_dict = {
+                        k: v.detach().clone() for k, v in mut_model.state_dict().items()
+                    }
+                    best_step = iter
+                    improved = "  (best)"
                 status = (
                     f"step {iter}: train loss {train_loss:.4f}, "
-                    f"val loss {val_loss:.4f}"
+                    f"val loss {val_loss:.4f}{improved}"
                 )
             else:
                 last_reported_loss = train_loss
@@ -112,4 +133,12 @@ def train(
         optimizer.step()
     train_time_s = (datetime.now() - start).seconds
     mut_model.eval()
+    if save_best and best_state_dict is not None:
+        mut_model.load_state_dict(best_state_dict)
+        msg = f"restored best checkpoint from step {best_step} (val_loss={best_val_loss:.4f})"
+        if isinstance(pbar, tqdm):
+            pbar.write(msg)
+        else:
+            print(msg)
+        return best_val_loss, train_time_s
     return float(last_reported_loss), train_time_s
