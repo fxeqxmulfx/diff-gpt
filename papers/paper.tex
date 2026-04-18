@@ -440,6 +440,67 @@ data-starved regimes where many short series force extrapolation of
 conditional distributions without enough signal to localize a single
 bin.
 
+\subsection{M4 Hourly probabilistic (preliminary)}
+\label{sec:prob-m4}
+
+The same global model (same training recipe as \S5.1; no probabilistic
+re-tuning) also ships as a probabilistic forecaster via $N = 100$
+Monte-Carlo trajectories. Aggregate metrics across 414 series,
+horizon 48, comparing plain temperature sampling against nucleus
+top-$p$ on top of temperature:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+metric & $T=1$ & $T=1$, top-$p=0.9$ \\
+\midrule
+sMAPE (median point) & 24.18 & \textbf{22.02} \\
+MASE (median point) & 2.94 & \textbf{2.41} \\
+pinball$_{0.5}$ (= $\tfrac{1}{2}$MAE) & 172.7 & \textbf{161.3} \\
+CRPS & 332.0 & \textbf{293.6} \\
+MSIS ($\alpha = 0.05$) & 41.1 & \textbf{30.8} \\
+coverage@80 (nominal 0.80) & 0.946 & \textbf{0.919} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Adding nucleus top-$p = 0.9$ at inference time, with no retraining,
+improves every metric. The largest effect is on MSIS ($-25\%$),
+because truncating the low-probability tail of each per-step
+distribution reduces the random-walk spread that drives band
+widening at horizon. Two observations remain:
+
+(a) \emph{Coverage is still over-dispersed} (0.92 against nominal 0.80).
+The model was tuned for argmax sMAPE; its training-distribution spread
+is wider than the bands needed to hit nominal coverage.
+Prop.~\ref{prop:pred} is the theoretical lower bound on this effect.
+
+(b) \emph{Median point estimate remains worse than argmax} (22.0 vs
+17.49 sMAPE), consistent with the finding that derivative-tokenized
+autoregressive generation prefers the mode; any sampled trajectory
+compounds drift.
+
+Against classical baselines (seasonal-naive MSIS $\sim 50$--$80$; M4
+probabilistic winners around MSIS $\sim 13$--$15$) the present result
+is $\sim 1.5{-}2\times$ better than naive and $\sim 2\times$ worse
+than SOTA. Closing the remaining gap is not structurally blocked ---
+it needs conformal prediction or CRPS-tuned $\sigma$ / temperature ---
+and is listed in \S\ref{sec:future}.
+
+\subsection{Anomaly detection on ETTh1 (demo)}
+\label{sec:anom-ett}
+
+Demo on the ETTh1 oil-temperature channel: train a small
+diff-gpt on 2880 clean hours, inject 5 synthetic $\pm 5\sigma$ spikes
+at known positions in a 336-hour test window, score every observed
+point via \texttt{anomaly\_scores}. Ranking by $-\log p(\text{token}_t
+\mid \mathrm{ctx})$ at top-10 recovers 3 of 5 injected spikes (recall
+$= 0.60$) after only 2000 training iterations; the remaining top-10
+positions correspond to real transitions the model has learned are
+atypical (ETTh1 is not synthetic, so some natural anomalies appear).
+This is a structural sanity check, not a benchmark --- standard
+anomaly-detection evaluation on SMD / MSL / SMAP / SWaT is future work.
+
 \subsection{Vocabulary / loss scaling, summary}
 \begin{center}
 \begin{tabular}{lcc}
@@ -485,14 +546,17 @@ diff-gpt's architectural choices --- autoregressive language-model
 recipe over a quantized vocabulary --- give it structural advantages in
 a different regime, which we believe deserves dedicated follow-up.
 
-\paragraph{Probabilistic forecasting (quantile / interval prediction).}
-The decoder emits a full distribution over next-token bins at every
-step; $N$-sample rollouts give native P10/P50/P90 estimates without
-a pinball-loss head or quantile-regression machinery. Direct
-competitors (iTransformer, N-BEATS) optimize MSE, i.e.\ the conditional
-mean. Applications: energy-load dispatch with confidence bands,
-financial risk (VaR, expected shortfall), reliability engineering,
-weather ensembles, inventory planning.
+\paragraph{Probabilistic forecasting (quantile / interval prediction)
+--- implemented, preliminary evaluation in \S\ref{sec:prob-m4}.}
+\texttt{DiffGPT.predict\_samples} / \texttt{predict\_quantiles} return
+Monte-Carlo trajectories or any quantile set. First-pass M4 Hourly
+numbers (MSIS 41, coverage 0.95 at nominal 0.80) are better than
+seasonal-naive but $\sim\!3\times$ worse than M4 probabilistic winners;
+the model is over-dispersed because it was tuned for argmax sMAPE.
+Closing the gap is straightforward: conformal post-hoc calibration
+to enforce nominal coverage, or $\sigma$ / temperature tuning on val
+CRPS instead of argmax sMAPE. These are concrete engineering wins
+rather than structural unknowns.
 
 \paragraph{Heavy-tailed and multi-modal conditional distributions.}
 $\ell_2$ regression collapses toward the conditional mean and fails
@@ -517,12 +581,15 @@ macro in one training run. Regression baselines need per-channel heads
 or manual unification. For foundation models this is a core problem
 and our scheme is structurally simpler.
 
-\paragraph{Anomaly detection via conditional likelihood.}
-$-\log p(\text{token}_t \mid \mathrm{ctx})$ is available for free at
-each step and calibrates correctly under variable conditional
-variance. Regression-based approaches rely on $\|y_t - \hat y_t\|$,
-which miscalibrates on heteroscedastic series. Candidate domains:
-industrial monitoring, network intrusion, patient monitoring.
+\paragraph{Anomaly detection via conditional likelihood ---
+implemented, sanity-checked in \S\ref{sec:anom-ett}.}
+$-\log p(\text{token}_t \mid \mathrm{ctx})$ is available after a single
+forward pass over the observed signal and is a proper scoring rule
+under the learned distribution. \texttt{DiffGPT.anomaly\_scores(df)}
+returns a $(T, F)$ array of per-(time, channel) negative log-likelihoods
+(\texttt{NaN} on the $k$-row prefix). The ETTh1 demo shows that a
+2000-iter model recovers 60\% of injected spikes at top-10; full
+benchmarks (SMD, MSL, SMAP, SWaT) are future work.
 
 \paragraph{Conditional / counterfactual generation.}
 ``What if $X_t$ jumps by $\Delta$ next week?'' reduces to token
