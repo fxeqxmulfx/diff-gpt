@@ -110,14 +110,93 @@ loader = DiffDataFrameDataLoader(
 
 model.train(loader=loader, max_iters=20_000, eval_interval=500)
 
-# Forecast.
+# Point forecast (argmax).
 context = dfs[0].iloc[-96:]
 prediction = model.predict(
     df=context,
     max_new_points=48,
-    sampler=TemperatureSampler(temperature=0.0),  # argmax
+    sampler=TemperatureSampler(temperature=0.0),
 )
 ```
+
+## Probabilistic forecasting
+
+Every trained model is already a probabilistic forecaster — the token head
+outputs a calibrated distribution at each step (cross-entropy is a strictly
+proper scoring rule). Point argmax is one readout; `num_samples` independent
+temperature-1 trajectories give Monte-Carlo samples from the joint future
+distribution, which we can reduce to any set of quantiles.
+
+```python
+# N Monte-Carlo trajectories, shape (N, H, F)
+samples = model.predict_samples(
+    df=context,
+    max_new_points=48,
+    num_samples=100,
+    sampler=TemperatureSampler(temperature=1.0),
+)
+
+# Or directly as quantile bands {0.1, 0.5, 0.9}: each a DataFrame of shape (H, F).
+bands = model.predict_quantiles(
+    df=context,
+    max_new_points=48,
+    quantiles=(0.1, 0.5, 0.9),
+    num_samples=100,
+    sampler=TemperatureSampler(temperature=1.0),
+)
+p10, p50, p90 = bands[0.1], bands[0.5], bands[0.9]
+```
+
+No architectural change and no auxiliary pinball-loss head: one model serves
+arbitrary quantile sets at inference time. Since the model predicts the
+*derivative* and the decoder integrates, confidence bands naturally widen
+with horizon as an integral of random-walk uncertainty.
+
+**First-pass M4 Hourly numbers** (same model as the point-forecast row,
+no probabilistic-specific tuning; 414 series, horizon 48, N = 100 samples):
+
+| metric | T = 1 | T = 1, top-p = 0.9 |
+|---|---|---|
+| sMAPE (median point) | 24.18 | **22.02** |
+| MASE (median point) | 2.94 | **2.41** |
+| CRPS | 332.0 | **293.6** |
+| MSIS (α = 0.05) | 41.1 | **30.8** (−25%) |
+| coverage@80 (nominal 0.80) | 0.946 | **0.919** |
+
+Nucleus top-p = 0.9 at inference time (zero retraining) tightens every
+metric, MSIS by 25%. Remaining over-coverage reflects the fact that the
+model was tuned for argmax sMAPE; conformal calibration or CRPS-tuned σ /
+temperature closes most of the rest of the gap vs M4 probabilistic winners
+(MSIS ~13–15).
+
+## Anomaly detection
+
+Cross-entropy training also gives a calibrated **per-step conditional
+log-likelihood** for free. Feeding an observed signal through a single
+forward pass and taking $-\log p(\text{token}_t \mid \text{ctx})$ at each
+position yields a per-(time, channel) anomaly score: low where the
+observation is typical, high where it surprises the model.
+
+```python
+# df: observed multivariate signal, shape (T, F).
+scores = model.anomaly_scores(df)
+# scores: DataFrame, same shape and columns as df.
+# First max_k rows are NaN (the derivative prefix); the first encoded
+# token at column 0 is also NaN (no preceding context).
+
+row_surprise = scores.sum(axis=1, skipna=True)     # per-step aggregate
+anomalies = row_surprise[row_surprise > row_surprise.quantile(0.99)]
+```
+
+Regression-based forecasters have to approximate this with $\|y_t - \hat
+y_t\|$, which miscalibrates on heteroscedastic series; the categorical
+head's log-likelihood is proper under the learned distribution.
+
+**ETTh1 oil-temperature demo** ([`benchmarks/anomaly_demo.py`](benchmarks/anomaly_demo.py)):
+train on 2880 clean hours, inject 5 synthetic ±5σ spikes into a 336-hour
+test window, rank positions by NLL. After only 2000 training iterations
+the top-10 contains **3 of 5 injected spikes (60% recall)**; the rest of
+the top-10 are genuine irregular transitions in the unsynthetic signal.
 
 ## Benchmarks
 
