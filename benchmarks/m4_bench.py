@@ -98,7 +98,7 @@ def main() -> None:
     # Block size: every series's VAL portion must be larger than block_size
     # for val-loss estimation. With train_part=0.8 on Hourly's shortest
     # series (700 tokens), val = 140 → block_size caps at 139.
-    train_part = 0.8
+    train_part = float(os.environ.get("M4_TRAIN_PART", "0.8"))
     min_series_len = min(len(s) for s in series_norm)
     min_val_tokens = int(min_series_len * (1 - train_part))
     # Target block_size (overridable via env); clamp down if val is too short.
@@ -125,12 +125,16 @@ def main() -> None:
     # Chinchilla-optimal (~20) and capacity needed for Hourly's daily +
     # weekly patterns. Tiny (n_embd=32) underfits; big (n_embd=128) overfits.
     label_smoothing_sigma = float(os.environ.get("M4_LABEL_SMOOTHING_SIGMA", "0.0"))
+    vocab_size = int(os.environ.get("M4_VOCAB_SIZE", "256"))
+    n_embd = int(os.environ.get("M4_N_EMBD", "64"))
+    n_layer = int(os.environ.get("M4_N_LAYER", "2"))
+    n_head = int(os.environ.get("M4_N_HEAD", "4"))
     base = GPT(
-        vocab_size=256,
-        n_embd=64,
+        vocab_size=vocab_size,
+        n_embd=n_embd,
         block_size=block_size,
-        n_head=4,
-        n_layer=2,
+        n_head=n_head,
+        n_layer=n_layer,
         use_checkpoint=False,
         label_smoothing_sigma=label_smoothing_sigma,
     ).to(device=device)
@@ -150,7 +154,7 @@ def main() -> None:
         dfs=dfs,
         block_size=block_size,
         batch_size=32,
-        vocab_size=256,
+        vocab_size=vocab_size,
         order_of_derivative=order_of_derivative,
         domain_of_definition=domain_of_definition,
         use_decimal=False,
