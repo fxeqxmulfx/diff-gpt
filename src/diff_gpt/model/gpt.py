@@ -65,6 +65,8 @@ class GPT(BaseGPT):
         swiglu_alpha: float = 1.702,
         swiglu_limit: float = 7.0,
         use_checkpoint: bool = True,
+        logit_softcap: float = 15.0,
+        pad_vocab_size_to: int = 64,
     ) -> None:
         super().__init__(
             block_size=block_size,
@@ -72,6 +74,14 @@ class GPT(BaseGPT):
             n_embd=n_embd,
             n_head=n_head,
             n_layer=n_layer,
+        )
+        assert logit_softcap >= 0, "logit_softcap must be non-negative (0 disables it)"
+        assert pad_vocab_size_to >= 1, "pad_vocab_size_to must be >= 1"
+        # GPT does not pad — the encoder owns vocab_size, so the caller is
+        # responsible for choosing a tensor-core-friendly multiple.
+        assert vocab_size % pad_vocab_size_to == 0, (
+            f"vocab_size ({vocab_size}) must be a multiple of "
+            f"pad_vocab_size_to ({pad_vocab_size_to}); pad it in the encoder"
         )
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.blocks = nn.ModuleList(
@@ -92,6 +102,7 @@ class GPT(BaseGPT):
             persistent=False,
         )
         self.use_checkpoint = use_checkpoint
+        self.logit_softcap = logit_softcap
 
     def forward(
         self,
@@ -126,6 +137,11 @@ class GPT(BaseGPT):
                 )
         x = rms_norm(x)  # (B, T, C) # pyright: ignore[reportArgumentType]
         logits = self.lm_head(x)  # (B, T, vocab_size)
+        if self.logit_softcap > 0:
+            # Smoothly bound logits to [-softcap, softcap]; stabilizes training and
+            # reduces sampling temperature collapse (Gemma-style).
+            cap = self.logit_softcap
+            logits = cap * torch.tanh(logits / cap)
         loss = None
         if targets is not None:
             B, T, C = logits.shape
