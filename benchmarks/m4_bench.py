@@ -118,9 +118,9 @@ def main() -> None:
     )
 
     # Small model: ~130k params. At ~280k training tokens (414 series * ~850 *
-    # train_part=0.8), this gives ~2 tokens/param — much closer to Chinchilla's
-    # ~20/param target than a large model would. Matches TSLib's TimesNet
-    # M4 config (d_model=32).
+    # train_part=0.8), this gives ~2 tokens/param — a compromise between
+    # Chinchilla-optimal (~20) and capacity needed for Hourly's daily +
+    # weekly patterns. Tiny (n_embd=32) underfits; big (n_embd=128) overfits.
     base = GPT(
         vocab_size=256,
         n_embd=64,

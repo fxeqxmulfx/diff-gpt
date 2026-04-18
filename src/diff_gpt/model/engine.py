@@ -34,8 +34,20 @@ class Engine:
         max_tokens: int | None = None,
         sampler: Sampler | None = None,
         seed: int = 42,
+        force_schedule: list[int | None] | None = None,
     ) -> Generator[tuple[list[int], list[int]], None, None]:
-        """Streaming generation: single prefill, then clone the KV cache for each sample."""
+        """
+        Streaming generation: single prefill, then clone the KV cache for each sample.
+
+        `force_schedule`, when provided, is a per-step list aligned with the
+        generation loop:
+          - entry is `None` → sample normally at that step
+          - entry is an `int` → teacher-force that token at that step (across
+            every sample in the batch)
+        Length must be at least `max_tokens`. Useful for TimeXer-style
+        exogenous forecasting where specific positions (covariate columns)
+        are known a priori.
+        """
         assert isinstance(tokens, list), "tokens must be a list of ints"
         assert len(tokens) > 0, "tokens must be non-empty"
         assert all(isinstance(t, int) for t in tokens), "tokens must be a list of ints"
@@ -50,6 +62,11 @@ class Engine:
             effective_max_tokens = hard_ceiling
         if effective_max_tokens == 0:
             return  # nothing to generate; skip expensive prefill+alloc
+        if force_schedule is not None:
+            assert len(force_schedule) >= effective_max_tokens, (
+                f"force_schedule must cover all generation steps "
+                f"(len={len(force_schedule)} < {effective_max_tokens})"
+            )
 
         device = self.model.device_type
         rng = torch.Generator(device=device)
@@ -87,29 +104,40 @@ class Engine:
         # 4) Main generation loop
         num_generated = 0
         while num_generated < effective_max_tokens:
-            # Sample the next token for each row
-            if sampler is not None:
-                next_ids = sampler(logits, rng=rng)  # (B, 1)
+            # Is this step position-forced by the schedule?
+            scheduled_token: int | None = None
+            if force_schedule is not None:
+                scheduled_token = force_schedule[num_generated]
+
+            if scheduled_token is None:
+                # Sample the next token for each row
+                if sampler is not None:
+                    next_ids = sampler(logits, rng=rng)  # (B, 1)
+                else:
+                    probs = torch.softmax(logits, dim=-1)  # (B, C)
+                    next_ids = torch.multinomial(
+                        probs, num_samples=1, generator=rng
+                    )  # (B, 1)
+                sampled_tokens = next_ids[:, 0].tolist()
             else:
-                probs = torch.softmax(logits, dim=-1)  # (B, C)
-                next_ids = torch.multinomial(
-                    probs, num_samples=1, generator=rng
-                )  # (B, 1)
-            sampled_tokens = next_ids[:, 0].tolist()
+                # Position-forced: skip the sampler entirely, reuse across samples.
+                sampled_tokens = [scheduled_token] * num_samples
 
             # Process each row: choose the next token, update state, optional tool use
             token_column = []  # contains the next token id along each row
             token_masks = []  # contains the mask (was it sampled (1) or forced (0)?) along each row
             for i, state in enumerate(row_states):
-                # Select the next token in this row
-                is_forced = (
-                    len(state.forced_tokens) > 0
-                )  # are there tokens waiting to be forced in deque?
-                token_masks.append(
-                    0 if is_forced else 1
-                )  # mask is 0 if forced, 1 if sampled
+                # Per-row deque-forcing still wins over sampling (but the
+                # position-forced path above has already replaced the sampled
+                # values, so this just carries them through).
+                is_deque_forced = len(state.forced_tokens) > 0
+                # mask: 0 if the token was forced (either path), 1 if sampled
+                forced = is_deque_forced or scheduled_token is not None
+                token_masks.append(0 if forced else 1)
                 next_token = (
-                    state.forced_tokens.popleft() if is_forced else sampled_tokens[i]
+                    state.forced_tokens.popleft()
+                    if is_deque_forced
+                    else sampled_tokens[i]
                 )
                 token_column.append(next_token)
                 # Update the state of this row to include the next token
