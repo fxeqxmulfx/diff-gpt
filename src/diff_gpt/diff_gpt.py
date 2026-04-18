@@ -79,7 +79,12 @@ class DiffGPT:
         sampler: Sampler | None,
     ) -> pd.DataFrame:
         columns = df.shape[1]
-        assert (df.shape[0] + max_new_points - 1) * columns <= self.model.block_size
+        total_positions = (df.shape[0] + max_new_points - 1) * columns
+        assert total_positions <= self.model.block_size, (
+            f"prompt rows ({df.shape[0]}) + new points ({max_new_points}) with "
+            f"{columns} columns require {total_positions} context positions, "
+            f"but block_size is {self.model.block_size}"
+        )
         vocab_size = self.model.vocab_size
         device = self.model.device_type
         use_decimal = self.use_decimal

@@ -11,7 +11,8 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, n_embd: int, n_head: int, layer_idx: int) -> None:
         super().__init__()
         assert n_embd % n_head == 0
-        assert n_head % 2 == 0
+        # RoPE requires head_dim to be even (pairs of dims are rotated as complex).
+        assert (n_embd // n_head) % 2 == 0
         self.n_embd = n_embd
         self.n_head = n_head
         self.layer_idx = layer_idx

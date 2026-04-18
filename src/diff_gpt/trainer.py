@@ -2,7 +2,6 @@ import pickle
 import numpy as np
 import torch
 import gc
-import sys
 from tqdm import tqdm
 
 from diff_gpt.data_loader import DiffSQLiteDataLoader
@@ -36,8 +35,10 @@ def auto_tune_params(
         dynamic_mem_per_seq = ATTN_HEURISTIC_FACTOR * N * H * L
     remaining = available_mem - static_mem
     if remaining <= 0:
-        print("Error: Model too big for GPU!")
-        sys.exit(1)
+        raise RuntimeError(
+            f"Model too big for device: params*20={static_mem:.0f} bytes exceeds "
+            f"available {available_mem:.0f} bytes (vram_gb={vram_gb}, reserved={reserved})"
+        )
     mini_batch_size = int(remaining / dynamic_mem_per_seq)
     mini_batch_size = max(1, min(32, mini_batch_size))
     target_tokens = max(32_000, int(params * 0.003))
@@ -77,8 +78,6 @@ def train(
         vram_gb=vram,
         use_checkpoint=use_checkpoint,
     )
-    if mini_batch_size == 1 and grad_accum_size < 1:
-        print("Warning: Very constrained memory, training may be slow")
     print(f"--- Config ({vram:.1f}GB GPU) ---")
     print(f"Micro-Batch: {mini_batch_size} | Grad Accum: {grad_accum_size}")
     loader = DiffSQLiteDataLoader(

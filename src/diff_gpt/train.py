@@ -21,6 +21,10 @@ def get_batch(
     block_size: int,
     device: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    if len(data) <= block_size:
+        raise ValueError(
+            f"data length ({len(data)}) must be greater than block_size ({block_size})"
+        )
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack(
         tuple(
@@ -54,12 +58,10 @@ def estimate_loss(
     eval_iters: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     device = model.device_type
-    train = torch.Tensor()
-    val = train
-    for split in ["train", "val"]:
+    means: dict[str, torch.Tensor] = {}
+    for split, data in (("train", train_data), ("val", val_data)):
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
-            data = train_data if split == "train" else val_data
             X, Y = get_batch(
                 data=data,
                 batch_size=batch_size,
@@ -68,12 +70,8 @@ def estimate_loss(
             )
             _, loss = model(X, Y)
             losses[k] = loss.item()
-        mean_loss = losses.mean()
-        if split == "train":
-            train = mean_loss
-        else:
-            val = mean_loss
-    return train, val
+        means[split] = losses.mean()
+    return means["train"], means["val"]
 
 
 def train(

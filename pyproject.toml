@@ -6,7 +6,13 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.txt"]
 requires-python = ">=3.13"
-dependencies = ["numpy>=2.3.3", "pandas>=2.3.3", "torch>=2.8.0", "tqdm>=4.67.1"]
+dependencies = [
+    "numpy>=2.3.3",
+    "pandas>=2.3.3",
+    "torch>=2.8.0",
+    "tqdm>=4.67.1",
+    "typing-extensions>=4.14",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.4.2"]
