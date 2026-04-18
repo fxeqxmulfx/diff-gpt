@@ -14,83 +14,117 @@
 \newtheorem{remark}[theorem]{Remark}
 
 \title{diff-gpt: autoregressive time-series forecasting via \\
-       derivative tokenization with $\Sigma\Delta$-quantization}
-\author{Mikhail Borisov}
+       derivative tokenization with MASH $\Sigma\Delta$-quantization}
+\author{}
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We study autoregressive forecasting of continuous time series via a decoder-only
-transformer trained on a derivative-based tokenization. The encoder differentiates
-the input, scales by its observed range, and quantizes with a first-order
-$\Sigma\Delta$ modulator; the decoder inverts this exactly up to a vocabulary-width
-term. We prove two tokenization-level bounds: the achievable cross-entropy loss
-grows as $\log V$, and the reconstruction error decays as $1/V$, both
-independently of the model. We additionally introduce an ordinal Gaussian
-soft-target cross-entropy that turns the bin-wise classification loss into a
-distance-aware regression loss over bin indices. On the M4 Hourly short-term
-forecasting benchmark, ordinal smoothing reduces sMAPE from $18.58$ to $17.49$
-(6\% relative) without any change to the architecture or training schedule.
+We study autoregressive forecasting of continuous time series with a
+decoder-only transformer trained on a derivative-based tokenization.
+The encoder differentiates the input to order $k \ge 1$, scales by its
+observed range, and quantizes with a \emph{MASH} (multi-stage
+noise-shaping) $k$-th-order $\Sigma\Delta$ modulator; the decoder
+inverts this. We prove two tokenization-level bounds, both independent
+of the model: the achievable cross-entropy loss grows linearly in
+$\log V$, and the reconstruction error is uniformly bounded by $\Delta/2
+= D/(V-2-2^k)$ for any $k$ such that $V > 2^k + 2$. We further observe
+that while MASH's reconstruction bound is tight against pure
+quantization noise, \emph{model prediction error} compounds as
+$O(\Delta \cdot T^{k-1})$ through $k$ decoder integrations --- giving a
+principled reason to prefer $k = 1$ for forecasting despite the clean
+higher-order theory. We introduce an ordinal Gaussian soft cross-entropy
+that converts bin-wise classification into a distance-aware loss over
+ordinal bins; on M4 Hourly it reduces sMAPE from $18.58$ to $17.49$
+(6\% relative) without architectural change.
 \end{abstract}
 
 \section{Introduction}
 
 Most state-of-the-art time-series forecasters are regression models with
-specialized inductive biases (patching, inverted attention, channel mixing).
-They treat the output as a continuous vector and optimize an $\ell_2$ or
-Huber loss. By contrast, large language models are decoder-only transformers
-trained with cross-entropy over a discrete vocabulary. The question we address
-is whether a pure language-model recipe --- fixed architecture, fixed loss,
-autoregressive generation --- is competitive on standard forecasting benchmarks,
-once the continuous input has been mapped into a faithful discrete
-representation.
+specialized inductive biases (patching, inverted attention, channel
+mixing) trained against an $\ell_2$ or Huber loss. By contrast, large
+language models are decoder-only transformers trained with cross-entropy
+over a discrete vocabulary. The question we address is whether a pure
+language-model recipe --- fixed architecture, fixed loss,
+autoregressive generation --- is competitive on standard forecasting
+benchmarks, given a faithful discrete representation of the continuous
+input.
 
-The key choice is the tokenization. We describe a derivative-based encoder
-with first-order $\Sigma\Delta$ (sigma--delta) quantization that has two
-desirable properties: (a) cross-entropy loss at the achievable rate scales
-linearly in $\log V$, so vocabulary size has a predictable information-theoretic
-cost, and (b) the reconstruction error between a round-trip of the encoder
-and decoder is bounded uniformly in sequence length by $\Delta/2 = D/(V-2)$,
-where $D$ is the maximum observed first difference. These two bounds are the
-tokenization contract --- they hold regardless of what model sits on top.
+The key choice is the tokenization. We describe a derivative-based
+encoder with MASH $\Sigma\Delta$ quantization that satisfies two closed-
+form vocabulary-scaling laws: (a) the ideal cross-entropy loss grows
+linearly in $\log V$ (Prop.~\ref{prop:ce}) and (b) the reconstruction
+error between a round-trip of encoder and decoder is bounded uniformly
+in $T$ by $\Delta/2$ for any order $k$ (Thm.~\ref{thm:recon}). Both are
+tokenization-level statements --- they hold regardless of what model
+sits on top.
 
-The rest of the paper: Section~\ref{sec:encoder} describes the encoder and
-decoder; Section~\ref{sec:theory} proves the two scaling laws; Section~\ref{sec:loss}
-introduces ordinal soft cross-entropy and motivates it from the differential-entropy
+The rest of the paper. Section~\ref{sec:encoder} describes the encoder
+and decoder; Section~\ref{sec:theory} proves the two scaling laws and
+warns that the reconstruction theorem's tight bound is against
+quantization noise only --- the model's prediction error compounds
+less kindly at higher $k$; Section~\ref{sec:loss} introduces ordinal
+soft cross-entropy and motivates it from the differential-entropy
 bound; Section~\ref{sec:experiments} reports M4 Hourly and ETTh1 results.
 
 \section{Derivative tokenization}
 \label{sec:encoder}
 
-Let $x \in \mathbb{R}^{T \times F}$ be a multivariate signal with $F$ channels
-of length $T$. We fix a derivative order $k \ge 1$ (all results below are for
-$k = 1$); define $D_c = \max_{t} |x_{t+1,c} - x_{t,c}|$ per channel (the
-\emph{domain of definition}) and per-channel scale
-$s_c = (V-2)/(2 D_c)$ where $V \in 2\mathbb{Z}_{\ge 2}$ is the vocabulary size.
+Let $x \in \mathbb{R}^{T \times F}$ be a multivariate signal with $F$
+channels of length $T$. We fix a derivative order $k \ge 1$ and define
+$D_c = \max_{t} |x_{t+1,c} - x_{t,c}|$ per channel (the \emph{domain
+of definition}). For even $V$ with $V > 2^k + 2$, define the per-channel
+scale
+\begin{equation}
+s_c \;=\; \frac{V - 2 - 2^k}{2 D_c}, \qquad \Delta_c \;=\; \frac{1}{s_c} \;=\; \frac{2 D_c}{V - 2 - 2^k}.
+\end{equation}
+The $-2^k$ headroom is the maximum overshoot MASH can produce over
+the unshaped input (Lemma~\ref{lem:mash-bound}); without it the
+quantizer would saturate at signal peaks and lose the noise-shaping
+guarantee.
 
-\subsection{Encoder.}
-For each channel the encoder computes
-\begin{align}
-y_t &= s \cdot (x_{t+1} - x_t), \qquad |y_t| \le (V-2)/2, \\
-u_t &= \mathrm{trunc}(y_t) \in \mathbb{Z}, \\
-e_t &= y_t - u_t, \\
-E_t &= \textstyle\sum_{s \le t} e_s, \quad R_t = \mathrm{round}(E_t), \quad R_0 = 0, \\
-c_t &= R_t - R_{t-1}, \\
-q_t &= u_t + c_t + V/2 \quad \in \{0, \dots, V-1\}.
-\end{align}
-This is a first-order $\Sigma\Delta$ modulator. The truncation residual $e_t$
-is accumulated; when the accumulator crosses $\pm\tfrac12$, a unit carry $c_t \in
-\{-1, 0, +1\}$ is pushed into the next token. Tokens exiting the range
-$[0, V-1]$ due to $c_t$ carry are clipped; Remark~\ref{rem:clip} discusses the
-effect.
+\subsection{MASH $k$-th-order modulator.}
+Each of the $k$ stages is a stable first-order $\Sigma\Delta$ loop.
+Stage 1 operates on the scaled $k$-th finite difference $y_t = s \cdot
+\Delta^k x_t$; stage $i \ge 2$ operates on $-\varepsilon^{(i-1)}_t$, the
+previous stage's quantization error (bounded by $\tfrac{1}{2}$ in bin
+units). Let $q^{(i)}_t$ denote stage $i$'s integer output and
+$\varepsilon^{(i)}_t = q^{(i)}_t - (\text{stage $i$'s quantizer input})$.
+
+The final token stream is the digital-differentiator combination
+\begin{equation}
+q_t \;=\; \sum_{i=0}^{k-1} (1 - z^{-1})^i \, q^{(i+1)}_t \;=\;
+           q^{(1)}_t + \Delta q^{(2)}_t + \Delta^2 q^{(3)}_t + \cdots
+           + \Delta^{k-1} q^{(k)}_t,
+\label{eq:mash-combined}
+\end{equation}
+shifted by $V/2$ and clipped to $\{0, \dots, V-1\}$.
 
 \subsection{Decoder.}
-Given the start $x_1$ and the token sequence $(q_t)$ the decoder reconstructs
+Given the start prefix $(x_1, \ldots, x_k)$ and token sequence $(q_t)$,
+the decoder reconstructs the signal by dequantizing and integrating
+$k$ times:
 \begin{equation}
-\hat x_{t+1} = \hat x_t + (q_t - V/2)/s, \qquad \hat x_1 = x_1.
+\hat x_{t+1} \;=\; \hat x_t + (q_t - V/2)\,\Delta.
 \end{equation}
+
+\subsection{Per-column orders.}
+For multivariate input where channels have qualitatively different
+dynamics (e.g., a slowly-drifting trend column alongside a
+stationary-noise column), a single shared $k$ is suboptimal. The
+implementation accepts $k$ as a per-column vector $k_c$ instead of a
+scalar. Each column is differentiated to its own $k_c$, scaled by
+$(V - 2 - 2^{k_c}) / (2 D_c)$ if $k_c \ge 2$ (for MASH headroom) or
+$(V - 2) / (2 D_c)$ otherwise, then passed through the appropriate
+$\Sigma\Delta$ variant per column (plain round for $k_c = 0$, carry
+scheme for $k_c = 1$, MASH for $k_c \ge 2$). The encoder aligns all columns to
+the shared valid window $T - \max_c k_c$, stores the raw prefix as
+$start$, and the decoder reconstructs each column using only its own
+$k_c$ cumsums. Theorem~\ref{thm:recon} and Prop.~\ref{prop:ce} apply
+per column with $D_c$, $k_c$ replacing their scalar counterparts.
 
 \section{Tokenization contract}
 \label{sec:theory}
@@ -99,81 +133,119 @@ Two tokenization-level results, both independent of the model.
 
 \subsection{Reconstruction bound}
 
-\begin{theorem}[reconstruction, $k=1$]
+\begin{theorem}[MASH reconstruction, any $k$]
 \label{thm:recon}
-For any signal with $D = \max_t |x_{t+1} - x_t| > 0$,
+For any signal with $D = \max_t |\Delta^k x_t| > 0$ and vocabulary size
+$V > 2^k + 2$, the MASH encoder--decoder pair satisfies
 \begin{equation}
-\|\hat x - x\|_\infty \;\le\; \frac{D}{V-2} \;=\; \frac{\Delta}{2},
-\quad\text{uniformly in } T.
+\|\hat x - x\|_\infty \;\le\; \frac{D}{V - 2 - 2^k} \;=\; \frac{\Delta}{2},
+\qquad \text{uniformly in } T.
 \end{equation}
 \end{theorem}
 
-The proof rests on two elementary facts about the $\Sigma\Delta$ loop.
+The proof relies on a standard identity about the cascade.
 
-\begin{lemma}\label{lem:round}
-Let $\rho_t = E_t - R_t$. Then $\rho_0 = 0$ and $|\rho_t| \le \tfrac{1}{2}$
-for all $t$.
+\begin{lemma}[MASH noise-shaping]
+\label{lem:mash-bound}
+Let $\varepsilon_k := \varepsilon^{(k)}$ be the quantization error of the
+final stage. The combined output \eqref{eq:mash-combined} satisfies
+\begin{equation}
+q_t - y_t \;=\; (1 - z^{-1})^k \, \varepsilon_{k,t}, \qquad
+|\varepsilon_{k,t}| \;\le\; \tfrac{1}{2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}[Sketch]
+Induction on the cascade. Stage 1's first-order $\Sigma\Delta$ gives
+$q^{(1)}_t = y_t + \Delta \varepsilon^{(1)}_t$. Stage $i \ge 2$ with
+input $-\varepsilon^{(i-1)}_t$ gives $q^{(i)}_t = -\varepsilon^{(i-1)}_t
++ \Delta \varepsilon^{(i)}_t$. Substituting into \eqref{eq:mash-combined}
+and telescoping the intermediate $\varepsilon^{(i)}$ terms yields
+$q_t = y_t + \Delta^k \varepsilon_{k,t}$. The bound
+$|\varepsilon_{k,t}| \le 1/2$ is immediate: each 1st-order stage rounds
+to the nearest integer, so its internal quantization error is in
+$(-\tfrac{1}{2}, \tfrac{1}{2}]$.
+\end{proof}
+
+\begin{lemma}[bounded MASH output]
+\label{lem:mash-range}
+$|q_t - y_t| \le 2^{k-1}$.
 \end{lemma}
 
 \begin{proof}
-Direct: $R_t$ is $E_t$ rounded to the nearest integer.
+$|\Delta^k \varepsilon_k| \le \|(1-z^{-1})^k\|_1 \cdot \max|\varepsilon_k|
+= 2^k \cdot \tfrac{1}{2} = 2^{k-1}$.
 \end{proof}
 
-\begin{lemma}[per-step cancellation]\label{lem:step}
-$u_t + c_t = y_t + \rho_{t-1} - \rho_t.$
-\end{lemma}
-
-\begin{proof}
-$c_t = R_t - R_{t-1} = (E_t - \rho_t) - (E_{t-1} - \rho_{t-1}) = e_t + \rho_{t-1} - \rho_t$.
-Add $u_t$ to both sides and use $y_t = u_t + e_t$.
-\end{proof}
+The $-2^k$ headroom in the scale's denominator ensures this overshoot
+stays within the quantizer range, avoiding saturation.
 
 \begin{proof}[Proof of Theorem~\ref{thm:recon}]
-The decoded increment is $\hat x_{t+1} - \hat x_t = (q_t - V/2)/s = (u_t + c_t)\Delta$.
-The true increment is $x_{t+1} - x_t = y_t \Delta$. By Lemma~\ref{lem:step}
-their difference is $(\rho_{t-1} - \rho_t)\Delta$. Summing from $t = 1$ to $T-1$
-telescopes:
+The decoded increment is $(q_t - V/2)\Delta = (y_t + \Delta^k
+\varepsilon_{k,t})\Delta$. The true increment is $y_t \Delta$. Their
+difference is $\Delta^k \varepsilon_{k,t} \cdot \Delta$. Summing $k$
+times from the exact starts telescopes the $\Delta^k$ down to
+$\varepsilon_{k,t}$:
 \begin{equation}
-\hat x_T - x_T \;=\; \Delta \sum_{t=1}^{T-1}(\rho_{t-1} - \rho_t)
-             \;=\; \Delta\,(\rho_0 - \rho_{T-1})
-             \;=\; -\rho_{T-1}\,\Delta,
+\hat x_T - x_T \;=\; \varepsilon_{k,T-k} \cdot \Delta.
 \end{equation}
-using $\hat x_1 = x_1$ and $\rho_0 = 0$. Lemma~\ref{lem:round} gives
-$|\rho_{T-1}| \le \tfrac12$. The same argument on any prefix yields the
-uniform-in-$t$ bound.
+By Lemma~\ref{lem:mash-bound}, $|\varepsilon_k| \le \tfrac{1}{2}$, so
+$|\hat x_T - x_T| \le \Delta/2$.
 \end{proof}
 
 \begin{corollary}[scaling]
-$\|\hat x - x\|_\infty = O(D/V)$. Vocabulary doubling halves the reconstruction
-error.
+$\|\hat x - x\|_\infty = O(D/V)$. Vocabulary doubling halves the
+reconstruction error, uniformly in $T$ and for any $k$.
 \end{corollary}
 
-\begin{remark}[clipping]\label{rem:clip}
-Since $|y_t| \le (V-2)/2$ and $|c_t| \le 1$, we have $q_t \in [0, V] \cup \{-1\}$.
-Saturation to $\{-1, V\}$ is clipped and introduces at most one extra $\Delta$
-per clipped step. Because $|y_t|$ attains its maximum only on a finite (and
-typically empty) set of $t$ where the carry direction also aligns, the total
-effect is $O(\Delta)$ and is absorbed into the rate.
-\end{remark}
+\subsection{Prediction-error compounding vs. quantization noise}
+\label{sec:pred-compound}
 
-\begin{remark}[higher-order derivatives]
-For $k \ge 2$ the decoder applies $k$ integrations. First-order $\Sigma\Delta$
-cancels one; the remaining $k-1$ turn the bounded residual into a drift of
-order $T^{k-1}\Delta/2$. This is why the current encoder uses $k = 1$.
-A $k$-th-order $\Sigma\Delta$ modulator would restore the $O(\Delta)$ bound
-at the cost of more complex state.
+Theorem~\ref{thm:recon} bounds the residual between $\hat x$ and $x$
+\emph{given} a perfect encoder/decoder round-trip. In autoregressive
+forecasting, the decoder does not consume the exact encoded tokens of
+the true signal; it consumes tokens \emph{predicted} by the model,
+which carry prediction error on top of quantization noise.
+
+\begin{proposition}[prediction-error amplification at order $k$]
+\label{prop:pred}
+Suppose the model's per-step prediction error has typical magnitude
+$\eta$ bins (so $\eta \cdot \Delta$ in value space per step). After $k$
+decoder integrations the forecast error at the horizon end grows as
+\begin{equation}
+|\hat x_{T+H} - x_{T+H}| \;=\; O\!\left(\eta \cdot \Delta \cdot H^{\,k-1}\right),
+\end{equation}
+where $H$ is the number of forecast steps.
+\end{proposition}
+
+\begin{proof}[Sketch]
+Token prediction error $\delta q_t$ of typical size $\eta$ enters the
+decoder as diff-estimate error $\delta q_t \cdot \Delta$. Under $k$
+successive cumsum operations, an i.i.d.\ or coherent bias sequence of
+size $\eta \Delta$ produces output whose magnitude at step $H$ scales
+as $\eta \Delta H^{k-1}$ (integration of polynomial in $H$).
+\end{proof}
+
+\begin{remark}[$k=1$ preferred for forecasting]
+At $k=1$ the amplification is $H^0 = 1$: prediction errors contribute
+proportionally to their bin size, not multiplicatively across the
+horizon. At $k=2$ a single-bin token error grows $H \cdot \Delta$ over
+a 48-step forecast, on the order of $24 \Delta$ --- much larger than
+the $\Delta/2$ quantization bound. Empirically (Section~\ref{sec:experiments})
+this manifests as catastrophic forecasting regression at $k=2$ despite
+strictly lower token-level cross-entropy.
 \end{remark}
 
 \subsection{Cross-entropy bound}
 
-Let $X_t$ be the continuous next-step increment conditional on context $\mathrm{ctx}$,
-with density $p(\cdot \mid \mathrm{ctx})$ and differential entropy
-$h(X_t \mid \mathrm{ctx}) = -\int p \log p$.
+Let $X_t$ be the continuous next-step increment conditional on context
+$\mathrm{ctx}$, with density $p(\cdot \mid \mathrm{ctx})$ and differential
+entropy $h(X_t \mid \mathrm{ctx}) = -\int p \log p$.
 
 \begin{proposition}[achievable CE]
 \label{prop:ce}
-In the fine-quantization limit $\Delta \to 0$, the expected cross-entropy of
-the optimal autoregressive token predictor satisfies
+In the fine-quantization limit $\Delta \to 0$, the expected cross-
+entropy of the optimal autoregressive token predictor satisfies
 \begin{equation}
 \mathcal{L}^\star(V) \;=\; h(X_t \mid \mathrm{ctx}) + \log V - \log(2D) \;+\; o(1).
 \end{equation}
@@ -181,118 +253,173 @@ Equivalently, $\mathcal L^\star$ is linear in $\log V$ with slope $1$.
 \end{proposition}
 
 \begin{proof}[Sketch]
-Standard quantized-entropy relation: for a continuous RV with density $p$ and
-bin width $\Delta$,
+Standard quantized-entropy relation (Cover \& Thomas, \S 8.3): for a
+continuous RV with density $p$ and bin width $\Delta$,
 \begin{equation}
-H(\mathrm{bin}) = -\sum_b P(\mathrm{bin}{=}b) \log P(\mathrm{bin}{=}b) = h(X) - \log \Delta + o(1)
-\qquad (\Delta \to 0).
+H(\mathrm{bin}) \;=\; h(X) - \log \Delta + o(1), \qquad \Delta \to 0.
 \end{equation}
-(See e.g.\ Cover \& Thomas, \emph{Elements of Information Theory}, \S 8.3.)
-The conditional version replaces $X$ by $X \mid \mathrm{ctx}$. Substituting
-$\Delta = 2D/(V-2)$ gives the stated formula.
+Condition on $\mathrm{ctx}$ and substitute $\Delta = 2D/(V - 2 - 2^k)
+\sim 2D/V$.
 \end{proof}
 
 \begin{corollary}[vocabulary-invariant skill]
 \label{cor:skill}
-Two models at vocabulary sizes $V_1 \neq V_2$ are comparable only through the
-\emph{differential-entropy residual}
+Two models at vocabulary sizes $V_1 \neq V_2$ are comparable only
+through the \emph{differential-entropy residual}
 \begin{equation}
-\tilde h(V) := \mathcal L(V) - \log V + \log(2D),
+\tilde h(V) \;:=\; \mathcal L(V) - \log V + \log(2D),
 \end{equation}
-which estimates $h(X_t \mid \mathrm{ctx})$ and is independent of $V$ at the rate.
+which estimates $h(X_t \mid \mathrm{ctx})$ and is independent of $V$ at
+the rate.
 \end{corollary}
 
 \subsection{Empirical check}
 
-On ETTh1 with seq\_len = 96, pred\_len = 96, trained for 2000 iters:
+M4 Hourly, global model, $V$-sweep with $\sigma$ scaled $\propto V$ to
+hold value-space soft-target smoothing constant:
 
 \begin{center}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-$V$ & val CE (nats) & $\log V / \log 4$ & $\mathcal L(V) - \log V$ \\
+$V$ & $\sigma$ & val CE (nats) & $\Delta \log V$ & $\Delta \text{(CE)}$ \\
 \midrule
-256 & 3.96 & $\log 256 = 5.545$ & $-1.585$ \\
-64  & 2.51 & $\log 64  = 4.159$ & $-1.649$ \\
+64   & 0.5 & 1.01 & --- & --- \\
+128  & 1.0 & 1.70 & $\log 2 = 0.69$ & $0.69$ \\
+256  & 2.0 & 2.35 & $\log 2 = 0.69$ & $0.65$ \\
+512  & 4.0 & 3.04 & $\log 2 = 0.69$ & $0.69$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The predicted gap $\log(256/64) = 1.386$ nats matches the observed $1.45$ nats
-to within $0.06$ --- the latter is the $\tilde h$ residual. Consistent with
-Proposition~\ref{prop:ce}.
+Empirical CE increments match $\log 2$ per vocab doubling to within
+$0.04$ nat. Consistent with Prop.~\ref{prop:ce}.
 
 \section{Ordinal soft cross-entropy}
 \label{sec:loss}
 
-Standard cross-entropy treats the $V$ bins as nominal categories: a prediction
-that is off by one bin is penalized identically to a prediction that is off by
-fifty. This is a lie: bins are an ordinal index over a continuous scale, and
-``off by one'' is almost right.
+Standard cross-entropy treats the $V$ bins as nominal categories: a
+prediction off by one bin is penalized identically to one off by
+fifty. Bins are an ordinal index over a continuous scale --- off by one
+is almost right.
 
-We replace the one-hot target $\mathbf 1_{i = y}$ with a discrete Gaussian
-over bin indices:
+We replace the one-hot target $\mathbf 1_{i = y}$ with a discrete
+Gaussian over bin indices:
 \begin{equation}
 p^{\text{soft}}_i(y; \sigma) \;\propto\; \exp\!\left(-\tfrac{(i - y)^2}{2\sigma^2}\right),
 \qquad \sigma \ge 0,
 \end{equation}
-and train with standard soft-target cross-entropy
-$\mathcal L_\sigma = -\sum_i p^{\text{soft}}_i \log q_i$, where $q = \mathrm{softmax}(\text{logits})$.
-Taking $\sigma \to 0$ recovers ordinary cross-entropy with one-hot targets.
+and train with soft-target cross-entropy $\mathcal L_\sigma = -\sum_i
+p^{\text{soft}}_i \log q_i$, where $q = \mathrm{softmax}(\text{logits})$.
+Taking $\sigma \to 0$ recovers ordinary cross-entropy with one-hot
+targets.
 
 \paragraph{Why this matters for a $\Sigma\Delta$-quantized signal.}
-A continuous value landing near a bin boundary is, modulo carry, assigned to
-one of the two adjacent bins. The $\Sigma\Delta$ encoder can shift it either
-way depending on the running accumulator. Training with a one-hot target
-pretends this assignment is deterministic; soft targets acknowledge the
-effectively stochastic tie-breaking. More broadly, any aleatoric component of
-$p(X \mid \mathrm{ctx})$ makes the true conditional distribution over bins
-already a smooth Gaussian-like shape, and label smoothing with a scale
-$\sigma$ \emph{in bin units} is the ordinal equivalent of matching that
-distribution.
+A continuous value landing near a bin boundary is, modulo the MASH
+carry, assigned to one of two adjacent bins; the encoder can shift
+either way depending on the running accumulator. One-hot training
+pretends this assignment is deterministic; soft targets acknowledge
+the effectively stochastic tie-breaking. More broadly, any aleatoric
+component of $p(X \mid \mathrm{ctx})$ makes the true conditional
+distribution over bins a smooth Gaussian-like shape; label smoothing
+with scale $\sigma$ in bin units is the ordinal equivalent.
 
 \paragraph{Bin-space versus value-space.}
-Because bin width $\Delta = 2D/V$, a constant value-space smoothing
-$\sigma_{\text{val}} = \sigma \cdot \Delta$ requires $\sigma$ to scale
-\emph{linearly in} $V$. A value of $\sigma$ tuned at $V = 64$ is under-scaled
-at $V = 256$ by a factor of $4$.
+Because bin width $\Delta \approx 2D/V$, a constant value-space
+smoothing $\sigma_{\text{val}} = \sigma \cdot \Delta$ requires $\sigma$
+to scale linearly in $V$. A value of $\sigma$ tuned at one $V$ is
+under-scaled at larger $V$ by the same factor.
 
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{M4 Hourly (short-term, global)}
+\subsection{M4 Hourly, short-term global protocol}
 
-Following the M4 leaderboard protocol: per-series $z$-score normalization,
-one global model trained across all 414 Hourly series, forecast horizon
-$H = 48$. Model: 2-layer GPT, $d = 64$, $h = 4$, $V = 256$, 20k iters, AdamW,
-best-val checkpoint restored. Metric: sMAPE (smaller is better).
+Following the M4 leaderboard: per-series $z$-score normalization, one
+global model across 414 Hourly series, horizon $H = 48$, best-val
+checkpoint restored. Model: 2-layer GPT, $d_{\text{model}} = 64$,
+$h = 4$, block 138, 20k iters, AdamW, temperature-0 argmax at inference.
 
+\paragraph{Soft-CE sweep at $V = 256$.}
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
-loss & sMAPE & MASE \\
+$\sigma$ & sMAPE & MASE \\
 \midrule
-plain CE ($\sigma=0$)    & 18.58 & -- \\
-soft-CE $\sigma = 1.0$  & 17.55 & 1.663 \\
-soft-CE $\sigma = 2.0$  & \textbf{17.49} & \textbf{1.659} \\
-soft-CE $\sigma = 3.0$  & 17.35 & 1.949 \\
+$0$ (plain CE) & 18.58 & --- \\
+$1.0$ & 17.55 & 1.663 \\
+$2.0$ & \textbf{17.49} & \textbf{1.659} \\
+$3.0$ & 17.35 & 1.949 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-$\sigma = 2$ is the joint-metric optimum. At $\sigma = 3$ sMAPE continues to
-improve but MASE degrades sharply --- a classic over-smoothing signature where
-forecasts regress toward the conditional mean, which is rewarded under the
-symmetric sMAPE but punished under the naive-seasonal-normalized MASE.
-The one-point sMAPE gain at $\sigma = 1.0$ over plain CE is the core
-qualitative finding: \emph{on a short-horizon benchmark with many short,
-heterogeneous series, telling the model that ``off by one bin is almost
-right'' is worth as much as a substantial architectural change.}
+$\sigma = 2$ is the joint-metric optimum. At $\sigma = 3$ sMAPE
+continues to improve but MASE degrades sharply --- a classic
+over-smoothing signature where forecasts regress toward the
+conditional mean, rewarded by symmetric sMAPE but penalized by the
+naive-seasonal-normalized MASE.
 
-\subsection{ETTh1 (long-term, multivariate)}
+\paragraph{Vocabulary sweep (U-curve).}
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$V$ & $\sigma$ & sMAPE & MASE \\
+\midrule
+64  & 0.5 & 19.96 & 2.019 \\
+128 & 1.0 & 19.39 & 1.888 \\
+\textbf{256} & \textbf{2.0} & \textbf{17.49} & \textbf{1.659} \\
+512 & 4.0 & 18.21 & 1.772 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-iTransformer protocol: 7 channels, seq\_len = 96, pred\_len = 96, chronological
-12/4/4-month split, StandardScaler from train. Single model at
-$d = 128$, $h = 4$, 2 layers, 2000 iters, batch 32, AdamW.
+Non-monotone with interior optimum at $V = 256$. Smaller $V$ hurts
+reconstruction precision (bin width doubles); larger $V$ over-refines
+for the $\sim 280$k available training tokens. The CE bound is always
+tight ($\log 2$ per doubling) but the prediction-quality curve is not.
+
+\paragraph{Order-of-derivative ablation.}
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+$k$ & val CE & sMAPE & MASE & note \\
+\midrule
+\textbf{1} & \textbf{2.35} & \textbf{17.49} & \textbf{1.66} & --- \\
+2 & 2.28 & 39.27 & 8.93 & prediction-error compounding \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Token-level training loss is \emph{lower} at $k=2$, confirming that
+MASH's higher-order tokenization is learnable. But reconstruction via
+double integration amplifies model prediction error linearly with the
+forecast horizon (Prop.~\ref{prop:pred}), collapsing sMAPE.
+Practically, $k = 1$ is preferred for autoregressive forecasting.
+
+\paragraph{Model-size sensitivity ($V = 256$, $\sigma = 2$).}
+\begin{center}
+\begin{tabular}{cccccc}
+\toprule
+$d_{\text{model}}$ & $n_{\text{layer}}$ & params & val CE & sMAPE & MASE \\
+\midrule
+32 & 2 & $\sim$30k  & 2.36 & 18.47 & 1.88 \\
+\textbf{64} & \textbf{2} & $\sim$130k & 2.35 & \textbf{17.49} & \textbf{1.66} \\
+64 & 4 & $\sim$260k & 2.35 & 17.41 & 1.68 \\
+128 & 2 & $\sim$400k & 2.38 & 18.67 & 1.99 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+With $\sim 280$k training tokens, the $64 \times 2$ setting
+($\sim 2$ tokens/parameter) is near the data-limited ceiling. Wider
+(128) overfits (best val at step 2000 of 20000); deeper (64$\times$4)
+matches within noise at $2.3\times$ training cost.
+
+\subsection{ETTh1, long-term multivariate protocol}
+
+iTransformer protocol: 7 channels, seq\_len = 96, pred\_len = 96,
+chronological 12/4/4-month split, StandardScaler from train. Single
+model, $d = 128$, $h = 4$, $n_{\text{layer}} = 2$, 2000 iters, batch 32.
 
 \begin{center}
 \begin{tabular}{lcc}
@@ -300,61 +427,133 @@ $d = 128$, $h = 4$, 2 layers, 2000 iters, batch 32, AdamW.
 config & MSE & MAE \\
 \midrule
 $V = 256$, plain CE                 & 0.9861 & 0.6056 \\
-$V = 64$, plain CE                   & 0.9787 & 0.6030 \\
-$V = 64$, soft-CE $\sigma = 1.0$     & 0.9806 & 0.6034 \\
+$V = 64$, plain CE                  & 0.9787 & 0.6030 \\
+$V = 64$, soft-CE $\sigma = 1.0$    & 0.9806 & 0.6034 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-ETTh1 is dominated by a capacity / data-fit floor at roughly $\mathrm{MSE} = 0.98$:
-shrinking the vocabulary and applying soft targets each move the number by
-within-noise amounts. The contrast with M4 suggests that the \emph{value} of
-soft targets is concentrated in the data-starved regime where many short series
-force the model to extrapolate conditional distributions without enough signal
-to localize a single bin.
+ETTh1 is dominated by a capacity/data-fit floor around MSE $= 0.98$:
+vocab and soft-CE move the number by within-noise amounts. Contrast
+with M4 suggests the \emph{value} of soft targets concentrates in
+data-starved regimes where many short series force extrapolation of
+conditional distributions without enough signal to localize a single
+bin.
 
 \subsection{Vocabulary / loss scaling, summary}
-
-Tokenization budget vs.\ loss budget:
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
-                         & per vocab doubling & regime \\
+                         & per vocab doubling & reference \\
 \midrule
-ideal CE $\mathcal L^\star(V)$   & $+\log 2 \approx 0.69$ nats & Prop.\ref{prop:ce} \\
-reconstruction $\|\hat x - x\|_\infty$ & $\times \tfrac12$ & Thm.\ref{thm:recon} \\
-ordinal smoothing $\sigma^\star$ & $\times 2$ (to hold value-space constant) & \S\ref{sec:loss} \\
+ideal CE $\mathcal L^\star(V)$   & $+\log 2 \approx 0.69$ nats & Prop.~\ref{prop:ce} \\
+reconstruction $\|\hat x - x\|_\infty$ & $\times \tfrac12$ & Thm.~\ref{thm:recon} \\
+ordinal smoothing $\sigma^\star$ & $\times 2$ (hold value-space constant) & \S\ref{sec:loss} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \section{Related work}
 
-\textbf{Inverted/channel-mixing transformers.} iTransformer \cite{itransformer2024}
-and PatchTST \cite{patchtst2023} remove the autoregressive head and regress the
-entire horizon in one shot, which is the dominant design on long-horizon
-benchmarks. Our model keeps the autoregressive GPT recipe unchanged; the
-tokenization carries the inductive bias.
+\textbf{Inverted/channel-mixing transformers.} iTransformer
+\cite{itransformer2024} and PatchTST \cite{patchtst2023} remove the
+autoregressive head and regress the entire horizon in one shot, the
+dominant design on long-horizon benchmarks. Our model keeps the GPT
+recipe unchanged; the tokenization carries the inductive bias.
 
 \textbf{Ordinal and label-smoothed classification.} Label smoothing
-\cite{szegedy2016} distributes probability uniformly over non-target classes.
-Distance-weighted variants (cumulative link models, ordinal softmax) exist in
-the ordinal-regression literature. Gaussian soft targets specifically appear
-in CORAL \cite{cao2020} and in diffusion-model score-matching of discretized
-targets \cite{austin2021}. Our contribution is situating the smoothing scale
-$\sigma$ in the vocabulary-scaled tokenization of a $\Sigma\Delta$ encoder.
+\cite{szegedy2016} distributes probability uniformly over non-target
+classes. Distance-weighted variants (cumulative-link ordinal softmax)
+appear in the ordinal-regression literature; Gaussian soft targets
+specifically in CORAL \cite{cao2020} and in diffusion-model score
+matching of discretized targets \cite{austin2021}. Our contribution is
+situating the smoothing scale $\sigma$ in a $\Sigma\Delta$-tokenized
+vocabulary.
 
-\textbf{$\Sigma\Delta$ quantization.} First-order sigma--delta modulators are
-a classical element of analog-to-digital conversion \cite{candy1992}; we apply
-them as a differentiable-free preprocessing step in front of a transformer.
+\textbf{$\Sigma\Delta$ quantization.} First-order sigma--delta
+modulators are classical in analog-to-digital conversion
+\cite{candy1992}; MASH (multi-stage noise shaping) extends to arbitrary
+order with stability guarantees, originally for audio/oversampling
+applications \cite{hayashi1986}. We apply MASH as a differentiable-free
+preprocessing stage in front of a language model.
+
+\section{Future research directions}
+\label{sec:future}
+
+The experiments here focus on deterministic sMAPE/MSE benchmarks.
+diff-gpt's architectural choices --- autoregressive language-model
+recipe over a quantized vocabulary --- give it structural advantages in
+a different regime, which we believe deserves dedicated follow-up.
+
+\paragraph{Probabilistic forecasting (quantile / interval prediction).}
+The decoder emits a full distribution over next-token bins at every
+step; $N$-sample rollouts give native P10/P50/P90 estimates without
+a pinball-loss head or quantile-regression machinery. Direct
+competitors (iTransformer, N-BEATS) optimize MSE, i.e.\ the conditional
+mean. Applications: energy-load dispatch with confidence bands,
+financial risk (VaR, expected shortfall), reliability engineering,
+weather ensembles, inventory planning.
+
+\paragraph{Heavy-tailed and multi-modal conditional distributions.}
+$\ell_2$ regression collapses toward the conditional mean and fails
+catastrophically on bursty / spike / regime-change series where the
+true $p(X_t \mid \mathrm{ctx})$ is bimodal (``jump up or jump down,
+not in between''). A categorical head models this directly. Candidate
+domains: network traffic, high-frequency finance (CDS spreads,
+order-book imbalances), industrial sensors with fault modes.
+
+\paragraph{Foundation-style zero-/few-shot forecasting.}
+The LM recipe admits trivial pretrain-then-transfer: one model
+pretrained on a million heterogeneous series, few-shot on a new one.
+This is the angle pursued by Chronos, TimesFM, MOIRAI. Our
+tokenization contract (two closed-form scaling laws) is theoretically
+cleaner than their binning schemes, which is a plausible advantage at
+scale.
+
+\paragraph{Heterogeneous / multi-resolution series in one model.}
+The encoder self-normalizes per channel via $D$, letting a single
+parameter set handle $\mu V$ ECG, $m/s^2$ seismograms, and dollar-scale
+macro in one training run. Regression baselines need per-channel heads
+or manual unification. For foundation models this is a core problem
+and our scheme is structurally simpler.
+
+\paragraph{Anomaly detection via conditional likelihood.}
+$-\log p(\text{token}_t \mid \mathrm{ctx})$ is available for free at
+each step and calibrates correctly under variable conditional
+variance. Regression-based approaches rely on $\|y_t - \hat y_t\|$,
+which miscalibrates on heteroscedastic series. Candidate domains:
+industrial monitoring, network intrusion, patient monitoring.
+
+\paragraph{Conditional / counterfactual generation.}
+``What if $X_t$ jumps by $\Delta$ next week?'' reduces to token
+substitution in the prefix, then resume generation. Regression models
+need a separate conditional mode or structured covariate mechanism.
+
+\paragraph{Edge inference.}
+A 130k-parameter model attains the results in Section~\ref{sec:experiments};
+the bulk of the inductive bias lives in the tokenization, not the
+weights. This makes sub-mobile-CPU inference realistic for production
+forecasting on IoT or embedded devices --- a regime where Transformer
+SOTA typically does not fit.
+
+\paragraph{Where the architecture will not win.}
+Deterministic MSE benchmarks at long horizons (ETTh1 / Traffic at
+pred\_len $\ge 336$) are structurally unfavorable: one-shot inverted
+transformers emit the whole horizon without autoregressive error
+compounding, and Prop.~\ref{prop:pred} guarantees our error grows at
+rate $H^{k-1}$. Deterministic long-horizon forecasting is not a
+target; the wins above are.
 
 \section{Conclusion}
 
-A decoder-only transformer trained autoregressively on derivative-plus-$\Sigma\Delta$-quantized
-tokens attains competitive short-term and long-term forecasting without any
-specialized head. The tokenization contract gives two closed-form vocabulary-
-scaling laws; an ordinal soft cross-entropy matches the natural bin-wise
-geometry and yields a $6\%$ relative sMAPE reduction on M4 Hourly without
+A decoder-only transformer trained autoregressively on derivative-plus-
+MASH-quantized tokens gives competitive short- and long-term forecasts
+without a specialized head. The tokenization contract provides two
+closed-form vocabulary-scaling laws valid at any derivative order;
+prediction-error compounding gives a principled preference for $k=1$
+in forecasting despite MASH's tight higher-order reconstruction
+bound. Ordinal soft cross-entropy matches the natural bin-wise geometry
+and yields a 6\% relative sMAPE reduction on M4 Hourly without
 architectural change.
 
 \begin{thebibliography}{9}
@@ -362,21 +561,25 @@ architectural change.
 Transformers are Effective for Time Series Forecasting}. ICLR 2024.
 arXiv:2310.06625.
 
-\bibitem{patchtst2023} Nie, Y.\ et al.\ \emph{A Time Series is Worth 64 Words:
-Long-term Forecasting with Transformers}. ICLR 2023.
+\bibitem{patchtst2023} Nie, Y.\ et al.\ \emph{A Time Series is Worth 64
+Words: Long-term Forecasting with Transformers}. ICLR 2023.
 
-\bibitem{szegedy2016} Szegedy, C.\ et al.\ \emph{Rethinking the Inception
-Architecture for Computer Vision}. CVPR 2016.
+\bibitem{szegedy2016} Szegedy, C.\ et al.\ \emph{Rethinking the
+Inception Architecture for Computer Vision}. CVPR 2016.
 
-\bibitem{cao2020} Cao, W., Mirjalili, V., Raschka, S.\ \emph{Rank-consistent
-Ordinal Regression for Neural Networks with Application to Age Estimation}.
-Pattern Recognition Letters 2020.
+\bibitem{cao2020} Cao, W., Mirjalili, V., Raschka, S.\ \emph{Rank-
+consistent Ordinal Regression for Neural Networks with Application to
+Age Estimation}. Pattern Recognition Letters 2020.
 
-\bibitem{austin2021} Austin, J.\ et al.\ \emph{Structured Denoising Diffusion
-Models in Discrete State-Spaces}. NeurIPS 2021.
+\bibitem{austin2021} Austin, J.\ et al.\ \emph{Structured Denoising
+Diffusion Models in Discrete State-Spaces}. NeurIPS 2021.
 
-\bibitem{candy1992} Candy, J.C., Temes, G.C.\ \emph{Oversampling Delta-Sigma
-Data Converters}. IEEE Press 1992.
+\bibitem{candy1992} Candy, J.C., Temes, G.C.\ \emph{Oversampling Delta-
+Sigma Data Converters}. IEEE Press 1992.
+
+\bibitem{hayashi1986} Hayashi, T., Kaneko, Y., Morimoto, A.,
+Sugawara, T., Iwasaki, K.\ \emph{A multistage delta-sigma modulator
+without double integration loop}. IEEE ISSCC 1986.
 \end{thebibliography}
 
 \end{document}
