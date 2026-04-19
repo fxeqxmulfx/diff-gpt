@@ -59,6 +59,9 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates), best-val checkpoint auto-restore.
+- **NUMA-aware training**: single-process CPU-affinity pin via
+  `DiffGPT.train(pin_node=...)`, or one-worker-per-node DDP via
+  `DiffGPT.train_numa` on multi-socket boxes.
 
 ## Usage
 
@@ -211,6 +214,110 @@ train on 2880 clean hours, inject 5 synthetic ±5σ spikes into a 336-hour
 test window, rank positions by NLL. After only 2000 training iterations
 the top-10 contains **3 of 5 injected spikes (60% recall)**; the rest of
 the top-10 are genuine irregular transitions in the unsynthetic signal.
+
+## Compiled training (`torch.compile`)
+
+PyTorch 2's `torch.compile` fuses the GPT forward/backward into a handful
+of kernels — a sizable step-time speedup at this model scale, once the
+one-time graph-tracing cost is amortized. Two rules:
+
+- **Disable gradient checkpointing.** `use_checkpoint=True` introduces
+  graph breaks that defeat the fusion. Pass `use_checkpoint=False` to
+  `GPT` when compiling.
+- **Compile the inner `GPT`, not the `DiffGPT` wrapper.** `DiffGPT` is a
+  numpy-side encoder/decoder shell around an `nn.Module`; `torch.compile`
+  only operates on the latter. Compile before constructing the wrapper.
+
+```python
+base = GPT(
+    vocab_size=256, n_embd=64, block_size=138, n_head=4, n_layer=2,
+    label_smoothing_sigma=2.0,
+    use_checkpoint=False,           # required alongside torch.compile
+)
+# GPU: max-autotune without cudagraphs — peak Triton/Inductor tuning,
+# no CUDA-graph capture (which breaks under variable shapes, DDP, and
+# KV-cache inference). CPU: max-autotune enables Inductor's CPU GEMM
+# template / tile sweep; cudagraphs is a no-op on CPU either way.
+compile_mode = "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
+base = torch.compile(base, mode=compile_mode)
+model = DiffGPT(
+    model=base, order_of_derivative=order,
+    domain_of_definition=domain, use_decimal=False,
+)
+model.train(loader=loader, max_iters=20_000, eval_interval=500)
+```
+
+Combined with `DiffGPT.train_numa`, compile inside the factory so every
+worker DDP-wraps an already-compiled module:
+
+```python
+def build_gpt(rank: int) -> GPT:
+    gpt = GPT(vocab_size=256, n_embd=64, block_size=138, n_head=4,
+              n_layer=2, use_checkpoint=False)
+    mode = "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
+    return torch.compile(gpt, mode=mode)
+```
+
+The first 1–2 training iterations are dominated by tracing and kernel
+compilation; benchmark step time from iteration 10+ for a fair number.
+Inference (`predict`, `predict_samples`, `anomaly_scores`) still works
+on a compiled model — `OptimizedModule` delegates attribute access — but
+the KV-cache generation path grows `T` by one token per step, so the
+compiled graph is recompiled or specialized frequently and the speedup
+is smaller than at training time.
+
+## NUMA-aware training
+
+On multi-socket CPU boxes, cross-socket memory traffic and thread migration
+dominate wall-clock for this size of model. Two entry points:
+
+**Single-process pin.** Pass a NUMA node id to `train()` — pins CPU affinity
+and aligns `torch.set_num_threads` / `OMP_NUM_THREADS` to that node's core
+count before the hot loop:
+
+```python
+model.train(loader=loader, max_iters=20_000, pin_node=0)
+```
+
+**One process per NUMA node (DDP).** For linear scaling across sockets,
+`DiffGPT.train_numa` spawns one worker per detected NUMA node, pins each to
+its CPUs, and wraps the inner GPT in `DistributedDataParallel`. Both
+factories run *inside* the pinned worker so allocations land on local
+memory; seed the loader by `rank` so workers draw different batches
+(otherwise DDP averages identical gradients).
+
+```python
+from diff_gpt.diff_gpt import DiffGPT
+from diff_gpt.model.gpt import GPT
+from diff_gpt.data_loader import DiffDataFrameDataLoader
+import torch
+
+def build_gpt(rank: int) -> GPT:
+    return GPT(vocab_size=256, n_embd=64, block_size=138,
+               n_head=4, n_layer=2, label_smoothing_sigma=2.0)
+
+def build_loader(rank: int, world: int) -> DiffDataFrameDataLoader:
+    rng = torch.Generator().manual_seed(42 + rank)
+    return DiffDataFrameDataLoader(
+        dfs=dfs, block_size=138, batch_size=32, vocab_size=256,
+        order_of_derivative=order, domain_of_definition=domain,
+        use_decimal=False, device="cpu", train_part=0.8, rng=rng,
+    )
+
+val_loss, _ = DiffGPT.train_numa(
+    model_factory=build_gpt,
+    loader_factory=build_loader,
+    train_kwargs={"max_iters": 20_000, "eval_interval": 500},
+    checkpoint_path="best.pt",
+)
+# Rebuild DiffGPT around the trained weights:
+gpt = build_gpt(0); gpt.load_state_dict(torch.load("best.pt"))
+model = DiffGPT(model=gpt, order_of_derivative=order,
+                domain_of_definition=domain, use_decimal=False)
+```
+
+Backend: NCCL on CUDA, Gloo on CPU. Single-node systems short-circuit to
+the in-process pinning path — no spawn, no DDP overhead.
 
 ## Benchmarks
 
