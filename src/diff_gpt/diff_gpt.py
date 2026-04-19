@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 import pandas as pd
 import torch
@@ -48,6 +50,7 @@ class DiffGPT:
         grad_accum_steps: int = 1,
         grad_clip_norm: float | None = None,
         save_best: bool = True,
+        pin_node: int | None = None,
     ) -> tuple[float, int]:
         """
         Train the underlying GPT against batches produced by `loader`.
@@ -56,7 +59,15 @@ class DiffGPT:
         DataFrames, a flat token sequence) and handles any encoding, splits,
         and loss masking. DiffGPT only drives the optimization loop and
         holds the encoder metadata used by `predict`.
+
+        `pin_node`: if set, pin this process to the given NUMA node's CPUs
+        (via `numa.pin_to_node`) before training. Cheap way to cut
+        cross-socket memory traffic on CPU training. For multi-node DDP
+        across all NUMA nodes, use `diff_gpt.train_ddp.train_numa` instead.
         """
+        if pin_node is not None:
+            from diff_gpt.numa import pin_to_node
+            pin_to_node(pin_node)
         return train(
             mut_model=self.model,
             loader=loader,
@@ -71,6 +82,46 @@ class DiffGPT:
             grad_accum_steps=grad_accum_steps,
             grad_clip_norm=grad_clip_norm,
             save_best=save_best,
+        )
+
+    @staticmethod
+    def train_numa(
+        model_factory: Callable[[int], BaseGPT],
+        loader_factory: Callable[[int, int], DataLoader],
+        train_kwargs: dict | None = None,
+        nodes: list[int] | None = None,
+        checkpoint_path: str | None = None,
+    ) -> tuple[float, int]:
+        """
+        Spawn one worker per NUMA node and train the inner GPT across
+        nodes via DDP. Thin pass-through to `train_ddp.train_numa` — DDP
+        wraps the bare `BaseGPT`, not the DiffGPT shell (which is numpy-
+        side encoder/decoder metadata, not an nn.Module).
+
+        Both factories are called *inside* each worker after that worker
+        has been pinned to its NUMA node, so every allocation lands on
+        local memory. Seed `loader_factory` by `rank` or all workers see
+        identical batches and DDP collapses to no-speedup replication.
+
+        Rebuild the DiffGPT around the returned weights in the caller:
+
+            val_loss, _ = DiffGPT.train_numa(
+                model_factory=build_gpt,
+                loader_factory=build_loader,
+                checkpoint_path="best.pt",
+            )
+            gpt = build_gpt(0)
+            gpt.load_state_dict(torch.load("best.pt"))
+            model = DiffGPT(model=gpt, order_of_derivative=...,
+                            domain_of_definition=..., use_decimal=...)
+        """
+        from diff_gpt.train_ddp import train_numa as _train_numa
+        return _train_numa(
+            model_factory=model_factory,
+            loader_factory=loader_factory,
+            train_kwargs=train_kwargs,
+            nodes=nodes,
+            checkpoint_path=checkpoint_path,
         )
 
     @torch.inference_mode()

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Protocol
 
 import torch
+import torch.distributed as dist
 from tqdm.autonotebook import tqdm
 
 from diff_gpt.model.gpt import BaseGPT
@@ -23,6 +24,29 @@ class DataLoader(Protocol):
     def has_val(self) -> bool: ...
 
 
+def _dist_active() -> bool:
+    return dist.is_available() and dist.is_initialized()
+
+
+def _is_main_rank() -> bool:
+    return not _dist_active() or dist.get_rank() == 0
+
+
+def _all_reduce_mean(t: torch.Tensor) -> torch.Tensor:
+    """
+    All-reduce a scalar to the global mean across ranks. No-op outside DDP.
+    All ranks must see the same eval-loss value so early-stop and save-best
+    fire on the same iteration — otherwise ranks desync and DDP deadlocks.
+    """
+    if not _dist_active():
+        return t
+    world = dist.get_world_size()
+    # NCCL needs CUDA tensors; gloo operates on CPU tensors.
+    work = t.to("cuda") if dist.get_backend() == "nccl" else t.clone()
+    dist.all_reduce(work, op=dist.ReduceOp.SUM)
+    return (work / world).to(t.device)
+
+
 @torch.inference_mode()
 def _estimate_loss(
     model: BaseGPT, loader: DataLoader, eval_iters: int, split: str
@@ -32,7 +56,7 @@ def _estimate_loss(
         X, Y = loader.get_batch(split)
         _, loss = model(X, Y)
         losses[k] = loss.item()
-    return losses.mean()
+    return _all_reduce_mean(losses.mean())
 
 
 def train(
@@ -76,7 +100,8 @@ def train(
     )
     has_val = loader.has_val()
     start = datetime.now()
-    pbar = tqdm(range(max_iters)) if use_tqdm else range(max_iters)
+    is_main = _is_main_rank()
+    pbar = tqdm(range(max_iters)) if (use_tqdm and is_main) else range(max_iters)
     last_reported_loss: torch.Tensor = torch.tensor(float("inf"))
     last_val_loss = torch.inf
     best_val_loss = float("inf")
@@ -114,7 +139,7 @@ def train(
             optimizer.train()
             if isinstance(pbar, tqdm):
                 pbar.set_description(status)
-            else:
+            elif is_main:
                 print(status)
             if has_val and use_early_stopping and last_val_loss < float(
                 last_reported_loss
@@ -138,7 +163,7 @@ def train(
         msg = f"restored best checkpoint from step {best_step} (val_loss={best_val_loss:.4f})"
         if isinstance(pbar, tqdm):
             pbar.write(msg)
-        else:
+        elif is_main:
             print(msg)
         return best_val_loss, train_time_s
     return float(last_reported_loss), train_time_s
