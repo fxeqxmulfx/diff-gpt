@@ -5,6 +5,12 @@ from torch.testing import assert_close
 from diff_gpt.model.rope import apply_rotary_emb
 
 
+def _freqs_cis_from_theta(theta: torch.Tensor) -> torch.Tensor:
+    """Pack (cos θ, sin θ) into the trailing dim — matches the
+    real-valued shape `apply_rotary_emb` expects."""
+    return torch.stack([theta.cos(), theta.sin()], dim=-1)
+
+
 def test_rotation_geometry_pi_2():
     r"""
     Test rotation by \pi/2 on 4D input.
@@ -15,9 +21,9 @@ def test_rotation_geometry_pi_2():
     x = torch.tensor([[[[1.0, 0.0]]]])
 
     # \theta = \pi / 2
-    # freqs\_cis \in \mathbb{C}^{1 \times 1 \times 1 \times 1}
+    # freqs_cis \in \mathbb{R}^{1 \times 1 \times 1 \times 1 \times 2}, last dim = (cos, sin)
     theta = torch.tensor([[[[torch.pi / 2]]]])
-    freqs_cis = torch.polar(torch.ones_like(theta), theta)
+    freqs_cis = _freqs_cis_from_theta(theta)
 
     # z' = z \cdot i = (1)(i) = 0 + 1i
     out = apply_rotary_emb(x, freqs_cis)
@@ -39,7 +45,7 @@ def test_rotation_formula_explicit():
 
     # \theta \in \mathbb{R}^{B \times H \times S \times D/2}
     theta = torch.randn(B, H, S, D // 2)
-    freqs_cis = torch.polar(torch.ones_like(theta), theta)
+    freqs_cis = _freqs_cis_from_theta(theta)
 
     # y_{model}
     out = apply_rotary_emb(x, freqs_cis)
@@ -74,7 +80,7 @@ def test_gradients_backward(dtype):
 
     # \theta \in \mathbb{R}^{1 \times 1 \times 2 \times 2}
     theta = torch.randn(1, 1, 2, 2, dtype=dtype)
-    freqs_cis = torch.polar(torch.ones_like(theta), theta)
+    freqs_cis = _freqs_cis_from_theta(theta)
 
     out = apply_rotary_emb(x, freqs_cis)
 
@@ -91,14 +97,14 @@ def test_broadcasting_shapes():
     r"""
     Test broadcasting of freqs_cis.
     x \in \mathbb{R}^{B \times H \times S \times D}
-    freqs \in \mathbb{C}^{1 \times 1 \times S \times D/2}
+    freqs \in \mathbb{R}^{1 \times 1 \times S \times D/2 \times 2}
     """
     # x: [Batch=2, Heads=4, Seq=8, Dim=10]
     x = torch.randn(2, 4, 8, 10)
 
     # \theta: Broadcast over Batch and Heads
     theta = torch.randn(1, 1, 8, 5)
-    freqs_cis = torch.polar(torch.ones_like(theta), theta)
+    freqs_cis = _freqs_cis_from_theta(theta)
 
     out = apply_rotary_emb(x, freqs_cis)
 

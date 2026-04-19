@@ -1,9 +1,12 @@
 import os
+import socket
 
 import numpy as np
 import pandas as pd
 import pytest
 import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.encoder_decoder import get_domain_of_definition
@@ -102,6 +105,91 @@ def _make_loader_factory():
         )
 
     return build
+
+
+@pytest.fixture
+def _single_rank_gloo_pg():
+    """
+    Stand up a single-rank gloo process group on a free port, tear it
+    down afterward. Lets tests exercise DDP's reducer (which enforces
+    the unused-parameter check regardless of world size) without
+    spawning child processes.
+    """
+    prev = {k: os.environ.get(k) for k in
+            ("MASTER_ADDR", "MASTER_PORT", "RANK", "WORLD_SIZE")}
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    os.environ.update(
+        MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port),
+        RANK="0", WORLD_SIZE="1",
+    )
+    dist.init_process_group(backend="gloo", rank=0, world_size=1)
+    try:
+        yield
+    finally:
+        if dist.is_initialized():
+            dist.destroy_process_group()
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def test_ddp_without_find_unused_raises_on_block_attn_res_shortcircuit(
+    _single_rank_gloo_pg,
+):
+    """
+    Regression proof: Block(layer_idx=0).attn_res_proj never receives a
+    gradient because `block_attn_res` short-circuits when
+    `partial_block is blocks[0]`. DDP's reducer reports this on the
+    second backward — this test locks in the premise for the fix below.
+    """
+    torch.manual_seed(0)
+    model = GPT(
+        vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    ddp = DDP(model)  # find_unused_parameters=False by default
+    X = torch.randint(0, 64, (2, 16), dtype=torch.int64)
+    Y = torch.randint(0, 64, (2, 16), dtype=torch.int64)
+    _, loss = ddp(X, Y)
+    loss.backward()
+    # The reducer flags the missing gradient on the next forward/backward.
+    with pytest.raises(RuntimeError, match="unused|find_unused_parameters"):
+        _, loss = ddp(X, Y)
+        loss.backward()
+
+
+def test_ddp_with_static_graph_runs_through_block_attn_res_shortcircuit(
+    _single_rank_gloo_pg,
+):
+    """
+    The fix in train_ddp.py: `static_graph=True` lets DDP record the
+    deterministically-unused param on the first iter and stop checking
+    afterward. Two forward+backward cycles must complete, and the
+    short-circuited param must have either no grad or a zero grad —
+    proving it really is the unused one (so the flag is load-bearing).
+    """
+    torch.manual_seed(0)
+    model = GPT(
+        vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=1,
+        use_checkpoint=False,
+    )
+    ddp = DDP(model, static_graph=True)
+    X = torch.randint(0, 64, (2, 16), dtype=torch.int64)
+    Y = torch.randint(0, 64, (2, 16), dtype=torch.int64)
+    for _ in range(2):
+        _, loss = ddp(X, Y)
+        loss.backward()
+    proj_grad = model.blocks[0].attn_res_proj.weight.grad
+    if proj_grad is not None:
+        assert torch.count_nonzero(proj_grad) == 0, (
+            "block0.attn_res_proj.weight got a nonzero grad — the "
+            "block_attn_res short-circuit no longer applies, so the "
+            "static_graph=True flag may no longer be needed"
+        )
 
 
 def test_train_numa_single_node_fast_path(tmp_path, _restore_numa_state):
