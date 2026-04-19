@@ -6,9 +6,10 @@ from diff_gpt.model.kv_cache import KVCache
 
 
 def get_freqs_cis(seq_len: int, head_dim: int) -> torch.Tensor:
+    """Real-valued (cos, sin) RoPE table; shape (1, T, 1, D/2, 2)."""
     dims = head_dim // 2
     theta = torch.randn(1, seq_len, 1, dims)
-    return torch.polar(torch.ones_like(theta), theta)
+    return torch.stack([theta.cos(), theta.sin()], dim=-1)
 
 
 def test_block_attn_res_shape_and_weights_sum_to_one():

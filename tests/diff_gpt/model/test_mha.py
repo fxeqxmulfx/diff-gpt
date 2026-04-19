@@ -7,14 +7,13 @@ from diff_gpt.model.kv_cache import KVCache
 
 def get_freqs_cis(seq_len: int, head_dim: int, dtype=torch.float32) -> torch.Tensor:
     r"""
-    Generate complex frequency tensor.
-    \theta \in \mathbb{R}^{1 \times T \times 1 \times D/2}
-    freqs\_cis = e^{i\theta} \in \mathbb{C}
+    Generate the (cos, sin) RoPE table consumed by `apply_rotary_emb`.
+    Shape: (1, T, 1, D/2, 2) where the last dim packs (cos θ, sin θ) —
+    real-valued, broadcasts over batch and heads.
     """
     dims = head_dim // 2
     theta = torch.randn(1, seq_len, 1, dims)
-    freqs_cis = torch.polar(torch.ones_like(theta), theta)
-    return freqs_cis
+    return torch.stack([theta.cos(), theta.sin()], dim=-1)
 
 
 def test_shape_and_gating_gradients():

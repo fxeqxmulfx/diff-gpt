@@ -78,8 +78,19 @@ def _worker(
     try:
         model = model_factory(rank)
         loader = loader_factory(rank, world_size)
-        ddp = DDP(model)
-        result = train(ddp, loader, **train_kwargs)
+        # static_graph=True: `block_attn_res` short-circuits layer 0's
+        # first call (softmax over identical tensors is uniform → the
+        # proj weight isn't touched), leaving one parameter without a
+        # gradient. Vanilla DDP errors out. Static-graph mode records
+        # the unused set on iter 1 and reuses it — cheaper than the
+        # per-iter tracking of `find_unused_parameters=True` and valid
+        # because the short-circuit fires on a fixed, data-independent
+        # condition.
+        ddp = DDP(model, static_graph=True)
+        # DDP forwards every BaseGPT attribute / method used by train()
+        # (parameters, state_dict, train/eval, __call__, load_state_dict)
+        # but isn't a BaseGPT subclass, hence the ignore.
+        result = train(ddp, loader, **train_kwargs)  # pyright: ignore[reportArgumentType]
         if rank == 0:
             if checkpoint_path is not None:
                 # Unwrap so the saved keys match a standalone load of the

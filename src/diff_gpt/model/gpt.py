@@ -149,8 +149,8 @@ class GPT(BaseGPT):
         assert T_end <= self.freqs_cis.shape[0]  # pyright: ignore[reportIndexIssue]
         freqs_cis = (
             self.freqs_cis[T_start:T_end]  # pyright: ignore[reportIndexIssue]
-        )  # (T, hs/2)
-        freqs_cis = freqs_cis.view(1, T, 1, -1)
+        )  # (T, hs/2, 2)
+        freqs_cis = freqs_cis.view(1, T, 1, -1, 2)
         x = self.token_embedding_table(idx)  # (B, T, C)
         x = rms_norm(x)
         # Block AttnRes state: the normalized embedding is committed as block 0
