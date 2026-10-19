@@ -7,25 +7,28 @@ public import DiffGPT.LevelGrid
 # int64 and uint64 arithmetic
 
 numpy's int64 and uint64 arrays add and subtract modulo `2^64` without a check, as Lean's
-`Int64` and `UInt64` do, so these are their model. The tokenizer relies on three facts.
+`Int64` and `UInt64` do, so these are their model. The tokenizer relies on four facts.
 
-* int64 sums and differences that stay in range are exact (`toInt_add_of_inInt64`,
-  `toInt_sub_of_inInt64`), so `np.diff(L, n=k)` is exact while every difference up to the
-  `k`-th stays in range (`toInt_diffI64_iter`): for levels in `[-2^b - 1, 2^b]` with
-  `b + k ≤ 62` (`toInt_diffI64_iter_of_mem_Icc`) and for values in `[0, 2^G)` with
-  `k + G ≤ 64` (`toInt_diffI64_iter_of_mem_Ico`).
+* int64 sums and differences are the integer ones modulo `2^64` (`toInt_add_modEq`, and
+  `toInt_diffI64_iter_modEq` for `np.diff(f, n=k)`), so a result that lies in int64 is the
+  integer one (`eq_of_modEq_of_inInt64`). So is every result while the integer ones stay in
+  range (`toInt_add_of_inInt64`, `toInt_diffI64_iter`): differences up to the `k`-th of levels
+  in `[-2^b - 1, 2^b]` with `b + k ≤ 62` (`inInt64_fwdDiff_iter_of_mem_Icc`) and of values in
+  `[0, 2^G)` with `k + G ≤ 64` (`toInt_diffI64_iter_of_mem_Ico`).
 * `_cumsum`'s test, terms of one sign with a wrapped sum of the other, fires exactly at the
   int64 sums that wrap (`toInt_add_eq_iff_not_sumWraps`): an int64 cumulative sum is the
   integer one unless it fires (`toInt_cumsumI64`), and it fires when an integer partial sum
-  leaves int64 (`exists_sumWraps`). `_integrate_levels`, k such sums, is then exact in int64
-  while the levels' differences stay in range (`toInt_integrateI64`).
+  leaves int64 (`exists_sumWraps`). `_integrate_levels`, `k` such sums, is then exact in int64
+  and does not raise (`IntegrateRaises`) while the levels' differences stay in range
+  (`toInt_integrateI64`).
 * uint64 is a ring modulo `2^64`, so `_integrate_levels` in uint64 is the integer
   `integrate` modulo `2^64` (`map_integrate`), and masking with `2^G - 1` leaves it modulo
   `2^G` (`anchor_numerators`). The residues modulo `2^G` of an integer sequence with zero
   `k`-th differences have `k`-th differences divisible by `2^G` (`fwdDiff_iter_emod_eq`), below
   `2^(k-1+G)` in magnitude (`abs_fwdDiff_iter_emod_lt`).
+* `>> G` is the floor division by `2^G` (`toInt_shiftRight_ofNat`), and `.astype(np.int64)`
+  keeps uint64 values below `2^63` (`toInt_toInt64_of_lt`).
 -/
-
 @[expose] public section
 
 open fwdDiff
@@ -49,6 +52,27 @@ theorem toInt_add_of_inInt64 (a b : Int64) (h : InInt64 (a.toInt + b.toInt)) :
 theorem toInt_sub_of_inInt64 (a b : Int64) (h : InInt64 (a.toInt - b.toInt)) :
     (a - b).toInt = a.toInt - b.toInt := by
   rw [Int64.toInt_sub, bmod_eq_of_inInt64 h]
+
+/-! ### Modulo `2^64` -/
+
+lemma toInt_add_modEq (a b : Int64) : (a + b).toInt ≡ a.toInt + b.toInt [ZMOD 2 ^ 64] := by
+  rw [Int64.toInt_add]
+  exact Int.bmod_emod
+
+lemma toInt_sub_modEq (a b : Int64) : (a - b).toInt ≡ a.toInt - b.toInt [ZMOD 2 ^ 64] := by
+  rw [Int64.toInt_sub]
+  exact Int.bmod_emod
+
+/-- numpy casts a Python int operand to int64 modulo `2^64`. -/
+lemma toInt_ofInt_modEq (n : ℤ) : (Int64.ofInt n).toInt ≡ n [ZMOD 2 ^ 64] := by
+  rw [Int64.toInt_ofInt]
+  exact Int.bmod_emod
+
+/-- Two integers in int64 that agree modulo `2^64` are equal. -/
+lemma eq_of_modEq_of_inInt64 {a b : ℤ} (h : a ≡ b [ZMOD 2 ^ 64]) (ha : InInt64 a)
+    (hb : InInt64 b) : a = b := by
+  unfold Int.ModEq InInt64 at *
+  omega
 
 /-! ### `_cumsum` -/
 
@@ -150,21 +174,55 @@ theorem toInt_diffI64_iter {k : ℕ} {f : ℕ → Int64}
       rw [hd, ← Function.iterate_succ_apply]
       exact h (j + 1) (by omega) m
 
-/-- The levels under `_levels`' guard `|p| < 2^b`: values in `[-2^b - 1, 2^b]` with
-`b + k ≤ 62`, whose differences up to the `k`-th stay below `3·2^61`. -/
-theorem toInt_diffI64_iter_of_mem_Icc {k b : ℕ} (hbk : b + k ≤ 62) {f : ℕ → Int64}
-    (h : ∀ n, -2 ^ b - 1 ≤ (f n).toInt ∧ (f n).toInt ≤ 2 ^ b) (n : ℕ) :
-    (diffI64^[k] f n).toInt = Δ_[1] ^[k] (fun m => (f m).toInt) n := by
-  refine toInt_diffI64_iter (fun j hj m => ?_) n
+/-- `k` differences keep congruences. -/
+lemma fwdDiff_iter_modEq {c : ℤ} {f g : ℕ → ℤ} (h : ∀ i, f i ≡ g i [ZMOD c]) (k n : ℕ) :
+    Δ_[1] ^[k] f n ≡ Δ_[1] ^[k] g n [ZMOD c] := by
+  induction k generalizing f g with
+  | zero => exact h n
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
+    exact ih fun i => (h (i + 1)).sub (h i)
+
+/-- `np.diff(f, n=k)` in int64 is the integer one modulo `2^64`, overflow or not. -/
+theorem toInt_diffI64_iter_modEq (f : ℕ → Int64) (k n : ℕ) :
+    (diffI64^[k] f n).toInt ≡ Δ_[1] ^[k] (fun m => (f m).toInt) n [ZMOD 2 ^ 64] := by
+  induction k generalizing f with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
+    exact (ih (diffI64 f)).trans (fwdDiff_iter_modEq (fun i => toInt_sub_modEq _ _) k n)
+
+/-- `k ≥ 1` differences of integers in `[a, b]` on the first `M` values stay within
+`2^(k-1)·(b - a)` there. -/
+lemma abs_fwdDiff_iter_le_of_mem_Icc_of_lt {a b : ℤ} {M : ℕ} {f : ℕ → ℤ}
+    (h : ∀ m < M, a ≤ f m ∧ f m ≤ b) {k n : ℕ} (hk : 1 ≤ k) (hn : n + k < M) :
+    |Δ_[1] ^[k] f n| ≤ 2 ^ (k - 1) * (b - a) := by
+  have hab : a ≤ b := (h n (by omega)).1.trans (h n (by omega)).2
+  set f' : ℕ → ℤ := fun m => if m < M then f m else a
+  rw [fwdDiff_iter_congr (g := f') fun i hi => by simp [f', show n + i < M by omega]]
+  refine abs_fwdDiff_iter_le_of_mem_Icc (fun m => ?_) hk n
+  simp only [f']
+  split_ifs with hm
+  exacts [h m hm, ⟨le_rfl, hab⟩]
+
+/-- The levels under `_levels`' guard `|p| < 2^b`: on the first `M` values in
+`[-2^b - 1, 2^b]` with `b + k ≤ 62`, their differences up to the `k`-th stay below `3·2^61`
+there. -/
+lemma inInt64_fwdDiff_iter_of_mem_Icc {k b M : ℕ} (hbk : b + k ≤ 62) {f : ℕ → ℤ}
+    (h : ∀ m < M, -2 ^ b - 1 ≤ f m ∧ f m ≤ 2 ^ b) {j n : ℕ} (hj : j ≤ k) (hn : n + j < M) :
+    InInt64 (Δ_[1] ^[j] f n) := by
+  have hb2 : (2 : ℤ) ^ b ≤ 2 ^ 62 := pow_le_pow_right₀ (by norm_num) (by omega)
   rcases Nat.eq_zero_or_pos j with rfl | hj1
-  · exact inInt64_toInt (f m)
+  · obtain ⟨h1, h2⟩ := h n (by omega)
+    exact ⟨by simp only [Function.iterate_zero, id_eq]; linarith,
+      by simp only [Function.iterate_zero, id_eq]; linarith⟩
   have h1 : (2 : ℤ) ^ (j - 1) * 2 ^ b ≤ 2 ^ 61 := by
     rw [← pow_add]
     exact pow_le_pow_right₀ (by norm_num) (by omega)
   have h2 : (2 : ℤ) ^ (j - 1) ≤ 2 ^ 61 := pow_le_pow_right₀ (by norm_num) (by omega)
   have h3 : (2 : ℤ) ^ (j - 1) * (2 ^ b - (-2 ^ b - 1)) =
       2 * (2 ^ (j - 1) * 2 ^ b) + 2 ^ (j - 1) := by ring
-  obtain ⟨b1, b2⟩ := abs_le.mp (abs_fwdDiff_iter_le_of_mem_Icc h hj1 m)
+  obtain ⟨b1, b2⟩ := abs_le.mp (abs_fwdDiff_iter_le_of_mem_Icc_of_lt h hj1 hn)
   exact ⟨by linarith, by linarith⟩
 
 /-- The anchor numerators: values in `[0, 2^G)` with `k + G ≤ 64`. -/
@@ -223,6 +281,16 @@ lemma integrate_congr {R : Type*} [AddCommGroup R] {k : ℕ} {pre pre' : ℕ →
     funext n
     simp only [integrate, hd, h 0 (by omega)]
 
+lemma integrate_zero {R : Type*} [AddCommGroup R] (k : ℕ) : integrate k (0 : ℕ → R) 0 = 0 := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    have h0 : Δ_[1] (0 : ℕ → R) = 0 := by
+      funext m
+      simp [fwdDiff]
+    funext n
+    simp [integrate, h0, ih]
+
 /-- An additive map, such as the reduction of integers modulo `2^64`, commutes with
 `integrate`. -/
 theorem map_integrate {R S : Type*} [AddCommGroup R] [AddCommGroup S] (φ : R →+ S) (k : ℕ)
@@ -246,17 +314,26 @@ def integrateI64 : ℕ → (ℕ → Int64) → (ℕ → Int64) → ℕ → Int64
       | 0 => pre 0
       | m + 1 => integrateI64 k (diffI64 pre) d m
 
-/-- `_integrate_levels` is exact in int64 on the first `M` rows while the differences of the
-levels it returns, up to the `k`-th, stay in range there: the decoder gets the encoder's
-levels back. (The `j`-th differences span the rows `n, …, n + j`.) -/
+/-- `_integrate_levels` raises on `M` rows: one of its `_cumsum`s, over `M`, `M - 1`, … values
+from the outermost in, fires (`SumWraps`). -/
+def IntegrateRaises : ℕ → (ℕ → Int64) → (ℕ → Int64) → ℕ → Prop
+  | 0, _, _, _ => False
+  | k + 1, pre, d, M =>
+    (∃ m, m + 1 < M ∧
+      SumWraps (integrateI64 (k + 1) pre d m) (integrateI64 k (diffI64 pre) d m)) ∨
+      IntegrateRaises k (diffI64 pre) d (M - 1)
+
+/-- `_integrate_levels` on the first `M` rows is exact in int64 and does not raise while the
+differences of the levels it returns, up to the `k`-th, stay in range there: the decoder gets
+the encoder's levels back. (The `j`-th differences span the rows `n, …, n + j`.) -/
 theorem toInt_integrateI64 {k M : ℕ} (hkM : k ≤ M) {pre d : ℕ → Int64}
     (h : ∀ j ≤ k, ∀ n, n + j < M → InInt64
-      (Δ_[1] ^[j] (integrate k (fun m => (pre m).toInt) (fun m => (d m).toInt)) n))
-    {n : ℕ} (hn : n < M) :
-    (integrateI64 k pre d n).toInt =
-      integrate k (fun m => (pre m).toInt) (fun m => (d m).toInt) n := by
-  induction k generalizing M pre n with
-  | zero => rfl
+      (Δ_[1] ^[j] (integrate k (fun m => (pre m).toInt) (fun m => (d m).toInt)) n)) :
+    (∀ n < M, (integrateI64 k pre d n).toInt =
+      integrate k (fun m => (pre m).toInt) (fun m => (d m).toInt) n) ∧
+      ¬IntegrateRaises k pre d M := by
+  induction k generalizing M pre with
+  | zero => exact ⟨fun n _ => rfl, id⟩
   | succ k ih =>
     set P : ℕ → ℤ := fun m => (pre m).toInt
     set D : ℕ → ℤ := fun m => (d m).toInt
@@ -274,22 +351,30 @@ theorem toInt_integrateI64 {k M : ℕ} (hkM : k ≤ M) {pre d : ℕ → Int64}
     have hinner : integrate k (fun m => (diffI64 pre m).toInt) D = Δ_[1] L := by
       rw [hL, fwdDiff_integrate_succ]
       exact integrate_congr hpre D
-    have hIH : ∀ m, m + 1 < M → (integrateI64 k (diffI64 pre) d m).toInt = Δ_[1] L m := by
-      intro m hm
-      rw [← hinner]
-      refine ih (M := M - 1) (by omega) (fun j hj m' hm' => ?_) (by omega)
-      rw [hinner, ← Function.iterate_succ_apply]
-      exact h (j + 1) (by omega) m' (by omega)
+    obtain ⟨hIH, hnr⟩ := ih (M := M - 1) (pre := diffI64 pre) (by omega)
+      fun j hj m' hm' => by
+        rw [hinner, ← Function.iterate_succ_apply]
+        exact h (j + 1) (by omega) m' (by omega)
+    rw [hinner] at hIH
     -- the outer cumulative sum stays on the levels, which are in range
-    induction n with
-    | zero => exact (integrate_of_lt (by omega) P D).symm
-    | succ m ihm =>
-      have e : integrateI64 (k + 1) pre d (m + 1) =
-          integrateI64 (k + 1) pre d m + integrateI64 k (diffI64 pre) d m := rfl
-      have hm : L m + Δ_[1] L m = L (m + 1) := by simp [fwdDiff]
-      rw [e, toInt_add_of_inInt64, ihm (by omega), hIH m hn, hm]
-      rw [ihm (by omega), hIH m hn, hm]
-      simpa using h 0 (by omega) (m + 1) (by omega)
+    have e (m : ℕ) : integrateI64 (k + 1) pre d (m + 1) =
+        integrateI64 (k + 1) pre d m + integrateI64 k (diffI64 pre) d m := rfl
+    have hval : ∀ n < M, (integrateI64 (k + 1) pre d n).toInt = L n := by
+      intro n hn
+      induction n with
+      | zero => exact (integrate_of_lt (by omega) P D).symm
+      | succ m ihm =>
+        have hm : L m + Δ_[1] L m = L (m + 1) := by simp [fwdDiff]
+        rw [e, toInt_add_of_inInt64, ihm (by omega), hIH m (by omega), hm]
+        rw [ihm (by omega), hIH m (by omega), hm]
+        simpa using h 0 (by omega) (m + 1) (by omega)
+    -- so no outer sum wraps
+    refine ⟨hval, ?_⟩
+    rintro (⟨m, hm, hw⟩ | hr)
+    · refine (toInt_add_eq_iff_not_sumWraps _ _).mp ?_ hw
+      rw [← e, hval (m + 1) hm, hval m (by omega), hIH m (by omega)]
+      simp [fwdDiff]
+    · exact hnr hr
 
 /-! ### The "mash" anchor -/
 
@@ -347,5 +432,33 @@ theorem anchor_numerators {G : ℕ} (hG : G ≤ 64) (k : ℕ) (seeds : ℕ → U
   push_cast
   rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by norm_num))]
   exact Int.emod_emod_of_dvd Z (pow_dvd_pow 2 hG)
+
+/-- `.astype(np.int64)` keeps uint64 values below `2^63`. -/
+theorem toInt_toInt64_of_lt (u : UInt64) (h : u.toNat < 2 ^ 63) :
+    u.toInt64.toInt = u.toNat := by
+  show u.toBitVec.toInt = _
+  rw [BitVec.toInt_eq_toNat_of_lt (by simp; omega)]
+  simp
+
+/-- `a >> G` in int64, `G < 64`, is the floor division by `2^G`. -/
+theorem toInt_shiftRight_ofNat (a : Int64) {G : ℕ} (hG : G < 64) :
+    (a >>> Int64.ofNat G).toInt = a.toInt / 2 ^ G := by
+  have h1 : (a >>> Int64.ofNat G).toInt =
+      a.toBitVec.toInt >>> ((Int64.ofNat G).toBitVec.smod 64).toNat := by
+    show (BitVec.sshiftRight' a.toBitVec ((Int64.ofNat G).toBitVec.smod 64)).toInt = _
+    rw [BitVec.toInt_sshiftRight']
+  have h2 : ((Int64.ofNat G).toBitVec.smod 64).toNat = G := by
+    have hx : (Int64.ofNat G).toBitVec.toNat = G := by
+      simp
+      omega
+    have hmx : (Int64.ofNat G).toBitVec.msb = false := by
+      rw [BitVec.msb_eq_false_iff_two_mul_lt, hx]
+      omega
+    have hmy : (64 : BitVec 64).msb = false := by decide
+    rw [BitVec.toNat_smod, hmx, hmy]
+    simp
+    omega
+  rw [h1, h2, Int.shiftRight_eq_div_pow]
+  rfl
 
 end DiffGPT

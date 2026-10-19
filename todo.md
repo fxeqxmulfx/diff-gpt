@@ -309,6 +309,16 @@ on the unfixed code.
 - [x] **Lean.** `ExactLevels.lean` proves `_levels` exact, and
   `encode_token_mem` in `Machine.lean` the token range of `encode` as
   written, with no float64 slack. 81 theorems, standard axioms only.
+- [x] **Lean end to end.** `encode_decode` in `Machine.lean` takes a column
+  from its floats to the decoded values: every token `encode` emits is its
+  int64 token sum and lies in [1, V-1], `decode`'s `_integrate_levels` does
+  not raise, and every decoded value lies within 1/(2s) +
+  2^-52·(1 + 2^-54)·(|x| + 1/(2s)) + 2^-1075·(1 + (1 + 2^-53)/s) of x. The
+  token range needs only the float64 guard 2^53, since int64 wraps modulo
+  2^64; the cap 2^(62 - k) keeps the differences `decode` integrates
+  through in int64, and the token sum of a step outside the domain exact,
+  so it clips toward its own side (`toInt_tokenSum`). 105 theorems,
+  standard axioms only.
 
 ## Observations, no action planned
 

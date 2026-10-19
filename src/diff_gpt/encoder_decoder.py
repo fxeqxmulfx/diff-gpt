@@ -34,9 +34,10 @@ exact error (Dekker's product), without rounding s·x itself
 s·D <= V/2 - 2^(k-1) holds exactly, and the max of
 `get_domain_of_definition` is rounded up, so that |Δ^k x| <= D does: every
 token then lies in [1, V-1] as in exact arithmetic, the levels stay within
-2^53, where float64 holds every one of them, and no int64 sum overflows
-(lean/DiffGPT/Machine.lean). Only the decode is rounded, by about 2^-53 of
-|x̂| per operation on top of 1/(2s).
+2^53, where float64 holds every one of them, and `decode` gets them back
+without an int64 overflow (`encode_decode` in lean/DiffGPT/Machine.lean).
+Only the decode is rounded, by about 2^-53 of |x̂| per operation on top of
+1/(2s).
 """
 
 import math
@@ -207,8 +208,12 @@ def _compute_scale(
 
 
 # Values put on the levels at order k must stay below 2^(62 - k) in
-# magnitude: then the int64 levels and their differences up to the k-th, at
-# most 2^k times larger, cannot overflow.
+# magnitude, so that their differences up to the k-th, at most 2^k times
+# larger, stay in int64: `decode`'s cumulative sums pass through every one of
+# them, and the token sum of a step outside the domain stays exact, so it
+# clips toward its own side (`toInt_tokenSum` in lean/DiffGPT/Machine.lean).
+# A token within the domain is right either way, since int64 wraps modulo
+# 2^64.
 _LEVEL_BITS = 62
 # float64 holds the integers below 2^53, and so the fractions n / 2^G,
 # 0 <= n < 2^G, exactly for G <= 53. s·x must stay below 2^53 as well: past
@@ -280,10 +285,11 @@ def _levels(
       sign of e where p = c.
 
     Raises ValueError when |p| reaches 2^min(53, 62 - `order`): past 2^53
-    float64 no longer holds every level, and past 2^(62 - `order`) the levels
-    or their `order`-th differences would overflow int64. Below it the
-    levels lie in [-2^b - 1, 2^b] for b = min(53, 62 - `order`)
-    (`levels_mem` in lean/DiffGPT/ExactLevels.lean).
+    float64 no longer holds every level, and past 2^(62 - `order`) their
+    differences up to the `order`-th, which `decode` integrates through,
+    could leave int64 (see `_LEVEL_BITS`). Below it the levels lie in
+    [-2^b - 1, 2^b] for b = min(53, 62 - `order`) (`levels_mem` in
+    lean/DiffGPT/ExactLevels.lean).
     """
     bits = min(_FLOAT64_EXACT_BITS, _LEVEL_BITS - order)
     s_mantissa, s_exponent = np.frexp(scale)

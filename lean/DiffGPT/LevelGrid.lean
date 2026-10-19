@@ -11,13 +11,14 @@ grid, measured from an anchor `A` that the `k`-th difference removes
 (`Δᵏ A = 0`): `A = 0` for "lgt", the polynomial through the first `k` values for
 "mash".
 
-* `abs_fwdDiff_iter_levels_le`: if `|Δᵏ x| ≤ D` and `s·D ≤ V/2 - 2^(k-1)`, with
+* `abs_fwdDiff_iter_levels_le`: if `|Δᵏ x n| ≤ D` and `s·D ≤ V/2 - 2^(k-1)`, with
   `k - 1` truncated (so `V/2 - 1` at `k = 0`), then `|Δᵏ L n| ≤ V/2 - 1`: every
   token lies in `[1, V - 1]`. `scale_mul_domain`: the scale
   `s = (V - 2·2^(k-1)) / (2D) = (V - max(2, 2^k)) / (2D)` meets this with equality.
 * `lgt_token_bound`, `mash_token_bound`: the two anchors.
 * `eq_of_fwdDiff_iter_eq`: the tokens and the first `k` levels determine `L`, so the
-  decoder's integer `k`-fold cumulative sum recovers the levels exactly;
+  decoder's integer `k`-fold cumulative sum recovers the levels exactly, on the first `M`
+  rows from their tokens alone (`eq_of_fwdDiff_iter_eq_of_lt`);
   `roundHalfUp_levels_eq_zero`: "mash" starts it from zeros.
 * `abs_decode_sub_le`: the decoded `A n + L n / s` is within `1/(2s)` of `x n`;
   `half_step_eq`: with that scale `1/(2s) = D / (V - max(2, 2^k))`.
@@ -82,10 +83,21 @@ lemma cast_fwdDiff_iter (f : ℕ → ℤ) (k n : ℕ) :
       simp [fwdDiff]
     rw [Function.iterate_succ_apply, Function.iterate_succ_apply, ih, hf]
 
+/-- The `k`-th difference at `n` reads the values at `n, …, n + k` alone. -/
+lemma fwdDiff_iter_congr {G : Type*} [AddCommGroup G] {f g : ℕ → G} {k n : ℕ}
+    (h : ∀ i ≤ k, f (n + i) = g (n + i)) : Δ_[1] ^[k] f n = Δ_[1] ^[k] g n := by
+  induction k generalizing f g with
+  | zero => simpa using h 0 le_rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
+    exact ih fun i hi => by
+      simp only [fwdDiff]
+      rw [show n + i + 1 = n + (i + 1) by omega, h i (by omega), h (i + 1) (by omega)]
+
 /-- Every token `Δᵏ L n + V/2` lies in `[1, V - 1]`. -/
 theorem abs_fwdDiff_iter_levels_le {V : ℤ} (hV : Even V) {k : ℕ} {s D : ℝ} (hs : 0 ≤ s)
-    {x A : ℕ → ℝ} (hA : Δ_[1] ^[k] A = 0) (hD : ∀ n, |Δ_[1] ^[k] x n| ≤ D)
-    (hsD : s * D ≤ (V : ℝ) / 2 - 2 ^ (k - 1)) (n : ℕ) :
+    {x A : ℕ → ℝ} (hA : Δ_[1] ^[k] A = 0) {n : ℕ} (hD : |Δ_[1] ^[k] x n| ≤ D)
+    (hsD : s * D ≤ (V : ℝ) / 2 - 2 ^ (k - 1)) :
     |Δ_[1] ^[k] (fun m => roundHalfUp (s * (x m - A m))) n| ≤ V / 2 - 1 := by
   set L : ℕ → ℤ := fun m => roundHalfUp (s * (x m - A m)) with hL
   set ζ : ℕ → ℝ := fun m => (L m : ℝ) - s * (x m - A m) with hζdef
@@ -100,7 +112,7 @@ theorem abs_fwdDiff_iter_levels_le {V : ℤ} (hV : Even V) {k : ℕ} {s D : ℝ}
     simp
   have hx : |s * Δ_[1] ^[k] x n| ≤ s * D := by
     rw [abs_mul, abs_of_nonneg hs]
-    exact mul_le_mul_of_nonneg_left (hD n) hs
+    exact mul_le_mul_of_nonneg_left hD hs
   have hlt : |((Δ_[1] ^[k] L n : ℤ) : ℝ)| < (V : ℝ) / 2 := by
     rw [hdiff]
     rcases Nat.eq_zero_or_pos k with rfl | hk
@@ -133,11 +145,11 @@ lemma scale_mul_domain (V : ℝ) {D : ℝ} (hD : D ≠ 0) (k : ℕ) :
   field_simp
 
 /-- The zero sequence has zero differences. -/
-lemma fwdDiff_iter_zero (k : ℕ) : Δ_[1] ^[k] (0 : ℕ → ℝ) = 0 := by
+lemma fwdDiff_iter_zero {G : Type*} [AddCommGroup G] (k : ℕ) : Δ_[1] ^[k] (0 : ℕ → G) = 0 := by
   induction k with
   | zero => rfl
   | succ k ih =>
-    have h0 : Δ_[1] (0 : ℕ → ℝ) = 0 := by
+    have h0 : Δ_[1] (0 : ℕ → G) = 0 := by
       funext m
       simp [fwdDiff]
     rw [Function.iterate_succ_apply, h0, ih]
@@ -146,7 +158,7 @@ lemma fwdDiff_iter_zero (k : ℕ) : Δ_[1] ^[k] (0 : ℕ → ℝ) = 0 := by
 theorem lgt_token_bound {V : ℤ} (hV : Even V) {k : ℕ} {s D : ℝ} (hs : 0 ≤ s) {x : ℕ → ℝ}
     (hD : ∀ n, |Δ_[1] ^[k] x n| ≤ D) (hsD : s * D ≤ (V : ℝ) / 2 - 2 ^ (k - 1)) (n : ℕ) :
     |Δ_[1] ^[k] (fun m => roundHalfUp (s * x m)) n| ≤ V / 2 - 1 := by
-  simpa using abs_fwdDiff_iter_levels_le hV hs (fwdDiff_iter_zero k) hD hsD n
+  simpa using abs_fwdDiff_iter_levels_le hV hs (fwdDiff_iter_zero k) (hD n) hsD
 
 /-- The `k`-th difference of a polynomial of degree `< k`, read at `0, 1, 2, …`,
 vanishes. -/
@@ -164,7 +176,7 @@ theorem mash_token_bound {V : ℤ} (hV : Even V) {k : ℕ} {s D : ℝ} (hs : 0 �
     {x : ℕ → ℝ} {P : Polynomial ℝ} (hP : P.natDegree < k)
     (hD : ∀ n, |Δ_[1] ^[k] x n| ≤ D) (hsD : s * D ≤ (V : ℝ) / 2 - 2 ^ (k - 1)) (n : ℕ) :
     |Δ_[1] ^[k] (fun m => roundHalfUp (s * (x m - P.eval (m : ℝ)))) n| ≤ V / 2 - 1 :=
-  abs_fwdDiff_iter_levels_le hV hs (fwdDiff_iter_eval_eq_zero hP) hD hsD n
+  abs_fwdDiff_iter_levels_le hV hs (fwdDiff_iter_eval_eq_zero hP) (hD n) hsD
 
 /-- The `k`-th differences and the first `k` values determine an integer sequence. -/
 lemma eq_of_fwdDiff_iter_eq {k : ℕ} {L L' : ℕ → ℤ} (h : Δ_[1] ^[k] L = Δ_[1] ^[k] L')
@@ -182,6 +194,27 @@ lemma eq_of_fwdDiff_iter_eq {k : ℕ} {L L' : ℕ → ℤ} (h : Δ_[1] ^[k] L = 
     | succ m ihm =>
       have hm := congrFun hd m
       simp only [fwdDiff] at hm
+      omega
+
+/-- The `k`-th differences on the first `M` values and the first `k` values determine an
+integer sequence there. -/
+lemma eq_of_fwdDiff_iter_eq_of_lt {k M : ℕ} {L L' : ℕ → ℤ}
+    (h : ∀ n, n + k < M → Δ_[1] ^[k] L n = Δ_[1] ^[k] L' n) (h0 : ∀ m < k, L m = L' m)
+    {m : ℕ} (hm : m < M) : L m = L' m := by
+  induction k generalizing L L' M m with
+  | zero => simpa using h m (by omega)
+  | succ k ih =>
+    have hd : ∀ n < M - 1, Δ_[1] L n = Δ_[1] L' n := fun n hn =>
+      ih (M := M - 1) (fun n' hn' => by
+          have := h n' (by omega)
+          rwa [Function.iterate_succ_apply, Function.iterate_succ_apply] at this)
+        (fun m' hm' => by simp only [fwdDiff]; rw [h0 m' (by omega), h0 (m' + 1) (by omega)]) hn
+    induction m with
+    | zero => exact h0 0 (by omega)
+    | succ m ihm =>
+      have h1 := hd m (by omega)
+      have h2 := ihm (by omega)
+      simp only [fwdDiff] at h1
       omega
 
 /-- Where the anchor passes through the series, the level is `0`. -/
