@@ -1,4 +1,5 @@
 import math
+import os
 from decimal import Decimal
 
 import numpy as np
@@ -31,6 +32,173 @@ ufunc_round = np.frompyfunc(round, 1, 1)
 
 def _is_scalar_order(order_of_derivative: int | np.ndarray) -> bool:
     return isinstance(order_of_derivative, (int, np.integer))
+
+
+# Which tokenizer `encode`/`decode` use when the caller does not say:
+#   "mash": prefix-anchored Σ-Δ (carry scheme for k<=1, MASH cascade for k>=2).
+#   "lgt":  level-grid tokenization, q_t = Δ^k round(s·x_t) + V/2 (see `encode_lgt`).
+# Default is "lgt" (since 0.32): same Δ/2 bound and headroom as MASH, but local,
+# window-consistent and exactly decodable in integers. Set DIFF_GPT_TOKENIZER=mash
+# (or pass tokenizer="mash") to reproduce models trained with the Σ-Δ encoder.
+DEFAULT_TOKENIZER = os.environ.get("DIFF_GPT_TOKENIZER", "lgt")
+
+
+def _order_array(order_of_derivative: int | np.ndarray, n_features: int) -> np.ndarray:
+    """Normalise a scalar or per-column order to an int64 array of shape (F,)."""
+    if _is_scalar_order(order_of_derivative):
+        k = int(order_of_derivative)
+        assert k >= 0
+        return np.full(n_features, k, dtype=np.int64)
+    order = np.asarray(order_of_derivative, dtype=np.int64)
+    assert order.shape == (n_features,), (
+        f"order_of_derivative shape {order.shape} must be ({n_features},)"
+    )
+    assert (order >= 0).all()
+    return order
+
+
+# Level-grid scale for columns whose training domain is D = 0 (constant column):
+# a fine grid so the prefix level is reproduced to 2^-21 instead of being
+# rounded on the unit grid. (The Σ-Δ path keeps scale 1 there and carries the
+# level through `start`.)
+LGT_CONSTANT_COLUMN_SCALE = float(2 ** 20)
+
+
+def _compute_scale(
+    vocab_size: int,
+    domain_of_definition: np.ndarray,
+    order_arr: np.ndarray,
+    use_decimal: bool,
+    lgt: bool = False,
+) -> np.ndarray:
+    """Per-column scale s_c.
+
+    Σ-Δ ("mash"): headroom 2^k when k>=2 and V > 2^k + 2 (MASH cascade), else
+    (V-2)/2 (carry scheme, whose noise term needs only ±1).
+    Level-grid ("lgt"): the noise term Δ^k ζ always needs headroom 2^(k-1) per
+    side, so k>=2 requires V > 2^k + 2 (asserted); k<=1 uses (V-2)/2.
+    """
+    scale = np.ones(shape=domain_of_definition.shape, dtype=np.float64)
+    if use_decimal:
+        scale = np_to_decimal(scale)
+    _filter = np.abs(domain_of_definition) > np.finfo(np.float64).eps
+    for c in range(domain_of_definition.shape[0]):
+        k_c = int(order_arr[c])
+        if not _filter[c]:
+            if lgt:
+                scale[c] = (
+                    Decimal(LGT_CONSTANT_COLUMN_SCALE) if use_decimal else LGT_CONSTANT_COLUMN_SCALE
+                )
+            continue
+        if lgt and k_c >= 2:
+            assert vocab_size > 2 ** k_c + 2, (
+                f"level-grid tokenization needs vocab_size > 2^k + 2 = {2 ** k_c + 2} "
+                f"for k={k_c} (got {vocab_size}); use tokenizer='mash' for smaller vocabularies"
+            )
+        use_headroom = k_c >= 2 and vocab_size > 2 ** k_c + 2
+        if use_headroom:
+            scale[c] = (vocab_size - 2 - 2 ** k_c) / domain_of_definition[c] / 2
+        else:
+            scale[c] = (vocab_size - 2) / domain_of_definition[c] / 2
+    return scale
+
+
+def _round_levels(x_col: np.ndarray, s, use_decimal: bool) -> np.ndarray:
+    """L = round(s·x) as int64 (banker's rounding in both float64 and Decimal)."""
+    if use_decimal:
+        vals = ufunc_round(x_col * s)
+        return np.array([int(v) for v in vals], dtype=np.int64)
+    return np.rint(x_col * s).astype(np.int64)
+
+
+def encode_lgt(
+    inp: np.ndarray,
+    vocab_size: int,
+    domain_of_definition: np.ndarray,
+    order_of_derivative: int | np.ndarray,
+    use_decimal: bool,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Level-grid tokenization (LGT).
+
+    Round the signal onto the absolute grid of step 1/s, L_t = round(s·x_t),
+    and emit the k-th differences of the grid index: q_t = Δ^k L_t + V/2.
+
+    Same scale and headroom as the MASH path, same bound ‖x̂ − x‖∞ ≤ 1/(2s),
+    because Δ^k L = s·Δ^k x + Δ^k ζ with |ζ| ≤ 1/2 and |Δ^k ζ| ≤ 2^(k−1).
+    The headroom is mandatory: k >= 2 requires vocab_size > 2^k + 2 (there is
+    no carry-scheme fallback here). Constant columns (D = 0) use a fine level
+    grid (`LGT_CONSTANT_COLUMN_SCALE`) so their level survives the round trip.
+    Unlike Σ-Δ the token at t depends only on x_{t−k..t}: encoding a window
+    equals the slice of the full encoding, identical values give identical
+    tokens anywhere in the series, and the decoder is exact integer cumsum.
+
+    `start` is the raw prefix inp[:max_k] for both scalar and per-column
+    orders (the decoder re-rounds it). Token row r corresponds to raw time
+    r + max_k, as in the Σ-Δ path.
+    """
+    assert vocab_size % 2 == 0 and vocab_size >= 4
+    T, F = inp.shape
+    assert domain_of_definition.shape[0] == F
+    order_arr = _order_array(order_of_derivative, F)
+    max_k = int(order_arr.max()) if F > 0 else 0
+    assert max_k <= T
+    scale = _compute_scale(vocab_size, domain_of_definition, order_arr, use_decimal, lgt=True)
+    start = inp[:max_k].copy()
+    N = T - max_k
+    tokens = np.zeros((N, F), dtype=np.int64)
+    for c in range(F):
+        k_c = int(order_arr[c])
+        L = _round_levels(inp[:, c], scale[c], use_decimal)
+        q = np.diff(L, n=k_c) if k_c > 0 else L
+        tokens[:, c] = q[-N:] if N > 0 else q[:0]
+    tokens += vocab_size // 2
+    np.clip(tokens, 0, vocab_size - 1, out=tokens)
+    return start, scale, tokens
+
+
+def decode_lgt(
+    start: np.ndarray,
+    scale: np.ndarray,
+    inp: np.ndarray,
+    vocab_size: int,
+    order_of_derivative: int | np.ndarray,
+    use_decimal: bool,
+) -> np.ndarray:
+    """Inverse of `encode_lgt`: exact integer k-fold cumsum, then one division."""
+    assert vocab_size % 2 == 0 and vocab_size >= 4
+    assert inp.dtype == np.int64
+    N, F = inp.shape
+    order_arr = _order_array(order_of_derivative, F)
+    max_k = start.shape[0]
+    assert (order_arr <= max_k).all()
+    q = inp - vocab_size // 2
+    T = N + max_k
+    levels = np.zeros((T, F), dtype=np.int64)
+    for c in range(F):
+        k_c = int(order_arr[c])
+        L_pre = (
+            _round_levels(start[:, c], scale[c], use_decimal)
+            if max_k > 0
+            else np.zeros(0, dtype=np.int64)
+        )
+        # Integer derivative starts from the last k_c prefix levels.
+        d = L_pre[max_k - k_c : max_k]
+        der_starts = []
+        for _ in range(k_c):
+            der_starts.append(int(d[0]))
+            d = np.diff(d)
+        res = q[:, c]
+        for i in range(k_c):
+            res = np.cumsum(np.concatenate([[der_starts[k_c - 1 - i]], res]))
+        if max_k > k_c:
+            res = np.concatenate([L_pre[: max_k - k_c], res])
+        levels[:, c] = res
+    if use_decimal:
+        out = np.empty((T, F), dtype=object)
+        for c in range(F):
+            out[:, c] = [Decimal(int(v)) / scale[c] for v in levels[:, c]]
+        return out
+    return levels / scale
 
 
 def differentiate(
@@ -281,12 +449,16 @@ def encode(
     domain_of_definition: np.ndarray,
     order_of_derivative: int | np.ndarray,
     use_decimal: bool,
+    tokenizer: str | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Encode multivariate signal to tokens.
 
     `order_of_derivative` can be scalar (uniform k for all columns) or a 1D
     array (per-column k). In the per-column case, each column's scale is
     sized by its own k (headroom for MASH if applicable).
+
+    `tokenizer`: "mash" (prefix-anchored Σ-Δ, this function's body) or
+    "lgt" (`encode_lgt`); None picks `DEFAULT_TOKENIZER`.
     """
     assert vocab_size % 2 == 0
     assert vocab_size >= 4
@@ -298,31 +470,19 @@ def encode(
     else:
         assert np_is_float64(inp)
         assert np_is_float64(domain_of_definition)
-    # Normalize order to per-column array for uniform scale computation.
-    if _is_scalar_order(order_of_derivative):
-        scalar_k = int(order_of_derivative)
-        assert scalar_k >= 0
-        order_arr = np.full(F, scalar_k, dtype=np.int64)
-    else:
-        order_arr = np.asarray(order_of_derivative, dtype=np.int64)
-        assert order_arr.shape == (F,)
-        assert (order_arr >= 0).all()
-
-    scale = np.ones(shape=domain_of_definition.shape, dtype=np.float64)
-    if use_decimal:
-        scale = np_to_decimal(scale)
-    _filter = np.abs(domain_of_definition) > np.finfo(np.float64).eps
-    # Per-column scale: for MASH columns include headroom 2^{k_c}, else use
-    # the standard (V − 2)/2 formula.
-    for c in range(F):
-        if not _filter[c]:
-            continue
-        k_c = int(order_arr[c])
-        use_mash_c = k_c >= 2 and vocab_size > 2 ** k_c + 2
-        if use_mash_c:
-            scale[c] = (vocab_size - 2 - 2 ** k_c) / domain_of_definition[c] / 2
-        else:
-            scale[c] = (vocab_size - 2) / domain_of_definition[c] / 2
+    tok = tokenizer or DEFAULT_TOKENIZER
+    if tok == "lgt":
+        return encode_lgt(
+            inp=inp,
+            vocab_size=vocab_size,
+            domain_of_definition=domain_of_definition,
+            order_of_derivative=order_of_derivative,
+            use_decimal=use_decimal,
+        )
+    if tok != "mash":
+        raise ValueError(f"unknown tokenizer {tok!r}; expected 'mash' or 'lgt'")
+    order_arr = _order_array(order_of_derivative, F)
+    scale = _compute_scale(vocab_size, domain_of_definition, order_arr, use_decimal)
 
     start, diff = differentiate(
         inp=inp,
@@ -377,7 +537,20 @@ def decode(
     vocab_size: int,
     order_of_derivative: int | np.ndarray,
     use_decimal: bool,
+    tokenizer: str | None = None,
 ) -> np.ndarray:
+    tok = tokenizer or DEFAULT_TOKENIZER
+    if tok == "lgt":
+        return decode_lgt(
+            start=start,
+            scale=scale,
+            inp=inp,
+            vocab_size=vocab_size,
+            order_of_derivative=order_of_derivative,
+            use_decimal=use_decimal,
+        )
+    if tok != "mash":
+        raise ValueError(f"unknown tokenizer {tok!r}; expected 'mash' or 'lgt'")
     assert vocab_size % 2 == 0
     assert vocab_size >= 4
     if use_decimal:
@@ -401,16 +574,34 @@ def get_domain_of_definition(
     inp: np.ndarray,
     order_of_derivative: int | np.ndarray,
     use_decimal: bool,
+    quantile: float | None = None,
 ) -> np.ndarray:
+    """Per-column bound D on |Δ^k x|, which sets the bin width Δ = 2D/(V−2).
+
+    `quantile` (e.g. 0.9999) uses that quantile of |Δ^k x| instead of the max.
+    The max is set by the single most extreme step in the whole training set, so
+    on heavy-tailed collections it makes the grid useless for typical series: on
+    M4 Daily the max is 19.5 while the median step is 0.02, and Δ/2 alone comes
+    to 3.8 typical steps. A quantile trades a small fraction of clipped values
+    (which the encoder saturates, see the clipping note in the docs) for a grid
+    that can actually represent ordinary moves.
+    """
     if use_decimal:
         assert np_is_decimal(inp)
+        assert quantile is None, "quantile domain is float64-only"
     else:
         assert np_is_float64(inp)
+    assert quantile is None or 0.0 < quantile <= 1.0
+    reduce = (
+        (lambda a: np.max(a, axis=0))
+        if quantile is None or quantile == 1.0
+        else (lambda a: np.quantile(a, quantile, axis=0))
+    )
     if _is_scalar_order(order_of_derivative):
         k = int(order_of_derivative)
         assert k >= 0
         diff = np.diff(inp, n=k, axis=0)
-        return np.max(np.abs(diff), axis=0)
+        return reduce(np.abs(diff))
     order = np.asarray(order_of_derivative, dtype=np.int64)
     assert order.ndim == 1 and order.shape[0] == inp.shape[1]
     assert (order >= 0).all()
@@ -423,5 +614,5 @@ def get_domain_of_definition(
         k_c = int(order[c])
         diff_c = np.diff(inp[:, c], n=k_c)
         if len(diff_c) > 0:
-            result[c] = np.max(np.abs(diff_c))
+            result[c] = reduce(np.abs(diff_c))
     return result

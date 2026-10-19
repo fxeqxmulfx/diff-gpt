@@ -1,0 +1,125 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2020_conference,times}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+
+\usepackage{hyperref}
+\usepackage{url}
+%\usepackage{enumitem}
+
+\usepackage{color}
+\definecolor{darkblue}{rgb}{0,0.0,0.55}
+\hypersetup{ 
+	colorlinks = true,
+	citecolor  = darkblue,
+	linkcolor  = darkblue,
+	citecolor  = darkblue,
+	filecolor  = darkblue,
+	urlcolor   = darkblue,
+}
+
+\usepackage{cy}
+\usepackage{bbm}
+\usepackage{subcaption}
+\newcommand{\sfmx}{\sigma}
+\newcommand{\hdmx}{\sigma_{\rm H}}
+\newcommand{\relu}{{\rm ReLU}}
+\newcommand{\adju}{{\rm adj}}
+\newcommand{\funcdist}{\mathsf{d}}
+\newcommand{\attn}{{\rm Attn}}
+\newcommand{\ff}{{\rm FF}}
+\renewcommand{\indic}[1]{\mathbbm{1}\left\{#1\right\}}
+\newcommand{\range}{{\rm range}}
+\newcommand{\BB}{\text{BERT}_{\text{BASE}}}
+\newcommand{\leqwtxt}[1]{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily{#1}}}}{\leq}}}
+
+%\setlist[itemize]{leftmargin=0.2in}
+%\setlist[enumerate]{leftmargin=0.2in}
+
+
+\title{Are Transformers universal approximators of sequence-to-sequence functions?}
+
+% Authors must not appear in the submitted version. They should be hidden
+% as long as the \iclrfinalcopy macro remains commented out below.
+% Non-anonymous submissions will be rejected without review.
+
+\author{Chulhee Yun\thanks{ Based on work performed at Google Research New York }\\
+MIT\\
+\texttt{chulheey@mit.edu} \\
+\And
+%Srinadh Bhojanapalli, Ankit Singh Rawat, Sashank J. Reddi, Sanjiv Kumar \\
+%Google Research New York \\
+%\texttt{\{bsrinadh,ankitsrawat,sashank,sanjivk\}@google.com}
+Srinadh Bhojanapalli\\
+Google Research NY\\
+\texttt{bsrinadh@google.com}\\
+\And
+Ankit Singh Rawat\\
+Google Research NY\\
+\texttt{ankitsrawat@google.com}\\
+\And
+Sashank J. Reddi\\
+Google Research NY\\
+\texttt{sashank@google.com}\\
+\And
+Sanjiv Kumar\\
+Google Research NY\\
+\texttt{sanjivk@google.com}
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
+\begin{document}
+
+
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Abstract
+\input{abstract.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Introduction
+\input{introduction.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Background
+\input{background.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Universal approximation
+\input{universal.tex}
+
+\input{proofs_main}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Discussion and experiments
+\input{discussion}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Conclusion
+%\input{conclusion.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Bibliography
+\bibliography{iclr2020_conference}
+\bibliographystyle{iclr2020_conference}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Appendices
+\newpage
+\appendix
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Proofs
+\input{appx_proof}
+\input{appx_experiments}
+\end{document}

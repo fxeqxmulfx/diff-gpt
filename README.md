@@ -1,12 +1,28 @@
 # diff-gpt
 
 Autoregressive time-series forecasting with a decoder-only transformer trained on
-a derivative-based tokenization. The encoder differentiates the input, scales by
-its observed range, and quantizes with a MASH (multi-stage noise-shaping)
-$k$-th-order $\Sigma\Delta$ modulator; the decoder inverts this. The model is
-a standard GPT — the inductive bias sits entirely in the tokenization.
+a derivative-based tokenization. The encoder rounds the signal onto a fixed grid
+of step $\Delta$ and emits the $k$-th differences of the grid index
+(level-grid tokenization, LGT: $q_t = \Delta^k\,\mathrm{round}(s\,x_t) + V/2$);
+the decoder integrates the tokens exactly in integer arithmetic. The model is a
+standard GPT — the inductive bias sits entirely in the tokenization.
+
+LGT has the same reconstruction bound and vocabulary headroom as the MASH
+$\Sigma\Delta$ encoder used in earlier versions (which is in fact the same
+rounding relative to a polynomial extrapolated from the window prefix), but the
+token at $t$ depends only on $x_{t-k..t}$: encoding a window equals the slice of
+the full encoding, identical values give identical tokens anywhere in a series,
+and decoding is exact for any $k$ and $T$. The $\Sigma\Delta$ encoder is kept
+for compatibility: `tokenizer="mash"` on `encode`/`decode`, or
+`DIFF_GPT_TOKENIZER=mash` for models trained with it.
 
 See [papers/paper.pdf](papers/paper.pdf) for the full write-up with proofs and benchmarks.
+
+Additional English notes cover [MASH tokenization](papers/mash_how_it_works.md),
+[sequence-to-sequence function families](papers/seq2seq_family.md), and
+[MLPs and transformers](papers/note_mlp_to_transformer.pdf).
+The [Yun et al. (2020) paper](papers/yun2020.pdf) is included with its
+original English sources and a `papers/yun2020.tex` build wrapper.
 
 ## Signal assumption
 
@@ -41,14 +57,45 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 
 ## Key features
 
-- **MASH $k$-th-order $\Sigma\Delta$**: stable noise-shaping at arbitrary order $k$,
-  tight $\Delta/2$ reconstruction bound uniformly in $T$. Falls back to the
-  classical carry scheme when $V \le 2^k + 2$.
-- **Gaussian ordinal soft-CE**: replaces one-hot targets with a discrete Gaussian
-  over bin indices, $p^\text{soft}_i \propto \exp(-(i - y)^2 / 2\sigma^2)$.
-  Teaches the model that "off by one bin is almost right" — matches the ordinal
-  structure of derivative-quantized tokens. On M4 Hourly: sMAPE $18.58 \to 17.49$
-  at $\sigma = 2$ with no architectural change.
+- **Level-grid tokenization**: tight $\Delta/2$ reconstruction bound uniformly
+  in $T$ at any order $k$, exact integer decoding, window-consistent tokens.
+  The MASH $\Sigma\Delta$ encoder remains available (`tokenizer="mash"`).
+- **Discretised logistic-mixture head** (`GPT(head="mixture")`): the token is
+  the rounding of a continuous quantity, so the head predicts a density over it
+  and assigns each bin the mass of its cell. No smoothing hyper-parameter; on
+  M4 Hourly it halves CRPS (343 → 183) and cuts MSIS from 46 to 10 against the
+  soft-CE softmax head, with better point metrics under the Bayes readout below.
+- **Bayes point readout** (`DiffGPT.predict_point`): the point forecast that
+  minimises the expected metric (MAE/MASE, MSE, sMAPE or M4's OWA) under
+  $N$ sampled trajectories, instead of feeding argmax/median tokens back.
+- **Exact token features** (`GPT(feature_lags=(24,))`): the decoder recovers
+  the signal by integrating the tokens and the data is seasonal, yet a linear
+  probe shows the trained model represents the running integral only at
+  $R^2 = 0.69$ and the token one season back at $0.40$. Feeding those exact
+  functions of the token prefix as numeric inputs — the running integral, the
+  level change over the lag, and the lagged token — is the single largest win
+  measured here: on M4 Hourly sMAPE $16.91 \to 13.11$, OWA $0.726 \to 0.569$,
+  validation cross-entropy $-0.082$ nats on every seed. They cost no plumbing:
+  the features are computed inside `forward`, and the cross-step state lives in
+  the KV cache, which is what a cache is for.
+- **Channel-aware positions** (`GPT(n_channels=F)`): a multivariate stream
+  interleaves $F$ channels, so absolute position $p$ belongs to channel
+  $p \bmod F$; a learned channel embedding states that instead of leaving the
+  model to infer it. Pair with `DiffDataFrameDataLoader(align_windows=True)`
+  so training windows start on a channel boundary like the inference context.
+  On ETTh1 (7 variates): validation cross-entropy $2.51 \to 2.19$ nats,
+  median-window MSE $-22\%$, CRPS $-8\%$, both seeds.
+- **Free-run temperature calibration** (`DiffGPT.calibrate_temperature`):
+  cross-entropy calibrates each one-step distribution, but a rollout feeds its
+  own samples back and the joint forecast comes out over-dispersed. Pick the
+  temperature on held-out windows by CRPS — *not* by matching interval
+  coverage, which any wide enough band satisfies. On ETTh1 the CRPS criterion
+  picks $T = 0.5$ and the sampled readout then beats the deterministic path;
+  coverage-matching picks $T = 1$, where MSE is 2.4x worse.
+- **Gaussian ordinal soft-CE** (softmax head): replaces one-hot targets with a
+  discrete Gaussian over bin indices, $p^\text{soft}_i \propto \exp(-(i - y)^2 / 2\sigma^2)$.
+  On M4 Hourly: sMAPE $18.58 \to 17.49$ at $\sigma = 2$. Superseded by the
+  mixture head, which learns the width per position.
 - **Per-column derivative order**: `order_of_derivative` can be an array of shape
   $(F,)$ giving each channel its own $k_c$. Mix $k = 0$ (raw) with $k = 1, 2, \ldots$
   in a single model.
@@ -89,7 +136,7 @@ base = GPT(
     block_size=138,
     n_head=4,
     n_layer=2,
-    label_smoothing_sigma=2.0,  # ordinal soft-CE
+    head="mixture",             # discretised logistic mixture over the bins
 )
 model = DiffGPT(
     model=base,
@@ -112,14 +159,24 @@ loader = DiffDataFrameDataLoader(
 
 model.train(loader=loader, max_iters=20_000, eval_interval=500)
 
-# Point forecast (argmax).
+# Point forecast: Bayes-optimal readout for the metric you are scored on,
+# from 100 sampled trajectories ("mae" -> marginal median, "mse" -> mean,
+# "smape", or "owa" with M4's Naive2 references).
 context = dfs[0].iloc[-96:]
-prediction = model.predict(
-    df=context,
-    max_new_points=48,
-    sampler=TemperatureSampler(temperature=0.0),
+prediction = model.predict_point(
+    df=context, max_new_points=48, metric="mae", num_samples=100,
 )
+# Deterministic single-path readouts are still available:
+from diff_gpt.sampler.median import MedianSampler
+path = model.predict(df=context, max_new_points=48, sampler=MedianSampler())
 ```
+
+M4 Hourly, 414 series (mixture head, LGT, exact token features, OWA readout):
+sMAPE **13.11**, MASE **1.018**, OWA **0.569**; CRPS 190, MSIS 7.2,
+coverage@80 0.77 against a nominal 0.80. The soft-CE softmax baseline of
+earlier versions scores 17.49 / 1.659 / OWA 0.822 with the argmax readout, so
+OWA improves by 31%. `improvement_plan.md` carries the step-by-step ablation,
+including the changes that were measured and rejected.
 
 ## Probabilistic forecasting
 

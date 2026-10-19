@@ -1,11 +1,20 @@
+"""Σ-Δ (MASH) encoder tests. Thresholds below are empirical maxima of the
+prefix-anchored Σ-Δ path, so the tokenizer is pinned to "mash" explicitly;
+the level-grid encoder (the package default) is covered by test_lgt.py."""
+
+from functools import partial
+
 import numpy as np
 
+from diff_gpt.encoder_decoder import decode as _decode
+from diff_gpt.encoder_decoder import encode as _encode
 from diff_gpt.encoder_decoder import (
-    decode,
-    encode,
     get_domain_of_definition,
     np_to_decimal,
 )
+
+encode = partial(_encode, tokenizer="mash")
+decode = partial(_decode, tokenizer="mash")
 
 
 def test_diff_encoder_decoder_sin_cos():

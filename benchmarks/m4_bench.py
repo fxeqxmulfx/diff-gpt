@@ -16,6 +16,7 @@ the competitive setup.
 Usage:
     uv run --no-sync python -m benchmarks.m4_bench
     M4_FREQ=Daily  M4_N_SERIES=200 uv run --no-sync python -m benchmarks.m4_bench
+    M4_SEED=1 M4_SAMPLERS=argmax,median M4_SAVE=runs/m4.pt uv run --no-sync python -m benchmarks.m4_bench
 """
 
 from __future__ import annotations
@@ -29,9 +30,11 @@ import torch
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import get_domain_of_definition
+from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER, get_domain_of_definition
 from diff_gpt.model.gpt import GPT
+from diff_gpt.sampler.median import MedianSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.train import train as train_loop
 
 
 M4_DIR = (
@@ -46,9 +49,12 @@ HORIZONS = {
     "Daily": 14,
     "Hourly": 48,
 }
+# MASE seasonality per M4's own definition (Makridakis et al. 2020): the daily
+# series have a weekly period of 7, but M4 scores Daily with seasonality 1, and
+# using 7 understates MASE by ~2.7x on this data.
 SEASONALITY = {
     "Yearly": 1, "Quarterly": 4, "Monthly": 12,
-    "Weekly": 1, "Daily": 7, "Hourly": 24,
+    "Weekly": 1, "Daily": 1, "Hourly": 24,
 }
 
 
@@ -70,7 +76,8 @@ def mase(pred: np.ndarray, true: np.ndarray, insample: np.ndarray, season: int) 
 
 def main() -> None:
     torch.set_float32_matmul_precision("high")
-    torch.manual_seed(0)
+    seed = int(os.environ.get("M4_SEED", "0"))
+    torch.manual_seed(seed)
 
     freq = os.environ.get("M4_FREQ", "Hourly")
     n_series = int(os.environ.get("M4_N_SERIES", "50"))
@@ -87,9 +94,18 @@ def main() -> None:
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device} | freq={freq} | n_series={len(picked)} | horizon={horizon}")
+    train_module = None  # set when a CUDA-graph compile mode wraps the model for training
 
     # Per-series normalization stats computed on the training history.
     # We store them so we can invert before scoring.
+    # Drop very short series before sizing the context: block_size is capped by
+    # the SHORTEST series' val portion, so one 93-point series would shrink the
+    # context for all 4227 of them (M4_MIN_LEN=0 keeps every series).
+    min_len = int(os.environ.get("M4_MIN_LEN", "0"))
+    if min_len > 0:
+        keep = [i for i in picked if len(train[i]) >= min_len]
+        print(f"M4_MIN_LEN={min_len}: kept {len(keep)} of {len(picked)} series")
+        picked = np.array(keep)
     series_raw = [train[i].astype(np.float64) for i in picked]
     stats = [(float(s.mean()), float(s.std() or 1.0)) for s in series_raw]
     series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats)]
@@ -116,9 +132,12 @@ def main() -> None:
     order_of_derivative = int(os.environ.get("M4_ORDER", "1"))
     # Global domain_of_definition over the union of normalized training data.
     all_tokens = np.concatenate(series_norm, axis=0).reshape(-1, 1)
+    dq = os.environ.get("M4_DOMAIN_QUANTILE")
     domain_of_definition = get_domain_of_definition(
-        all_tokens, order_of_derivative=order_of_derivative, use_decimal=False
+        all_tokens, order_of_derivative=order_of_derivative, use_decimal=False,
+        quantile=float(dq) if dq else None,
     )
+    print(f"domain={domain_of_definition.round(4)} (quantile={dq or 'max'})")
 
     # Small model: ~130k params. At ~280k training tokens (414 series * ~850 *
     # train_part=0.8), this gives ~2 tokens/param — a compromise between
@@ -129,6 +148,16 @@ def main() -> None:
     n_embd = int(os.environ.get("M4_N_EMBD", "64"))
     n_layer = int(os.environ.get("M4_N_LAYER", "2"))
     n_head = int(os.environ.get("M4_N_HEAD", "4"))
+    head = os.environ.get("M4_HEAD", "softmax")
+    mix_k = int(os.environ.get("M4_MIX_K", "8"))
+    embed_once = os.environ.get("M4_ATTNRES_EMBED_ONCE", "0") == "1"
+    lags_env = os.environ.get("M4_FEATURE_LAGS", "")  # e.g. "24" (daily) — step 11
+    feature_lags = tuple(int(x) for x in lags_env.split(",") if x.strip())
+    print(
+        f"tokenizer={DEFAULT_TOKENIZER} | head={head} (K={mix_k}) | "
+        f"sigma={label_smoothing_sigma} | V={vocab_size} | embed_once={embed_once} "
+        f"| feature_lags={feature_lags}"
+    )
     base = GPT(
         vocab_size=vocab_size,
         n_embd=n_embd,
@@ -137,9 +166,21 @@ def main() -> None:
         n_layer=n_layer,
         use_checkpoint=False,
         label_smoothing_sigma=label_smoothing_sigma,
+        head=head,
+        mixture_components=mix_k,
+        attn_res_commit_embed_once=embed_once,
+        feature_lags=feature_lags,
     ).to(device=device)
     if device == "cuda":
-        base.compile(mode="max-autotune-no-cudagraphs")
+        # M4_COMPILE_MODE: "max-autotune-no-cudagraphs" (default), "max-autotune"
+        # (adds CUDA graphs; training shapes are static), "reduce-overhead", "none".
+        compile_mode = os.environ.get("M4_COMPILE_MODE", "max-autotune-no-cudagraphs")
+        if compile_mode in ("reduce-overhead", "max-autotune"):
+            # CUDA graphs need static shapes: compile a separate wrapper for the
+            # training loop only; inference (KV cache, growing T) stays on `base`.
+            train_module = torch.compile(base, mode=compile_mode)
+        elif compile_mode != "none":
+            base.compile(mode=compile_mode)
     model = DiffGPT(
         model=base,
         order_of_derivative=order_of_derivative,
@@ -150,8 +191,13 @@ def main() -> None:
     # Global training: one model over all series.
     max_iters = int(os.environ.get("M4_MAX_ITERS", "20000"))
     eval_interval = int(os.environ.get("M4_EVAL_INTERVAL", "500"))
+    # Data-scaling knob: train on a prefix of the series, always score all of them,
+    # so the test set is identical across training-set sizes.
+    n_train_series = int(os.environ.get("M4_TRAIN_SERIES", "0")) or len(dfs)
+    if n_train_series < len(dfs):
+        print(f"M4_TRAIN_SERIES={n_train_series}: training on {n_train_series} of {len(dfs)} series")
     loader = DiffDataFrameDataLoader(
-        dfs=dfs,
+        dfs=dfs[:n_train_series],
         block_size=block_size,
         batch_size=32,
         vocab_size=vocab_size,
@@ -160,8 +206,9 @@ def main() -> None:
         use_decimal=False,
         device=device,
         train_part=train_part,
+        rng=torch.Generator().manual_seed(42 + seed),
     )
-    val_loss, train_time_s = model.train(
+    train_kwargs = dict(
         loader=loader,
         learning_rate=1e-2,
         betas=(0.9, 0.95),
@@ -172,30 +219,46 @@ def main() -> None:
         use_tqdm=False,
         use_early_stopping=False,
     )
+    if train_module is not None:
+        val_loss, train_time_s = train_loop(mut_model=train_module, **train_kwargs)
+    else:
+        val_loss, train_time_s = model.train(**train_kwargs)
     print(f"train: val_loss={val_loss:.4f}  train_time_s={train_time_s}")
 
-    # Forecast each series by conditioning on its tail.
-    base.eval()
-    sampler = TemperatureSampler(temperature=0.0)
-    smapes, mases = [], []
-    for i_global, series_idx in enumerate(picked):
-        insample_raw = series_raw[i_global]
-        mu, sd = stats[i_global]
-        truth_raw = test[series_idx].astype(np.float64)
-        # Use the tail of the normalized training series as context.
-        ctx_len = min(len(dfs[i_global]), block_size - horizon)
-        context = dfs[i_global].iloc[-ctx_len:]
-        pred_df = model.predict(df=context, max_new_points=horizon, sampler=sampler)
-        pred_norm = pred_df.iloc[-horizon:].to_numpy().reshape(-1)
-        pred_raw = pred_norm * sd + mu
-        smapes.append(smape(pred_raw, truth_raw))
-        mases.append(mase(pred_raw, truth_raw, insample_raw, season))
+    save_path = os.environ.get("M4_SAVE")
+    if save_path:
+        torch.save(base.state_dict(), save_path)
 
-    print("=" * 60)
-    print(
-        f"M4 {freq} (global) | n={len(picked)} series | horizon={horizon} | "
-        f"sMAPE={np.mean(smapes):.2f} MASE={np.nanmean(mases):.3f}"
-    )
+    # Forecast each series by conditioning on its tail, once per requested
+    # point readout (M4_SAMPLERS="argmax" | "median" | "argmax,median").
+    base.eval()
+    sampler_names = os.environ.get("M4_SAMPLERS", "argmax").split(",")
+    samplers = {
+        "argmax": TemperatureSampler(temperature=0.0),
+        "median": MedianSampler(),
+    }
+    for name in sampler_names:
+        sampler = samplers[name]
+        smapes, mases = [], []
+        for i_global, series_idx in enumerate(picked):
+            insample_raw = series_raw[i_global]
+            mu, sd = stats[i_global]
+            truth_raw = test[series_idx].astype(np.float64)
+            # Use the tail of the normalized training series as context.
+            ctx_len = min(len(dfs[i_global]), block_size - horizon)
+            context = dfs[i_global].iloc[-ctx_len:]
+            pred_df = model.predict(df=context, max_new_points=horizon, sampler=sampler)
+            pred_norm = pred_df.iloc[-horizon:].to_numpy().reshape(-1)
+            pred_raw = pred_norm * sd + mu
+            smapes.append(smape(pred_raw, truth_raw))
+            mases.append(mase(pred_raw, truth_raw, insample_raw, season))
+
+        print("=" * 60)
+        print(
+            f"M4 {freq} (global) | n={len(picked)} series | horizon={horizon} | "
+            f"seed={seed} | readout={name} | "
+            f"sMAPE={np.mean(smapes):.2f} MASE={np.nanmean(mases):.3f}"
+        )
 
 
 if __name__ == "__main__":

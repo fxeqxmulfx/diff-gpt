@@ -1,0 +1,49 @@
+"""Sampling seed (step 16): repeated calls were identical because the Engine
+always seeded with 42, which silently correlated independent Monte-Carlo runs."""
+import numpy as np
+import pandas as pd
+import torch
+
+from diff_gpt.diff_gpt import DiffGPT
+from diff_gpt.encoder_decoder import get_domain_of_definition
+from diff_gpt.model.gpt import GPT
+from diff_gpt.sampler.temperature import TemperatureSampler
+
+
+def _model():
+    torch.manual_seed(0)
+    idx = np.arange(80, dtype=np.float64)
+    df = pd.DataFrame({"y": np.sin(idx / 5.0)})
+    dod = get_domain_of_definition(df.to_numpy(dtype=np.float64), 1, False)
+    base = GPT(vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+               use_checkpoint=False, head="mixture")
+    return DiffGPT(model=base, order_of_derivative=1, domain_of_definition=dod, use_decimal=False), df
+
+
+def test_same_seed_reproduces_and_different_seed_does_not():
+    model, df = _model()
+    kw = dict(df=df.iloc[:20], max_new_points=6, num_samples=8,
+              sampler=TemperatureSampler(temperature=1.0))
+    a = model.predict_samples(**kw, seed=1)
+    b = model.predict_samples(**kw, seed=1)
+    c = model.predict_samples(**kw, seed=2)
+    assert np.array_equal(a, b)
+    assert not np.array_equal(a, c)
+
+
+def test_default_seed_is_still_reproducible():
+    model, df = _model()
+    kw = dict(df=df.iloc[:20], max_new_points=5, num_samples=4,
+              sampler=TemperatureSampler(temperature=1.0))
+    assert np.array_equal(model.predict_samples(**kw), model.predict_samples(**kw))
+
+
+def test_seed_reaches_quantiles_and_point_readouts():
+    model, df = _model()
+    kw = dict(df=df.iloc[:20], max_new_points=5, num_samples=8,
+              sampler=TemperatureSampler(temperature=1.0))
+    q1 = model.predict_quantiles(**kw, quantiles=(0.5,), seed=3)[0.5].to_numpy()
+    q2 = model.predict_quantiles(**kw, quantiles=(0.5,), seed=4)[0.5].to_numpy()
+    assert not np.array_equal(q1, q2)
+    p1 = model.predict_point(**kw, metric="mae", seed=3).to_numpy()
+    assert np.allclose(p1, q1)  # the MAE Bayes point is the marginal median

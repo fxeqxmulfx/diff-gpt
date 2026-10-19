@@ -11,6 +11,7 @@ class KVCache:
         "kv_shape",
         "kv_cache",
         "pos",
+        "token_ids",
     )
 
     def __init__(
@@ -25,9 +26,31 @@ class KVCache:
         self.kv_shape = (num_layers, 2, batch_size, num_heads, seq_len, head_dim)
         self.kv_cache = torch.zeros(0)
         self.pos = 0  # current position in time in the cache
+        # Token history, needed by models that derive numeric features (running
+        # integral, seasonal lags) from the emitted tokens: those are exact
+        # functions of the prefix, and the cache is where cross-step state lives.
+        self.token_ids: torch.Tensor | None = None
 
     def reset(self) -> None:
         self.pos = 0
+        self.token_ids = None
+
+    def record_tokens(self, idx: torch.Tensor, t0: int) -> torch.Tensor:
+        """Store `idx` at absolute positions [t0, t0 + T) and return the history
+        up to t0 + T, shape (B, t0 + T)."""
+        B, T = idx.shape
+        need = t0 + T
+        if self.token_ids is None or self.token_ids.size(1) < need:
+            grown = torch.zeros(B, max(need, self.kv_shape[4]), dtype=torch.long, device=idx.device)
+            if self.token_ids is not None:
+                n = min(self.token_ids.size(1), grown.size(1))
+                grown[:, :n] = self.token_ids[:, :n]
+            self.token_ids = grown
+        assert self.token_ids.size(0) == B, (
+            f"token history batch {self.token_ids.size(0)} != idx batch {B}"
+        )
+        self.token_ids[:, t0:need] = idx
+        return self.token_ids[:, :need]
 
     def get_pos(self) -> int:
         return self.pos
@@ -79,6 +102,13 @@ class KVCache:
         self.kv_cache[:, :, :, :, : other.pos, :] = other.kv_cache[..., : other.pos, :]
         # 4) update the pos
         self.pos = other.pos
+        # 5) carry the token history over, expanding the batch dim if needed
+        if other.token_ids is not None:
+            width = max(self_seq, other.token_ids.size(1))
+            self.token_ids = torch.zeros(
+                self_batch, width, dtype=torch.long, device=other.token_ids.device
+            )
+            self.token_ids[:, : other.token_ids.size(1)] = other.token_ids
 
     def insert_kv(
         self, layer_idx: int, k: torch.Tensor, v: torch.Tensor

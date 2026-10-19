@@ -1,0 +1,27 @@
+\section{Experimental setup}\label{sec:appx_experiments}
+
+For our experiments we follow the same setting as in BERT \citep{devlin2018bert}. We first pre-train the models on the masked language modeling task and the next sentence prediction task. We use English Wikipedia corpus and BooksCorpus dataset \citep{zhu2015aligning} for this pre-training. We use $\BB$, a 12 layer Transformer model as the baseline. This model uses an embedding size of 768 and has 12 head self-attention layers and 3072 wide feed forward layers. We train it with the Adam optimizer, with $.01$ dropout and weight decay. We do pre-training for 250k steps with a batch size of 1024 and a max sequence length of 512. Pre-training takes around 2 days on 16 TPUv3 chips. We take the pre-train models and finetune them on the MNLI and SQuAD datasets separately using the same hyper-parameters as in \citet{devlin2018bert}. MNLI is a sentence entailment task in which, given a premise sentence, requires us to classify a hypothesis sentence into neutral, contradiction or entailment classes. We report the classification accuracy on this task. SQuAD is a question answering task, in which given a paragraph and a question, requires us to identify the answer as a span of the words in the paragraph. For this task we report both the F1 score and the Exact Match (EM) percentage. The metrics are reported on the dev sets of these datasets.
+
+For our experiments with the depth-wise separable convolution layers, we follow the implementation in \citep{wu2019pay}. We first use a GLU layer followed by the convolution layer. We use 16 separable convolution filters, of filter length 128, and reuse them, with each filter operating on 48 of the 768 dimensions of the input. This layer also has a skip connection and the output is normalized using layer normalization, similar to the self-attention layer. In our experiments, we replace the self-attention layers of the Transformers, in the lower layers, with this convolution layer. We keep the feed forward layer of the Transformer block the same.
+
+For the experiments performed in this paper, one might consider an alternate explanation that the tasks considered maybe are easy, and do not require any advanced architecture to solve them, and even a simple architecture (bi-linear projection or separable convolution) might solve these tasks. To rule out this case we consider an even simpler architecture, namely average attention, as a baseline for our experiments.
+
+\noindent{\bf Average attention.}~An average attention layer replaces the self-attention layer, and just computes the average of projections of all the other tokens. That is, we replace $\sfmx [(\mW_K^i \mX)^T \mW_Q^i \mX]$ in \eqref{eq:attn} with a matrix full of $1/n$. The model still has the skip connections and the feed-forward layers like Transformer. 
+
+\begin{table}[!t]
+\centering
+\begin{tabular}{|c| c c c c|} 
+ \hline
+ Architecture & Average Attention & {\rm BProj} & {\rm SepConv} & Transformer \\ [0.5ex] 
+ \hline
+  \# params & 88.3M & 90M  & 102.5M & 110M \\
+ \hline
+ Masked LM accuracy (\%)& 28 & 59 & 60 & 63 \\
+ \hline
+ MNLI accuracy (\%)& 66 & 72.3 & 73 & 78.2 \\
+ \hline
+\end{tabular}
+\vspace{1ex}
+\caption{Performance of bi-linear projection and separable convolution layers on masked LM pre-training task and MNLI. Note that we expect these computationally cheaper models to have lower performance than the expensive Transformers as they do not compute input dependent attention weights and have weaker representation power. Our goal in studying them is to see if they can substitute some of the expensive attention layers for computing the contextual mappings. These models are trained in a large batch setting, with a batch size of 8192 for 60k steps, unlike the other set of experiments reported in Fig.~\ref{fig:conv}. Note that average attention has clearly worse performance, showing that theses tasks indeed require an advanced architecture.}
+\label{table:large_batch}
+\end{table}

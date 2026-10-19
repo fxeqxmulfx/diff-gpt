@@ -1,0 +1,270 @@
+\vspace*{-5pt}
+\subsection{Proof of the universal approximation theorem (Theorem~\ref{thm:univapprox})}
+\vspace*{-4pt}
+\label{sec:proof-univapprox}
+%In this section, we present the proof of Theorem~\ref{thm:univapprox}. Proof of Theorem~\ref{thm:anyseq2seq} is in Section \ref{sec:proof_anyseq2seq}.%As it would become evident in subsequent subsections, our analysis help demystify the inner functioning of Transformer network by identifying the role of different components of these networks, including the positional embeddings.
+
+Next, we outline the proof of Theorem~\ref{thm:univapprox} in greater detail. We refer the reader to Section~\ref{sec:proof_anyseq2seq} for the proof of Theorem~\ref{thm:anyseq2seq}, since it is a modification of Theorem~\ref{thm:univapprox}. Even though Theorems~\ref{thm:univapprox} and~\ref{thm:anyseq2seq} do not specifically mention the required depth for approximation, our proof techniques do characterize it, and we show that our construction is tight in the number of parameters. We defer the discussion of depth to Section~\ref{sec:tightness}.
+
+Recall that we want to show that given a function $f \in \mc F_{\rm PE}$, we can find a Transformer network $g \in \mc T^{2,1,4}$ such that $\funcdist_p(f, g) \leq \epsilon$. Without loss of generality, we can assume that the compact support of $f$ is contained in $[0, 1]^{d \times n}$. We achieve our desired objective in three key steps:
+
+\vspace{-2pt}
+\noindent{\bf Step 1.~Approximate $\mc F_{\rm PE}$ with piece-wise constant functions.}~We first use (a variant of) the classical result that any continuous function can be approximated up to arbitrary accuracy by piece-wise constant functions. For $\delta > 0$, we define the following class of piece-wise constant functions.
+\begin{align*}
+%\label{eq:piecewise-function-class}
+    \overline{\mc F}_{\rm PE}(\delta) \defeq
+    \left \{ f: \mX \mapsto \sum\nolimits_{\mL \in \sG_{\delta}} \mA_\mL \indic{\mX \in \sS_\mL} 
+    \mid
+    f \text{ is permutation equivariant, } \mA_\mL \in \reals^{d \times n} \right \},
+\end{align*}
+where $\sG_{\delta} \defeq \{0, \delta, \dots, 1-\delta \}^{d \times n}$ and, for a grid point $\mL \in \sG_{\delta}$, $\sS_\mL \defeq \prod_{j=1}^d \prod_{k=1}^n [\emL_{j,k}, \emL_{j,k}+\delta) \subset [0,1]^{d \times n}$ denotes the associated cube of width $\delta$. Let $\overline{f} \in \overline{\mc F}_{\rm PE}(\delta)$ be such that $\funcdist_{p}(f, \overline{f}) \leq \epsilon/3$. 
+
+% The following result states that the underlying function $f \in \mc F_{\rm PE}$ can be approximated using the function class $\overline{\mc F}_{\rm PE}(\delta)$.
+
+% \begin{lemma}
+% \label{lemma:part1}
+% For any given $f \in \mc F_{\rm PE}$ and $1 \leq p < \infty$, one can find a $\delta^* > 0$ such that $\exists$ $\overline f \in \overline {\mc F}_{\rm PE} (\delta^*)$ which satisfies $\funcdist_p(f, \overline f) \leq \epsilon/3$.
+% \end{lemma}
+
+\vspace{-2pt}
+\noindent{\bf Step 2.~Approximate $\overline {\mc F}_{\rm PE} (\delta)$ with {\em modified} Transformers.} 
+We then consider a slightly modified architecture for Transformer networks, where the softmax operator $\sfmx[\cdot]$ and $\relu(\cdot)$ are replaced by the hardmax operator $\hdmx[\cdot]$ and an activation function $\phi \in \Phi$, respectively. Here, the set of allowed activations $\Phi$ consists of all piece-wise linear functions with at most three pieces, where at least one piece is constant. Let $\overline{\mc T}^{h, m, r}$ denote the function class corresponding to the sequence-to-sequence functions defined by the modified Transformer networks. The following result establishes that the modified Transformer networks in $\overline{\mc T}^{2, 1, 1}$ can closely approximate functions in $\overline {\mc F}_{\rm PE}(\delta)$.
+
+\begin{proposition}
+\label{prop:part2}
+For each $\overline f \in \overline {\mc F}_{\rm PE} (\delta)$ and $1\leq p < \infty$, $\exists$ $\overline g \in \overline {\mc T}^{2,1,1}$ such that $\funcdist_p(\overline f, \overline g) = O(\delta^{d/p})$.
+\end{proposition}
+
+\vspace{-2pt}
+\noindent{\bf Step 3.~Approximate modified Transformers with (original) Transformers.}
+%{$\overline{\mc T}^{2, 1, 1}$ with $\mc T^{2, 1, 4}$.}
+Finally, we show that $\overline{g} \in \overline {\mc T}^{2,1,1}$ can be approximated by $\mc T^{2, 1, 4}$. Let $g \in {\mc T}^{2,1,4}$ be such that $\funcdist_{p}(\overline{g}, g)\leq \epsilon/3$.
+
+% The following result relies on the connection between the softmax operator and the hardmax operator; and the fact each activation $\phi \in \Phi$ can approximated by the sum of four $\relu$'s. 
+
+% \begin{lemma}
+% \label{lemma:part3}
+% For each $\overline g \in \overline {\mc T}^{2,1,1}$ and $1 \leq p < \infty$, $\exists$ $g \in \mc T^{2,1,4}$ such that $\funcdist_p(\overline g,g) \leq \epsilon/3$.
+% \end{lemma}
+
+Theorem~\ref{thm:univapprox} now follows from these three steps, because we have
+\begin{equation*}
+\funcdist_p(f, g) \leq \funcdist_p(f, \overline f) + \funcdist_p(\overline f, \overline g) + \funcdist_p(\overline g,g) \leq {2\epsilon}/{3} + O(\delta^{d/p}).
+\end{equation*}
+Choosing $\delta$ small enough ensures that $\funcdist_p(f, g) \leq \epsilon$. \qed
+%Lemma~\ref{lemma:part1}, Proposition~\ref{prop:part2}, and Lemma~\ref{lemma:part3} in a straightforward manner. Specifically, given an $f \in \mc F_{\rm PE}$, we can find an $\overline f \in \overline{\mc F}_{\rm PE}$, $\overline g \in \overline {\mc T}^{2,1,1}$, and $g \in \mc T^{2,1,4}$ such that $\funcdist_p(f, \overline f) \leq \epsilon/3$, $\funcdist_p(\overline f, \overline g) = O(\delta^d)$, and $\funcdist_p(\overline g,g) \leq \epsilon/3$, respectively. By choosing $\delta$ small enough that $\delta \leq \delta^{\ast}$ and $\funcdist_p(\overline f, \overline g) \leq \epsilon/3$, it follows from the triangle inequality that $\funcdist_p(f, g) \leq \epsilon$. \qed
+
+We refer the reader to Sections~\ref{appen:thm2-part1} and \ref{appen:thm2-part3} in the supplementary material for the formal statements and proofs of Steps~$1$ and $3$, respectively. As for Step~$2$, which is the most critical step in establishing the universal approximation property of Transformers, we provide a sketch of the proof of Proposition~\ref{prop:part2} in the next section, and refer the reader to Section~\ref{sec:appx_proof_prop} for the complete proof.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace*{-5pt}
+\section{Proof sketch of Proposition~\ref{prop:part2}: different roles of two layers}
+\vspace*{-3pt}
+%\section{Different roles of attention and feed-forward layers}
+\label{sec:different-roles}
+
+% Now an arbitrary (piece-wise constant) function $\overline{f}$ can potentially map $\mX_1$ and $\tilde{\mX}_2$ to the sequences that arbitrarily far, i.e., 
+% $$
+% \mY = [\mY_{:,1}, \mY_{:,2}, \mY_{:,3}] = \overline{f}(\mX_1)~~\text{and}~~\tilde{\mY} = [\tilde{\mY}_{:,1}, \tilde{\mY}_{:,2}, \tilde{\mY}_{:,2}] = \overline{f}(\tilde{\mX})
+% $$
+% such that $\|\mY_{:,j} - \tilde{\mY}_{:,j}\| \geq c > 0$, for all $j \in [3]$. 
+
+%This behavior cannot be produced by a function that captured by a function that applies the same operation on each token without capturing the context of the entire input. Fortunately, the self-attention layer in a Transformer block does consider {\em pair-wise} interaction among different input tokens. However, it is not clear if this weak form of interaction with shared projection weights is sufficient to extract the underlying context in a precise manner so that the Transformer network can map two very close input sequences to arbitrary output sequences. In this subsection, we show that despite shared parameters a (modified) Transformer can indeed capture the precise context of the input sequence via pairwise interactions.
+
+
+%As it would become evident in subsequent subsections, our analysis help demystify the inner functioning of Transformer network by identifying the role of different components of these networks, including the positional embeddings.
+
+As mentioned earlier, the heavy parameter sharing in Transformers makes the goal of universally approximating sequence-to-sequence functions seemingly difficult. Both the self-attention and the feed-forward layer weights inside a Transformer block are fixed across $n$ tokens. In this section, we show that Transformers are able to overcome this architectural constraint, and compute contextual mappings of the entire input sequence just based on the pair-wise interactions. The token-wise feedforward layers then transform these contextual mappings to the desired output sequence. %Once this context is distilled, token-wise feedforward layers are sufficient to compute the desired output sequence. 
+
+%are able to overcome this architectural constraint by realizing the contextual mapping which enable them to capture the precise context of the entire input sequence just based on the pair-wise interaction computed by the self-attention layers.
+
+We highlight these inner workings of Transformers en route to proving Proposition~\ref{prop:part2}. We want to show that given a piece-wise constant function $\overline f \in \overline{\mc F}_{PE}(\delta)$, there exists a modified Transformer network $\overline{g} \in \overline{\mc T}^{2, 1, 1}$ that closely approximates $\overline{f}$. We achieve this goal by establishing the following three claims, which correspond to Lemmas~\ref{lemma:quantize}, \ref{lemma:contextmap}, and \ref{lemma:memorize}.
+%The proof of Proposition~\ref{prop:part2} consists of the following three steps: 
+% \begin{enumerate}[\hspace{100pt}1.]
+%   \setlength{\itemsep}{10pt}
+%   \setlength{\leftmargin}{100pt}
+% \end{enumerate}
+\begin{enumerate}[\hspace{5pt}1.]
+\setlength{\itemsep}{2pt}
+\item Given an input $\mX \in \reals^{d \times n}$, a series of feed-forward layers in the modified Transformer network can quantize $\mX$ to an element $\mL$ on the extended grid $\sG^+_{\delta} \defeq \{ -\delta^{-nd}, 0, \delta, \dots, 1-\delta \}^{d \times n}$.
+\item Next, a series of self-attention layers in the modified Transformer network can take the input $\mL$ and implement a {\em contextual mapping} $q$ such that, for $\mL$ and $\mL'$ that are not permutation of each other, all the elements in $q(\mL)$ and $q(\mL')$ are distinct.
+\item Finally, a series of feed-forward layers in the modified Transformer network can map elements of the contextual embedding $q(\mL)$ to the desired output value of $\overline{f} \in \overline{\mc F}_{\rm PE}$ at the input $\mX$.
+\end{enumerate}
+
+Before discussing these three claims in detail, we note that even though a Transformer network stacks self-attention and feed-forward layers in an alternate manner, the skip connections enable these networks to employ a composition of multiple self-attention or feed-forward layers. Furthermore, as alluded earlier, these three steps clearly highlight the different roles that self-attention and feed-forward layers play in realizing the ability to universally approximate sequence-to-sequence functions: 1) self-attention layers compute precise contextual maps; and 2) feed-forward layers then assign the results of these contextual maps to the desired output values. %We only discuss steps 2 and 3 here and refer the reader to Section \ref{sec:appx_proof_prop} for the complete proof.
+
+\vspace*{-3pt}
+\subsection{Quantization by feed-forward layers}
+\vspace*{-3pt}
+\label{sec:ff-quantize}
+Since our objective in Proposition~\ref{prop:part2} is to approximate the function $\overline{f} \in \overline {\mc F}_{\rm PE}(\delta)$,
+%$$
+%\overline{f}: \mX \mapsto \sum\nolimits_{\mL \in \sG_{\delta}} \mA_\mL \indic{\mX \in \sS_\mL},
+%$$
+which takes a constant value on the cubes $\sS_{\mL}$'s, the (modified) Transformer network approximating $\overline{f}$ first quantizes the input $\mX$ according to these cubes. In particular, we want each input $\mX \in \sS_{\mL}$ to be mapped to the point $\mL$. The following result shows that a modified Transformer network can indeed implement this quantization map with a composition of multiple feed-forward layers. 
+%Here, we would like to restate that such compositions can be realized inside a Transformer block with the help of the skip connections.
+
+\begin{lemma}
+\label{lemma:quantize}
+Consider a scalar quantization map $g^{\rm ent}_{q} : \reals \to  \{ -\delta^{-nd}, 0, \delta, \dots, 1-\delta \}$:
+\begin{equation*}
+    g_{\rm q}^{\rm ent} (t) = 
+    \begin{cases}
+    k\delta & \text{ if } k\delta \leq t < (k+1)\delta, ~~k = 0, \dots, 1/\delta-1,\\
+    -\delta^{-nd} & \text{ otherwise. }
+    \end{cases}
+\end{equation*}
+There exists a function $g_{\rm q}: \reals^{d \times n} \mapsto \sG^{+}_{\delta}$ composed of $\frac{d}{\delta} + d$ token-wise feed-forward layers with $r=1$ and activations in $\Phi$, which employs the scalar quantization $g^{\rm ent}_{q}$ to each entry of its input.
+\end{lemma}
+
+As desired, the function $g_{\rm q}$ maps any $\mX \in \sS_\mL$ to $\mL$. Furthermore, if any element of $\mX$ is not in $[0, 1]$, the element is mapped to $-\delta^{-nd}$, indicating that $\mX$ is outside the compact support of $\overline{f} \in \overline{\mc F}_{\rm PE}(\delta)$.
+
+\vspace*{-3pt}
+\subsection{Contextual mapping by self-attention layers}
+\vspace*{-3pt}
+\label{sec:attn-context}
+In this subsection, we show that the (modified) Transformer network can compute contextual mappings (cf.~Definition~\ref{def:context-mapping}) from the output $\mL \in \sG^{+}_{\delta}$ of the map $g_{\rm q}$ (cf.~Section~\ref{sec:ff-quantize}) by using a composition of self-attention layers.
+The following lemma, sketched earlier in Section~\ref{sec:contextual-mapping}, shows that the (modified) Transformer networks can implement a \emph{permutation equivariant} contextual mapping over almost all elements of $\sG_{\delta}$, while mapping the rest of elements in $\sG^{+}_{\delta}$ to a disjoint set.
+
+% Let us consider a setting where we are interested in embedding two sentences: 1) I am happy; and 2) I am Bob. These sentences are fed to a sequence-to-sequence model as 
+% $$
+% \mX = [\mX_{:,1}, \mX_{:,2}, \mX_{:,3}] = [\vv_{\rm I}, \vv_{\rm am}, \vv_{\rm happy}]~~\text{and}~~\tilde{\mX} = [\tilde{\mX}_{:,1}, \tilde{\mX}_{:,2}, \tilde{\mX}_{:,3}] = [\vv_{\rm I}, \vv_{\rm am}, \vv_{\rm Bob}],
+% $$
+% where $\vv_{\rm I}, \vv_{\rm am}, \vv_{\rm happy},$ and $\vv_{\rm Bob}$ denote $d$-dimensional embedding for the tokens `I', `am', `happy', and `Bob', respectively. Since the word `I' occurs in different contexts in these sentences, the contextual mapping of this word should be different. We formally define this requirement below.
+
+% %In this subsection, we show that despite shared parameters the (modified) self-attention layer can indeed capture the precise context of the input sequence via pairwise interactions.
+
+% %As discussed earlier, in order for the Transformer networks to be able to universally approximate arbitrary sequence-to-sequence function despite the amount of parameter sharing, these networks should able to extract the context present in the input in a very precise manner. We show that the (modified) Transformer network are successful in extracting the context from the output of the quantized map $g_{\rm q}$ (cf.~Section~\ref{sec:ff-quantize}) by creating contextual maps with the help of the composition of multiple self-attention layers. The following definition formalizes the notion of contextual maps.
+
+% \begin{definition}[Contextual mapping]
+% Consider a finite set $\sL \subset \reals^{d \times n}$.
+% A map $q: \sL \to \reals^{1 \times n}$ defines a {\em contextual mapping} if the map satisfies the following:
+% \begin{enumerate}[\hspace{5pt}1.]
+% \setlength{\itemsep}{-3pt}
+%     \item For any $\mL \in \sL$, the $n$ entries in $q(\mL)$ are all distinct.
+%     \item For any $\mL, \mL' \in \sL$, with $\mL \neq \mL'$, all entries of $q(\mL)$ and $q(\mL')$ are distinct.
+% \end{enumerate}
+% \end{definition}
+% In other words, a contextual mapping maps each token (column) of $\mL \in \sL$ to a unique value which depends on the entire $\mL$; as a result, capturing the precise context of $\mL$. This allows the subsequent token-wise function (e.g., defined by the feed-forward layers in case of Transformer networks) to realize the outputs of any arbitrary sequence-to-sequence functions. 
+
+% At first thought, we can consider getting a contextual mapping by simply averaging all the tokens, because this can capture the one-word difference (e.g., ``happy'' vs.\ ``Bob'') in two different contexts. However, if there are multiple words that are different, it is not guaranteed that the average will be different. Indeed, requiring unique mappings for all the tokens for any change in any number of tokens, is a steep requirement. 
+
+% While the self-attention layer does consider {\em pair-wise} interactions among different input tokens, it is not clear if this weak form of pair-wise interaction with shared projection weights is sufficient to extract the underlying context. The following result shows that the (modified) Transformer networks can implement a \emph{permutation equivariant} contextual mapping over almost all elements of $\sG_{\delta}$. %-- the subset of the extended grid $\sG^{+}_{\delta}$ where the compact support of $\overline{f}$ gets mapped to after the quantization (cf.~Section~\ref{sec:ff-quantize}).
+
+\begin{lemma}
+\label{lemma:contextmap}
+Consider the following subset of $\sG_{\delta} = \{0, \delta, \dots, 1-\delta\}^{d \times n}$:
+\begin{equation*}
+\wt {\sG}_{\delta}
+\defeq 
+\{ \mL \in \sG_{\delta} \mid \text{$\mL_{:,i} \neq \mL_{:,j}$ for all $i \neq j$} \}.
+\end{equation*}
+Assume that $n \geq 2$ and $\delta^{-1} \geq 2$.
+Then, there exist a function $g_{\rm c}: \reals^{d \times n} \to \reals^{d \times n}$ composed of $\delta^{-d} + 1$ self-attention layers \textup{($h = 2, m = 1$)} that employ the $\hdmx$ operator, a vector $\vu \in \reals^d$, constants $t_l, t_r \in \reals$ \textup{($0 < t_l < t_r$)}, such that $q(\mL) \defeq \vu^T g_{\rm c}(\mL)$ satisfies the following properties:
+\begin{enumerate}[\hspace{5pt}1.]
+\setlength{\itemsep}{-3pt}
+    \item \label{cond:1} For any $\mL \in \wt {\sG}_{\delta}$, the entries of $q(\mL)$ are all distinct.
+    \item \label{cond:2} For any $\mL, \mL' \!\in\! \wt {\sG}_{\delta}$ such that $\mL$ is not a permutation of $\mL'$, all entries of $q(\mL)$, $q(\mL')$ are distinct.
+    \item \label{cond:3} For any $\mL \in \wt {\sG}_{\delta}$, all the entries of $q(\mL)$ are in $[t_l, t_r]$.
+    \item \label{cond:4} For any $\mL \in \sG^+_{\delta} \setminus \wt {\sG}_{\delta}$, all the entries of $q(\mL)$ are outside $[t_l, t_r]$.
+\end{enumerate}
+\end{lemma}
+At this point, a few remarks about the result in Lemma~\ref{lemma:contextmap} are in order. First, since the Transformer networks are bound to implement permutation invariant maps, we require the Property~\ref{lemma:contextmap}.\ref{cond:2} to hold for the pair of sequences that cannot be mapped to each other via permutation of columns. Furthermore, the self-attention layers implement the desirable contextual map for only $\wt{\sG}_{\delta} \subseteq \sG_{\delta}$, where all columns of $\mL$ are distinct. Note that for small $\delta$, $\sG_{\delta} \setminus \wt {\sG}_{\delta}$ constitutes a negligible fraction of $\sG_{\delta}$ because  $|\sG_{\delta} \setminus \wt {\sG}_{\delta}| = O(\delta^d |\sG_{\delta}|)$. The function $q$ in Lemma~\ref{lemma:contextmap} maps the elements of $\sG^+_{\delta} \setminus \wt {\sG}_{\delta}$ outside $[t_l, t_r]$---the interval where the outputs of the contextual mapping for $\wt \sG_{\delta}$ reside.
+
+\vspace*{-3pt}
+\subsubsection{Proof sketch of Lemma~\ref{lemma:contextmap}}
+\vspace*{-3pt}
+Since Lemma~\ref{lemma:contextmap} is one of the major technical contributions of this paper, we provide a short sketch of its proof. The complete proof is presented in Section~\ref{sec:proof-contextmap}.
+For simplicity, we consider the case $d = 1$, so the input $\mL \in \sG^+_{\delta}$ is a row vector of length $n$. 
+
+The key idea of the proof is that, using two attention heads of size $1$, one can implement a self-attention layer that shifts up input entries that are \emph{in a specific interval}, while leaving all other entries intact. We call this the \textbf{selective shift operation}. Since the entries in $\mL$ are quantized, we apply the selective shift operation to $0, \delta, \dots, 1-\delta$ using $1/\delta$ attention layers. Interestingly, the value of the largest output entry after these operations is unique for each $\mL \in \wt {\sG}_{\delta}$ up to permutations. Using the largest entry, one can add one last layer that shifts up the entire matrix and outputs $q(\mL)$ that satisfies Properties~\ref{lemma:contextmap}.\ref{cond:1} and~\ref{lemma:contextmap}.\ref{cond:2} of the lemma.
+
+%$\{ -\delta^{-n}, 0, \delta, \dots, 1-\delta \}$
+More concretely, the following function $\Psi: \reals^{1 \times n} \to \reals^{1 \times n}$, parametrized by $b, b' \in \reals$ satisfying $b < b'$, can be implemented with two attention heads of size $1$ with the hardmax ($\hdmx$) operator:
+\begin{align*}
+    \Psi(\mZ; b, b')_{1, j} =
+    \begin{cases}
+        \max_k \emZ_{1,k} - \min_k \emZ_{1,k} & \text{ if } b < \emZ_{1,j} < b', \\
+        0 & \text{ if } \emZ_{1,j} < b \text{ or } \emZ_{1,j} > b'.
+    \end{cases}
+\end{align*}
+% Consider the following function of $\mZ \in \reals^{1 \times n}$, which can be expressed with an attention head with head size $m = 1$ and hardmax $\hdmx$:
+% %\begin{align*}
+%     $\psi(\mZ; b_Q) = \mZ \hdmx [ \mZ^T (\mZ - b_Q \vone_n^T) ]$.
+% %\end{align*}
+% To see what this function computes, consider the $j$-th column of the attention score matrix: $\mZ^T (\emZ_{1,j} - b_Q)$. Note that, if $\emZ_{1,j}>b_Q$, $\hdmx$ will calculate $\argmax$ of $\mZ$, whereas if $\emZ_{1,j}<b_Q$, it will calculate $\argmin$. Therefore, the $(1,j)$-th entry of $\psi(\mZ; b_Q)$ can be written as
+% \begin{equation*}
+% \psi(\mZ; b_Q)_{1, j} = 
+% \begin{cases}
+%     \max_k \emZ_{1,k} & \text{ if } \emZ_{1,j} > b_Q, \\
+%     \min_k \emZ_{1,k} & \text{ if } \emZ_{1,j} < b_Q,
+% \end{cases}
+% \end{equation*}
+% for $j \in [n]$. 
+% From this, one can define a function parametrized by $b_Q$ and $b'_Q$, where $b_Q < b'_Q$, which consists of two attention heads of size $1$: $\Psi(\mZ; b_Q, b'_Q) \defeq \psi(\mZ; b_Q) - \psi(\mZ; b'_Q)$, which computes
+% \begin{align*}
+%     \Psi(\mZ; b_Q, b'_Q)_{1, j} =
+%     \begin{cases}
+%         \max_k \emZ_{1,k} - \min_k \emZ_{1,k} & \text{ if } b_Q < \emZ_{1,j} < b'_Q, \\
+%         0 & \text{ if } \emZ_{1,j} < b_Q \text{ or } \emZ_{1,j} > b'_Q.
+%     \end{cases}
+% \end{align*}
+If we define an attention layer of the form $\mZ \mapsto \mZ + \Psi(\mZ;b,b')$, then any entry $\emZ_{1,j}$ in $(b,b')$ is shifted up by $\max_k \emZ_{1,k} - \min_k \emZ_{1,k}$, \emph{while all the other entries stay untouched}. We can choose $b$ and $b'$ to selectively shift certain entries, hence the name selective shift operation.
+
+We stack $1/\delta$ self-attention layers, with attention parts $\delta^{-1} \Psi(\cdot;l-\delta/2,l+\delta/2)$ for each $l \in \{0, \delta, \dots, 1-\delta\}$, in increasing order of $l$. 
+%After that, we add an extra single-head attention layer with attention part $\delta^{-3} \psi(\cdot;0)$.
+With these layers, we can apply the selective shift operations to input entries of values $0, \delta, \dots, 1-\delta$.
+To see how the shift operations modify the input, now consider $n = 2$ for simplicity, and let $\mL = \begin{bmatrix} l_1 & l_2 \end{bmatrix} \in \wt {\sG}_{\delta}$. Without loss of generality, we can assume $l_1 < l_2$.
+The selective shift operation is applied to $l_1$ first, shifting it by $\delta^{-1}(\max \mL - \min \mL) = \delta^{-1}(l_2-l_1)$, resulting in $\wt l_1 = l_1+\delta^{-1}(l_2-l_1) > l_2$. After that, the operation on $l_2$ shifts it up by $\delta^{-1} (\wt l_1 - l_2)$. Thus, the first $1/\delta$ layers map $\mL = \begin{bmatrix} l_1 & l_2 \end{bmatrix}$ ($l_1 < l_2$) to 
+\begin{equation*}
+\wt \mL 
+= \begin{bmatrix} \wt l_1 & \wt l_2 \end{bmatrix}
+\defeq 
+\begin{bmatrix} l_1+\delta^{-1}(l_2-l_1) & l_2+(\delta^{-2}-\delta^{-1})(l_2-l_1) \end{bmatrix}.
+\end{equation*}
+We can show that the map from $\begin{bmatrix} l_1 & l_2 \end{bmatrix} \in \{ \mL \in \wt {\sG}_{\delta} \mid l_1 < l_2 \}$ to $\wt l_2$ is one-to-one, and that $0 < \wt l_1 < \wt l_2 < \delta^{-2}$. 
+We then add one last layer that shifts all positive entries of $\wt \mL$ by $\delta^{-3} \max \wt \mL = \delta^{-3} \wt l_2$, whose output we denote by $q(\mL) = \begin{bmatrix} \delta^{-3} \wt l_2 + \wt l_1 & \delta^{-3} \wt l_2 + \wt l_2 \end{bmatrix}$. 
+All entries of $q(\mL)$ are in $[\delta^{-3} \wt l_2, \delta^{-3} \wt l_2 + \delta^{-2})$, and this interval is disjoint for different $\mL$'s because $\mL \mapsto \wt l_2$ is one-to-one. Thus, $q(\mL)$ satisfies Properties~\ref{lemma:contextmap}.\ref{cond:1} and~\ref{lemma:contextmap}.\ref{cond:2} of the lemma. 
+The remaining details are in Section~\ref{sec:proof-contextmap}.
+
+%The last attention layer $\delta^{-3} \psi(\cdot;0)$ shifts all entries of $\wt \mL$ by $\delta^{-3} \wt l_2$, whose output we define to be $q(\mL)$. Due to the one-to-one property of $\mL \mapsto \wt l_2$, the map $\mL \mapsto q(\mL)$ satisfies Properties~\ref{lemma:contextmap}.\ref{cond:1} and~\ref{lemma:contextmap}.\ref{cond:2} of the lemma. The remaining parts of the proof can be found in Section~\ref{sec:proof-contextmap}.
+
+\vspace*{-3pt}
+\subsection{Function value mapping by feed-forward layers}
+\vspace*{-3pt}
+\label{sec:ff-value-mapping}
+This brings us to the final step, which demonstrates the key utility of the feed-forward layers. After the contextual mapping by self-attention layers, each token captures the entire context available in the input sequence. The following result shows that token-wise application of a composition of feed-forward layers can map these tokens to the desired output values required by the function $\overline{f}$. 
+
+\begin{lemma}
+\label{lemma:memorize}
+Let $g_c : \reals^{d \times n} \to \reals^{d\times n}$ be the function from Lemma~\ref{lemma:contextmap}. Then, there exists a function $g_{\rm v}: \reals^{d \times n} \to \reals^{d \times n}$ composed of $O(n (\frac{1}{\delta})^{dn}/n!)$ token-wise feed-forward layers \textup{($r=1$)} with activations in $\Phi$ such that $g_{\rm v}$ is defined by a token-wise function $g_{\rm v}^{\rm tkn}:\reals^d \to \reals^d$ on each column,
+\begin{equation*}
+    g_{\rm v} (\mZ) = 
+    \begin{bmatrix}
+    g_{\rm v}^{\rm tkn} (\mZ_{:, 1}) &
+    \cdots &
+    g_{\rm v}^{\rm tkn} (\mZ_{:, n})
+    \end{bmatrix},
+\end{equation*}
+where for all $j \in \{1, \dots, n\}$,
+\begin{equation*}
+    g_{\rm v}^{\rm tkn}(g_{\rm c}(\mL)_{:,j}) =
+    \begin{cases}
+        (\mA_{\mL})_{:,j} & \text{ if } \mL \in \wt {\sG}_{\delta},\\
+        \vzero_{d} & \text{ if } \mL \in \sG^+_{\delta} \setminus \wt {\sG}_{\delta}.
+    \end{cases}
+\end{equation*}
+\end{lemma}
+
+\vspace*{-10pt}
+\subsection{Tightness of constructions}
+\label{sec:tightness}
+\vspace*{-5pt}
+We showed in this section that Theorem~\ref{thm:univapprox} requires $O(n(1/\delta)^{dn}/n!)$ Transformer blocks for approximation, where $\delta$ is the width of the cubes.
+Each transformer block is of constant width, so it has $O(d)$ parameters;
+this means that the total number of parameters is $O(dn(1/\delta)^{dn}/n!)$.
+We note that this exponential dependence cannot be avoided in the worse case. If we assume continuity without any additional smoothness, quantizing the domain to cubes and approximating the function with constants require memorizing $(\text{output dim}) \times (\text{num cubes}) /n!$ real numbers, where the factor of $1/n!$ is due to permutation equivariance. Thus, Theorem~\ref{thm:univapprox} is optimal in the order of parameters.
+
+If we compare with the residual network result \citep{lin2018resnet}, we can consider ``flattening'' $\mX$ into a $dn$-dimensional vector and fitting the function. The proof technique in \citep{lin2018resnet} requires $O((1/\delta)^{dn})$ layers, where each layer has $O(dn)$ parameters: the total parameter requirement is $O(dn (1/\delta)^{dn})$. This shows that Transformers can approximate permutation equivariant functions in a more efficient way than residual networks.
+
+In Section~\ref{sec:proof_anyseq2seq}, our proof of Theorem~\ref{thm:anyseq2seq} shows that we require $O(n(1/\delta)^{dn})$ layers to approximate continuous (not permutation equivariant) sequence-to-sequence functions. As seen from the argument above, this construction is also optimal in the order of parameters.

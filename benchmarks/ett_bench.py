@@ -34,6 +34,9 @@ from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
 from diff_gpt.encoder_decoder import get_domain_of_definition
 from diff_gpt.model.gpt import GPT
+from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER
+from diff_gpt.metrics import bayes_point
+from diff_gpt.sampler.median import MedianSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 
@@ -70,9 +73,15 @@ def _evaluate(
     seq_len: int,
     pred_len: int,
     stride: int,
-    sampler: TemperatureSampler,
-) -> tuple[float, float, int]:
-    """Slide a (seq_len + pred_len) window over test_df; report MSE / MAE."""
+    readouts: list[str],
+    num_samples: int,
+) -> tuple[dict[str, tuple[float, float]], int]:
+    """Slide a (seq_len + pred_len) window over test_df; MSE / MAE per readout.
+
+    Readouts: "argmax" and "median" feed one token back per step; "mc" draws
+    `num_samples` trajectories once and reports the Bayes points for MSE
+    ("mc-mean") and MAE ("mc-median").
+    """
     total = len(test_df)
     max_start = total - seq_len - pred_len
     if max_start <= 0:
@@ -80,17 +89,29 @@ def _evaluate(
             f"test split too small: need >={seq_len + pred_len}, got {total}"
         )
     starts = list(range(0, max_start + 1, stride))
-    mses: list[float] = []
-    maes: list[float] = []
+    acc: dict[str, list[tuple[float, float]]] = {}
     for s in starts:
         ctx = test_df.iloc[s : s + seq_len]
         truth = test_df.iloc[s + seq_len : s + seq_len + pred_len].to_numpy()
-        pred_df = model.predict(df=ctx, max_new_points=pred_len, sampler=sampler)
-        pred = pred_df.iloc[-pred_len:].to_numpy()
-        ms, ma = mse_mae(pred, truth)
-        mses.append(ms)
-        maes.append(ma)
-    return float(np.mean(mses)), float(np.mean(maes)), len(starts)
+        preds: dict[str, np.ndarray] = {}
+        for r in readouts:
+            if r == "argmax":
+                preds[r] = model.predict(df=ctx, max_new_points=pred_len,
+                                         sampler=TemperatureSampler(0.0)).iloc[-pred_len:].to_numpy()
+            elif r == "median":
+                preds[r] = model.predict(df=ctx, max_new_points=pred_len,
+                                         sampler=MedianSampler()).iloc[-pred_len:].to_numpy()
+            elif r == "mc":
+                samp = model.predict_samples(df=ctx, max_new_points=pred_len, num_samples=num_samples,
+                                             sampler=TemperatureSampler(1.0))
+                preds["mc-mean"] = bayes_point(samp, "mse")
+                preds["mc-median"] = bayes_point(samp, "mae")
+            else:
+                raise ValueError(f"unknown readout {r!r}")
+        for name, pred in preds.items():
+            acc.setdefault(name, []).append(mse_mae(pred, truth))
+    out = {name: (float(np.mean([m for m, _ in v])), float(np.mean([a for _, a in v]))) for name, v in acc.items()}
+    return out, len(starts)
 
 
 def run_horizon(
@@ -106,8 +127,19 @@ def run_horizon(
     device: str,
     label_smoothing_sigma: float,
     use_checkpoint: bool,
-) -> tuple[float, float, int, float]:
-    """Train+evaluate one (dataset, pred_len) cell. Returns (mse, mae, windows, train_time_s)."""
+    seed: int = 0,
+    head: str = "softmax",
+    mix_k: int = 8,
+    vocab_size: int = 64,
+    readouts: list[str] | None = None,
+    num_samples: int = 50,
+    save_path: str | None = None,
+    align_windows: bool = False,
+    n_channels: int = 1,
+) -> tuple[dict[str, tuple[float, float]], int, float]:
+    """Train+evaluate one (dataset, pred_len) cell. Returns ({readout: (mse, mae)}, windows, train_time_s)."""
+    readouts = readouts or ["argmax"]
+    torch.manual_seed(seed)
     csv = ETT_DIR / f"{dataset}.csv"
     assert csv.exists(), f"missing {csv}"
     train_end, val_end, test_end = BOUNDARIES[dataset]
@@ -138,14 +170,19 @@ def run_horizon(
         use_decimal=False,
     )
     base = GPT(
-        vocab_size=64,
+        vocab_size=vocab_size,
         n_embd=n_embd,
         block_size=block_size,
         n_head=n_head,
         n_layer=n_layer,
         use_checkpoint=use_checkpoint,
         label_smoothing_sigma=label_smoothing_sigma,
+        head=head,
+        mixture_components=mix_k,
+        n_channels=n_channels,
     ).to(device=device)
+    if device == "cuda" and os.environ.get("ETT_COMPILE", "1") == "1":
+        base.compile(mode="max-autotune-no-cudagraphs")
     model = DiffGPT(
         model=base,
         order_of_derivative=1,
@@ -156,12 +193,14 @@ def run_horizon(
         dfs=[train_plus_val],
         block_size=block_size,
         batch_size=batch_size,
-        vocab_size=64,
+        vocab_size=vocab_size,
         order_of_derivative=1,
         domain_of_definition=domain,
         use_decimal=False,
         device=device,
         train_part=train_part,
+        rng=torch.Generator().manual_seed(42 + seed),
+        align_windows=align_windows,
     )
     val_loss, train_time_s = model.train(
         loader=loader,
@@ -176,21 +215,24 @@ def run_horizon(
         save_best=True,
     )
     base.eval()
-    sampler = TemperatureSampler(temperature=0.0)  # argmax → deterministic
-    mse, mae, n_windows = _evaluate(
+    if save_path:
+        torch.save(base.state_dict(), save_path)
+    results, n_windows = _evaluate(
         model=model,
         test_df=test_df,
         seq_len=seq_len,
         pred_len=pred_len,
         stride=stride,
-        sampler=sampler,
+        readouts=readouts,
+        num_samples=num_samples,
     )
-    print(
-        f"{dataset:5s} pred={pred_len:4d} seq={seq_len:3d} "
-        f"MSE={mse:.4f} MAE={mae:.4f} "
-        f"windows={n_windows} val_loss={val_loss:.3f} train_s={train_time_s}"
-    )
-    return mse, mae, n_windows, train_time_s
+    for name, (mse, mae) in results.items():
+        print(
+            f"{dataset:5s} pred={pred_len:4d} seq={seq_len:3d} seed={seed} readout={name:9s} "
+            f"MSE={mse:.4f} MAE={mae:.4f} "
+            f"windows={n_windows} val_loss={val_loss:.3f} train_s={train_time_s}"
+        )
+    return results, n_windows, train_time_s
 
 
 def main() -> None:
@@ -208,9 +250,21 @@ def main() -> None:
     label_smoothing_sigma = float(os.environ.get("ETT_LABEL_SMOOTHING_SIGMA", "0.0"))
     use_checkpoint = os.environ.get("ETT_USE_CHECKPOINT", "0") == "1"
     batch_size_override = os.environ.get("ETT_BATCH_SIZE")
+    seed = int(os.environ.get("ETT_SEED", "0"))
+    head = os.environ.get("ETT_HEAD", "softmax")
+    mix_k = int(os.environ.get("ETT_MIX_K", "8"))
+    vocab_size = int(os.environ.get("ETT_VOCAB_SIZE", "64"))
+    readouts = os.environ.get("ETT_READOUTS", "argmax").split(",")
+    num_samples = int(os.environ.get("ETT_NUM_SAMPLES", "50"))
+    save_prefix = os.environ.get("ETT_SAVE")  # e.g. runs/ett_step6 -> runs/ett_step6_p96_seed0.pt
+    align_windows = os.environ.get("ETT_ALIGN_WINDOWS", "0") == "1"      # step 7
+    n_channels = int(os.environ.get("ETT_N_CHANNELS", "1"))              # step 8 (7 = one per variate)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device} dataset={dataset} pred_lens={pred_lens} max_iters={max_iters}")
+    print(f"tokenizer={DEFAULT_TOKENIZER} | head={head} (K={mix_k}) | sigma={label_smoothing_sigma} "
+          f"| V={vocab_size} | seed={seed} | readouts={readouts} | align_windows={align_windows} "
+          f"| n_channels={n_channels}")
 
     # Summary table.
     rows = []
@@ -226,7 +280,7 @@ def main() -> None:
             if batch_size_override
             else bs_per_horizon.get(pred_len, 4)
         )
-        mse, mae, n, t = run_horizon(
+        results, n, t = run_horizon(
             dataset=dataset,
             pred_len=pred_len,
             seq_len=seq_len,
@@ -239,17 +293,24 @@ def main() -> None:
             device=device,
             label_smoothing_sigma=label_smoothing_sigma,
             use_checkpoint=use_checkpoint,
+            seed=seed,
+            head=head,
+            mix_k=mix_k,
+            vocab_size=vocab_size,
+            readouts=readouts,
+            num_samples=num_samples,
+            save_path=f"{save_prefix}_p{pred_len}_seed{seed}.pt" if save_prefix else None,
+            align_windows=align_windows,
+            n_channels=n_channels,
         )
-        rows.append((pred_len, mse, mae, n, t))
+        for name, (mse, mae) in results.items():
+            rows.append((pred_len, name, mse, mae, n, t))
 
     print("=" * 60)
-    print(f"{dataset} (multivariate, 7 channels) | seq_len={seq_len}")
-    print(f"{'pred_len':>8}  {'MSE':>7}  {'MAE':>7}  {'windows':>8}  {'train_s':>8}")
-    for pred_len, mse, mae, n, t in rows:
-        print(f"{pred_len:>8}  {mse:7.4f}  {mae:7.4f}  {n:>8}  {t:>8}")
-    mses = [r[1] for r in rows]
-    maes = [r[2] for r in rows]
-    print(f"{'avg':>8}  {np.mean(mses):7.4f}  {np.mean(maes):7.4f}")
+    print(f"{dataset} (multivariate, 7 channels) | seq_len={seq_len} | seed={seed}")
+    print(f"{'pred_len':>8}  {'readout':>9}  {'MSE':>7}  {'MAE':>7}  {'windows':>8}  {'train_s':>8}")
+    for pred_len, name, mse, mae, n, t in rows:
+        print(f"{pred_len:>8}  {name:>9}  {mse:7.4f}  {mae:7.4f}  {n:>8}  {t:>8}")
 
 
 if __name__ == "__main__":

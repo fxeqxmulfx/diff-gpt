@@ -47,7 +47,10 @@ def _all_reduce_mean(t: torch.Tensor) -> torch.Tensor:
     return (work / world).to(t.device)
 
 
-@torch.inference_mode()
+# no_grad rather than inference_mode: inference tensors created here would
+# later break CUDA-graph recording of the training step (in-place update of
+# an inference tensor outside inference mode).
+@torch.no_grad()
 def _estimate_loss(
     model: BaseGPT, loader: DataLoader, eval_iters: int, split: str
 ) -> torch.Tensor:
@@ -156,7 +159,12 @@ def train(
         if grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(mut_model.parameters(), grad_clip_norm)
         optimizer.step()
-    train_time_s = (datetime.now() - start).seconds
+    train_time_s = int((datetime.now() - start).total_seconds())
+    # Schedule-free: parameters hold the fast "y" sequence while training; move
+    # them to the averaged "x" point before handing the model back. Without
+    # this the returned weights are the y point whenever no best-snapshot is
+    # restored (no val split, or save_best=False).
+    optimizer.eval()
     mut_model.eval()
     if save_best and best_state_dict is not None:
         mut_model.load_state_dict(best_state_dict)

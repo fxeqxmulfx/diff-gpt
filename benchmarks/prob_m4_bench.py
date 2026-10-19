@@ -48,7 +48,10 @@ M4_DIR = (
 )
 
 HORIZONS = {"Yearly": 6, "Quarterly": 8, "Monthly": 18, "Weekly": 13, "Daily": 14, "Hourly": 48}
-SEASONALITY = {"Yearly": 1, "Quarterly": 4, "Monthly": 12, "Weekly": 1, "Daily": 7, "Hourly": 24}
+# MASE seasonality per M4's own definition (Makridakis et al. 2020): the daily
+# series have a weekly period of 7, but M4 scores Daily with seasonality 1, and
+# using 7 understates MASE by ~2.7x on this data.
+SEASONALITY = {"Yearly": 1, "Quarterly": 4, "Monthly": 12, "Weekly": 1, "Daily": 1, "Hourly": 24}
 
 
 def smape(pred: np.ndarray, true: np.ndarray) -> float:

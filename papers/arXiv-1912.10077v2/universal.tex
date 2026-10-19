@@ -1,0 +1,96 @@
+\vspace*{-5pt}
+\section{Transformers are universal approximators of sequence-to-sequence functions}
+\vspace*{-4pt}
+\label{sec:main}
+
+%In this section, we now explore the ability of the Transformer networks to approximate sequence-to-sequence networks. Remarkably, we establish that the Transformer networks are universal approximators for all sequence-to-sequence permutation equivariant functions with compact support (cf.~Theorem~\ref{thm:univapprox}). We then show that the positional embeddings indeed endow the Transformer networks with the ability to go beyond permutation equivariant functions and approximate all sequence-to-sequence functions defined on compact domain (cf.~Theorem~\ref{thm:anyseq2seq}). Once we state these results, we present an outline of the proofs of these results, which highlights the significance/functionality of the two key components of a Transformer block, namely self attention layer and feed-forward layer.
+
+In this section, we present our theorems showing that the Transformer networks are universal approximators of sequence-to-sequence functions. Let us start by defining the target function class $\mc F_{\rm PE}$, which consists of all continuous permutation equivariant functions with compact support that map $\reals^{d \times n}$ to $\reals^{d \times n}$. Here, continuity is defined with respect to any entry-wise $\ell^p$ norm, $1 \leq p < \infty$. Given two functions $f_1, f_2 : \reals^{d\times n} \to \reals^{d \times n}$, for $1 \leq p < \infty$, we define a distance between them as
+$$
+\funcdist_p(f_1,f_2) \defeq \Big (\int \norm{f_1(\mX) - f_2(\mX)}_p^p d\mX \Big )^{1/p}.
+$$
+The following result shows that a Transformer network with a constant number of heads $h$, head size $m$, and hidden layer of size $r$ can approximate any function in $\mc F_{\rm PE}$.
+
+\begin{theorem}
+\label{thm:univapprox}
+Let $1 \leq p < \infty$ and $\epsilon > 0$, then for any given $f \in \mc F_{\rm PE}$, there exists a Transformer network $g \in \mc T^{2,1,4}$, such that $\funcdist_p(f,g) \leq \epsilon$. 
+\end{theorem}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\vspace*{-3pt}
+%\subsection{Transformers with trainable positional encodings}
+%\vspace*{-3pt}
+%The Transformed networks combined with the positional embeddings significantly broadens the set of sequence-to-sequence functions defined by such networks as it removes the restriction of permutation equivariant. This motivates us to consider the following extension of~\eqref{eq:transformer-fclass}: 
+
+%As stated in Claim~\ref{claim:equivariance}, a Transformer networks define only permutation equivariant sequence-to-sequence functions. However, in practice, one employs the positional embeddings to remove this restriction, resulting in a broader function class $\mc T^{h, m, r}$ (cf.~\eqref{eq:transformer-p-class}). Next, we show that positional embeddings indeed significantly enhance the ability of the Transformer networks as sequence-to-sequence function approximator. Towards this, we define $\mc F_{\rm CD}$ to be the set of all continuous functions that map a compact domain $\mathbb{D} \subseteq \reals^{d \times n}$ to $\reals^{d\times n}$. {\color{red} Note that $\mc F_{\rm CD}$ is significantly richer functional class as compared to $\mc F_{\rm PE}$.} The following result states that, equipped with the positional embeddings, the Transformer functions with constant number of heads $h$, head size $m$, and hidden layer size $r$ can approximated the traget class $\mc F_{\rm CD}$.  
+
+Next, we present our theorem on Transformers with \emph{positional encodings}. In order to endow the Transformer networks with the ability to capture the information about the position of tokens in the input sequence, it is a common practice to add positional encodings $\mE \in \reals^{d \times n}$ to the input sequence before feeding it to the Transformer network~ \citep{vaswani2017attention, devlin2018bert}. Consider the functions represented by Transformers with positional encodings: 
+\begin{equation*}
+%\label{eq:transformer-p-class}
+    \mc T^{h, m, r}_{\rm P} \defeq \{ g_{\rm P}(\mX) = g(\mX+\mE) \mid g \in \mc T^{h, m, r} \text{ and } \mE \in \reals^{d \times n} \}.
+\end{equation*}
+
+Here we show that if $\mE$ is trainable, these positional encodings are sufficient to remove the permutation equivariance restriction of the Transformers. Towards this, we define $\mc F_{\rm CD}$ to be the set of all continuous functions that map a compact domain in $\reals^{d \times n}$ to $\reals^{d\times n}$. Note that $\mc F_{\rm CD}$ does not have the restriction of permutation equivariance as in $\mc F_{\rm PE}$, but any $f \in \mc F_{\rm CD}$ is defined on a compact domain instead of the whole $\reals^{d \times n}$. The following result states that, equipped with the trainable positional encodings, Transformers can approximate any sequence-to-sequence function in $\mc F_{\rm CD}$. 
+%with a constant number of heads $h$, head size $m$, and hidden layer size $r$ can approximate any sequence to sequence function.
+ 
+\begin{theorem}
+\label{thm:anyseq2seq}
+Let $1 \leq p < \infty$ and $\epsilon > 0$, then for any given $f \in \mc F_{\rm CD}$, there exists a Transformer network $g \in \mc T^{2,1,4}_{\rm P}$ such that we have $\funcdist_p(f,g) \leq \epsilon$. 
+\end{theorem}
+\vspace{-2pt}
+Theorems~\ref{thm:univapprox} and~\ref{thm:anyseq2seq} provide an interesting characterization of the representation power of fixed-width Transformer networks. Since the function classes $\mc T^{h, m, r}$ and $\mc T^{h, m, r}_{\rm P}$ become richer as we increase the values of $(h, m, r)$, our results establish that general Transformer networks are also universal approximators of sequence-to-sequence functions. Remarkably, none of the parameters $(h, m, r)$ depend on the input sequence length $n$ or embedding dimension $d$. 
+
+Here, we would like to again point out that Theorems~\ref{thm:univapprox} and~\ref{thm:anyseq2seq} appear quite surprising at a first glance, given the parameter sharing across all the tokens in a sequence, e.g., feed-forward layers are applied token-wise and the projection matrices in the self-attention layers are the same across different tokens. Furthermore, attention layers can only capture pairwise interaction between different tokens in the sequence. 
+%In Section~\ref{sec:different-roles}, we make it clear how Transformer networks are able to circumvent these apparent restrictions imposed by parameter sharing and limited interaction among tokens, and achieve universal approximation of the function class $\mc F_{\rm PE}$.
+In the next subsection, we briefly describe one of our key steps in overcoming the aforementioned restrictions and proving universal approximation power of Transformers.
+
+\vspace*{-3pt}
+\subsection{A key step: self-attention layers can implement contextual mappings}
+\vspace*{-3pt}
+\label{sec:contextual-mapping}
+Let us consider a setting where we are interested in embedding two sentences: 1) I am happy; and 2) I am Bob. These sentences are fed to a sequence-to-sequence model as 
+$$
+\mX = [\mX_{:,1}, \mX_{:,2}, \mX_{:,3}] = [\vv_{\rm I}, \vv_{\rm am}, \vv_{\rm happy}]~~\text{and}~~\tilde{\mX} = [\tilde{\mX}_{:,1}, \tilde{\mX}_{:,2}, \tilde{\mX}_{:,3}] = [\vv_{\rm I}, \vv_{\rm am}, \vv_{\rm Bob}],
+$$
+where $\vv_{\rm I}, \vv_{\rm am}, \vv_{\rm happy},$ and $\vv_{\rm Bob}$ denote $d$-dimensional embedding for the tokens `I', `am', `happy', and `Bob', respectively. Since the word `I' occurs in different contexts in these sentences, in order to implement arbitrary sequence-to-sequence functions, the sequence-to-sequence model should map the two occurrences of `I' to different values. We formally define this requirement below.
+
+%In this subsection, we show that despite shared parameters the (modified) self-attention layer can indeed capture the precise context of the input sequence via pairwise interactions.
+
+%As discussed earlier, in order for the Transformer networks to be able to universally approximate arbitrary sequence-to-sequence function despite the amount of parameter sharing, these networks should able to extract the context present in the input in a very precise manner. We show that the (modified) Transformer network are successful in extracting the context from the output of the quantized map $g_{\rm q}$ (cf.~Section~\ref{sec:ff-quantize}) by creating contextual maps with the help of the composition of multiple self-attention layers. The following definition formalizes the notion of contextual maps.
+
+\begin{definition}[Contextual mapping]
+\label{def:context-mapping}
+Consider a finite set $\sL \subset \reals^{d \times n}$.
+A map $q: \sL \to \reals^{1 \times n}$ defines a {\em contextual mapping} if the map satisfies the following:
+\begin{enumerate}[\hspace{5pt}1.]
+\setlength{\itemsep}{-3pt}
+    \item For any $\mL \in \sL$, the $n$ entries in $q(\mL)$ are all distinct.
+    \item For any $\mL, \mL' \in \sL$, with $\mL \neq \mL'$, all entries of $q(\mL)$ and $q(\mL')$ are distinct.
+\end{enumerate}
+\end{definition}
+In other words, a contextual mapping maps each token (column) of $\mL \in \sL$ to a unique value which depends on the entire $\mL$; as a result, capturing the precise context of $\mL$. This allows the subsequent token-wise function (e.g., defined by the feed-forward layers in case of Transformer networks) to realize the outputs of any arbitrary sequence-to-sequence functions. 
+
+At the first thought, we can consider getting a contextual mapping by simply averaging all the tokens, because this can capture the one-word difference (e.g., ``happy'' vs.\ ``Bob'') in two different contexts. However, if there are multiple words that are different, it is not guaranteed that the average will be different. Indeed, requiring unique mappings for all the tokens for any change in any number of tokens, is a steep requirement. 
+
+While the self-attention layer does consider {\em pair-wise} interactions among different input tokens, it is not clear if this weak form of pair-wise interaction with shared projection weights is sufficient to extract the underlying context. The following result, which we sketch here, shows that self-attention layers can implement a \emph{permutation equivariant} contextual mapping over almost all elements of a grid in $[0,1]^{d \times n}$. We defer the full statement to Section~\ref{sec:attn-context}.
+
+\newtheorem*{lem-contextmap-sketch}{Lemma~\ref{lemma:contextmap}}
+
+\begin{lem-contextmap-sketch}[informal]
+Consider the grid $\sG_{\delta} \defeq \{0, \delta, \dots, 1-\delta\}^{d \times n}$. Then, there exist a function $g_{\rm c}: \reals^{d \times n} \to \reals^{d \times n}$ composed of $\delta^{-d} + 1$ self-attention layers \textup{($h = 2, m = 1$)} and a vector $\vu \in \reals^d$ such that $q(\mL) \defeq \vu^T g_{\rm c}(\mL)$ satisfies the following properties, for a subset $\wt {\sG}_{\delta} \subset \sG_{\delta}$ that contains almost all elements of $\sG_{\delta}$:
+\begin{enumerate}[\hspace{5pt}1.]
+\setlength{\itemsep}{-3pt}
+    \item For any $\mL \in \wt {\sG}_{\delta}$, the entries of $q(\mL)$ are all distinct.
+    \item For any $\mL, \mL' \!\in\! \wt {\sG}_{\delta}$ such that $\mL$ is not a permutation of $\mL'$, all entries of $q(\mL)$, $q(\mL')$ are distinct.
+\end{enumerate}
+\end{lem-contextmap-sketch}
+
+Lemma~\ref{lemma:contextmap} shows that a series of self-attention layers can implement contextual mappings, despite the apparent restriction that each of them can only capture pair-wise interaction. However, the restriction of permutation equivarance still exists because attention layers are inherently permutation equivariant. Coupled with the ability of token-wise feed-forward layers to map different values in $q(\mL)$ to arbitrary output values, we can prove universal approximation capability of Transformers.
+
+%Next, we outline the proof of Theorem~\ref{thm:univapprox} in greater detail. We refer the reader to Section~\ref{sec:proof_anyseq2seq} for the proof of Theorem~\ref{thm:anyseq2seq}, since it is a modification of Theorem~\ref{thm:univapprox}. Even though Theorems~\ref{thm:univapprox} and~\ref{thm:anyseq2seq} do not specifically mention the required depth for approximation, our proof techniques do characterize it, and we show that our construction is tight in the number of parameters. We defer the discussion of depth to Section~\ref{sec:tightness}.
+
+% agrees with our expectation and shows that our construction is optimal in the number of parameters.
+% to approximate arbitrary functions requires networks that have exponential depth in dimension. This is something that cannot be avoided in the worst case. We present a discussion about the tightness of our results in Section \ref{sec:appx_lowerbound}.
+
+%What is even more remarkable that the ability of Transformer networks to universally approximate sequence-to-sequence functions manifest for such a small values of the underlying number of heads, head size, and number of hidden units, i.e., $(h, m, r) = (2, 1, 4)$. 
+%Since the function classes $\mc T^{h, m, r}$ and $\mc T^{h, m, r}$ become even richer as we increasing the values of $(h, m, r)$, our results also establish that general Transformer networks are also universal approximator of sequence-to-sequence functions.

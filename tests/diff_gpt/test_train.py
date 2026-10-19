@@ -90,9 +90,17 @@ def test_dataframe_loader_target_column_mask():
         target_columns=[1],
     )
     _, y = loader.get_batch("train")
-    mask = torch.tensor([i % 3 == 1 for i in range(12)])
-    assert (y[:, ~mask] == -100).all()
-    assert (y[:, mask] != -100).all()
+    keep = y != -100
+    # Windows are cut at arbitrary token offsets, so the kept positions of each
+    # row form exactly one residue class modulo n_features (the row's phase),
+    # and the phase is not the same for every row.
+    phases = set()
+    for row in keep:
+        js = torch.nonzero(row).flatten().tolist()
+        assert len(js) == 4  # 12 positions / 3 columns
+        assert len({j % 3 for j in js}) == 1
+        phases.add(js[0] % 3)
+    assert len(phases) > 1
 
 
 def test_dataframe_loader_multi_series_blends():

@@ -517,8 +517,12 @@ def test_probabilistic_argmax_inside_median_band():
         order_of_derivative=1, domain_of_definition=dod,
         use_decimal=False, device=base.device_type, train_part=0.9,
     )
+    # No val split here (16 val tokens < block_size), so train() returns the
+    # schedule-free x point (uniform average of the iterates). At 500 iters
+    # that average is still dragged by early iterates and the calibration
+    # check below is not meaningful; 2000 iters is enough for it to converge.
     model.train(
-        loader=loader, max_iters=500, eval_interval=500, eval_iters=2,
+        loader=loader, max_iters=2000, eval_interval=2000, eval_iters=2,
         use_tqdm=False, use_early_stopping=False,
     )
     ctx = df.iloc[-50:-20]
@@ -673,3 +677,23 @@ def test_train_grad_accum_runs():
         grad_clip_norm=1.0,
     )
     assert np.isfinite(val_loss)
+
+
+def test_predict_point_mae_equals_per_step_median_of_samples():
+    """predict_point(metric="mae") is the per-horizon median of predict_samples
+    (same fixed generation seed, so the trajectories are identical)."""
+    torch.manual_seed(0)
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20)
+    samples = model.predict_samples(
+        df=df.iloc[:10], max_new_points=5, num_samples=16,
+        sampler=TemperatureSampler(temperature=1.0),
+    )
+    point = model.predict_point(df=df.iloc[:10], max_new_points=5, metric="mae", num_samples=16)
+    assert point.shape == (5, 3)
+    assert list(point.columns) == ["cov0", "cov1", "y"]
+    assert np.allclose(point.to_numpy(), np.median(samples, axis=0))
+    smape_pt = model.predict_point(df=df.iloc[:10], max_new_points=5, metric="smape", num_samples=16)
+    assert smape_pt.shape == (5, 3)
+    assert (smape_pt.to_numpy() >= samples.min(axis=0)).all()
+    assert (smape_pt.to_numpy() <= samples.max(axis=0)).all()

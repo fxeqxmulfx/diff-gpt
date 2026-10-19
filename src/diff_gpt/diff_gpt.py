@@ -182,6 +182,7 @@ class DiffGPT:
         max_new_points: int,
         sampler: Sampler | None,
         num_samples: int,
+        seed: int = 42,
     ) -> np.ndarray:
         """Generate `num_samples` parallel future trajectories.
 
@@ -232,6 +233,7 @@ class DiffGPT:
             num_samples=num_samples,
             max_tokens=max_new_points * columns,
             sampler=sampler,
+            seed=seed,
         )
         futures = np.empty(
             (num_samples, max_new_points, columns), dtype=np.float64
@@ -274,6 +276,7 @@ class DiffGPT:
         max_new_points: int,
         num_samples: int,
         sampler: Sampler | None = None,
+        seed: int = 42,
     ) -> np.ndarray:
         """Probabilistic forecasting: return `num_samples` future trajectories.
 
@@ -283,6 +286,10 @@ class DiffGPT:
         temperature-0 collapses all trajectories to the mode and is only
         useful as a smoke test.
 
+        `seed` seeds the generator: repeated calls with the same seed return the
+        same trajectories, so independent Monte-Carlo batches (a second CRPS
+        estimate, a bootstrap) need different seeds.
+
         Returns ndarray of shape (num_samples, max_new_points, n_features).
         """
         return self._generate_future_samples(
@@ -290,6 +297,7 @@ class DiffGPT:
             max_new_points=max_new_points,
             sampler=sampler,
             num_samples=num_samples,
+            seed=seed,
         )
 
     @torch.inference_mode()
@@ -370,6 +378,7 @@ class DiffGPT:
         quantiles: "list[float] | tuple[float, ...]" = (0.1, 0.5, 0.9),
         num_samples: int = 100,
         sampler: Sampler | None = None,
+        seed: int = 42,
     ) -> dict[float, pd.DataFrame]:
         """Empirical quantile forecasts from `num_samples` Monte-Carlo trajectories.
 
@@ -385,6 +394,7 @@ class DiffGPT:
             max_new_points=max_new_points,
             sampler=sampler,
             num_samples=num_samples,
+            seed=seed,
         )
         # futures: (N, H, F). Reduce across samples axis.
         out: dict[float, pd.DataFrame] = {}
@@ -392,6 +402,105 @@ class DiffGPT:
             q_vals = np.quantile(futures, q, axis=0)  # (H, F)
             out[float(q)] = pd.DataFrame(q_vals, columns=df.columns)
         return out
+
+    @torch.inference_mode()
+    def calibrate_temperature(
+        self,
+        windows: "list[tuple[pd.DataFrame, np.ndarray]]",
+        max_new_points: int,
+        temperatures: "tuple[float, ...]" = (0.4, 0.5, 0.6, 0.7, 0.85, 1.0),
+        num_samples: int = 30,
+        criterion: str = "crps",
+        level: float = 0.8,
+        seed: int = 42,
+    ) -> tuple[float, dict[float, float]]:
+        """Pick the free-running sampling temperature on held-out windows.
+
+        Cross-entropy calibrates each *one-step* distribution, but a free run
+        feeds its own samples back, so per-step errors compound and the joint
+        forecast is over-dispersed: on ETTh1 (672-token rollouts) temperature 1
+        gives 0.95 coverage of a nominal 0.80 band and a CRPS twice the value
+        at temperature 0.5. Temperature is the one knob that rescales the joint
+        spread without retraining.
+
+        `windows`: (context DataFrame, truth array of shape (H, F)) pairs from
+        a validation split — never the test data being reported.
+        `criterion`: "crps" minimises the mean empirical CRPS (a proper score);
+        "coverage" minimises |empirical coverage − `level`|.
+
+        Returns the best temperature and the score of every candidate.
+        """
+        from diff_gpt.metrics.probabilistic import crps_empirical, empirical_coverage
+        from diff_gpt.sampler.temperature import TemperatureSampler
+
+        assert len(windows) > 0, "need at least one calibration window"
+        assert criterion in ("crps", "coverage"), f"unknown criterion {criterion!r}"
+        assert num_samples >= 2, "CRPS and coverage need at least 2 samples"
+        scores: dict[float, float] = {}
+        for t in temperatures:
+            assert t > 0, "temperature must be positive for sampling"
+            vals = []
+            for ctx, truth in windows:
+                truth = np.asarray(truth, dtype=np.float64)
+                samples = self._generate_future_samples(
+                    df=ctx,
+                    max_new_points=max_new_points,
+                    sampler=TemperatureSampler(temperature=t),
+                    num_samples=num_samples,
+                    seed=seed,  # same draws for every candidate: a paired comparison
+                )
+                if criterion == "crps":
+                    vals.append(crps_empirical(samples, truth))
+                else:
+                    vals.append(
+                        abs(empirical_coverage(samples, truth, level=level) - level)
+                    )
+            scores[float(t)] = float(np.mean(vals))
+        best = min(scores, key=lambda k: scores[k])
+        return best, scores
+
+    @torch.inference_mode()
+    def predict_point(
+        self,
+        df: pd.DataFrame,
+        max_new_points: int,
+        metric: str = "mae",
+        num_samples: int = 100,
+        sampler: Sampler | None = None,
+        naive_scale: "float | np.ndarray | None" = None,
+        smape_ref: float | None = None,
+        mase_ref: float | None = None,
+        seed: int = 42,
+    ) -> pd.DataFrame:
+        """Bayes-optimal point forecast for `metric` from Monte-Carlo trajectories.
+
+        Draws `num_samples` trajectories (temperature 1 unless `sampler` says
+        otherwise) and returns, per horizon and column, the point minimising
+        the expected loss: marginal median for "mae", mean for "mse", the
+        expected-sMAPE minimiser for "smape", and M4's OWA minimiser for "owa"
+        (needs `naive_scale`, `smape_ref`, `mase_ref`; see `metrics.bayes_point`).
+        Unlike feeding argmax / median tokens back into the model, this is the
+        marginal decision at each horizon and integrates over intermediate
+        uncertainty. Returns a DataFrame of shape (max_new_points, n_features).
+        """
+        from diff_gpt.metrics.point import bayes_point
+
+        if sampler is None:
+            from diff_gpt.sampler.temperature import TemperatureSampler
+
+            sampler = TemperatureSampler(temperature=1.0)
+        futures = self._generate_future_samples(
+            df=df,
+            max_new_points=max_new_points,
+            sampler=sampler,
+            num_samples=num_samples,
+            seed=seed,
+        )
+        point = bayes_point(
+            futures, metric,
+            naive_scale=naive_scale, smape_ref=smape_ref, mase_ref=mase_ref,
+        )
+        return pd.DataFrame(point, columns=df.columns)
 
     def _predict_teacher_forced(
         self,

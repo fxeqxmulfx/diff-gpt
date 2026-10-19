@@ -24,7 +24,7 @@ def block_attn_res(
     # where partial_block is the same object as blocks[0]), the softmax is
     # provably uniform over copies of the same tensor, so h is just that
     # tensor. Saves a stack + rms_norm + two matmuls per forward at depth 0.
-    if len(blocks) == 1 and partial_block is blocks[0]:
+    if len(blocks) == 0 or (len(blocks) == 1 and partial_block is blocks[0]):
         return partial_block
 
     V = torch.stack([*blocks, partial_block], dim=0)  # (N+1, B, T, D)

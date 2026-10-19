@@ -341,7 +341,15 @@ def _mask_targets(
     block_size: int,
     n_features: int,
     target_columns: Sequence[int] | None,
+    phase: torch.Tensor | None = None,
 ) -> torch.Tensor:
+    """Mask (with -100) every position of `y` that is not a target column.
+
+    Position j of row i holds the column `(phase[i] + j) % n_features`, where
+    `phase[i]` is the column of that row's first target token. Windows are cut
+    at arbitrary token offsets, so the phase differs per row; assuming phase 0
+    aligned the mask with the real target column in only 1/F of the windows.
+    """
     if target_columns is None:
         return y
     targets = tuple(target_columns)
@@ -349,13 +357,12 @@ def _mask_targets(
     assert all(0 <= c < n_features for c in targets), (
         f"target_columns {targets} out of range for n_features {n_features}"
     )
-    col = torch.arange(block_size) % n_features
-    if len(targets) == 1:
-        keep = col == targets[0]
-    else:
-        tgt = torch.tensor(targets, dtype=torch.long)
-        keep = (col.unsqueeze(-1) == tgt).any(dim=-1)
-    return y.masked_fill(~keep.unsqueeze(0), -100)
+    if phase is None:
+        phase = torch.zeros(y.shape[0], dtype=torch.long)
+    col = (phase.to(torch.long).unsqueeze(1) + torch.arange(block_size).unsqueeze(0)) % n_features
+    tgt = torch.tensor(targets, dtype=torch.long)
+    keep = (col.unsqueeze(-1) == tgt).any(dim=-1)  # (B, block_size)
+    return y.masked_fill(~keep, -100)
 
 
 class DiffDataFrameDataLoader:
@@ -371,6 +378,11 @@ class DiffDataFrameDataLoader:
     If `target_columns` is set, only positions that belong to those columns
     contribute to the loss (TimeXer-style exogenous forecasting) — covariate
     positions in `y` are set to -100 (F.cross_entropy's ignore_index).
+
+    `align_windows`: cut windows only at token offsets that are multiples of
+    `n_features`, so every window starts with column 0 exactly like the
+    context at inference (`DiffGPT.predict`). Default False keeps the
+    arbitrary-phase sampling.
     """
 
     __slots__ = (
@@ -378,6 +390,7 @@ class DiffDataFrameDataLoader:
         "batch_size",
         "n_features",
         "target_columns",
+        "align_windows",
         "device",
         "rng",
         "_train_serieses",
@@ -397,6 +410,7 @@ class DiffDataFrameDataLoader:
         train_part: float = 0.9,
         target_columns: Sequence[int] | None = None,
         rng: torch.Generator | None = None,
+        align_windows: bool = False,
     ) -> None:
         assert len(dfs) > 0, "dfs must be non-empty"
         n_features = dfs[0].shape[1]
@@ -407,6 +421,7 @@ class DiffDataFrameDataLoader:
         self.batch_size = batch_size
         self.n_features = n_features
         self.target_columns = tuple(target_columns) if target_columns is not None else None
+        self.align_windows = align_windows
         self.device = device
         self.rng = rng if rng is not None else torch.Generator().manual_seed(42)
         # Encode each DataFrame into a flat token tuple, then split.
@@ -425,6 +440,12 @@ class DiffDataFrameDataLoader:
             )
             flat = tuple(encoded.reshape(-1).tolist())
             n = int(len(flat) * train_part)
+            if align_windows:
+                # The split point must itself land on a column boundary, or the
+                # val slice starts mid-row and every val window carries a
+                # different column phase than the train windows (which breaks
+                # the channel embedding and the val loss it is selected on).
+                n -= n % n_features
             self._train_serieses.append(flat[:n])
             self._val_serieses.append(flat[n:])
 
@@ -446,22 +467,27 @@ class DiffDataFrameDataLoader:
                 f"No {split!r} series long enough: block_size={block_size}, "
                 f"max_series_len={max_len}"
             )
-        starts_per = [len(s) - block_size for s in eligible]
+        F = self.n_features
+        step = F if self.align_windows else 1
+        # Valid window starts: local + block_size + 1 <= len(s), stepping by `step`.
+        starts_per = [(len(s) - block_size - 1) // step + 1 for s in eligible]
         total_starts = sum(starts_per)
         cum = np.cumsum(starts_per)
         batch_size = self.batch_size
         x = torch.zeros((batch_size, block_size), dtype=torch.int64)
         y = torch.zeros((batch_size, block_size), dtype=torch.int64)
+        phase = torch.zeros(batch_size, dtype=torch.long)
         picks = torch.randint(
             0, total_starts, (batch_size,), generator=self.rng
         ).tolist()
         for i, r in enumerate(picks):
             sidx = int(np.searchsorted(cum, r, side="right"))
-            local = r - (int(cum[sidx - 1]) if sidx > 0 else 0)
+            local = (r - (int(cum[sidx - 1]) if sidx > 0 else 0)) * step
             s = eligible[sidx]
             x[i] = torch.tensor(s[local : local + block_size], dtype=torch.int64)
             y[i] = torch.tensor(
                 s[local + 1 : local + block_size + 1], dtype=torch.int64
             )
-        y = _mask_targets(y, block_size, self.n_features, self.target_columns)
+            phase[i] = (local + 1) % F  # column of y[i, 0]
+        y = _mask_targets(y, block_size, F, self.target_columns, phase)
         return x.to(device=self.device), y.to(device=self.device)
