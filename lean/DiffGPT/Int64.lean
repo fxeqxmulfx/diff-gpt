@@ -11,9 +11,9 @@ numpy's int64 and uint64 arrays add and subtract modulo `2^64` without a check, 
 
 * int64 sums and differences that stay in range are exact (`toInt_add_of_inInt64`,
   `toInt_sub_of_inInt64`), so `np.diff(L, n=k)` is exact while every difference up to the
-  `k`-th stays in range (`toInt_diffI64_iter`): for `|L| ≤ 2^(62-k)`
-  (`toInt_diffI64_iter_of_abs_le`) and for values in `[0, 2^G)` with `k + G ≤ 64`
-  (`toInt_diffI64_iter_of_mem_Ico`).
+  `k`-th stays in range (`toInt_diffI64_iter`): for levels in `[-2^b - 1, 2^b]` with
+  `b + k ≤ 62` (`toInt_diffI64_iter_of_mem_Icc`) and for values in `[0, 2^G)` with
+  `k + G ≤ 64` (`toInt_diffI64_iter_of_mem_Ico`).
 * `_cumsum`'s test, terms of one sign with a wrapped sum of the other, fires exactly at the
   int64 sums that wrap (`toInt_add_eq_iff_not_sumWraps`): an int64 cumulative sum is the
   integer one unless it fires (`toInt_cumsumI64`), and it fires when an integer partial sum
@@ -118,17 +118,23 @@ lemma abs_fwdDiff_iter_le {M : ℤ} {f : ℕ → ℤ} (h : ∀ n, |f n| ≤ M) (
     calc |Δ_[1] ^[k] (Δ_[1] f) n| ≤ 2 ^ k * (2 * M) := ih h2
       _ = 2 ^ (k + 1) * M := by ring
 
+/-- `k ≥ 1` differences of integers in `[a, b]` stay within `2^(k-1)·(b - a)`. -/
+lemma abs_fwdDiff_iter_le_of_mem_Icc {a b : ℤ} {f : ℕ → ℤ} (h : ∀ n, a ≤ f n ∧ f n ≤ b)
+    {k : ℕ} (hk : 1 ≤ k) (n : ℕ) : |Δ_[1] ^[k] f n| ≤ 2 ^ (k - 1) * (b - a) := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  rw [Function.iterate_succ_apply, Nat.add_sub_cancel]
+  refine abs_fwdDiff_iter_le (fun m => ?_) j n
+  obtain ⟨a1, a2⟩ := h m
+  obtain ⟨b1, b2⟩ := h (m + 1)
+  exact abs_le.mpr ⟨by simp only [fwdDiff]; linarith, by simp only [fwdDiff]; linarith⟩
+
 /-- `k ≥ 1` differences of integers in `[0, B)` stay below `2^(k-1)·B` in magnitude. -/
 lemma abs_fwdDiff_iter_lt_of_mem_Ico {B : ℤ} {f : ℕ → ℤ} (h : ∀ n, 0 ≤ f n ∧ f n < B)
     {k : ℕ} (hk : 1 ≤ k) (n : ℕ) : |Δ_[1] ^[k] f n| < 2 ^ (k - 1) * B := by
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-  rw [Function.iterate_succ_apply, Nat.add_sub_cancel]
-  have h1 : ∀ m, |Δ_[1] f m| ≤ B - 1 := fun m => by
-    obtain ⟨a1, a2⟩ := h m
-    obtain ⟨b1, b2⟩ := h (m + 1)
-    exact abs_le.mpr ⟨by simp only [fwdDiff]; linarith, by simp only [fwdDiff]; linarith⟩
-  calc |Δ_[1] ^[j] (Δ_[1] f) n| ≤ 2 ^ j * (B - 1) := abs_fwdDiff_iter_le h1 j n
-    _ < 2 ^ j * B := by have := pow_pos (two_pos : (0 : ℤ) < 2) j; nlinarith
+  have h1 := abs_fwdDiff_iter_le_of_mem_Icc (b := B - 1)
+    (fun m => ⟨(h m).1, by have := (h m).2; omega⟩) hk n
+  have := pow_pos (two_pos : (0 : ℤ) < 2) (k - 1)
+  linarith
 
 /-- `np.diff(f, n=k)` in int64 is exact while every difference up to the `k`-th fits. -/
 theorem toInt_diffI64_iter {k : ℕ} {f : ℕ → Int64}
@@ -144,15 +150,21 @@ theorem toInt_diffI64_iter {k : ℕ} {f : ℕ → Int64}
       rw [hd, ← Function.iterate_succ_apply]
       exact h (j + 1) (by omega) m
 
-/-- The levels: `|L| ≤ 2^(62-k)`. -/
-theorem toInt_diffI64_iter_of_abs_le {k : ℕ} (hk : k ≤ 62) {f : ℕ → Int64}
-    (h : ∀ n, |(f n).toInt| ≤ 2 ^ (62 - k)) (n : ℕ) :
+/-- The levels under `_levels`' guard `|p| < 2^b`: values in `[-2^b - 1, 2^b]` with
+`b + k ≤ 62`, whose differences up to the `k`-th stay below `3·2^61`. -/
+theorem toInt_diffI64_iter_of_mem_Icc {k b : ℕ} (hbk : b + k ≤ 62) {f : ℕ → Int64}
+    (h : ∀ n, -2 ^ b - 1 ≤ (f n).toInt ∧ (f n).toInt ≤ 2 ^ b) (n : ℕ) :
     (diffI64^[k] f n).toInt = Δ_[1] ^[k] (fun m => (f m).toInt) n := by
   refine toInt_diffI64_iter (fun j hj m => ?_) n
-  have hp : (2 : ℤ) ^ j * 2 ^ (62 - k) ≤ 2 ^ 62 := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj1
+  · exact inInt64_toInt (f m)
+  have h1 : (2 : ℤ) ^ (j - 1) * 2 ^ b ≤ 2 ^ 61 := by
     rw [← pow_add]
     exact pow_le_pow_right₀ (by norm_num) (by omega)
-  obtain ⟨b1, b2⟩ := abs_le.mp (abs_fwdDiff_iter_le h j m)
+  have h2 : (2 : ℤ) ^ (j - 1) ≤ 2 ^ 61 := pow_le_pow_right₀ (by norm_num) (by omega)
+  have h3 : (2 : ℤ) ^ (j - 1) * (2 ^ b - (-2 ^ b - 1)) =
+      2 * (2 ^ (j - 1) * 2 ^ b) + 2 ^ (j - 1) := by ring
+  obtain ⟨b1, b2⟩ := abs_le.mp (abs_fwdDiff_iter_le_of_mem_Icc h hj1 m)
   exact ⟨by linarith, by linarith⟩
 
 /-- The anchor numerators: values in `[0, 2^G)` with `k + G ≤ 64`. -/

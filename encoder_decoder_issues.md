@@ -8,7 +8,8 @@ k = 0–5, in float64 and Decimal. References to legacy behavior describe
 the audited MASH tokenizer; later fixes and LGT findings are recorded below.
 Fixes from the review of 2026-10-19 are marked in the overview and in each
 section. Version 2 of the token scheme (2026-10-20, §12) replaced the MASH
-cascade with the level grid and removed the Decimal path.
+cascade with the level grid and removed the Decimal path. Version 3 (§13)
+computes the levels exactly, so that steps within the domain never clip.
 
 ## Overview
 
@@ -24,6 +25,7 @@ cascade with the level grid and removed the Decimal path.
 | 8 | Low | `_sigma_delta_k` docstring | Described as "fast vectorized", but loops over T in Python | Moot: `_sigma_delta_k` is gone (§12) |
 | 11 | High | `_round_levels` (LGT) | At k=1, rounding ties overflow the vocabulary and lower the decoded level for good | Fixed |
 | 12 | Change | Both tokenizers | Token scheme version 2: one level grid for every k, float64 and int64 only | Done, proved in Lean |
+| 13 | Medium | `_round_levels`, `_compute_scale`, `get_domain_of_definition` | In float64 a step within the domain clips at rounding ties: an offset at k=1, a drift at k=2 | Fixed (version 3), proved in Lean |
 
 ## 1. Silent out-of-domain clipping and persistent level error
 
@@ -339,10 +341,42 @@ k = 3 domain of float64 noise, s·x of 7·10^16, and with only the int64 guard
 over a thousand tokens clipped and LGT decoded 0.03 off, against Δ/2 of
 10^−17. Past 2^(62−k) the k-th differences would overflow int64.
 
-**Remaining float64 caveat.** The token range is exact only where s·x is
-computed exactly. Otherwise a token can reach V, and clip, where a step of
-nearly D has all its k + 1 levels within about 2^−53·|s·x| of rounding ties
-(`token_mem_of_domain`). No series in the tests has hit this.
+**Float64 caveat (fixed in §13).** The token range was exact only where s·x
+was computed exactly. Otherwise a token could reach V, and clip, where a
+step of nearly D had all its k + 1 levels within about 2^−53·|s·x| of
+rounding ties.
+
+## 13. Exact levels: token scheme version 3 (2026-10-20)
+
+**Location.** `_round_levels`, which rounded s·x before taking its level,
+and `_compute_scale` and `get_domain_of_definition`, which rounded the
+scale and the max of |Δ^k x| to nearest.
+
+**Problem.** Each rounding can move a level across a rounding tie, so a
+step within D reached token V and clipped. Constructed series show all
+three: a k = 1 step whose ends round onto ties (V = 64); a k = 1 step of
+exactly D = fl(x1 − x0), where the nearest scale gives s·D = 31 + 1.1·10^−15
+and the rows after it decoded up to 2.65·Δ/2 off; and a k = 2 series whose
+clipped first token drifts without bound, 1999·Δ/2 at row 1001. np.diff
+also falls short of the exact max |Δ^k x| on about one random walk in ten
+at k = 1 and one in four at k = 3. None of 16,000 cent-quantized walks
+clipped, so the failure was rare outside such ties.
+
+**Fixed (2026-10-20).** `_levels` reads R = ⌊s·x − F + 1/2⌋ off the float64
+rounding p of s·x and its exact error e (Dekker's product of the np.frexp
+mantissas), without rounding s·x. `_compute_scale` rounds s down, so that
+s·D ≤ V/2 − 2^(k−1) holds exactly, and `get_domain_of_definition` returns
+the least float at or above the exact max. Every token then lies in
+[1, V−1] as in exact arithmetic. `lean/DiffGPT/ExactLevels.lean` proves
+`_levels` exact (`levels_eq`) and bounds its levels, and `encode_token_mem`
+in `Machine.lean` proves the token range for the code as written, from the
+floats to the int64 tokens. `test_exact_levels.py` checks the three series,
+the levels around ties against rationals, and the domain max. Checkpoints
+record `ENCODER_VERSION` = 3.
+
+**Cost.** At k = 1 on 4·10^6 values, `get_domain_of_definition` takes
+0.19 s instead of 0.03 s, `encode` 0.29 s instead of 0.09 s and `decode`
+0.086 s instead of 0.075 s.
 
 ## Checks that passed in the original audit
 

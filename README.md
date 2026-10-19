@@ -47,11 +47,12 @@ $$\|\hat x - x\|_\infty \le \frac{\Delta}{2} = \frac{D}{V - \max(2, 2^k)}$$
 
 uniformly in horizon $T$. Vocabulary doubling halves reconstruction error at any
 order $k$. The proof is checked in Lean 4: `lean/DiffGPT/LevelGrid.lean` for
-exact arithmetic, and `Float64.lean`, `Int64.lean` and `Machine.lean` next to
-it for the float64/int64 implementation. There the bound holds up to the
-float64 rounding of $s\,x$, about $2^{-53}|s\,x|$ levels, no int64 sum
-overflows, and `encode` raises where $|s\,x|$ would reach
-$2^{\min(53,\,62-k)}$.
+exact arithmetic, and `Float64.lean`, `ExactLevels.lean`, `Int64.lean` and
+`Machine.lean` next to it for the float64/int64 implementation. There the
+levels are exact, so every token lies in $[1, V-1]$ as in exact arithmetic,
+no int64 sum overflows, and the decode adds only the float64 rounding of
+$(R + F)/s$, about $2^{-53}|\hat x|$ per operation. `encode` raises where the
+float64 product $s\,x$ reaches $2^{\min(53,\,62-k)}$.
 
 The bound needs a `domain_of_definition` of at least $D$. A smaller one (a
 quantile, say) clips the larger steps, and `encode` reports how many with a

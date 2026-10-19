@@ -3,38 +3,37 @@ module
 public import Mathlib
 public import DiffGPT.LevelGrid
 public import DiffGPT.Float64
+public import DiffGPT.ExactLevels
 public import DiffGPT.Int64
 
 /-!
 # The tokenizer in float64 and int64
 
 For a column `x` of floats with scale `s` and order `k`, `encode` computes over its `k` prefix
-rows and the rows after them (index `m`), with `fl` the float64 rounding:
+rows and the rows after them (index `m`):
 
-    u m = fl (s * x m)                               `scaled = inp * scale`
     F m = (P m mod 2^G) / 2^G                         `_anchor_fraction`, exact
-    w m = fl (u m - F m)                              `scaled - fraction`
-    R m = ⌊w m + 1/2⌋                                 `_round_levels`, exact (`roundLevels_eq`)
+    R m = ⌊s·x m - F m + 1/2⌋                         `_levels`, exact (`levels_eq`)
     q n = Δᵏ R n + Δᵏ (P mod 2^G) n / 2^G + V/2       the token of row `n + k` (`token`)
 
 with `P = 0` for "lgt" and, for "mash", the integer sequence with `Δᵏ P = 0` that
 `_anchor_fraction` continues from the prefix in uint64 (`anchor_numerators`). `decode`
 integrates `q - V/2 - Δᵏ (P mod 2^G) / 2^G` from the prefix levels and returns
-`fl (fl (fl R + F) / s)`.
+`fl (fl (R + F) / s)`.
 
-* `token_eq`: `q - V/2` is the `k`-th difference of the levels `⌊ũ - B + 1/2⌋` of the
-  effective series `ũ = w + F` from the anchor `B = P / 2^G`, so the exact theory applies to
-  `ũ` (`token_mem`). `ũ` is within two roundings of `s·x` (`abs_effective_sub_le`), so every
-  token lies in `[1, V-1]` once the scale leaves room for `2^k` such errors
-  (`token_mem_of_domain`).
-* `decode_levels_eq`: the decoder's integration returns the encoder's levels, and
-  `abs_decode_sub_le_f64`: the decoded value is within `1/(2s)` of `x`, up to the error of `ũ`
-  and three more roundings.
-* `abs_fwdDiff_iter_levels_le_two_pow`: under `_round_levels`' guard `|w| < 2^(62-k)` the
-  levels and their differences up to the `k`-th lie within `2^62`, so `np.diff` and the
-  decoder's `_cumsum` are exact in int64 (`toInt_diffI64_iter_of_abs_le`,
-  `toInt_integrateI64`), and `abs_fracSteps_lt` bounds the anchor's term of the token.
-  `fl_roundHalfUp_eq`: under the guard's other bound, `|w| < 2^53`, every level is a float.
+* `token_eq`: `q - V/2` is the `k`-th difference of the levels `⌊s·x - B + 1/2⌋` from the
+  anchor `B = P / 2^G`, so the exact theory applies (`token_mem`): every token lies in
+  `[1, V-1]` when `|Δᵏ x| ≤ D` and `s·D ≤ V/2 - 2^(k-1)` (`token_mem_of_domain`), which the
+  scale, rounded down, and the max of `get_domain_of_definition`, rounded up, give exactly.
+* `encode_token_mem`: so do the tokens as `encode` computes them, `_levels` in float64 and
+  `np.diff` in int64. Under `_levels`' guard `|p| < 2^b` with `b ≤ 53` and `b + k ≤ 62`, which
+  `b = min(53, 62 - k)` meets, the levels lie in `[-2^b - 1, 2^b]` (`levels_mem`), so
+  `np.diff` is exact (`toInt_diffI64_iter_of_mem_Icc`), and `abs_fracSteps_lt` bounds the
+  anchor's term.
+* `decode_levels_eq`: the decoder's integration returns the encoder's levels, exactly in int64
+  (`toInt_integrateI64`), and `abs_decode_sub_le_f64`: the decoded value is within `1/(2s)` of
+  `x` up to the roundings of `R + F` and of the quotient, the level being a float
+  (`abs_levels_le`).
 -/
 
 @[expose] public section
@@ -52,7 +51,8 @@ def fracSteps (k G : ℕ) (P : ℕ → ℤ) (n : ℕ) : ℤ :=
   Δ_[1] ^[k] (fun m => P m % 2 ^ G) n / 2 ^ G
 
 /-- The token `encode` emits for row `n + k`, before clipping:
-`np.diff(levels, n=k) + fraction_steps + vocab_size // 2` with `levels = _round_levels(w)`. -/
+`np.diff(levels, n=k) + fraction_steps + vocab_size // 2` with the levels `⌊w + 1/2⌋`, which
+`_levels` returns for `w = s·x - F` (`levels_eq`). -/
 noncomputable def token (V : ℤ) (k G : ℕ) (P : ℕ → ℤ) (w : ℕ → ℝ) (n : ℕ) : ℤ :=
   Δ_[1] ^[k] (fun m => roundHalfUp (w m)) n + fracSteps k G P n + V / 2
 
@@ -72,7 +72,7 @@ theorem abs_fracSteps_lt {k G : ℕ} (hk : 1 ≤ k) {P : ℕ → ℤ} (hP : Δ_[
   rw [fracSteps_eq hP, abs_neg]
   exact lt_of_mul_lt_mul_left h h2.le
 
-/-- The tokens are the `k`-th differences of the levels of the effective series `ũ = w + F`,
+/-- The tokens are the `k`-th differences of the levels of `w + F`, `s·x` for `w = s·x - F`,
 measured from the anchor `B = P / 2^G`, offset by `V/2`. -/
 theorem token_eq {k G : ℕ} {P : ℕ → ℤ} (hP : Δ_[1] ^[k] P = 0) (V : ℤ) (w : ℕ → ℝ) (n : ℕ) :
     token V k G P w n =
@@ -95,7 +95,7 @@ theorem token_eq {k G : ℕ} {P : ℕ → ℤ} (hP : Δ_[1] ^[k] P = 0) (V : ℤ
     smul_eq_mul, fracSteps_eq hP]
   ring
 
-/-- Every token lies in `[1, V-1]` when the effective series' `k`-th differences stay within
+/-- Every token lies in `[1, V-1]` when the `k`-th differences of `w + F` stay within
 `V/2 - 2^(k-1)` (`abs_fwdDiff_iter_levels_le`). -/
 theorem token_mem {V : ℤ} (hV : Even V) {k G : ℕ} {P : ℕ → ℤ} (hP : Δ_[1] ^[k] P = 0)
     {w : ℕ → ℝ}
@@ -115,60 +115,51 @@ theorem token_mem {V : ℤ} (hV : Even V) {k G : ℕ} {P : ℕ → ℤ} (hP : Δ
   rw [abs_le] at h
   constructor <;> omega
 
-/-- The effective series `fl (fl (s·x) - F) + F` is within two roundings of `s·x`. -/
-theorem abs_effective_sub_le {fl : ℝ → ℝ} (hfl : IsRoundNearest fl) (s x F : ℝ) :
-    |fl (fl (s * x) - F) + F - s * x| ≤ rndErr (s * x) + rndErr (fl (s * x) - F) := by
-  calc |fl (fl (s * x) - F) + F - s * x|
-      = |(fl (fl (s * x) - F) - (fl (s * x) - F)) + (fl (s * x) - s * x)| := by
-        congr 1
-        ring
-    _ ≤ |fl (fl (s * x) - F) - (fl (s * x) - F)| + |fl (s * x) - s * x| := abs_add_le _ _
-    _ ≤ rndErr (fl (s * x) - F) + rndErr (s * x) :=
-        add_le_add (hfl.abs_sub_le _) (hfl.abs_sub_le _)
-    _ = rndErr (s * x) + rndErr (fl (s * x) - F) := add_comm _ _
-
-lemma abs_fwdDiff_iter_le_of_abs_le {η : ℝ} {g : ℕ → ℝ} (h : ∀ n, |g n| ≤ η) (k n : ℕ) :
-    |Δ_[1] ^[k] g n| ≤ 2 ^ k * η := by
-  induction k generalizing g η with
-  | zero =>
-    simp only [Function.iterate_zero, id_eq, pow_zero, one_mul]
-    exact h n
-  | succ k ih =>
-    rw [Function.iterate_succ_apply]
-    have h2 : ∀ m, |Δ_[1] g m| ≤ 2 * η := fun m => by
-      obtain ⟨b1, b2⟩ := abs_le.mp (h (m + 1))
-      obtain ⟨c1, c2⟩ := abs_le.mp (h m)
-      exact abs_le.mpr ⟨by simp only [fwdDiff]; linarith, by simp only [fwdDiff]; linarith⟩
-    calc |Δ_[1] ^[k] (Δ_[1] g) n| ≤ 2 ^ k * (2 * η) := ih h2
-      _ = 2 ^ (k + 1) * η := by ring
-
-/-- The token range in float64: if `|Δᵏ x| ≤ D`, the effective series is within `η` of `s·x`
-and the scale leaves room for `2^k` such errors, `s·D + 2^k·η ≤ V/2 - 2^(k-1)`, every token
-lies in `[1, V-1]`. -/
-theorem token_mem_of_domain {fl : ℝ → ℝ} {V : ℤ} (hV : Even V) {k G : ℕ} {P : ℕ → ℤ}
-    (hP : Δ_[1] ^[k] P = 0) {s D η : ℝ} (hs : 0 ≤ s) {x : ℕ → ℝ}
-    (hD : ∀ n, |Δ_[1] ^[k] x n| ≤ D)
-    (hη : ∀ m, |fl (fl (s * x m) - anchorFrac G P m) + anchorFrac G P m - s * x m| ≤ η)
-    (hsD : s * D + 2 ^ k * η ≤ (V : ℝ) / 2 - 2 ^ (k - 1)) (n : ℕ) :
-    1 ≤ token V k G P (fun m => fl (fl (s * x m) - anchorFrac G P m)) n ∧
-      token V k G P (fun m => fl (fl (s * x m) - anchorFrac G P m)) n ≤ V - 1 := by
+/-- The token range: every token of the levels of `s·x - F` lies in `[1, V-1]` when
+`|Δᵏ x| ≤ D` and `s·D ≤ V/2 - 2^(k-1)`. -/
+theorem token_mem_of_domain {V : ℤ} (hV : Even V) {k G : ℕ} {P : ℕ → ℤ}
+    (hP : Δ_[1] ^[k] P = 0) {s D : ℝ} (hs : 0 ≤ s) {x : ℕ → ℝ}
+    (hD : ∀ n, |Δ_[1] ^[k] x n| ≤ D) (hsD : s * D ≤ (V : ℝ) / 2 - 2 ^ (k - 1)) (n : ℕ) :
+    1 ≤ token V k G P (fun m => s * x m - anchorFrac G P m) n ∧
+      token V k G P (fun m => s * x m - anchorFrac G P m) n ≤ V - 1 := by
   refine token_mem hV hP (fun n => ?_) n
-  set e : ℕ → ℝ :=
-    fun m => fl (fl (s * x m) - anchorFrac G P m) + anchorFrac G P m - s * x m with he
-  have hsplit :
-      (fun m => fl (fl (s * x m) - anchorFrac G P m) + anchorFrac G P m) = s • x + e := by
+  have h : (fun m => s * x m - anchorFrac G P m + anchorFrac G P m) = s • x := by
     funext m
-    simp only [he, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    simp only [Pi.smul_apply, smul_eq_mul]
     ring
-  rw [hsplit, fwdDiff_iter_add, fwdDiff_iter_const_smul, Pi.add_apply, Pi.smul_apply,
-    smul_eq_mul]
-  have hx : |s * Δ_[1] ^[k] x n| ≤ s * D := by
-    rw [abs_mul, abs_of_nonneg hs]
-    exact mul_le_mul_of_nonneg_left (hD n) hs
-  calc |s * Δ_[1] ^[k] x n + Δ_[1] ^[k] e n|
-      ≤ |s * Δ_[1] ^[k] x n| + |Δ_[1] ^[k] e n| := abs_add_le _ _
-    _ ≤ s * D + 2 ^ k * η := add_le_add hx (abs_fwdDiff_iter_le_of_abs_le hη k n)
-    _ ≤ (V : ℝ) / 2 - 2 ^ (k - 1) := hsD
+  rw [h, fwdDiff_iter_const_smul, Pi.smul_apply, smul_eq_mul, abs_mul, abs_of_nonneg hs]
+  exact (mul_le_mul_of_nonneg_left (hD n) hs).trans hsD
+
+/-- `encode`'s tokens in float64 and int64: for `s = m_s·2^e_s` and `x m = m_x m·2^(e_x m)` as
+`np.frexp` splits them, the int64 levels `L` that `_levels` returns and its guard
+`|p| < 2^b`, `b ≤ 53`, `b + k ≤ 62`, every token
+`np.diff(L, n=k) + fraction_steps + vocab_size // 2` lies in `[1, V-1]` when `|Δᵏ x| ≤ D` and
+`s·D ≤ V/2 - 2^(k-1)`. -/
+theorem encode_token_mem {fl : ℝ → ℝ} (hfl : IsRoundNearest fl) {ri : ℝ → ℤ}
+    (hri : IsRoundInt ri) {V : ℤ} (hV : Even V) {k G b : ℕ} (hG : G ≤ 53) (hb : b ≤ 53)
+    (hbk : b + k ≤ 62) {P : ℕ → ℤ} (hP : Δ_[1] ^[k] P = 0) {ms : ℝ} {es : ℤ}
+    (hms : IsMantissa ms) {mx : ℕ → ℝ} {ex : ℕ → ℤ} (hmx : ∀ m, IsMantissa (mx m))
+    (hguard : ∀ m, |levelHi fl ms es (mx m) (ex m)| < 2 ^ b) {s D : ℝ} (hs : s = ms * 2 ^ es)
+    (hs0 : 0 ≤ s) {x : ℕ → ℝ} (hx : ∀ m, x m = mx m * 2 ^ ex m)
+    (hD : ∀ n, |Δ_[1] ^[k] x n| ≤ D) (hsD : s * D ≤ (V : ℝ) / 2 - 2 ^ (k - 1))
+    {L : ℕ → Int64}
+    (hL : ∀ m, (L m).toInt = levels fl ri ms es (mx m) (ex m) (anchorFrac G P m)) (n : ℕ) :
+    1 ≤ (diffI64^[k] L n).toInt + fracSteps k G P n + V / 2 ∧
+      (diffI64^[k] L n).toInt + fracSteps k G P n + V / 2 ≤ V - 1 := by
+  have hF (m : ℕ) : ∃ N : ℤ, anchorFrac G P m = N / 2 ^ G ∧ 0 ≤ N ∧ N < 2 ^ G :=
+    ⟨P m % 2 ^ G, rfl, Int.emod_nonneg _ (by positivity), Int.emod_lt_of_pos _ (by positivity)⟩
+  have hR (m : ℕ) : (L m).toInt = roundHalfUp (s * x m - anchorFrac G P m) := by
+    obtain ⟨N, hN, hN0, hN1⟩ := hF m
+    rw [hL m, hN, levels_eq hfl hri hms (hmx m) es (ex m) hG hN0 hN1
+      ((hguard m).trans_le (pow_le_pow_right₀ (by norm_num) hb)), hs, hx m]
+  have hdiff : (diffI64^[k] L n).toInt = Δ_[1] ^[k] (fun m => (L m).toInt) n := by
+    refine toInt_diffI64_iter_of_mem_Icc hbk (fun m => ?_) n
+    obtain ⟨N, hN, hN0, hN1⟩ := hF m
+    rw [hL m, hN]
+    exact levels_mem hfl hri hms (hmx m) es (ex m) hG hN0 hN1 hb (hguard m)
+  rw [hdiff, show (fun m => (L m).toInt) = fun m => roundHalfUp (s * x m - anchorFrac G P m)
+    from funext hR]
+  exact token_mem_of_domain hV hP hs0 hD hsD n
 
 /-- The decoder's integration of `token - V/2 - fracSteps` from the prefix levels returns the
 encoder's levels (`eq_of_fwdDiff_iter_eq`). -/
@@ -184,62 +175,27 @@ theorem decode_levels_eq (V : ℤ) (k G : ℕ) (P : ℕ → ℤ) (w : ℕ → �
   rw [hd]
   exact eq_of_fwdDiff_iter_eq (fwdDiff_iter_integrate k _ _) fun m hm => integrate_of_lt hm _ _
 
-/-- The decoded value `fl (fl (fl R + F) / s)` is within `1/(2s)` of `x`, up to the error of
-the effective series `w + F` and the roundings of the three operations. -/
+/-- The decoded value `fl (fl (fl R + F) / s)` of the level `R = ⌊s·x - F + 1/2⌋` is within
+`1/(2s)` of `x`, up to the roundings of the sum and the quotient, when `R` lies within `2^53`,
+as under `_levels`' guard (`abs_levels_le`): then `fl R = R`. -/
 theorem abs_decode_sub_le_f64 {fl : ℝ → ℝ} (hfl : IsRoundNearest fl) {s : ℝ} (hs : 0 < s)
-    (x w F : ℝ) :
-    |fl (fl (fl (roundHalfUp w) + F) / s) - x| ≤
-      1 / (2 * s)
-        + (|w + F - s * x| + rndErr (roundHalfUp w) + rndErr (fl (roundHalfUp w) + F)) / s
-        + rndErr (fl (fl (roundHalfUp w) + F) / s) := by
-  set R : ℝ := (roundHalfUp w : ℝ)
-  set y := fl (fl R + F)
-  obtain ⟨h1, h2⟩ := abs_le.mp (hfl.abs_sub_le (fl R + F))
-  obtain ⟨h3, h4⟩ := abs_le.mp (hfl.abs_sub_le R)
-  obtain ⟨h5, h6⟩ := roundHalfUp_sub_mem w
-  have h7 := neg_abs_le (w + F - s * x)
-  have h8 := le_abs_self (w + F - s * x)
-  have hys : |y - s * x| ≤ 1 / 2 + (|w + F - s * x| + rndErr R + rndErr (fl R + F)) :=
-    abs_le.mpr ⟨by linarith, by linarith⟩
-  have hdiv :
-      |y / s - x| ≤ 1 / (2 * s) + (|w + F - s * x| + rndErr R + rndErr (fl R + F)) / s := by
+    (x F : ℝ) (hR : |roundHalfUp (s * x - F)| ≤ 2 ^ 53) :
+    |fl (fl (fl (roundHalfUp (s * x - F)) + F) / s) - x| ≤
+      1 / (2 * s) + rndErr (roundHalfUp (s * x - F) + F) / s
+        + rndErr (fl (roundHalfUp (s * x - F) + F) / s) := by
+  set R : ℝ := (roundHalfUp (s * x - F) : ℝ)
+  rw [hfl.eq_self (isF64_intCast hR)]
+  set y := fl (R + F)
+  obtain ⟨h1, h2⟩ := abs_le.mp (hfl.abs_sub_le (R + F))
+  obtain ⟨h3, h4⟩ := roundHalfUp_sub_mem (s * x - F)
+  have hys : |y - s * x| ≤ 1 / 2 + rndErr (R + F) := abs_le.mpr ⟨by linarith, by linarith⟩
+  have hdiv : |y / s - x| ≤ 1 / (2 * s) + rndErr (R + F) / s := by
     rw [show y / s - x = (y - s * x) / s by field_simp, abs_div, abs_of_pos hs,
       show 1 / (2 * s) = 1 / 2 / s by ring, ← add_div]
     exact div_le_div_of_nonneg_right hys hs.le
   calc |fl (y / s) - x| ≤ |fl (y / s) - y / s| + |y / s - x| := abs_sub_le _ _ _
-    _ ≤ rndErr (y / s) + (1 / (2 * s) + (|w + F - s * x| + rndErr R + rndErr (fl R + F)) / s) :=
+    _ ≤ rndErr (y / s) + (1 / (2 * s) + rndErr (R + F) / s) :=
         add_le_add (hfl.abs_sub_le _) hdiv
     _ = _ := by ring
-
-/-- `_round_levels`' guard bounds the levels: `|u| < 2^j` gives `|⌊u + 1/2⌋| ≤ 2^j`. -/
-lemma abs_roundHalfUp_le {u : ℝ} {j : ℕ} (hu : |u| < 2 ^ j) : |roundHalfUp u| ≤ 2 ^ j := by
-  obtain ⟨h1, h2⟩ := roundHalfUp_sub_mem u
-  obtain ⟨hu1, hu2⟩ := abs_lt.mp hu
-  have hlt1 : ((roundHalfUp u : ℤ) : ℝ) < ((2 ^ j + 1 : ℤ) : ℝ) := by
-    push_cast
-    linarith
-  have hlt2 : ((-2 ^ j - 1 : ℤ) : ℝ) < ((roundHalfUp u : ℤ) : ℝ) := by
-    push_cast
-    linarith
-  have h3 := Int.cast_lt.mp hlt1
-  have h4 := Int.cast_lt.mp hlt2
-  rw [abs_le]
-  constructor <;> omega
-
-/-- `_round_levels`' other bound, `|w| < 2^53`: every level is a float, so `fl R = R` and the
-first of the decode's roundings, `rndErr R` in `abs_decode_sub_le_f64`, vanishes. -/
-theorem fl_roundHalfUp_eq {fl : ℝ → ℝ} (hfl : IsRoundNearest fl) {w : ℝ} (hw : |w| < 2 ^ 53) :
-    fl (roundHalfUp w) = roundHalfUp w :=
-  hfl.eq_self (isF64_intCast (abs_roundHalfUp_le hw))
-
-/-- Under the guard `|w| < 2^(62-k)` the levels and their differences up to the `k`-th lie
-within `2^62`, inside int64. -/
-theorem abs_fwdDiff_iter_levels_le_two_pow {k : ℕ} (hk : k ≤ 62) {w : ℕ → ℝ}
-    (hw : ∀ m, |w m| < 2 ^ (62 - k)) {j : ℕ} (hj : j ≤ k) (n : ℕ) :
-    |Δ_[1] ^[j] (fun m => roundHalfUp (w m)) n| ≤ 2 ^ 62 :=
-  calc |Δ_[1] ^[j] (fun m => roundHalfUp (w m)) n| ≤ 2 ^ j * 2 ^ (62 - k) :=
-        abs_fwdDiff_iter_le (fun m => abs_roundHalfUp_le (hw m)) j n
-    _ = 2 ^ (j + (62 - k)) := (pow_add _ _ _).symm
-    _ ≤ 2 ^ 62 := pow_le_pow_right₀ (by norm_num) (by omega)
 
 end DiffGPT

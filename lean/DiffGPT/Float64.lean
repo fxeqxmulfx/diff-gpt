@@ -1,7 +1,6 @@
 module
 
 public import Mathlib
-public import DiffGPT.LevelGrid
 
 /-!
 # A binary64 model
@@ -16,11 +15,10 @@ at `2^1024`, and below it the capped format rounds the same way.
 * `IsRoundNearest.abs_sub_le`: an operation errs by at most `2^-53` of the magnitude of its
   exact result, plus `2^-1075` in the subnormal range.
 * `IsRoundNearest.eq_self`, `IsRoundNearest.mono`: rounding keeps floats and order.
-* `IsF64.sterbenz`: `x - y` is a float, so exact, when `y/2 ≤ x ≤ 2y`.
-* `IsF64.floor`: the floor of a float is a float, so `np.floor` is exact.
-* `roundLevels_eq`: `_round_levels` computes `f + (fl(u - f) ≥ 1/2)` with `f = ⌊u⌋`, and
-  this is exactly `⌊u + 1/2⌋` for every float `u`, where `⌊fl(u + 1/2)⌋` would round the
-  sum first, to `1` at `u = 1/2 - 2^-54`.
+* `IsRoundNearest.nonneg_add_iff`: the rounded sum of two floats has the sign of the exact
+  sum, since both are multiples of `2^-1074`.
+* `IsF64.exists_int_eq`, `IsF64.exists_intCast_div`: floats of magnitude at least `2^52` are
+  integers, and those of at least `2^(52 - G)` multiples of `2^-G`.
 -/
 
 @[expose] public section
@@ -61,10 +59,19 @@ lemma isF64_intCast_mul_zpow {m e : ℤ} (hm : |m| ≤ 2 ^ 53) (he : -1074 ≤ e
 lemma isF64_intCast {n : ℤ} (hn : |n| ≤ 2 ^ 53) : IsF64 n := by
   simpa using isF64_intCast_mul_zpow (e := 0) hn (by norm_num)
 
-/-- The anchor fractions `n / 2^G`, `|n| < 2^53`, are floats. -/
-lemma isF64_intCast_div_two_pow {n : ℤ} (hn : |n| < 2 ^ 53) {G : ℕ} (hG : G ≤ 1074) :
-    IsF64 ((n : ℝ) / 2 ^ G) :=
-  ⟨n, -G, hn, by omega, by rw [zpow_neg, zpow_natCast, div_eq_mul_inv]⟩
+/-- `n / 2^G` with `|n| ≤ 2^53` is a float. -/
+lemma isF64_intCast_div_two_pow {n : ℤ} (hn : |n| ≤ 2 ^ 53) {G : ℕ} (hG : G ≤ 1074) :
+    IsF64 ((n : ℝ) / 2 ^ G) := by
+  have := isF64_intCast_mul_zpow hn (e := -G) (by omega)
+  rwa [zpow_neg, zpow_natCast, ← div_eq_mul_inv] at this
+
+/-- `(n / 2^G) · 2^-E` is a float for `|n| ≤ 2^53` while `G + E ≤ 1074`. -/
+lemma isF64_intCast_div_mul_zpow {n : ℤ} (hn : |n| ≤ 2 ^ 53) {G : ℕ} {E : ℤ}
+    (h : G + E ≤ 1074) : IsF64 ((n : ℝ) / 2 ^ G * 2 ^ (-E)) := by
+  have := isF64_intCast_mul_zpow hn (e := -G - E) (by omega)
+  convert this using 1
+  rw [sub_eq_add_neg, zpow_add₀ two_ne_zero, zpow_neg (2 : ℝ) (G : ℤ), zpow_natCast]
+  ring
 
 /-- Floats of magnitude at least `2^52` are integers. -/
 lemma IsF64.exists_int_eq {x : ℝ} (hx : IsF64 x) (h : 2 ^ 52 ≤ |x|) : ∃ n : ℤ, x = n := by
@@ -82,15 +89,38 @@ lemma IsF64.exists_int_eq {x : ℝ} (hx : IsF64 x) (h : 2 ^ 52 ≤ |x|) : ∃ n 
   push_cast
   rw [← zpow_natCast, Int.toNat_of_nonneg he]
 
-/-- The floor of a float is a float: `np.floor` is exact. -/
-lemma IsF64.floor {x : ℝ} (hx : IsF64 x) : IsF64 (⌊x⌋ : ℝ) := by
-  by_cases h : 2 ^ 52 ≤ |x|
-  · obtain ⟨n, rfl⟩ := hx.exists_int_eq h
-    rwa [Int.floor_intCast]
-  · obtain ⟨h1, h2⟩ := abs_lt.mp (not_le.mp h)
-    have h3 : ⌊x⌋ < 2 ^ 52 := Int.floor_lt.mpr (by push_cast; linarith)
-    have h4 : -2 ^ 52 ≤ ⌊x⌋ := Int.le_floor.mpr (by push_cast; linarith)
-    exact isF64_intCast (abs_le.mpr ⟨by linarith, by linarith⟩)
+/-- A float of magnitude at least `2^j` has an exponent of at least `j - 52`. -/
+lemma IsF64.exists_exponent_ge {y : ℝ} (hy : IsF64 y) {j : ℤ} (h : (2 : ℝ) ^ j ≤ |y|) :
+    ∃ m e : ℤ, |m| < 2 ^ 53 ∧ j - 52 ≤ e ∧ y = m * (2 : ℝ) ^ e := by
+  obtain ⟨m, e, hm, -, rfl⟩ := hy
+  refine ⟨m, e, hm, ?_, rfl⟩
+  by_contra! hlt
+  have hm' : |(m : ℝ)| < 2 ^ 53 := by exact_mod_cast hm
+  have h2e : (0 : ℝ) < 2 ^ e := zpow_pos two_pos e
+  rw [abs_mul, abs_of_pos h2e] at h
+  have : |(m : ℝ)| * 2 ^ e < 2 ^ j :=
+    calc |(m : ℝ)| * 2 ^ e < 2 ^ 53 * 2 ^ e := mul_lt_mul_of_pos_right hm' h2e
+      _ = 2 ^ ((53 : ℤ) + e) := by rw [zpow_add₀ two_ne_zero]; norm_num
+      _ ≤ 2 ^ j := zpow_le_zpow_right₀ (by norm_num) (by omega)
+  linarith
+
+/-- A float of magnitude at least `2^(52 - G)` is a multiple of `2^-G`. -/
+lemma IsF64.exists_intCast_div {y : ℝ} (hy : IsF64 y) {G : ℕ}
+    (h : (2 : ℝ) ^ (52 - (G : ℤ)) ≤ |y|) : ∃ N : ℤ, y = N / 2 ^ G := by
+  obtain ⟨m, e, -, he, rfl⟩ := hy.exists_exponent_ge h
+  refine ⟨m * 2 ^ (e + G).toNat, ?_⟩
+  rw [eq_div_iff (by positivity)]
+  push_cast
+  rw [← zpow_natCast (2 : ℝ) (e + G).toNat, Int.toNat_of_nonneg (by omega),
+    zpow_add₀ two_ne_zero, zpow_natCast]
+  ring
+
+/-- A float of magnitude at least `2^j` stays a float when scaled by `2^E`, as long as the
+smallest exponent it may need, `j - 52 + E`, stays normal or subnormal. -/
+lemma IsF64.mul_zpow {y : ℝ} (hy : IsF64 y) {j : ℤ} (h : (2 : ℝ) ^ j ≤ |y|) {E : ℤ}
+    (hE : -1074 ≤ j - 52 + E) : IsF64 (y * 2 ^ E) := by
+  obtain ⟨m, e, hm, hje, rfl⟩ := hy.exists_exponent_ge h
+  exact ⟨m, e + E, hm, by omega, by rw [zpow_add₀ two_ne_zero]; ring⟩
 
 /-- A float `m · 2^e₁` is an integer multiple of `2^e` for every `e ≤ e₁`. -/
 lemma intCast_mul_zpow_eq_of_le (m : ℤ) {e e₁ : ℤ} (h : e ≤ e₁) :
@@ -98,38 +128,6 @@ lemma intCast_mul_zpow_eq_of_le (m : ℤ) {e e₁ : ℤ} (h : e ≤ e₁) :
   push_cast
   rw [← zpow_natCast, Int.toNat_of_nonneg (by omega), mul_assoc, ← zpow_add₀ two_ne_zero,
     sub_add_cancel]
-
-/-- An integer multiple `M · 2^e`, `e ≥ -1074`, of magnitude below `2^53 · 2^e` is a float. -/
-lemma isF64_of_abs_lt {M e : ℤ} (he : -1074 ≤ e) (h : |(M : ℝ) * 2 ^ e| < 2 ^ 53 * 2 ^ e) :
-    IsF64 (M * (2 : ℝ) ^ e) := by
-  refine ⟨M, e, ?_, he, rfl⟩
-  have h2 : (0 : ℝ) < 2 ^ e := zpow_pos two_pos e
-  rw [abs_mul, abs_of_pos h2] at h
-  have : |(M : ℝ)| < 2 ^ 53 := lt_of_mul_lt_mul_right h h2.le
-  exact_mod_cast this
-
-/-- Sterbenz's lemma: the difference of floats within a factor of two is a float. -/
-lemma IsF64.sterbenz {x y : ℝ} (hx : IsF64 x) (hy : IsF64 y) (h₁ : y / 2 ≤ x) (h₂ : x ≤ 2 * y) :
-    IsF64 (x - y) := by
-  have hle : |x - y| ≤ x ∧ |x - y| ≤ y :=
-    ⟨abs_le.mpr ⟨by linarith, by linarith⟩, abs_le.mpr ⟨by linarith, by linarith⟩⟩
-  obtain ⟨m₁, e₁, hm₁, he₁, rfl⟩ := hx
-  obtain ⟨m₂, e₂, hm₂, he₂, rfl⟩ := hy
-  have hlt : |(m₁ : ℝ) * 2 ^ e₁ - m₂ * 2 ^ e₂| < 2 ^ 53 * 2 ^ min e₁ e₂ := by
-    rcases min_choice e₁ e₂ with h | h <;> rw [h]
-    · calc _ ≤ (m₁ : ℝ) * 2 ^ e₁ := hle.1
-        _ ≤ |(m₁ : ℝ)| * 2 ^ e₁ :=
-          mul_le_mul_of_nonneg_right (le_abs_self _) (zpow_pos two_pos _).le
-        _ < 2 ^ 53 * 2 ^ e₁ :=
-          mul_lt_mul_of_pos_right (by exact_mod_cast hm₁) (zpow_pos two_pos _)
-    · calc _ ≤ (m₂ : ℝ) * 2 ^ e₂ := hle.2
-        _ ≤ |(m₂ : ℝ)| * 2 ^ e₂ :=
-          mul_le_mul_of_nonneg_right (le_abs_self _) (zpow_pos two_pos _).le
-        _ < 2 ^ 53 * 2 ^ e₂ :=
-          mul_lt_mul_of_pos_right (by exact_mod_cast hm₂) (zpow_pos two_pos _)
-  rw [intCast_mul_zpow_eq_of_le m₁ (min_le_left e₁ e₂),
-    intCast_mul_zpow_eq_of_le m₂ (min_le_right e₁ e₂), ← sub_mul, ← Int.cast_sub] at hlt ⊢
-  exact isF64_of_abs_lt (le_min he₁ he₂) hlt
 
 namespace IsRoundNearest
 
@@ -152,6 +150,48 @@ lemma mono {a b : ℝ} (h : a ≤ b) : fl a ≤ fl b := by
     rcases abs_cases (fl a - b) with ⟨h4, _⟩ | ⟨h4, _⟩ <;> linarith
   obtain rfl := le_antisymm h hba
   exact lt_irrefl _ hlt
+
+/-- Rounding keeps a float lower bound on the magnitude. -/
+lemma le_abs {a y : ℝ} (hy : IsF64 y) (h : y ≤ |a|) : y ≤ |fl a| := by
+  rcases le_or_gt 0 a with ha | ha
+  · rw [abs_of_nonneg ha] at h
+    have := hfl.mono h
+    rw [hfl.eq_self hy] at this
+    exact this.trans (le_abs_self _)
+  · rw [abs_of_neg ha] at h
+    have := hfl.mono (show a ≤ -y by linarith)
+    rw [hfl.eq_self hy.neg] at this
+    exact (show y ≤ -fl a by linarith).trans (neg_le_abs _)
+
+/-- The rounded sum of two floats has the sign of the exact sum: both are multiples of
+`2^-1074`, so a negative sum is at most `-2^-1074`, itself a float. -/
+lemma nonneg_add_iff {a b : ℝ} (ha : IsF64 a) (hb : IsF64 b) : 0 ≤ fl (a + b) ↔ 0 ≤ a + b := by
+  constructor
+  · intro h
+    by_contra! hlt
+    obtain ⟨m₁, e₁, -, he₁, rfl⟩ := ha
+    obtain ⟨m₂, e₂, -, he₂, rfl⟩ := hb
+    rw [intCast_mul_zpow_eq_of_le m₁ he₁, intCast_mul_zpow_eq_of_le m₂ he₂, ← add_mul,
+      ← Int.cast_add] at h hlt
+    set K := m₁ * 2 ^ (e₁ - -1074).toNat + m₂ * 2 ^ (e₂ - -1074).toNat
+    have h2 : (0 : ℝ) < 2 ^ (-1074 : ℤ) := zpow_pos two_pos _
+    have hK : K ≤ -1 := by
+      have : (K : ℝ) < 0 := by
+        by_contra! h0
+        have := mul_nonneg h0 h2.le
+        linarith
+      have : K < 0 := by exact_mod_cast this
+      omega
+    have hle : (K : ℝ) * 2 ^ (-1074 : ℤ) ≤ ((-1 : ℤ) : ℝ) * 2 ^ (-1074 : ℤ) :=
+      mul_le_mul_of_nonneg_right (by exact_mod_cast hK) h2.le
+    have hm1 : IsF64 (((-1 : ℤ) : ℝ) * 2 ^ (-1074 : ℤ)) := ⟨-1, -1074, by norm_num, le_refl _, rfl⟩
+    have := hfl.mono hle
+    rw [hfl.eq_self hm1] at this
+    push_cast at this
+    linarith
+  · intro h
+    have := hfl.mono h
+    rwa [hfl.eq_self IsF64.zero] at this
 
 /-- The rounding error: `2^-53` relative, plus `2^-1075` absolute for subnormals. -/
 lemma abs_sub_le (a : ℝ) : |fl a - a| ≤ rndErr a := by
@@ -213,70 +253,5 @@ lemma abs_sub_le (a : ℝ) : |fl a - a| ≤ rndErr a := by
     linarith
 
 end IsRoundNearest
-
-/-- `_round_levels` on a float `u`: `f = np.floor(u)`, exact, then `f + (u - f >= 0.5)`, with
-the difference and the sum rounded. -/
-noncomputable def roundLevels (fl : ℝ → ℝ) (u : ℝ) : ℝ :=
-  fl ((⌊u⌋ : ℝ) + if (1 / 2 : ℝ) ≤ fl (u - ⌊u⌋) then 1 else 0)
-
-/-- `_round_levels` rounds every float half up exactly. -/
-theorem roundLevels_eq {fl : ℝ → ℝ} (hfl : IsRoundNearest fl) {u : ℝ} (hu : IsF64 u) :
-    roundLevels fl u = roundHalfUp u := by
-  have h1 : (⌊u⌋ : ℝ) ≤ u := Int.floor_le u
-  have h2 : u < ⌊u⌋ + 1 := Int.lt_floor_add_one u
-  have hcond : (1 / 2 : ℝ) ≤ fl (u - ⌊u⌋) ↔ (1 / 2 : ℝ) ≤ u - ⌊u⌋ := by
-    by_cases hneg : -(1 / 2 : ℝ) < u ∧ u < 0
-    · have hf : ⌊u⌋ = -1 := Int.floor_eq_iff.mpr ⟨by push_cast; linarith, by push_cast; linarith⟩
-      have hhalf : IsF64 (1 / 2 : ℝ) := ⟨1, -1, by norm_num, by norm_num, by norm_num⟩
-      have hmono : fl (1 / 2) ≤ fl (u - ⌊u⌋) := hfl.mono (by rw [hf]; push_cast; linarith)
-      rw [hfl.eq_self hhalf] at hmono
-      exact iff_of_true hmono (by rw [hf]; push_cast; linarith)
-    · suffices hd : IsF64 (u - ⌊u⌋) by rw [hfl.eq_self hd]
-      rcases lt_trichotomy ⌊u⌋ 0 with hf | hf | hf
-      · -- `u ≤ -1/2`: `u - f = (-f) - (-u)`, Sterbenz with `-u/2 ≤ -f ≤ -2u`
-        have hf' : (⌊u⌋ : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hf
-        have hu0 : u ≤ -(1 / 2) := by
-          by_contra! h
-          exact hneg ⟨h, by linarith⟩
-        have h2u : 2 * u ≤ ⌊u⌋ := by
-          rcases le_or_gt u (-1) with h | h
-          · linarith
-          · have : (-1 : ℤ) ≤ ⌊u⌋ := Int.le_floor.mpr (by push_cast; linarith)
-            have : (-1 : ℝ) ≤ ⌊u⌋ := by exact_mod_cast this
-            linarith
-        have := hu.floor.neg.sterbenz hu.neg (by linarith) (by linarith)
-        rwa [neg_sub_neg] at this
-      · rw [hf]
-        simpa using hu
-      · -- `f ≥ 1`: Sterbenz with `f/2 ≤ u ≤ 2f`
-        have hf' : (1 : ℝ) ≤ ⌊u⌋ := by exact_mod_cast hf
-        exact hu.sterbenz hu.floor (by linarith) (by linarith)
-  unfold roundLevels roundHalfUp
-  by_cases h : (1 / 2 : ℝ) ≤ u - ⌊u⌋
-  · rw [ite_eq_left (hcond.mpr h)]
-    have hfr : ⌊u + 1 / 2⌋ = ⌊u⌋ + 1 :=
-      Int.floor_eq_iff.mpr ⟨by push_cast; linarith, by push_cast; linarith⟩
-    rw [hfr]
-    push_cast
-    apply hfl.eq_self
-    have hsmall : |u| < 2 ^ 52 := by
-      by_contra! h52
-      obtain ⟨n, rfl⟩ := hu.exists_int_eq h52
-      rw [Int.floor_intCast, sub_self] at h
-      norm_num at h
-    obtain ⟨h3, h4⟩ := abs_lt.mp hsmall
-    have h5 : ⌊u⌋ + 1 ≤ 2 ^ 52 := by
-      have : ⌊u⌋ < 2 ^ 52 := Int.floor_lt.mpr (by push_cast; linarith)
-      omega
-    have h6 : -2 ^ 52 ≤ ⌊u⌋ + 1 := by
-      have : -2 ^ 52 ≤ ⌊u⌋ := Int.le_floor.mpr (by push_cast; linarith)
-      omega
-    have := isF64_intCast (n := ⌊u⌋ + 1) (abs_le.mpr ⟨by linarith, by linarith⟩)
-    exact_mod_cast this
-  · rw [ite_eq_right (mt hcond.mp h)]
-    have hfr : ⌊u + 1 / 2⌋ = ⌊u⌋ :=
-      Int.floor_eq_iff.mpr ⟨by linarith, by linarith⟩
-    rw [hfr, add_zero]
-    exact hfl.eq_self hu.floor
 
 end DiffGPT

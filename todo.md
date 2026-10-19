@@ -295,8 +295,20 @@ on the unfixed code.
   arithmetic; `Float64.lean`, `Int64.lean` and `Machine.lean` model float64
   rounding and int64 wrapping and prove the implementation: exact half-up
   rounding, the uint64 anchor, the overflow test in `_cumsum`, the decoded
-  levels, and the float64 token range and error. 62 theorems, standard
-  axioms only.
+  levels, and the float64 token range up to the rounding of s·x, which
+  version 3 removed. 62 theorems, standard axioms only.
+
+## Token scheme version 3 (2026-10-20)
+
+- [x] **Exact levels.** `_levels` reads floor(s·x - F + 1/2) off the
+  float64 rounding of s·x and its exact error (Dekker's product), the scale
+  rounds down and the domain max rounds up, so a step within D never clips,
+  at rounding ties included. Version 2 clipped such steps on constructed
+  series; a k = 2 one drifted to 1999·Δ/2 over 1000 rows. Checkpoints
+  record `encoder_version` 3.
+- [x] **Lean.** `ExactLevels.lean` proves `_levels` exact, and
+  `encode_token_mem` in `Machine.lean` the token range of `encode` as
+  written, with no float64 slack. 81 theorems, standard axioms only.
 
 ## Observations, no action planned
 
@@ -304,10 +316,6 @@ on the unfixed code.
 - MASH tokens depend on the window's prefix, the anchor of its grid, so a
   separately encoded window differs from a slice (audit #5). LGT, the
   default, does not have this.
-- In float64 the token range holds exactly only where s·x is computed
-  exactly. Otherwise a token can reach V and clip where a step of nearly D
-  has all its k + 1 levels within about 2^-53·|s·x| of rounding ties
-  (`token_mem_of_domain` in `lean/DiffGPT/Machine.lean`).
 - **Checked and correct:**
   - the optimizer matches schedulefree 1.4.1 bit for bit with `amsgrad=False`;
   - cached and uncached logits agree, and the Engine reproduces uncached
