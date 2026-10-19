@@ -14,9 +14,8 @@ def test_kv_cache_resize() -> None:
     """
     Check that a full cache grows on insert and keeps the tokens it already stored.
 
-    The KV cache was not resized correctly, more information here:
-    https://github.com/karpathy/nanochat/pull/186
-    This test reproduces the issue and will be merged alongside the fix.
+    Regression test for the resize bug described in
+    https://github.com/karpathy/nanochat/pull/186.
     """
     batch_size = 2
     num_heads = 3
@@ -116,14 +115,19 @@ def test_insert_kv_lazy_init_and_pos_update() -> None:
     cache = KVCache(B, H, T, D, L)
 
     # Input: k, v \in \mathbb{R}^{B \times H \times 1 \times D}
-    k = torch.randn(B, H, 1, D)
-    v = torch.randn(B, H, 1, D)
+    # float64, unlike the float32 placeholder, so the dtype check means something.
+    k = torch.randn(B, H, 1, D, dtype=torch.float64)
+    v = torch.randn(B, H, 1, D, dtype=torch.float64)
+
+    # Nothing is allocated before the first insert
+    assert cache.kv_cache.size(0) == 0
 
     # --- Layer 0 ---
     _k_out, _v_out = cache.insert_kv(0, k, v)
 
-    # Cache allocated?
-    assert cache.kv_cache is not None
+    # Allocated with the recorded shape and the dtype of the input
+    assert cache.kv_cache.shape == (L, 2, B, H, T, D)
+    assert cache.kv_cache.dtype == k.dtype
     # $pos$ should NOT update yet (wait for last layer)
     assert cache.get_pos() == 0
 

@@ -118,21 +118,22 @@ def test_dataframe_loader_target_column_mask() -> None:
 
 def test_dataframe_loader_multi_series_blends() -> None:
     """
-    Check that a loader over two series serves full (batch_size, block_size) batches.
+    Check that a loader over two series samples windows from both of them.
 
-    With two series that produce distinct token bands, windows should come
-    from both over many samples.
+    One series rises and the other falls, so with order 1 their tokens lie on
+    opposite sides of the middle token: every window must sit on one side,
+    and both sides must show up in the batch.
     """
     torch.manual_seed(0)
-    a = _toy_df(n_rows=200)  # values 0..199
-    b = _toy_df(n_rows=200)
-    # Shifted; same derivatives though, so encoded tokens overlap.
-    b["c0"] = b["c0"] + 1000
+    vocab_size = 64
+    mid = vocab_size // 2
+    a = _toy_df(n_rows=200)  # slope +1: tokens >= mid
+    b = -50 * _toy_df(n_rows=200)  # slope -50: tokens < mid
     loader = DiffDataFrameDataLoader(
         dfs=[a, b],
         block_size=8,
         batch_size=32,
-        vocab_size=64,
+        vocab_size=vocab_size,
         order_of_derivative=1,
         domain_of_definition=_big_domain(1),
         use_decimal=False,
@@ -140,3 +141,9 @@ def test_dataframe_loader_multi_series_blends() -> None:
     )
     x, _ = loader.get_batch("train")
     assert x.shape == (32, 8)
+    from_a = (x >= mid).all(dim=1)
+    from_b = (x < mid).all(dim=1)
+    # No window mixes the two series, and the batch draws on both.
+    assert (from_a | from_b).all()
+    assert from_a.any()
+    assert from_b.any()

@@ -151,7 +151,7 @@ def test_fourth_order_differentiate_integrate_sin_cos() -> None:
 
 @pytest.mark.slow
 def test_fifth_order_differentiate_integrate_sin_cos() -> None:
-    """Check the sin/cos round trip; despite the name, it runs order 1."""
+    """Check that the order-5 round trip recovers sin/cos within its error bound."""
     idx = np.arange(1_000_000, dtype=np.float64)
     inp = np.stack(
         (
@@ -161,7 +161,7 @@ def test_fifth_order_differentiate_integrate_sin_cos() -> None:
         axis=1,
     )
     inp = np_to_decimal(inp)
-    order_of_derivative = 1
+    order_of_derivative = 5
     use_decimal = True
     start, diff = differentiate(
         inp=inp,
@@ -174,7 +174,7 @@ def test_fifth_order_differentiate_integrate_sin_cos() -> None:
         order_of_derivative=order_of_derivative,
         use_decimal=use_decimal,
     )
-    assert np.max(np.abs(result - inp)) <= Decimal("7.802992583885788917541503906E-26")
+    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
 
 
 @pytest.mark.slow

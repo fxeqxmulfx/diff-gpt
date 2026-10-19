@@ -118,6 +118,7 @@ def train(
     grad_accum_steps: int = 1,
     grad_clip_norm: float | None = None,
     save_best: bool = True,
+    optimizer: AdamWScheduleFree | None = None,
 ) -> tuple[float, int]:
     """
     Train `mut_model` against batches produced by `loader`.
@@ -135,16 +136,22 @@ def train(
     seen and restore it before returning. Lets training run past the val
     optimum without losing the best model (useful when val is noisy).
     Returns the best val_loss instead of the final one when active.
+
+    `optimizer`: a schedule-free AdamW over the parameters of `mut_model`;
+    by default one is built from `learning_rate`, `betas` and `weight_decay`,
+    which are ignored when `optimizer` is given. It is left in eval mode,
+    matching the weights handed back.
     """
     if grad_accum_steps < 1:
         msg = "grad_accum_steps must be >= 1"
         raise ValueError(msg)
-    optimizer = AdamWScheduleFree(
-        _param_groups(mut_model, weight_decay),
-        lr=learning_rate,
-        betas=betas,
-        weight_decay=weight_decay,
-    )
+    if optimizer is None:
+        optimizer = AdamWScheduleFree(
+            _param_groups(mut_model, weight_decay),
+            lr=learning_rate,
+            betas=betas,
+            weight_decay=weight_decay,
+        )
     has_val = loader.has_val()
     start = datetime.now(tz=UTC)
     is_main = _is_main_rank()
