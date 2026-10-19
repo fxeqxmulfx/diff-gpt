@@ -1,7 +1,6 @@
 """Input checks, the clipping report and edge cases of the encoder."""
 
 import warnings
-from decimal import Decimal
 
 import numpy as np
 import pytest
@@ -13,8 +12,6 @@ from diff_gpt.encoder_decoder import (
     encode,
     get_domain_of_definition,
     integrate,
-    np_is_decimal,
-    np_to_decimal,
 )
 
 V = 64
@@ -30,33 +27,74 @@ def test_encode_and_domain_reject_nan_and_infinity(bad: float) -> None:
     """
     x = np.array([[0.0], [1.0], [bad], [2.0]])
     with pytest.raises(ValueError, match="inp must be finite"):
-        encode(x, V, np.array([1.0]), 1, use_decimal=False)
+        encode(x, V, np.array([1.0]), 1)
     with pytest.raises(ValueError, match="inp must be finite"):
-        get_domain_of_definition(x, 1, use_decimal=False)
+        get_domain_of_definition(x, 1)
     finite = np.array([[0.0], [1.0], [2.0]])
     with pytest.raises(ValueError, match="domain_of_definition must be finite"):
-        encode(finite, V, np.array([bad]), 1, use_decimal=False)
+        encode(finite, V, np.array([bad]), 1)
 
 
-def test_encode_rejects_decimal_nan() -> None:
-    """Check that a Decimal NaN raises as the float one does."""
-    x = np_to_decimal(np.array([[0.0], [1.0], [2.0]]))
-    x[1, 0] = Decimal("NaN")
-    with pytest.raises(ValueError, match="inp must be finite"):
-        encode(x, V, np_to_decimal(np.array([1.0])), 1, use_decimal=True)
+def test_values_other_than_float64_are_rejected() -> None:
+    """Check that the encoder takes float64 values only, e.g. no object arrays."""
+    x = np.array([[0.0], [1.0], [2.0]])
+    with pytest.raises(TypeError, match="inp must be float64"):
+        encode(x.astype(object), V, np.array([1.0]), 1)
+    with pytest.raises(TypeError, match="inp must be float64"):
+        get_domain_of_definition(x.astype(object), 1)
+    st, sc, tok = encode(x, V, np.array([1.0]), 1)
+    with pytest.raises(TypeError, match="start must be float64"):
+        decode(st.astype(np.float32), sc, tok, V, 1)
 
 
-def test_lgt_rejects_levels_past_the_int64_grid() -> None:
+# The order from which the int64 limit on the levels, 2^(62 - k), binds
+# before the float64 one, 2^53.
+INT64_BOUND_ORDER = 12
+
+
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+def test_levels_past_the_int64_grid_are_rejected(tokenizer: str) -> None:
     """
-    Check that LGT raises where |s·x| would leave the int64 level grid.
+    Check that encode raises where |s·x| would leave the int64 level grid.
 
     A constant column gets the scale 2^20, so a level of 2^44 used to wrap
-    around in the cast to int64 and decode to garbage.
+    around in the cast to int64 and decode to garbage. From k = 12 on, the
+    levels must stay below 2^(62 - k), so that their k-th differences fit.
     """
-    x = np.full((10, 1), 2.0**44)
-    dod = get_domain_of_definition(x, 1, use_decimal=False)
+    x = np.full((20, 1), 2.0**44)
     with pytest.raises(ValueError, match="level grid"):
-        encode(x, V, dod, 1, use_decimal=False, tokenizer="lgt")
+        encode(x, V, get_domain_of_definition(x, 1), 1, tokenizer=tokenizer)
+    x = np.full((20, 1), 2.0**30)  # levels of 2^50
+    vocab_size = 2 ** (INT64_BOUND_ORDER + 1)
+    for k in (INT64_BOUND_ORDER - 1, INT64_BOUND_ORDER):
+        dod = get_domain_of_definition(x, k)
+        if k < INT64_BOUND_ORDER:
+            encode(x, vocab_size, dod, k, tokenizer=tokenizer)
+        else:
+            with pytest.raises(ValueError, match=r"\|s·x\| < 2\^50"):
+                encode(x, vocab_size, dod, k, tokenizer=tokenizer)
+
+
+# Domains of x = 1 at V = 64, where s·x = 31 / D, on either side of 2^53.
+FINEST_DOMAIN = 4e-15  # s·x = 7.8e15
+TOO_FINE_DOMAIN = 3e-15  # s·x = 1.03e16
+
+
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+def test_a_grid_finer_than_float64_resolves_is_rejected(tokenizer: str) -> None:
+    """
+    Check that encode raises where |s·x| reaches 2^53 and float64 misses levels.
+
+    Sampled every 10^-6, one sin/cos period has Δ³x of 10^-18, below the
+    float64 noise of the values, so D is that noise and s·x reaches 7·10^16.
+    The rounding of s·x then moves levels by whole steps: with the int64
+    guard alone, over a thousand tokens clipped and LGT decoded 0.03 off,
+    against Δ/2 of 10^-17.
+    """
+    x = np.ones((10, 1))
+    encode(x, V, np.array([FINEST_DOMAIN]), 1, tokenizer=tokenizer)
+    with pytest.raises(ValueError, match=r"\|s·x\| < 2\^53"):
+        encode(x, V, np.array([TOO_FINE_DOMAIN]), 1, tokenizer=tokenizer)
 
 
 @pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
@@ -69,38 +107,37 @@ def test_encode_warns_with_the_number_of_clipped_tokens(tokenizer: str) -> None:
     """
     x = np.array([[0.0], [1.0], [2.0], [10.0], [11.0]])
     with pytest.warns(TokenClippingWarning, match="1 of 4 tokens"):
-        encode(x, V, np.array([1.0]), 1, use_decimal=False, tokenizer=tokenizer)
+        encode(x, V, np.array([1.0]), 1, tokenizer=tokenizer)
 
 
-# Steps that MASH at k = 1 takes to make up the jump below: it needs about
-# 1240 levels at V = 64, and each later step leaves about 31 levels of room.
-CATCH_UP_STEPS = 50
+# The jump below exceeds the largest step the grid holds, D = 1, by this much.
+JUMP_EXCESS = 39.0
 
 
-@pytest.mark.parametrize("use_decimal", [False, True])
-def test_mash_k1_makes_up_a_step_outside_the_domain(*, use_decimal: bool) -> None:
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+def test_a_clipped_step_offsets_the_values_after_it(tokenizer: str) -> None:
     """
-    Check that MASH at k = 1 makes a jump of 40·D up within a few dozen steps.
+    Check that a clipped jump of 40·D shifts every later value by its excess.
 
-    The jump's token was clipped after the feedback loop, so every later
-    decoded value stayed off by 39.0, against Δ/2 = 0.016. The tokens before
-    the jump stay as they were.
+    Both tokenizers clip alike for every k. Before version 2, MASH at k = 1
+    alone made the excess up over the next steps instead.
     """
     steps = np.random.default_rng(0).uniform(-1, 1, size=(400, 1))
     steps[200] = 40.0
     x = np.concatenate([np.zeros((1, 1)), np.cumsum(steps, axis=0)])
     dod = np.array([1.0])
-    if use_decimal:
-        x, dod = np_to_decimal(x), np_to_decimal(dod)
     with pytest.warns(TokenClippingWarning, match="1 of 400 tokens"):
-        st, sc, tok = encode(x, V, dod, 1, use_decimal=use_decimal, tokenizer="mash")
-    _, _, before = encode(x[:201], V, dod, 1, use_decimal=use_decimal, tokenizer="mash")
+        st, sc, tok = encode(x, V, dod, 1, tokenizer=tokenizer)
+    _, _, before = encode(x[:201], V, dod, 1, tokenizer=tokenizer)
     assert np.array_equal(tok[:200], before)
-    dec = decode(st, sc, tok, V, 1, use_decimal=use_decimal, tokenizer="mash")
-    err = np.abs((dec - x).astype(np.float64))[:, 0]
+    err = (decode(st, sc, tok, V, 1, tokenizer=tokenizer) - x)[:, 0]
     half_step = 1.0 / (V - 2) * (1 + 1e-9)  # Δ/2 = D / (V - 2), D = 1
-    assert err[:201].max() <= half_step
-    assert err[201 + CATCH_UP_STEPS :].max() <= half_step
+    assert np.abs(err[:201]).max() <= half_step
+    # The excess is a whole number of levels, so after the jump the error
+    # stays within Δ/2 of one offset.
+    offset = np.median(err[201:])
+    assert abs(offset + JUMP_EXCESS) <= 2 * half_step
+    assert np.abs(err[201:] - offset).max() <= 2 * half_step
 
 
 @pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
@@ -109,7 +146,7 @@ def test_encode_in_domain_does_not_warn(tokenizer: str) -> None:
     x = np.array([[0.0], [1.0], [2.0], [1.5], [0.5]])
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        encode(x, V, np.array([1.0]), 1, use_decimal=False, tokenizer=tokenizer)
+        encode(x, V, np.array([1.0]), 1, tokenizer=tokenizer)
 
 
 def test_mash_scalar_order_0_rounds_like_the_per_column_order_0() -> None:
@@ -121,18 +158,17 @@ def test_mash_scalar_order_0_rounds_like_the_per_column_order_0() -> None:
     against README Theorem 1.
     """
     x = np.random.default_rng(0).normal(size=(2000, 1))
-    dod = get_domain_of_definition(x, 0, use_decimal=False)
-    st, sc, scalar = encode(x, V, dod, 0, use_decimal=False, tokenizer="mash")
+    dod = get_domain_of_definition(x, 0)
+    st, sc, scalar = encode(x, V, dod, 0, tokenizer="mash")
     _, _, per_column = encode(
         x,
         V,
         dod,
         np.array([0]),
-        use_decimal=False,
         tokenizer="mash",
     )
     assert np.array_equal(scalar, per_column)
-    dec = decode(st, sc, scalar, V, 0, use_decimal=False, tokenizer="mash")
+    dec = decode(st, sc, scalar, V, 0, tokenizer="mash")
     # Δ/2 = 1 / (2s) = D / (V - 2)
     assert np.abs(dec - x).max() <= dod[0] / (V - 2) * (1 + 1e-12)
 
@@ -148,9 +184,9 @@ def test_integrate_inverts_differentiate_across_order_forms() -> None:
     """
     t = np.arange(1000, dtype=np.float64)
     x = np.stack([t + 3.0, t**2 / 1000 - 2.0, np.cos(t / 10)], axis=1)
-    start, diff = differentiate(x, 2, use_decimal=False)
+    start, diff = differentiate(x, 2)
     assert np.array_equal(start, x[:2])
-    back = integrate(start, diff, np.array([2, 2, 2]), use_decimal=False)
+    back = integrate(start, diff, np.array([2, 2, 2]))
     np.testing.assert_allclose(back, x, atol=1e-6)
 
 
@@ -158,11 +194,11 @@ def test_integrate_rejects_a_start_of_the_wrong_shape() -> None:
     """Check that integrate raises on a start with too few rows or columns."""
     t = np.arange(50, dtype=np.float64)
     x = np.stack([t, t**2, -t], axis=1)
-    start, diff = differentiate(x, 2, use_decimal=False)
+    start, diff = differentiate(x, 2)
     with pytest.raises(ValueError, match="exceeds the 1-row start prefix"):
-        integrate(start[1:], diff, 2, use_decimal=False)
+        integrate(start[1:], diff, 2)
     with pytest.raises(ValueError, match="start has shape"):
-        integrate(start[:, :2], diff, 2, use_decimal=False)
+        integrate(start[:, :2], diff, 2)
 
 
 @pytest.mark.parametrize("order", [2, np.array([2, 1])])
@@ -175,10 +211,35 @@ def test_domain_needs_a_row_past_the_order(order: int | np.ndarray) -> None:
     """
     x = np.array([[0.0, 1.0], [1.0, 2.0]])
     with pytest.raises(ValueError, match="needs a series longer than 2 rows"):
-        get_domain_of_definition(x, order, use_decimal=False)
+        get_domain_of_definition(x, order)
 
 
-def test_np_is_decimal_on_arrays_without_columns() -> None:
-    """Check that np_is_decimal goes by the dtype of an empty array, not inp[0, 0]."""
-    assert not np_is_decimal(np.zeros((3, 0)))
-    assert np_is_decimal(np.empty((3, 0), dtype=object))
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize(("k", "vocab_size"), [(0, 2), (1, 2), (2, 4), (3, 8)])
+def test_the_vocabulary_must_exceed_max_2_2k(
+    tokenizer: str,
+    k: int,
+    vocab_size: int,
+) -> None:
+    """Check that V <= max(2, 2^k), with no room for the rounding noise, raises."""
+    x = np.random.default_rng(0).normal(size=(20, 1))
+    dod = get_domain_of_definition(x, k)
+    with pytest.raises(ValueError, match=r"vocab_size > max\(2, 2\^k\)|even and >= 4"):
+        encode(x, vocab_size, dod, k, tokenizer=tokenizer)
+    encode(x, vocab_size + 2, dod, k, tokenizer=tokenizer)
+
+
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+def test_decode_raises_where_the_tokens_leave_int64(tokenizer: str) -> None:
+    """
+    Check that decode raises on tokens whose levels would wrap around in int64.
+
+    At k = 3, 3·10^6 tokens of the largest step reach 31·(3·10^6)^3/6 levels,
+    past 2^63; the int64 sums would wrap and decode to garbage.
+    """
+    x = np.random.default_rng(0).normal(size=(10, 1))
+    st, sc, _ = encode(x, V, np.array([10.0]), 3, tokenizer=tokenizer)
+    tokens = np.full((3_000_000, 1), V - 1, dtype=np.int64)
+    with pytest.raises(ValueError, match="outside int64"):
+        decode(st, sc, tokens, V, 3, tokenizer=tokenizer)
+    assert np.isfinite(decode(st, sc, tokens[:1000], V, 3, tokenizer=tokenizer)).all()

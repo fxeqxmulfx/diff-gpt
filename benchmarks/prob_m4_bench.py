@@ -144,7 +144,6 @@ def main() -> None:
     domain_of_definition = get_domain_of_definition(
         all_tokens,
         order_of_derivative=1,
-        use_decimal=False,
     )
 
     vocab_size = int(os.environ.get("M4_VOCAB_SIZE", "256"))
@@ -162,7 +161,6 @@ def main() -> None:
         model=base,
         order_of_derivative=1,
         domain_of_definition=domain_of_definition,
-        use_decimal=False,
     )
 
     max_iters = int(os.environ.get("M4_MAX_ITERS", "20000"))
@@ -173,7 +171,6 @@ def main() -> None:
         vocab_size=vocab_size,
         order_of_derivative=1,
         domain_of_definition=domain_of_definition,
-        use_decimal=False,
         device=device,
         train_part=train_part,
     )

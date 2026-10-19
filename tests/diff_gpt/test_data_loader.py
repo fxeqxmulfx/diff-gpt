@@ -8,7 +8,7 @@ import pytest
 import torch
 
 from diff_gpt.data_loader import DiffSQLiteDataLoader
-from diff_gpt.encoder_decoder import encode, np_to_decimal
+from diff_gpt.encoder_decoder import encode
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -45,7 +45,6 @@ def pass_through_encode(
     domain_of_definition: np.ndarray,
     order_of_derivative: int,
     *,
-    use_decimal: bool,
     tokenizer: str,
 ) -> tuple[None, None, torch.Tensor]:
     """
@@ -56,7 +55,7 @@ def pass_through_encode(
     can verify exact numbers from the DB.
     """
     # Unused: these parameters only mirror encode()'s signature.
-    del vocab_size, domain_of_definition, use_decimal, tokenizer
+    del vocab_size, domain_of_definition, tokenizer
     # Simulate data loss due to derivative order
     if len(inp) <= order_of_derivative:
         return None, None, torch.tensor([], dtype=torch.int64)
@@ -164,7 +163,6 @@ def test_initialization_metadata(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=1,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -188,7 +186,6 @@ def test_retrieval_order_0(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -211,7 +208,6 @@ def test_retrieval_order_1_offset(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=1,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -234,7 +230,6 @@ def test_sub_row_slicing(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -256,7 +251,6 @@ def test_cross_row_slicing(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -277,7 +271,6 @@ def test_exact_boundary_end(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -304,7 +297,6 @@ def test_table_filtering(complex_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=complex_db_path,
         encode_data=pass_through_encode,
@@ -325,7 +317,6 @@ def test_wide_table_flattening(complex_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=complex_db_path,
         encode_data=pass_through_encode,
@@ -351,7 +342,6 @@ def test_get_batch_structure(complex_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=complex_db_path,
         encode_data=pass_through_encode,
@@ -376,7 +366,6 @@ def test_split_defaults_to_train_only(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -395,7 +384,6 @@ def test_unknown_split_raises(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -422,7 +410,6 @@ def test_sqlite_train_val_split_disjoint(linear_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -449,7 +436,6 @@ def test_stress_random_access(complex_db_path: str) -> None:
         vocab_size=100,
         order_of_derivative=1,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=complex_db_path,
         encode_data=pass_through_encode,
@@ -500,7 +486,6 @@ def test_get_data_with_real_encoder_multi_feature(wide_only_db_path: str) -> Non
         vocab_size=vocab_size,
         order_of_derivative=1,
         domain_of_definition=np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float64),
-        use_decimal=False,
         device="cpu",
         database=wide_only_db_path,
         encode_data=encode,
@@ -523,7 +508,6 @@ def test_get_batch_with_real_encoder(wide_only_db_path: str) -> None:
         vocab_size=256,
         order_of_derivative=1,
         domain_of_definition=np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float64),
-        use_decimal=False,
         device="cpu",
         database=wide_only_db_path,
         encode_data=encode,
@@ -554,7 +538,6 @@ def test_default_rng_is_not_shared_between_instances(linear_db_path: str) -> Non
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -565,7 +548,6 @@ def test_default_rng_is_not_shared_between_instances(linear_db_path: str) -> Non
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -605,7 +587,6 @@ def test_sql_identifier_quoting_for_weird_table_name(tmp_path: Path) -> None:
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1.0]),
-        use_decimal=False,
         device="cpu",
         database=str(db_file),
         encode_data=pass_through_encode,
@@ -643,7 +624,6 @@ def test_get_batch_tolerates_short_reads_without_recursion(
         vocab_size=100,
         order_of_derivative=0,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=complex_db_path,
         encode_data=pass_through_encode,
@@ -658,7 +638,7 @@ def test_get_batch_tolerates_short_reads_without_recursion(
 
 
 # =============================================================================
-# 8. Splits without room, Decimal rows, per-table domains, the tokenizer
+# 8. Splits without room, the real encoder, per-table domains, the tokenizer
 # =============================================================================
 
 
@@ -676,7 +656,6 @@ def test_get_batch_raises_when_no_train_part_has_room(linear_db_path: str) -> No
         vocab_size=100,
         order_of_derivative=1,
         domain_of_definition=np.array([-1, 1]),
-        use_decimal=False,
         device="cpu",
         database=linear_db_path,
         encode_data=pass_through_encode,
@@ -695,32 +674,20 @@ def _wide_rows() -> np.ndarray:
     return i + np.array([0.1, 0.2, 0.3, 0.4])
 
 
-def test_use_decimal_encodes_the_rows_as_decimal(wide_only_db_path: str) -> None:
-    """
-    Check that use_decimal=True hands the rows to the encoder as Decimal.
-
-    The rows used to reach `encode` as float64, which it rejects in Decimal
-    mode, so every Decimal SQLite loader failed.
-    """
+def test_loader_returns_the_tokens_of_the_real_encoder(wide_only_db_path: str) -> None:
+    """Check that the loader hands the rows to `encode` and returns its tokens."""
     block_size = 8
-    domain = np_to_decimal(np.array([2.0, 2.0, 2.0, 2.0]))
+    domain = np.array([2.0, 2.0, 2.0, 2.0])
     loader = DiffSQLiteDataLoader(
         block_size=block_size,
         batch_size=2,
         vocab_size=256,
         order_of_derivative=1,
         domain_of_definition=domain,
-        use_decimal=True,
         device="cpu",
         database=wide_only_db_path,
     )
-    _, _, expected = encode(
-        np_to_decimal(_wide_rows()),
-        256,
-        domain,
-        1,
-        use_decimal=True,
-    )
+    _, _, expected = encode(_wide_rows(), 256, domain, 1)
     data = loader.get_data("wide", 0, block_size + 1)
     assert data == tuple(expected.reshape(-1)[: block_size + 1].tolist())
     x, _ = loader.get_batch("train")
@@ -745,7 +712,6 @@ def test_tables_of_different_widths_take_a_domain_each(complex_db_path: str) -> 
         vocab_size=256,
         order_of_derivative=0,
         domain_of_definition=domains,
-        use_decimal=False,
         device="cpu",
         database=complex_db_path,
     )
@@ -754,7 +720,7 @@ def test_tables_of_different_widths_take_a_domain_each(complex_db_path: str) -> 
         ("standard", np.array([[i, 2 * i] for i in range(100)], dtype=np.float64)),
         ("wide", np.arange(20.0)[:, None] + np.array([0.1, 0.2, 0.3, 0.4])),
     ):
-        _, _, expected = encode(rows, 256, domains[table], 0, use_decimal=False)
+        _, _, expected = encode(rows, 256, domains[table], 0)
         assert loader.get_data(table, 0, 6) == tuple(
             expected.reshape(-1)[:6].tolist(),
         )
@@ -772,7 +738,6 @@ def test_a_domain_mapping_must_cover_every_sampled_table(complex_db_path: str) -
             vocab_size=256,
             order_of_derivative=0,
             domain_of_definition={"standard": np.array([100.0, 200.0])},
-            use_decimal=False,
             device="cpu",
             database=complex_db_path,
         )
@@ -784,11 +749,14 @@ def test_sqlite_loader_encodes_with_its_tokenizer(
     tokenizer: str,
 ) -> None:
     """Check that the loader encodes with the tokenizer it was given."""
-    domain = np.array([2.0, 2.0, 2.0, 2.0])
+    # The rows are ramps of slope 1, here 50.4 levels per row: off the
+    # integers, so LGT's rounding varies along them, while the MASH grid moves
+    # with them and gives V/2 throughout. (A domain of 2 gives 63 levels per
+    # row, and both tokenizers V/2.)
+    domain = np.array([2.5, 2.5, 2.5, 2.5])
     rows = _wide_rows()
     tokens = {
-        tok: encode(rows, 256, domain, 2, use_decimal=False, tokenizer=tok)[2]
-        for tok in ("lgt", "mash")
+        tok: encode(rows, 256, domain, 2, tokenizer=tok)[2] for tok in ("lgt", "mash")
     }
     assert not np.array_equal(tokens["lgt"], tokens["mash"])
     loader = DiffSQLiteDataLoader(
@@ -797,7 +765,6 @@ def test_sqlite_loader_encodes_with_its_tokenizer(
         vocab_size=256,
         order_of_derivative=2,
         domain_of_definition=domain,
-        use_decimal=False,
         device="cpu",
         database=wide_only_db_path,
         tokenizer=tokenizer,

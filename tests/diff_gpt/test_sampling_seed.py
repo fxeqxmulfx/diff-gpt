@@ -19,7 +19,7 @@ def _model() -> tuple[DiffGPT, pd.DataFrame]:
     torch.manual_seed(0)
     idx = np.arange(80, dtype=np.float64)
     df = pd.DataFrame({"y": np.sin(idx / 5.0)})
-    dod = get_domain_of_definition(df.to_numpy(dtype=np.float64), 1, use_decimal=False)
+    dod = get_domain_of_definition(df.to_numpy(dtype=np.float64), 1)
     base = GPT(
         vocab_size=64,
         n_embd=16,
@@ -32,7 +32,6 @@ def _model() -> tuple[DiffGPT, pd.DataFrame]:
         model=base,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     ), df
 
 

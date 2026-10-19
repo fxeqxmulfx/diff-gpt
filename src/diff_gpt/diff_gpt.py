@@ -6,7 +6,6 @@ GPT continues the token stream, and the generated tokens are decoded back into
 values; `anomaly_scores` reads the token likelihoods instead.
 """
 
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -15,10 +14,10 @@ import torch
 import torch.nn.functional as F
 
 from diff_gpt.encoder_decoder import (
+    ENCODER_VERSION,
     decode,
     encode,
     integrate,
-    np_to_decimal,
     resolve_tokenizer,
 )
 from diff_gpt.metrics.point import bayes_point
@@ -71,24 +70,8 @@ def _differing_settings(
     saved: dict[str, object],
     current: dict[str, object],
 ) -> list[str]:
-    """Return the names of the encoder settings that differ; domains by value."""
-    differing = []
-    for name, value in current.items():
-        other = saved.get(name)
-        if name == "domain_of_definition":
-            same = (
-                isinstance(other, list)
-                and isinstance(value, list)
-                and len(other) == len(value)
-                and all(
-                    Decimal(a) == Decimal(b) for a, b in zip(other, value, strict=True)
-                )
-            )
-        else:
-            same = other == value
-        if not same:
-            differing.append(name)
-    return differing
+    """Return the names of the encoder settings that differ."""
+    return [name for name, value in current.items() if saved.get(name) != value]
 
 
 class DiffGPT:
@@ -96,9 +79,8 @@ class DiffGPT:
     GPT forecaster over derivative-encoded time series.
 
     Holds the model together with the encoder settings it was trained with
-    (`order_of_derivative`, `domain_of_definition`, `use_decimal`,
-    `tokenizer`), so that every prediction encodes the context and decodes the
-    output the same way.
+    (`order_of_derivative`, `domain_of_definition`, `tokenizer`), so that
+    every prediction encodes the context and decodes the output the same way.
     """
 
     __slots__ = (
@@ -106,7 +88,6 @@ class DiffGPT:
         "model",
         "order_of_derivative",
         "tokenizer",
-        "use_decimal",
     )
 
     def __init__(
@@ -115,7 +96,6 @@ class DiffGPT:
         order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
         *,
-        use_decimal: bool,
         tokenizer: str | None = None,
     ) -> None:
         """
@@ -132,7 +112,6 @@ class DiffGPT:
         self.model = model
         self.order_of_derivative = order_of_derivative
         self.domain_of_definition = domain_of_definition
-        self.use_decimal = use_decimal
         self.tokenizer = resolve_tokenizer(tokenizer)
 
     def _max_order(self, n_features: int) -> int:
@@ -150,9 +129,8 @@ class DiffGPT:
         return int(order_arr.max())
 
     def _to_input(self, df: pd.DataFrame) -> np.ndarray:
-        """Return the values of `df` as the encoder takes them: float64 or Decimal."""
-        inp = df.to_numpy(dtype=np.float64)
-        return np_to_decimal(inp) if self.use_decimal else inp
+        """Return the values of `df` as the encoder takes them: float64."""
+        return df.to_numpy(dtype=np.float64)
 
     def _encode(self, inp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Encode `inp` with the model's encoder settings."""
@@ -161,7 +139,6 @@ class DiffGPT:
             vocab_size=self.model.vocab_size,
             domain_of_definition=self.domain_of_definition,
             order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
             tokenizer=self.tokenizer,
         )
 
@@ -184,10 +161,9 @@ class DiffGPT:
             inp=tokens,
             vocab_size=self.model.vocab_size,
             order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
             tokenizer=self.tokenizer,
         )
-        return np.asarray(decoded[len(anchor) :], dtype=np.float64)
+        return decoded[len(anchor) :]
 
     def train(
         self,
@@ -277,8 +253,7 @@ class DiffGPT:
             gpt = build_gpt(0)
             gpt.load_state_dict(torch.load("best.pt"))
             model = DiffGPT(model=gpt, order_of_derivative=...,
-                            domain_of_definition=..., use_decimal=...,
-                            tokenizer=...)
+                            domain_of_definition=..., tokenizer=...)
         """
         return _train_numa(
             model_factory=model_factory,
@@ -688,27 +663,24 @@ class DiffGPT:
             raise ValueError(msg)
 
         # Encode the context, and the future from the last max_order context
-        # rows, the rows `_decode_future` starts from. The covariate tokens of
-        # the future then decode to the supplied values, also after a context
-        # that ends while MASH at k = 1 still makes up a cut step: one frame
-        # carried that catch-up into the future tokens and offset them. The
-        # target futures get placeholders that the sampled tokens replace: the
-        # context continued with zero k-th differences, which encode in range,
-        # so they cause no clipping warning, whatever values the caller
-        # supplied there.
+        # rows, the rows `_decode_future` starts from: "mash" anchors its grid
+        # at the first rows it encodes, and the tokens of a frame that started
+        # earlier would decode from these rows off by a polynomial of degree
+        # < k through the rounding of that frame's grid at them. The covariate
+        # tokens of the future then decode to the supplied values, to within
+        # the grid's 1/(2s). The target futures get placeholders that the
+        # sampled tokens replace: the context continued with zero k-th
+        # differences, which encode in range, so they cause no clipping
+        # warning, whatever values the caller supplied there.
         ctx_inp = self._to_input(context_df)
         # A copy: under pandas copy-on-write to_numpy gives a read-only view.
         future_inp = self._to_input(future_covariates_df).copy()
         # Slice by length: ctx_inp[-0:] would be the whole context.
         anchor = ctx_inp[ctx_len - max_order :]
-        zero_steps = np.zeros((pred_len, n_features), dtype=np.float64)
-        if self.use_decimal:
-            zero_steps = np_to_decimal(zero_steps)
         continuation = integrate(
             start=anchor,
-            diff=zero_steps,
+            diff=np.zeros((pred_len, n_features), dtype=np.float64),
             order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
         )[max_order:]
         targets = sorted(target_set)
         future_inp[:, targets] = continuation[:, targets]
@@ -754,10 +726,10 @@ class DiffGPT:
         if order.size == 1:
             order = np.full(domain.shape, order[0])
         return {
+            "encoder_version": ENCODER_VERSION,
             "tokenizer": self.tokenizer,
-            "use_decimal": self.use_decimal,
             "order_of_derivative": [int(k) for k in order],
-            "domain_of_definition": [str(d) for d in domain],
+            "domain_of_definition": [float(d) for d in domain],
         }
 
     def save(self, path: str = "diff-gpt.bin") -> None:

@@ -7,21 +7,23 @@ and half-integer rounding ties, with T = 1200–20000, V in {8, 16, 64, 256},
 k = 0–5, in float64 and Decimal. References to legacy behavior describe
 the audited MASH tokenizer; later fixes and LGT findings are recorded below.
 Fixes from the review of 2026-10-19 are marked in the overview and in each
-section.
+section. Version 2 of the token scheme (2026-10-20, §12) replaced the MASH
+cascade with the level grid and removed the Decimal path.
 
 ## Overview
 
 | # | Severity | Location | Finding | Status |
 |---|---|---|---|---|
-| 1 | High | `_sigma_delta_k`, `encode`, `_encode_column_tokens` | Silent out-of-domain clipping leaves a persistent level error | Reported by a warning; MASH at k=1 saturates and makes the step up; `predict` no longer affected |
-| 2 | Medium | Scalar `encode` at k=0 | Carry scheme instead of rounding: error up to one bin, history-dependent tokens | Fixed |
+| 1 | High | `_sigma_delta_k`, `encode`, `_encode_column_tokens` | Silent out-of-domain clipping leaves a persistent level error | Reported by a warning; both tokenizers clip alike since §12; `predict` no longer affected |
+| 2 | Medium | Scalar `encode` at k=0 | Carry scheme instead of rounding: error up to one bin, history-dependent tokens | Fixed; the carry scheme is gone (§12) |
 | 3 | Medium | `integrate`, `differentiate` docstring | The `start` representation is not detected; mismatched representations silently produce incorrect output | Fixed |
-| 4 | Medium | `_sigma_delta_k` docstring, `integrate` | The float64 precision limit is understated: k=4 already degrades at T around 10000 | Docstring fixed |
-| 5 | Observation | Tokenization as a whole | Modulator state makes separately encoded windows differ from slices of the full encoding | LGT, the default, has no modulator state |
+| 4 | Medium | `_sigma_delta_k` docstring, `integrate` | The float64 precision limit is understated: k=4 already degrades at T around 10000 | Moot: the decoder sums int64 levels (§12) |
+| 5 | Observation | Tokenization as a whole | Modulator state makes separately encoded windows differ from slices of the full encoding | LGT, the default, has no modulator state; MASH anchors at the window's prefix (§12) |
 | 6 | Low | `get_domain_of_definition` | At T=k, the scalar path raises ValueError while the per-column path returns zero | Fixed |
 | 7 | Low | `encode` | Token zero is never emitted for in-domain inputs | No action planned |
-| 8 | Low | `_sigma_delta_k` docstring | Described as "fast vectorized", but loops over T in Python | Docstring fixed |
+| 8 | Low | `_sigma_delta_k` docstring | Described as "fast vectorized", but loops over T in Python | Moot: `_sigma_delta_k` is gone (§12) |
 | 11 | High | `_round_levels` (LGT) | At k=1, rounding ties overflow the vocabulary and lower the decoded level for good | Fixed |
+| 12 | Change | Both tokenizers | Token scheme version 2: one level grid for every k, float64 and int64 only | Done, proved in Lean |
 
 ## 1. Silent out-of-domain clipping and persistent level error
 
@@ -112,10 +114,10 @@ A random walk with F=3, T=3000 gives 2258 differing tokens out of 9000 (25%).
 
 ```python
 x = np.random.default_rng(0).uniform(-1, 1, size=(5000, 1))
-dod = get_domain_of_definition(x, 0, use_decimal=False)
+dod = get_domain_of_definition(x, 0)
 for order in (0, np.array([0])):
-    st, sc, enc = encode(x, 256, dod, order, use_decimal=False, tokenizer="mash")
-    dec = decode(st, sc, enc, 256, order, use_decimal=False, tokenizer="mash")
+    st, sc, enc = encode(x, 256, dod, order, tokenizer="mash")
+    dec = decode(st, sc, enc, 256, order, tokenizer="mash")
     print(order, np.abs(dec - x).max() * sc[0])  # 0.98 versus 0.50
 ```
 
@@ -310,6 +312,37 @@ stayed within Δ/2 on tie-heavy data.
 and in Decimal. Then |ΔL| ≤ (V−2)/2 at k=1, and the k=0 and k≥2 bounds still
 hold because |ζ| ≤ 1/2. Tokens change only at exact ties. `test_lgt.py`
 checks the integer walk in both modes.
+
+## 12. Token scheme version 2 (2026-10-20)
+
+**Change.** Both tokenizers put each column on one level grid, for every k:
+L = ⌊s·x − B + 1/2⌋, q = Δ^k L + V/2, s = (V − max(2, 2^k))/(2D). The anchor B
+is a polynomial of degree < k, which Δ^k removes: B = 0 for LGT, and for MASH
+the polynomial through the k prefix values. The MASH Σ-Δ cascade, its carry
+scheme at k ≤ 1 and the saturation at k = 1 (§1) are gone, as is the Decimal
+path. Every token lies in [1, V−1] and the error stays within
+D/(V − max(2, 2^k)) for both tokenizers (`lean/DiffGPT/LevelGrid.lean`).
+Checkpoints record `ENCODER_VERSION` = 2, and `DiffGPT.load` refuses others.
+
+**float64 and int64.** MASH needs B only through its fractional part F, a
+multiple of 2^−G with G = min(53, 64 − k), which float64 holds exactly. The
+numerators of F are continued modulo 2^64 in uint64; with R = ⌊s·x − F + 1/2⌋
+the tokens are Δ^k R + Δ^k F + V/2, where Δ^k F is an integer, and
+x̂ = (R + F)/s. Levels round half up exactly (`roundLevels_eq` in
+`Float64.lean`), `np.diff` and the decoder's cumulative sums are exact in
+int64 below the guard, and `_cumsum` detects the first overflow
+(`Int64.lean`). `Machine.lean` puts these together for the code as written.
+
+**Guard.** `encode` raises where |s·x| reaches 2^min(53, 62−k). Past 2^53
+float64 misses whole levels: one sin/cos period sampled every 10^−6 has a
+k = 3 domain of float64 noise, s·x of 7·10^16, and with only the int64 guard
+over a thousand tokens clipped and LGT decoded 0.03 off, against Δ/2 of
+10^−17. Past 2^(62−k) the k-th differences would overflow int64.
+
+**Remaining float64 caveat.** The token range is exact only where s·x is
+computed exactly. Otherwise a token can reach V, and clip, where a step of
+nearly D has all its k + 1 levels within about 2^−53·|s·x| of rounding ties
+(`token_mem_of_domain`). No series in the tests has hit this.
 
 ## Checks that passed in the original audit
 

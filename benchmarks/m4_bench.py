@@ -151,7 +151,6 @@ def prepare() -> dict[str, Any]:
     domain = get_domain_of_definition(
         np.concatenate(series_norm, axis=0).reshape(-1, 1),
         order_of_derivative=order,
-        use_decimal=False,
         quantile=quantile,
     )
     return {
@@ -245,7 +244,6 @@ def main() -> None:
         model=base,
         order_of_derivative=order_of_derivative,
         domain_of_definition=domain_of_definition,
-        use_decimal=False,
     )
 
     # Global training: one model over all series.
@@ -266,7 +264,6 @@ def main() -> None:
         vocab_size=vocab_size,
         order_of_derivative=order_of_derivative,
         domain_of_definition=domain_of_definition,
-        use_decimal=False,
         device=device,
         train_part=train_part,
         rng=torch.Generator().manual_seed(42 + seed),

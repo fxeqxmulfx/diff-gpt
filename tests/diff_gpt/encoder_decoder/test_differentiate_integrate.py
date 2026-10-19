@@ -1,263 +1,44 @@
-"""Tests for the differentiate/integrate round trip on Decimal series."""
-
-from decimal import Decimal
+"""Tests for the differentiate/integrate round trip."""
 
 import numpy as np
 import pytest
 
-from diff_gpt.encoder_decoder import differentiate, integrate, np_to_decimal
+from diff_gpt.encoder_decoder import differentiate, integrate
+
+# float64 round trips of sin/cos stay this close; the measured error is 1e-15.
+ROUND_TRIP_TOLERANCE = 1e-12
 
 
-@pytest.mark.slow
-def test_zero_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-0 round trip reproduces sin/cos exactly."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 0
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) == Decimal(0)
+def _sin_cos(T: int) -> np.ndarray:
+    idx = np.arange(T, dtype=np.float64)
+    return np.stack((np.sin(idx), np.cos(idx)), axis=1)
 
 
-@pytest.mark.slow
-def test_first_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-1 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 1
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("7.802992583885788917541503906E-26")
+@pytest.mark.parametrize("k", [0, 1, 2, 3, 4, 5, 6, 7])
+def test_differentiate_integrate_sin_cos_round_trips(k: int) -> None:
+    """Check that the order-k round trip recovers sin/cos to float64 precision."""
+    inp = _sin_cos(1_000)
+    start, diff = differentiate(inp=inp, order_of_derivative=k)
+    result = integrate(start=start, diff=diff, order_of_derivative=k)
+    assert np.abs(result - inp).max() <= ROUND_TRIP_TOLERANCE
 
 
-@pytest.mark.slow
-def test_second_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-2 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 2
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
-
-
-@pytest.mark.slow
-def test_third_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-3 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 3
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
-
-
-@pytest.mark.slow
-def test_fourth_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-4 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 4
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
-
-
-@pytest.mark.slow
-def test_fifth_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-5 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 5
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
-
-
-@pytest.mark.slow
-def test_sixth_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-6 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 6
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
-
-
-@pytest.mark.slow
-def test_seventh_order_differentiate_integrate_sin_cos() -> None:
-    """Check that the order-7 round trip recovers sin/cos within its error bound."""
-    idx = np.arange(1_000_000, dtype=np.float64)
-    inp = np.stack(
-        (
-            np.sin(idx),
-            np.cos(idx),
-        ),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 7
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) <= Decimal("2.913827378310570120811462402E-21")
+@pytest.mark.parametrize("k", [0, 1, 2, 3, 4, 5, 6, 7])
+def test_differentiate_integrate_is_exact_on_integer_series(k: int) -> None:
+    """Check that integer series round-trip exactly: every sum stays below 2^53."""
+    idx = np.arange(1_000, dtype=np.float64)
+    inp = np.stack((np.square(idx), idx**3), axis=1)
+    start, diff = differentiate(inp=inp, order_of_derivative=k)
+    result = integrate(start=start, diff=diff, order_of_derivative=k)
+    assert np.array_equal(result, inp)
 
 
 def test_overflow_differentiate_integrate_square_x() -> None:
     """Check that order 7 on 7 points round-trips and order 8 raises ValueError."""
     idx = np.arange(7, dtype=np.float64)
-    inp = np.stack(
-        (np.square(idx),),
-        axis=1,
-    )
-    inp = np_to_decimal(inp)
-    order_of_derivative = 7
-    use_decimal = True
-    start, diff = differentiate(
-        inp=inp,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    result = integrate(
-        start=start,
-        diff=diff,
-        order_of_derivative=order_of_derivative,
-        use_decimal=use_decimal,
-    )
-    assert np.max(np.abs(result - inp)) == Decimal(0)
-    order_of_derivative = 8
+    inp = np.stack((np.square(idx),), axis=1)
+    start, diff = differentiate(inp=inp, order_of_derivative=7)
+    result = integrate(start=start, diff=diff, order_of_derivative=7)
+    assert np.array_equal(result, inp)
     with pytest.raises(ValueError, match="series length"):
-        differentiate(
-            inp=inp,
-            order_of_derivative=order_of_derivative,
-            use_decimal=use_decimal,
-        )
+        differentiate(inp=inp, order_of_derivative=8)

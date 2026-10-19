@@ -58,7 +58,6 @@ def main() -> None:
     domain_of_definition = get_domain_of_definition(
         inp.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     n = 3
     val_loss_array = torch.zeros((n,))
@@ -78,7 +77,6 @@ def main() -> None:
             base_model,
             order_of_derivative=1,
             domain_of_definition=domain_of_definition,
-            use_decimal=False,
         )
         loader = DiffDataFrameDataLoader(
             dfs=[inp],
@@ -87,7 +85,6 @@ def main() -> None:
             vocab_size=vocab_size,
             order_of_derivative=1,
             domain_of_definition=domain_of_definition,
-            use_decimal=False,
             device=device,
             train_part=train_part,
         )

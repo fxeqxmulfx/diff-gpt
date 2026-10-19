@@ -272,11 +272,42 @@ on the unfixed code.
 - [x] **README.** "Tight Δ/2 … at any order k" holds for LGT only after the k=1
   fix, and Theorem 1 holds for MASH at k=0 only after audit #2.
 
+## Token scheme version 2 (2026-10-20)
+
+- [x] **One level grid for every k, for both tokenizers.** L = floor(s·x - B
+  + 1/2), q = Δ^k L + V/2 and s = (V - max(2, 2^k))/(2D), with the anchor
+  B = 0 (LGT) or the polynomial of degree < k through the prefix (MASH). The
+  Σ-Δ cascade, the k <= 1 carry scheme and the k = 1 saturation are gone:
+  every token lies in [1, V-1], the error stays within D/(V - max(2, 2^k)),
+  and a clipped step offsets the values after it with either tokenizer.
+  Checkpoints record `encoder_version` 2, and `load` refuses other versions.
+- [x] **float64 and int64 only.** The MASH anchor enters through its
+  fractional part, continued modulo 2^64 in uint64, so the exact anchors no
+  longer need Python ints; MASH encodes about 50x faster.
+- [x] **Decimal removed**: `use_decimal`, `np_to_decimal`, `np_is_decimal`
+  and `benchmarks/diff_bench_decimal.py`. The Decimal items above are moot.
+- [x] **Guards.** `encode` raises where |s·x| reaches 2^min(53, 62 - k):
+  past 2^53 float64 misses levels (one sin/cos period sampled every 10^-6
+  clipped over a thousand tokens at k = 3), past 2^(62 - k) the k-th
+  differences overflow int64. `decode` raises on tokens whose levels leave
+  int64.
+- [x] **Lean.** `lean/DiffGPT/LevelGrid.lean` proves the scheme in exact
+  arithmetic; `Float64.lean`, `Int64.lean` and `Machine.lean` model float64
+  rounding and int64 wrapping and prove the implementation: exact half-up
+  rounding, the uint64 anchor, the overflow test in `_cumsum`, the decoded
+  levels, and the float64 token range and error. 62 theorems, standard
+  axioms only.
+
 ## Observations, no action planned
 
 - Token 0 is never emitted for in-domain input (audit #7).
-- MASH tokens depend on the modulator state, so a separately encoded window
-  differs from a slice (audit #5). LGT, the default, does not have this.
+- MASH tokens depend on the window's prefix, the anchor of its grid, so a
+  separately encoded window differs from a slice (audit #5). LGT, the
+  default, does not have this.
+- In float64 the token range holds exactly only where s·x is computed
+  exactly. Otherwise a token can reach V and clip where a step of nearly D
+  has all its k + 1 levels within about 2^-53·|s·x| of rounding ties
+  (`token_mem_of_domain` in `lean/DiffGPT/Machine.lean`).
 - **Checked and correct:**
   - the optimizer matches schedulefree 1.4.1 bit for bit with `amsgrad=False`;
   - cached and uncached logits agree, and the Engine reproduces uncached

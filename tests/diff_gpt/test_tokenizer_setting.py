@@ -44,7 +44,6 @@ def _whole_series_loader(
         vocab_size=V,
         order_of_derivative=ORDER,
         domain_of_definition=dod,
-        use_decimal=False,
         device="cpu",
         train_part=1.0,
         tokenizer=tokenizer,
@@ -56,11 +55,9 @@ def test_dataframe_loader_encodes_with_its_tokenizer(tokenizer: str) -> None:
     """Check that the DataFrame loader encodes with the tokenizer it was given."""
     df = _frame()
     inp = df.to_numpy(dtype=np.float64)
-    dod = get_domain_of_definition(inp, ORDER, use_decimal=False)
+    dod = get_domain_of_definition(inp, ORDER)
     tokens = {
-        tok: encode(inp, V, dod, ORDER, use_decimal=False, tokenizer=tok)[2]
-        .reshape(-1)
-        .tolist()
+        tok: encode(inp, V, dod, ORDER, tokenizer=tok)[2].reshape(-1).tolist()
         for tok in ("lgt", "mash")
     }
     assert tokens["lgt"] != tokens["mash"]
@@ -80,14 +77,12 @@ def test_diffgpt_keeps_its_tokenizer_and_refuses_a_loader_with_another() -> None
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         ORDER,
-        use_decimal=False,
     )
     torch.manual_seed(0)
     model = DiffGPT(
         model=GPT(vocab_size=V, n_embd=16, block_size=32, n_head=2, n_layer=1),
         order_of_derivative=ORDER,
         domain_of_definition=dod,
-        use_decimal=False,
         tokenizer="mash",
     )
     assert model.tokenizer == "mash"
@@ -105,6 +100,5 @@ def test_diffgpt_keeps_its_tokenizer_and_refuses_a_loader_with_another() -> None
             model=model.model,
             order_of_derivative=ORDER,
             domain_of_definition=dod,
-            use_decimal=False,
             tokenizer="nope",
         )

@@ -1,7 +1,7 @@
 """
 Shared pytest configuration: tests marked `slow` run only with `--runslow`.
 
-Slow tests (long Decimal series, full training runs) are skipped by default,
+Slow tests (long series, full training runs) are skipped by default,
 so the default run stays quick enough to repeat after every change.
 """
 

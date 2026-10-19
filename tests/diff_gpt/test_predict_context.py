@@ -12,7 +12,7 @@ import pytest
 import torch
 
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import TokenClippingWarning, encode, np_to_decimal
+from diff_gpt.encoder_decoder import TokenClippingWarning, encode
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.sampler import Sampler
 
@@ -50,7 +50,6 @@ def _zero_step_sampler(order: int, n_features: int = 1) -> _ConstantSampler:
         V,
         np.ones(n_features),
         order,
-        use_decimal=False,
     )
     return _ConstantSampler(int(tokens[0, 0]))
 
@@ -59,7 +58,6 @@ def _model(
     order: int,
     domain: np.ndarray,
     *,
-    use_decimal: bool = False,
     tokenizer: str | None = None,
 ) -> DiffGPT:
     torch.manual_seed(0)
@@ -67,7 +65,6 @@ def _model(
         model=GPT(vocab_size=V, n_embd=16, block_size=64, n_head=2, n_layer=1),
         order_of_derivative=order,
         domain_of_definition=domain,
-        use_decimal=use_decimal,
         tokenizer=tokenizer,
     )
 
@@ -193,14 +190,9 @@ def test_negative_target_column_is_sampled_like_its_name() -> None:
             )
 
 
-def test_predict_returns_float64_on_both_paths_with_use_decimal() -> None:
-    """
-    Check that predict returns float64 on both paths of a Decimal model.
-
-    The teacher-forced path returned Decimal objects and the autoregressive
-    one float64, so scoring one against Decimal truth raised TypeError.
-    """
-    model = _model(1, np_to_decimal(np.array([1.0, 1.0])), use_decimal=True)
+def test_predict_returns_float64_on_both_paths() -> None:
+    """Check that predict returns float64 when teacher-forced and autoregressive."""
+    model = _model(1, np.array([1.0, 1.0]))
     df = _covariate_frame()
     ctx, fut = df.iloc[:8], df.iloc[8:]
     sampler = _zero_step_sampler(1, 2)

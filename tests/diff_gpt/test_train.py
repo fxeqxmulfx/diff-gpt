@@ -36,7 +36,6 @@ def test_dataframe_loader_shapes() -> None:
         vocab_size=64,
         order_of_derivative=1,
         domain_of_definition=_big_domain(1),
-        use_decimal=False,
         device="cpu",
         train_part=0.8,
     )
@@ -57,7 +56,6 @@ def test_dataframe_loader_train_val_split_exists() -> None:
         vocab_size=64,
         order_of_derivative=1,
         domain_of_definition=_big_domain(1),
-        use_decimal=False,
         device="cpu",
         train_part=0.8,
     )
@@ -78,7 +76,6 @@ def test_dataframe_loader_raises_on_unknown_split() -> None:
         vocab_size=64,
         order_of_derivative=1,
         domain_of_definition=_big_domain(1),
-        use_decimal=False,
         device="cpu",
     )
     with pytest.raises(ValueError, match="unknown split"):
@@ -97,7 +94,6 @@ def test_dataframe_loader_target_column_mask() -> None:
         vocab_size=64,
         order_of_derivative=1,
         domain_of_definition=_big_domain(n_features),
-        use_decimal=False,
         device="cpu",
         target_columns=[1],
     )
@@ -135,7 +131,6 @@ def test_dataframe_loader_multi_series_blends() -> None:
         vocab_size=vocab_size,
         order_of_derivative=1,
         domain_of_definition=_big_domain(1),
-        use_decimal=False,
         device="cpu",
     )
     x, _ = loader.get_batch("train")

@@ -191,7 +191,6 @@ def run_horizon(
     domain = get_domain_of_definition(
         train_plus_val.iloc[:train_end].to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=vocab_size,
@@ -207,7 +206,6 @@ def run_horizon(
         model=base,
         order_of_derivative=1,
         domain_of_definition=domain,
-        use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
         dfs=[train_plus_val],
@@ -216,7 +214,6 @@ def run_horizon(
         vocab_size=vocab_size,
         order_of_derivative=1,
         domain_of_definition=domain,
-        use_decimal=False,
         device=device,
         train_part=train_part,
         rng=torch.Generator().manual_seed(42 + seed),

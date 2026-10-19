@@ -8,16 +8,20 @@ the decoder integrates the tokens exactly in integer arithmetic. The model is a
 plain GPT that reads the token stream as ordinary text — the inductive bias
 sits entirely in the tokenization.
 
-LGT has the same reconstruction bound and vocabulary headroom as the MASH
-$\Sigma\Delta$ encoder used in earlier versions (which is in fact the same
-rounding relative to a polynomial extrapolated from the window prefix), but the
-token at $t$ depends only on $x_{t-k..t}$: encoding a window equals the slice of
-the full encoding, identical values give identical tokens anywhere in a series,
-and decoding is exact for any $k$ and $T$. The $\Sigma\Delta$ encoder is kept
-for compatibility: pass `tokenizer="mash"` to `encode`/`decode`, `DiffGPT` and
-the data loaders, or set `DIFF_GPT_TOKENIZER=mash` to make it the default.
-`DiffGPT` and the loaders keep the tokenizer they were built with, and
-`DiffGPT.train` refuses a loader that encodes with another.
+The second tokenizer, MASH (`tokenizer="mash"`), rounds onto the same grid
+anchored at a polynomial of degree $< k$ through the window prefix, the
+rounding a MASH $\Sigma\Delta$ cascade started there performs. Both share the
+scale, the bound and the exact decoding for any $k$ and $T$. With LGT the
+token at $t$ depends only on $x_{t-k..t}$: encoding a window equals the slice
+of the full encoding, and identical values give identical tokens anywhere in a
+series. MASH tokens depend on the prefix as well; in exchange MASH puts the
+prefix values on its grid, so a constant column comes back exactly, where LGT
+rounds it to $2^{-21}$. Pass `tokenizer="mash"` to
+`encode`/`decode`, `DiffGPT` and the data loaders, or set
+`DIFF_GPT_TOKENIZER=mash` to make it the default. `DiffGPT` and the loaders
+keep the tokenizer they were built with, `DiffGPT.train` refuses a loader that
+encodes with another, and `DiffGPT.load` refuses weights trained on another
+token scheme (`ENCODER_VERSION`).
 
 ## Signal assumption
 
@@ -35,19 +39,24 @@ model on top.
 | ideal CE $\mathcal L^\star(V)$ | $+\log 2 \approx 0.69$ nats | Prop. 2 |
 | reconstruction $\|\hat x - x\|_\infty$ | $\times \tfrac{1}{2}$ | Thm. 1 |
 
-**Theorem 1 (MASH reconstruction, any $k$).** For any signal with
-$D = \max_t |\Delta^k x_t| > 0$ and $V > 2^k + 2$,
+**Theorem 1 (reconstruction, any $k$, both tokenizers).** For any signal with
+$D = \max_t |\Delta^k x_t| > 0$ and $V > \max(2, 2^k)$, every token lies in
+$[1, V-1]$ and
 
-$$\|\hat x - x\|_\infty \le \frac{\Delta}{2} = \begin{cases} D/(V - 2) & k \le 1 \\ D/(V - 2 - 2^k) & k \ge 2 \end{cases}$$
+$$\|\hat x - x\|_\infty \le \frac{\Delta}{2} = \frac{D}{V - \max(2, 2^k)}$$
 
 uniformly in horizon $T$. Vocabulary doubling halves reconstruction error at any
-order $k$.
+order $k$. The proof is checked in Lean 4: `lean/DiffGPT/LevelGrid.lean` for
+exact arithmetic, and `Float64.lean`, `Int64.lean` and `Machine.lean` next to
+it for the float64/int64 implementation. There the bound holds up to the
+float64 rounding of $s\,x$, about $2^{-53}|s\,x|$ levels, no int64 sum
+overflows, and `encode` raises where $|s\,x|$ would reach
+$2^{\min(53,\,62-k)}$.
 
 The bound needs a `domain_of_definition` of at least $D$. A smaller one (a
 quantile, say) clips the larger steps, and `encode` reports how many with a
 `TokenClippingWarning`. At $k \ge 1$ a clipped step offsets every decoded
-value after it, except with MASH at $k = 1$, which saturates inside its
-feedback loop and makes the cut part up over the next steps. `predict` decodes
+value after it, with either tokenizer. `predict` decodes
 the forecast from the last context rows, so clipped context steps do not shift
 it.
 
@@ -61,7 +70,7 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 
 - **Level-grid tokenization**: tight $\Delta/2$ reconstruction bound uniformly
   in $T$ at any order $k$, exact integer decoding, window-consistent tokens.
-  The MASH $\Sigma\Delta$ encoder remains available (`tokenizer="mash"`).
+  The prefix-anchored MASH grid (`tokenizer="mash"`) keeps the same bound.
 - **Bayes point readout** (`DiffGPT.predict_point`): the point forecast that
   minimises the expected metric (MAE/MASE, MSE, sMAPE or M4's OWA) under
   $N$ sampled trajectories, instead of feeding argmax/median tokens back.
@@ -119,7 +128,6 @@ all_data = np.concatenate([df.to_numpy(dtype=np.float64) for df in dfs], axis=0)
 domain = get_domain_of_definition(
     inp=all_data,
     order_of_derivative=order,
-    use_decimal=False,
 )
 
 # Construct GPT + DiffGPT wrapper.
@@ -134,7 +142,6 @@ model = DiffGPT(
     model=base,
     order_of_derivative=order,
     domain_of_definition=domain,
-    use_decimal=False,
 )
 
 loader = DiffDataFrameDataLoader(
@@ -144,7 +151,6 @@ loader = DiffDataFrameDataLoader(
     vocab_size=256,
     order_of_derivative=order,
     domain_of_definition=domain,
-    use_decimal=False,
     device="cuda",
     train_part=0.8,
 )
@@ -298,7 +304,6 @@ model = DiffGPT(
     model=base,
     order_of_derivative=order,
     domain_of_definition=domain,
-    use_decimal=False,
 )
 model.train(loader=loader, max_iters=20_000, eval_interval=500)
 ```
@@ -372,7 +377,6 @@ def build_loader(rank: int, world: int) -> DiffDataFrameDataLoader:
         vocab_size=256,
         order_of_derivative=order,
         domain_of_definition=domain,
-        use_decimal=False,
         device="cpu",
         train_part=0.8,
         rng=rng,
@@ -388,9 +392,7 @@ val_loss, _ = DiffGPT.train_numa(
 # Rebuild DiffGPT around the trained weights:
 gpt = build_gpt(0)
 gpt.load_state_dict(torch.load("best.pt"))
-model = DiffGPT(
-    model=gpt, order_of_derivative=order, domain_of_definition=domain, use_decimal=False
-)
+model = DiffGPT(model=gpt, order_of_derivative=order, domain_of_definition=domain)
 ```
 
 Backend: Gloo for a CPU model, NCCL for a CUDA model. NCCL needs a GPU per

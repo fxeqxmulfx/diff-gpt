@@ -1,1 +1,7 @@
-import DiffGPT.Basic
+module
+
+public import DiffGPT.Basic
+public import DiffGPT.LevelGrid
+public import DiffGPT.Float64
+public import DiffGPT.Int64
+public import DiffGPT.Machine

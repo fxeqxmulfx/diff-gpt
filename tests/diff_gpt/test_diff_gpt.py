@@ -40,7 +40,6 @@ def _make_model(
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     model = DiffGPT(
         model=GPT(
@@ -52,7 +51,6 @@ def _make_model(
         ),
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     return model, dod
 
@@ -68,7 +66,6 @@ def test_train_runs_with_target_columns_by_name() -> None:
         vocab_size=model.model.vocab_size,
         order_of_derivative=model.order_of_derivative,
         domain_of_definition=model.domain_of_definition,
-        use_decimal=False,
         device=model.model.device_type,
         train_part=0.7,
         target_columns=[2],  # "y" is index 2
@@ -98,7 +95,6 @@ def test_predict_teacher_forced_shape_and_covariate_fidelity() -> None:
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=256,
@@ -112,7 +108,6 @@ def test_predict_teacher_forced_shape_and_covariate_fidelity() -> None:
         model=base,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     )
 
     context_df = df.iloc[:seq_len].copy()
@@ -142,7 +137,6 @@ def test_predict_autoregressive_shape() -> None:
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=64,
@@ -156,7 +150,6 @@ def test_predict_autoregressive_shape() -> None:
         model=base,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     result = model.predict(df=df.iloc[:seq_len], max_new_points=pred_len, sampler=None)
     assert result.shape == (seq_len + pred_len, 3)
@@ -207,7 +200,6 @@ def test_per_column_order_train_and_predict_autoregressive() -> None:
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=order,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=64,
@@ -221,7 +213,6 @@ def test_per_column_order_train_and_predict_autoregressive() -> None:
         model=base,
         order_of_derivative=order,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
         dfs=[df],
@@ -230,7 +221,6 @@ def test_per_column_order_train_and_predict_autoregressive() -> None:
         vocab_size=base.vocab_size,
         order_of_derivative=order,
         domain_of_definition=dod,
-        use_decimal=False,
         device=base.device_type,
         train_part=0.7,
     )
@@ -266,7 +256,6 @@ def test_per_column_order_predict_teacher_forced() -> None:
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=order,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=256,
@@ -280,7 +269,6 @@ def test_per_column_order_predict_teacher_forced() -> None:
         model=base,
         order_of_derivative=order,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     context_df = df.iloc[:seq_len].copy()
     future_cov = df.iloc[seq_len : seq_len + pred_len].copy()
@@ -306,7 +294,6 @@ def test_per_column_order_shape_mismatch_raises() -> None:
         get_domain_of_definition(
             df.to_numpy(dtype=np.float64),
             order_of_derivative=np.array([1, 1], dtype=np.int64),
-            use_decimal=False,
         )
 
 
@@ -455,7 +442,6 @@ def test_anomaly_scores_spike_is_higher_than_baseline_after_training() -> None:
     dod = get_domain_of_definition(
         df_clean.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=64,
@@ -469,7 +455,6 @@ def test_anomaly_scores_spike_is_higher_than_baseline_after_training() -> None:
         model=base,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     # Brief training on the clean signal so the model learns the
     # typical derivative distribution.
@@ -480,7 +465,6 @@ def test_anomaly_scores_spike_is_higher_than_baseline_after_training() -> None:
         vocab_size=base.vocab_size,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
         device=base.device_type,
         train_part=0.9,
     )
@@ -522,7 +506,6 @@ def _train_and_prob_predict(
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=64,
@@ -536,7 +519,6 @@ def _train_and_prob_predict(
         model=base,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
         dfs=[df.iloc[:-pred_len]],
@@ -545,7 +527,6 @@ def _train_and_prob_predict(
         vocab_size=base.vocab_size,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
         device=base.device_type,
         train_part=0.9,
     )
@@ -612,7 +593,6 @@ def test_probabilistic_argmax_inside_median_band() -> None:
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=64,
@@ -626,7 +606,6 @@ def test_probabilistic_argmax_inside_median_band() -> None:
         model=base,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
         dfs=[df],
@@ -635,7 +614,6 @@ def test_probabilistic_argmax_inside_median_band() -> None:
         vocab_size=base.vocab_size,
         order_of_derivative=1,
         domain_of_definition=dod,
-        use_decimal=False,
         device=base.device_type,
         train_part=0.9,
     )
@@ -702,7 +680,6 @@ def test_teacher_forced_max_order_exceeds_context_raises() -> None:
     dod = get_domain_of_definition(
         df.to_numpy(dtype=np.float64),
         order_of_derivative=order,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=64,
@@ -716,7 +693,6 @@ def test_teacher_forced_max_order_exceeds_context_raises() -> None:
         model=base,
         order_of_derivative=order,
         domain_of_definition=dod,
-        use_decimal=False,
     )
     # Context of only 2 rows — less than max_order=3.
     with pytest.raises(ValueError, match="max order"):
@@ -744,7 +720,6 @@ def test_train_save_best_restores_best_val() -> None:
         vocab_size=model.model.vocab_size,
         order_of_derivative=model.order_of_derivative,
         domain_of_definition=model.domain_of_definition,
-        use_decimal=False,
         device=model.model.device_type,
         train_part=0.7,
     )
@@ -785,7 +760,6 @@ def test_train_save_best_false_returns_final_loss() -> None:
         vocab_size=model.model.vocab_size,
         order_of_derivative=model.order_of_derivative,
         domain_of_definition=model.domain_of_definition,
-        use_decimal=False,
         device=model.model.device_type,
         train_part=0.7,
     )
@@ -812,7 +786,6 @@ def test_train_grad_accum_runs() -> None:
         vocab_size=model.model.vocab_size,
         order_of_derivative=model.order_of_derivative,
         domain_of_definition=model.domain_of_definition,
-        use_decimal=False,
         device=model.model.device_type,
         train_part=0.7,
     )

@@ -59,7 +59,6 @@ def load_model(path: str, data: dict, device: str) -> DiffGPT:
         model=base,
         order_of_derivative=data["order"],
         domain_of_definition=data["domain"],
-        use_decimal=False,
     )
 
 

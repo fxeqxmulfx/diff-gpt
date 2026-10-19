@@ -121,7 +121,6 @@ def _make_loader_factory(
         dom = get_domain_of_definition(
             df.to_numpy(dtype=np.float64),
             order_of_derivative=1,
-            use_decimal=False,
         )
         rng = torch.Generator().manual_seed(42 + rank)
         return DiffDataFrameDataLoader(
@@ -131,7 +130,6 @@ def _make_loader_factory(
             vocab_size=64,
             order_of_derivative=1,
             domain_of_definition=dom,
-            use_decimal=False,
             device="cpu",
             train_part=train_part,
             rng=rng,

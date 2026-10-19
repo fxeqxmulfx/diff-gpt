@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import torch
 
-from diff_gpt.encoder_decoder import encode, np_to_decimal, resolve_tokenizer
+from diff_gpt.encoder_decoder import encode, resolve_tokenizer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -63,7 +63,6 @@ class DiffSQLiteDataLoader:
         "tables_train_tokens_len",
         "tokenizer",
         "train_part",
-        "use_decimal",
         "vocab_size",
     )
 
@@ -75,7 +74,6 @@ class DiffSQLiteDataLoader:
         order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray | Mapping[str, np.ndarray],
         *,
-        use_decimal: bool,
         device: str,
         database: str,
         encode_data: Callable = encode,
@@ -91,8 +89,7 @@ class DiffSQLiteDataLoader:
         to its own (tables of different widths need their own). `encode_data`
         turns raw rows into tokens (`encode` by default) with `tokenizer`
         ("lgt" or "mash"; None picks `encoder_decoder.DEFAULT_TOKENIZER`).
-        With `use_decimal`, the rows reach it as Decimal. `rng` defaults to a
-        fresh generator seeded with 42.
+        `rng` defaults to a fresh generator seeded with 42.
         """
         self.block_size = block_size
         self.batch_size = batch_size
@@ -106,7 +103,6 @@ class DiffSQLiteDataLoader:
             else int(np.asarray(order_of_derivative).max())
         )
         self.domain_of_definition = domain_of_definition
-        self.use_decimal = use_decimal
         self.encode_data = encode_data
         self.tokenizer = resolve_tokenizer(tokenizer)
         self.device = device
@@ -236,11 +232,10 @@ class DiffSQLiteDataLoader:
             return ()
         arr = np.array(rows, dtype=np.float64)[:, 1:]
         _, _, encoded = self.encode_data(
-            inp=np_to_decimal(arr) if self.use_decimal else arr,
+            inp=arr,
             vocab_size=self.vocab_size,
             domain_of_definition=self._domain(table),
             order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
             tokenizer=self.tokenizer,
         )
         encoded = encoded.flatten()
@@ -477,7 +472,6 @@ class DiffDataFrameDataLoader:
         order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
         *,
-        use_decimal: bool,
         device: str,
         train_part: float = 0.9,
         target_columns: Sequence[int] | None = None,
@@ -512,15 +506,11 @@ class DiffDataFrameDataLoader:
         self._train_serieses: list[tuple[int, ...]] = []
         self._val_serieses: list[tuple[int, ...]] = []
         for df in dfs:
-            inp = df.to_numpy(dtype=np.float64)
-            if use_decimal:
-                inp = np_to_decimal(inp)
             _, _, encoded = encode(
-                inp=inp,
+                inp=df.to_numpy(dtype=np.float64),
                 vocab_size=vocab_size,
                 domain_of_definition=domain_of_definition,
                 order_of_derivative=order_of_derivative,
-                use_decimal=use_decimal,
                 tokenizer=self.tokenizer,
             )
             flat = tuple(encoded.reshape(-1).tolist())

@@ -97,7 +97,6 @@ def main() -> None:
     domain = get_domain_of_definition(
         train_norm.to_numpy(dtype=np.float64),
         order_of_derivative=1,
-        use_decimal=False,
     )
     base = GPT(
         vocab_size=256,
@@ -111,7 +110,6 @@ def main() -> None:
         model=base,
         order_of_derivative=1,
         domain_of_definition=domain,
-        use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
         dfs=[train_norm],
@@ -120,7 +118,6 @@ def main() -> None:
         vocab_size=base.vocab_size,
         order_of_derivative=1,
         domain_of_definition=domain,
-        use_decimal=False,
         device=device,
         train_part=0.9,
     )

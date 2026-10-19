@@ -1,7 +1,7 @@
 """
 Tests for the encoder settings that DiffGPT.save writes and DiffGPT.load checks.
 
-Weights decode right only with the tokenizer, order, domain and use_decimal
+Weights decode right only with the token scheme, tokenizer, order and domain
 they were trained with. `save` wrote the weights alone, so `load` took them
 into a DiffGPT with other settings, which then decoded silently wrong.
 """
@@ -13,7 +13,7 @@ import pytest
 import torch
 
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import np_to_decimal
+from diff_gpt.encoder_decoder import ENCODER_VERSION
 from diff_gpt.model.gpt import GPT
 
 if TYPE_CHECKING:
@@ -23,7 +23,6 @@ DOMAIN = np.array([1.0, 2.0])
 SETTINGS = {
     "order_of_derivative": 1,
     "domain_of_definition": DOMAIN,
-    "use_decimal": False,
     "tokenizer": "mash",
 }
 
@@ -61,10 +60,6 @@ def test_load_takes_weights_saved_with_the_same_settings(tmp_path: Path) -> None
         ({"tokenizer": "lgt"}, "tokenizer"),
         ({"order_of_derivative": 2}, "order_of_derivative"),
         ({"domain_of_definition": np.array([1.0, 3.0])}, "domain_of_definition"),
-        (
-            {"use_decimal": True, "domain_of_definition": np_to_decimal(DOMAIN)},
-            "use_decimal",
-        ),
     ],
 )
 def test_load_refuses_weights_saved_with_other_settings(
@@ -90,3 +85,29 @@ def test_load_takes_a_bare_state_dict_unchecked(tmp_path: Path) -> None:
     other = _diffgpt(1, tokenizer="lgt")
     other.load(path)
     assert _same(_weights(saved), _weights(other))
+
+
+@pytest.mark.parametrize("version", [ENCODER_VERSION - 1, None])
+def test_load_refuses_weights_of_another_token_scheme(
+    tmp_path: Path,
+    version: int | None,
+) -> None:
+    """
+    Check that load refuses a checkpoint of an older encoder, or of none.
+
+    The tokens of version 1 differ from the current ones for the same
+    settings, and checkpoints before version 2 record no version at all.
+    """
+    path = str(tmp_path / "model.bin")
+    _diffgpt(0).save(path)
+    checkpoint = torch.load(path, weights_only=True)
+    if version is None:
+        del checkpoint["encoder"]["encoder_version"]
+    else:
+        checkpoint["encoder"]["encoder_version"] = version
+    torch.save(checkpoint, path)
+    other = _diffgpt(1)
+    initial = _weights(other)
+    with pytest.raises(ValueError, match="holds weights for encoder_version="):
+        other.load(path)
+    assert _same(initial, _weights(other))
