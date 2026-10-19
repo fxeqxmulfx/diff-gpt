@@ -1,13 +1,18 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the position-wise FeedForward network."""
+
 import torch
 from torch.testing import assert_close
 
 from diff_gpt.model.feed_forward import FeedForward
 
 
-def test_ffn_shape_and_gradients():
+def test_ffn_shape_and_gradients() -> None:
     r"""
-    Verify dimensions and gradient flow.
-    FFN maps $x \in \mathbb{R}^{B \times T \times C} \to y \in \mathbb{R}^{B \times T \times C}$.
+    Check the (B, T, C) output shape and gradient flow through both Linear layers.
+
+    FFN maps $x \in \mathbb{R}^{B \times T \times C} \to
+    y \in \mathbb{R}^{B \times T \times C}$.
     Expansion factor is internal (4x -> 1x).
     """
     B, T, C = 2, 10, 32
@@ -39,9 +44,10 @@ def test_ffn_shape_and_gradients():
     assert torch.norm(model.net[2].weight.grad) > 0
 
 
-def test_ffn_token_independence():
-    r"""
-    Verify point-wise property (Locality).
+def test_ffn_token_independence() -> None:
+    """
+    Check the point-wise property: perturbing the last token changes only its output.
+
     Unlike Attention, FFN processes each token independently.
     $FFN(x)_t$ depends ONLY on $x_t$, not $x_{t-1}$ or $x_{t+1}$.
     """
@@ -66,7 +72,9 @@ def test_ffn_token_independence():
     # All tokens except the last one must remain EXACTLY the same
     # (Testing for strictly 0 interaction between time steps)
     assert_close(
-        y_orig[:, :-1, :], y_new[:, :-1, :], msg="FFN leaked info to previous tokens!"
+        y_orig[:, :-1, :],
+        y_new[:, :-1, :],
+        msg="FFN leaked info to previous tokens!",
     )
 
     # 4. Verify Change
@@ -76,9 +84,10 @@ def test_ffn_token_independence():
     )
 
 
-def test_ffn_batch_invariance():
-    r"""
-    Verify batch independence.
+def test_ffn_batch_invariance() -> None:
+    """
+    Check batch independence: batched outputs match per-sample outputs.
+
     Processing a sample alone vs in a batch should yield identical results.
     """
     T, C = 5, 16

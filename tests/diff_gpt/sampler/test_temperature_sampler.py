@@ -1,12 +1,16 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the temperature sampler."""
+
 import torch
 from torch.testing import assert_close
 
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 
-def test_output_shape():
+def test_output_shape() -> None:
     r"""
-    Verifies the output tensor shape.
+    Check that the output has shape (B, 1).
+
     L \in R^{B \times V} => S(L) \in Z^{B \times 1}
     where B is batch size, V is vocab size, S is the sampler.
     """
@@ -19,9 +23,11 @@ def test_output_shape():
     assert result.shape == (B, 1), f"Expected shape ({B}, 1), but got {result.shape}"
 
 
-def test_determinism_with_rng():
+def test_determinism_with_rng() -> None:
     """
-    Verifies that the sampler is deterministic given a seeded generator.
+    Check that equal seeds give equal samples and different seeds do not.
+
+    The sampler is deterministic given a seeded generator.
     Let L be logits, G_s be a generator with seed s.
     We verify:
     1. S(L, G_{s1}) == S(L, G_{s1})
@@ -47,9 +53,10 @@ def test_determinism_with_rng():
     assert not torch.equal(result1, result3)
 
 
-def test_temperature_zero_is_argmax():
+def test_temperature_zero_is_argmax() -> None:
     """
-    Verifies the edge case T=0.
+    Check the edge case T=0: the sampled tokens equal argmax(L).
+
     lim_{T->0} P(x_i) = 1 if l_i = max(L), else 0.
     This is equivalent to argmax(L).
     """
@@ -63,9 +70,10 @@ def test_temperature_zero_is_argmax():
     assert torch.equal(sampled_tokens, expected_tokens)
 
 
-def test_high_temperature_approaches_uniform():
+def test_high_temperature_approaches_uniform() -> None:
     """
-    Verifies the edge case T -> infinity.
+    Check the edge case T -> infinity: the samples are close to uniform.
+
     lim_{T->inf} P(x_i) = 1/|V| (uniform distribution)
     We check this statistically over N samples.
     """
@@ -92,9 +100,10 @@ def test_high_temperature_approaches_uniform():
     assert_close(empirical_probs, expected_probs, atol=0.01, rtol=0.1)
 
 
-def test_statistical_correctness():
-    """
-    Verifies that the empirical distribution matches the theoretical one.
+def test_statistical_correctness() -> None:
+    r"""
+    Check that the empirical distribution matches the theoretical one.
+
     Let C(i) be the count of token i after N samples.
     We verify: C(i)/N \approx softmax(L/T)_i
     """
@@ -105,8 +114,7 @@ def test_statistical_correctness():
 
     sampler = TemperatureSampler(temperature=T)
 
-    # Theoretical probabilities
-    # P = softmax(L/T)
+    # Theoretical probabilities: P = softmax(L/T).
     expected_probs = torch.softmax(logits / T, dim=-1).flatten()
 
     N = 50_000  # Number of samples for statistical test

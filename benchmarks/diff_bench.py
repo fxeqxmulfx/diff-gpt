@@ -1,3 +1,12 @@
+# Copyright 2025 Mikhail Borisov
+"""
+Sin/cos reference benchmark for diff-gpt.
+
+Trains a small GPT on 1M points of sin(t) and cos(t), forecasts the last 8
+points from the 8 before them and prints val_loss, train time and forecast
+MAE, each averaged over three runs.
+"""
+
 import numpy as np
 import pandas as pd
 import torch
@@ -9,6 +18,7 @@ from diff_gpt.model.gpt import GPT
 
 
 def mae(x: np.ndarray, y: np.ndarray) -> float:
+    """Return the MAE of `x` against `y`: the per-column MAE averaged over columns."""
     result = np.mean(np.abs(x - y), axis=0)
     return float(np.mean(result))
 
@@ -21,6 +31,7 @@ def mae(x: np.ndarray, y: np.ndarray) -> float:
 
 
 def main() -> None:
+    """Train three models on sin/cos and print their mean val_loss, time and MAE."""
     torch.set_float32_matmul_precision("high")
     n_embd = 64
     block_size = 32
@@ -43,7 +54,7 @@ def main() -> None:
         {
             "sin": np.sin(idx),
             "cos": np.cos(idx),
-        }
+        },
     )
     domain_of_definition = get_domain_of_definition(
         inp.to_numpy(dtype=np.float64),
@@ -103,7 +114,8 @@ def main() -> None:
     train_time = float(torch.mean(train_time_array))
     mae_loss = float(torch.mean(mae_loss_array))
     print(
-        f"val_loss={round(val_loss, 2)} train_time={round(train_time, 2)} MAE={round(mae_loss, 4)}"
+        f"val_loss={round(val_loss, 2)} train_time={round(train_time, 2)} "
+        f"MAE={round(mae_loss, 4)}",
     )
 
 

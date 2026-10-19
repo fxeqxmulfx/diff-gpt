@@ -1,18 +1,30 @@
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the LICENSE file of
+# https://github.com/facebookresearch/schedule_free, where it comes from.
+# Modifications copyright 2025 Mikhail Borisov
+"""
+Schedule-free AdamW (Defazio et al., "The Road Less Scheduled").
+
+Adapted from facebookresearch/schedule_free; the AMSGrad option is an addition.
+"""
+
+from typing import TYPE_CHECKING
 
 import torch
 import torch.optim
-from typing_extensions import TypeAlias
 
-try:
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from torch.optim.optimizer import ParamsT
-except ImportError:
-    ParamsT: TypeAlias = Union[Iterable[torch.Tensor], Iterable[Dict[str, Any]]]
 
 
 class AdamWScheduleFree(torch.optim.Optimizer):
     r"""
-    Schedule-Free AdamW
+    Schedule-Free AdamW.
+
     As the name suggests, no scheduler is needed with this optimizer.
     To add warmup, rather than using a learning rate schedule you can just
     set the warmup_steps parameter.
@@ -48,41 +60,45 @@ class AdamWScheduleFree(torch.optim.Optimizer):
             denominator. Guarantees the effective per-coord learning rate is
             non-increasing (Reddi et al., 2018). Costs one extra tensor per
             parameter. Default True.
+
     """
 
     def __init__(
         self,
         params: ParamsT,
-        lr: Union[float, torch.Tensor] = 0.0025,
-        betas: Tuple[float, float] = (0.9, 0.999),
+        lr: float | torch.Tensor = 0.0025,
+        betas: tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
         weight_decay: float = 0,
         warmup_steps: int = 0,
         r: float = 0.0,
         weight_lr_power: float = 2.0,
-        foreach: Optional[bool] = hasattr(torch, "_foreach_mul_"),
+        *,
+        foreach: bool | None = hasattr(torch, "_foreach_mul_"),
         amsgrad: bool = True,
-    ):
-        defaults = dict(
-            lr=lr,
-            betas=betas,
-            eps=eps,
-            r=r,
-            k=0,
-            warmup_steps=warmup_steps,
-            train_mode=False,
-            weight_sum=0.0,
-            lr_max=-1.0,
-            scheduled_lr=0.0,
-            weight_lr_power=weight_lr_power,
-            weight_decay=weight_decay,
-            foreach=foreach,
-            amsgrad=amsgrad,
-        )
+    ) -> None:
+        """Store the hyperparameters as the defaults of every parameter group."""
+        defaults = {
+            "lr": lr,
+            "betas": betas,
+            "eps": eps,
+            "r": r,
+            "k": 0,
+            "warmup_steps": warmup_steps,
+            "train_mode": False,
+            "weight_sum": 0.0,
+            "lr_max": -1.0,
+            "scheduled_lr": 0.0,
+            "weight_lr_power": weight_lr_power,
+            "weight_decay": weight_decay,
+            "foreach": foreach,
+            "amsgrad": amsgrad,
+        }
         super().__init__(params, defaults)
 
     @torch.no_grad()
-    def eval(self):
+    def eval(self) -> None:
+        """Move the parameters to the averaged point x, used for evaluation."""
         for group in self.param_groups:
             train_mode = group["train_mode"]
             beta1, _ = group["betas"]
@@ -95,7 +111,8 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                 group["train_mode"] = False
 
     @torch.no_grad()
-    def train(self):
+    def train(self) -> None:
+        """Move the parameters to the point y, where gradients are taken."""
         for group in self.param_groups:
             train_mode = group["train_mode"]
             beta1, _ = group["betas"]
@@ -108,19 +125,22 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                 group["train_mode"] = True
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
-        """Performs a single optimization step.
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
+        """
+        Perform a single optimization step.
 
         Arguments:
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
+
         """
         if not self.param_groups[0]["train_mode"]:
-            raise Exception(
+            msg = (
                 "Optimizer was not in train mode when step is called. "
                 "Please insert .train() and .eval() calls on the "
                 "optimizer. See documentation for details."
             )
+            raise RuntimeError(msg)
 
         loss = None
         if closure is not None:
@@ -137,10 +157,7 @@ class AdamWScheduleFree(torch.optim.Optimizer):
             weight_lr_power = group["weight_lr_power"]
             amsgrad = group["amsgrad"]
 
-            if k < warmup_steps:
-                sched = (k + 1) / warmup_steps
-            else:
-                sched = 1.0
+            sched = (k + 1) / warmup_steps if k < warmup_steps else 1.0
 
             bias_correction2 = 1 - beta2 ** (k + 1)
             lr = group["lr"] * sched
@@ -161,14 +178,17 @@ class AdamWScheduleFree(torch.optim.Optimizer):
             for p in active_p:
                 if "z" not in self.state[p]:
                     self.state[p]["z"] = torch.clone(
-                        p, memory_format=torch.preserve_format
+                        p,
+                        memory_format=torch.preserve_format,
                     )
                     self.state[p]["exp_avg_sq"] = torch.zeros_like(
-                        p, memory_format=torch.preserve_format
+                        p,
+                        memory_format=torch.preserve_format,
                     )
                 if amsgrad and "max_exp_avg_sq" not in self.state[p]:
                     self.state[p]["max_exp_avg_sq"] = torch.zeros_like(
-                        p, memory_format=torch.preserve_format
+                        p,
+                        memory_format=torch.preserve_format,
                     )
 
             if group["foreach"] and len(active_p) > 0:
@@ -176,7 +196,8 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                     *[
                         (p, p.grad, self.state[p]["exp_avg_sq"], self.state[p]["z"])
                         for p in active_p
-                    ]
+                    ],
+                    strict=True,
                 )
 
                 # Decay the first and second moment running average coefficient
@@ -190,9 +211,10 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                         self.state[p]["max_exp_avg_sq"] for p in active_p
                     )
                     torch._foreach_maximum_(max_exp_avg_sq, exp_avg_sq)
-                    denom = torch._foreach_div(max_exp_avg_sq, bias_correction2)
+                    # torch exposes the foreach kernels only as private functions.
+                    denom = torch._foreach_div(max_exp_avg_sq, bias_correction2)  # noqa: SLF001
                 else:
-                    denom = torch._foreach_div(exp_avg_sq, bias_correction2)
+                    denom = torch._foreach_div(exp_avg_sq, bias_correction2)  # noqa: SLF001
                 torch._foreach_sqrt_(denom)
                 torch._foreach_add_(denom, eps)
 

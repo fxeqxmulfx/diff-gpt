@@ -1,3 +1,4 @@
+# Copyright 2025 Mikhail Borisov
 """
 NUMA topology helpers for pinning a process to one node's CPUs.
 
@@ -7,8 +8,11 @@ NUMA subsystem, containers with the path hidden), every function falls back
 to a single virtual node covering the current affinity mask so callers get a
 silent no-op instead of a crash.
 """
+
 import os
 from pathlib import Path
+
+import torch
 
 _NODE_ROOT = Path("/sys/devices/system/node")
 
@@ -27,8 +31,8 @@ def list_numa_nodes() -> list[int]:
 
 def _parse_cpulist(text: str) -> list[int]:
     out: list[int] = []
-    for chunk in text.split(","):
-        chunk = chunk.strip()
+    for raw in text.split(","):
+        chunk = raw.strip()
         if not chunk:
             continue
         if "-" in chunk:
@@ -43,7 +47,9 @@ def cpus_on_node(node: int) -> list[int]:
     """CPU ids belonging to NUMA `node`; falls back to current affinity."""
     cpulist = _NODE_ROOT / f"node{node}" / "cpulist"
     if not cpulist.exists():
-        return sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else [0]
+        return (
+            sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else [0]
+        )
     cpus = _parse_cpulist(cpulist.read_text().strip())
     if cpus:
         return cpus
@@ -52,16 +58,14 @@ def cpus_on_node(node: int) -> list[int]:
 
 def pin_to_node(node: int) -> int:
     """
-    Pin the current process to NUMA `node` — CPU affinity mask, torch thread
-    count, and OMP/MKL env vars. Returns the number of CPUs pinned.
+    Pin the current process to NUMA `node` and return the number of CPUs pinned.
 
-    Call this once, before the hot loop. `torch.set_num_threads` takes effect
+    Sets the CPU affinity mask, the torch thread count and the OMP/MKL env
+    vars. Call this once, before the hot loop. `torch.set_num_threads` takes effect
     immediately; OMP_NUM_THREADS / MKL_NUM_THREADS are honored only by libs
     that read them at init, so for maximum effect also export them in the
     shell before launching the process.
     """
-    import torch
-
     cpus = cpus_on_node(node)
     if hasattr(os, "sched_setaffinity") and cpus:
         os.sched_setaffinity(0, set(cpus))

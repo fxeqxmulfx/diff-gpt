@@ -1,12 +1,16 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the nucleus sampler."""
+
 import torch
 
 from diff_gpt.sampler.nucleus import NucleusSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 
-def test_output_shape():
+def test_output_shape() -> None:
     r"""
-    Verifies the output tensor shape.
+    Check that the output has shape (B, 1).
+
     L \in R^{B \times V} => S(L) \in Z^{B \times 1}
     where B is batch size, V is vocab size, S is the sampler.
     """
@@ -22,9 +26,11 @@ def test_output_shape():
     assert result.shape == (B, 1), f"Expected shape ({B}, 1), but got {result.shape}"
 
 
-def test_determinism_with_rng():
+def test_determinism_with_rng() -> None:
     """
-    Verifies that the composite sampler is deterministic given a seeded generator.
+    Check that equal seeds give equal samples and different seeds do not.
+
+    The composite sampler is deterministic given a seeded generator.
     Let L be logits, G_s be a generator with seed s.
     We verify:
     1. S(L, G_{s1}) == S(L, G_{s1})
@@ -52,10 +58,12 @@ def test_determinism_with_rng():
     assert not torch.equal(result1, result3)
 
 
-def test_nucleus_selection_logic():
+def test_nucleus_selection_logic() -> None:
     r"""
-    Verifies that only tokens from the nucleus V^{(p)} are ever sampled.
-    Let P = softmax(L). Let V^{(p)} be the smallest set where sum_{i in V^{(p)}} P_i >= p.
+    Check that only tokens from the nucleus V^{(p)} are ever sampled.
+
+    Let P = softmax(L).
+    Let V^{(p)} be the smallest set where sum_{i in V^{(p)}} P_i >= p.
     We verify: For any sample s, s \in V^{(p)}.
     """
     # Use direct probabilities for clarity, then convert to logits.
@@ -87,9 +95,10 @@ def test_nucleus_selection_logic():
     assert len(unique_sampled_indices) > 0
 
 
-def test_edge_case_p_equals_one():
+def test_edge_case_p_equals_one() -> None:
     r"""
-    Verifies that for p=1, the sampler is equivalent to its inner sampler.
+    Check that for p=1, the sampler is equivalent to its inner sampler.
+
     p=1 => V^{(p)} = V (the entire vocabulary).
     Therefore, S_{nucleus}(L, p=1) \equiv S_{inner}(L).
     """
@@ -111,9 +120,10 @@ def test_edge_case_p_equals_one():
     assert torch.equal(result_inner, result_nucleus)
 
 
-def test_edge_case_p_very_small_is_argmax():
+def test_edge_case_p_very_small_is_argmax() -> None:
     """
-    Verifies that for a very small p, the result is always the most likely token.
+    Check that for a very small p, the result is always the most likely token.
+
     p -> 0 => V^{(p)} = {argmax_i P_i}.
     Therefore, S_{nucleus}(L, p->0) should be equivalent to argmax(L),
     regardless of the inner sampler's randomness.

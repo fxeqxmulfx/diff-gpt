@@ -1,4 +1,5 @@
-"""
+# Copyright 2025 Mikhail Borisov
+r"""
 Anomaly detection demo on ETTh1 oil-temperature.
 
 Demonstrates the `DiffGPT.anomaly_scores(df)` API on a real hourly signal.
@@ -12,7 +13,8 @@ Procedure:
 
 Usage:
     uv run --no-sync python -m benchmarks.anomaly_demo
-    ANOMALY_N_INJECT=5 ANOMALY_MAX_ITERS=3000 uv run --no-sync python -m benchmarks.anomaly_demo
+    ANOMALY_N_INJECT=5 ANOMALY_MAX_ITERS=3000 \
+        uv run --no-sync python -m benchmarks.anomaly_demo
 """
 
 from __future__ import annotations
@@ -29,14 +31,26 @@ from diff_gpt.diff_gpt import DiffGPT
 from diff_gpt.encoder_decoder import get_domain_of_definition
 from diff_gpt.model.gpt import GPT
 
-
 ETT_CSV = (
     Path(__file__).resolve().parents[1]
-    / "datasets" / "long_term_forecast" / "ETT-small" / "ETTh1.csv"
+    / "datasets"
+    / "long_term_forecast"
+    / "ETT-small"
+    / "ETTh1.csv"
 )
+
+# Smallest top-K recall of the injected spikes that counts as a passing demo.
+MIN_RECALL = 0.5
 
 
 def main() -> None:
+    """
+    Train on clean ETTh1 OT, score a spiked test window and print the top-K anomalies.
+
+    Settings come from ANOMALY_N_INJECT (spikes to inject), ANOMALY_MAX_ITERS
+    (training steps) and ANOMALY_TOP_K (positions to report); the recall of the
+    injected spikes in the top-K is printed last.
+    """
     torch.set_float32_matmul_precision("high")
     torch.manual_seed(0)
     rng = np.random.default_rng(0)
@@ -49,7 +63,7 @@ def main() -> None:
     # next month for scoring. Hourly → 24*30 ≈ 720 rows per month.
     df = pd.read_csv(ETT_CSV)
     ot = df[["OT"]].copy()
-    train_end = 24 * 30 * 4        # 2880 rows
+    train_end = 24 * 30 * 4  # 2880 rows
     test_end = train_end + 24 * 14  # 336 rows for the test window
     train_df = ot.iloc[:train_end].reset_index(drop=True)
     test_df_clean = ot.iloc[train_end:test_end].reset_index(drop=True)
@@ -69,7 +83,7 @@ def main() -> None:
         replace=False,
     )
     injection_idx = np.sort(injection_idx)
-    spike_magnitude = 5.0  # in normalized units, ~5σ of the training signal
+    spike_magnitude = 5.0  # in normalized units, ~5 sigma of the training signal
     test_spiked = test_norm.copy()
     sign = rng.choice([-1.0, 1.0], size=n_inject)
     for i, idx in enumerate(injection_idx):
@@ -78,8 +92,7 @@ def main() -> None:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device}")
     print(f"train rows: {len(train_norm)}, test rows: {test_len}")
-    print(f"injected {n_inject} spikes at test-local indices: "
-          f"{injection_idx.tolist()}")
+    print(f"injected {n_inject} spikes at test-local indices: {injection_idx.tolist()}")
 
     # Domain from training data only (treat injected spikes as unknown).
     domain = get_domain_of_definition(
@@ -156,7 +169,7 @@ def main() -> None:
     recall = caught / n_inject if n_inject > 0 else 0.0
     print(f"\nRecall of injected spikes in top-{k}: {caught}/{n_inject} = {recall:.0%}")
     # A passing demo: at least half the injected spikes should be in top-K.
-    if recall >= 0.5:
+    if recall >= MIN_RECALL:
         print("✓ model detects injected anomalies above noise floor.")
     else:
         print("(!) detection weak — try ANOMALY_MAX_ITERS > 3000 or larger model.")

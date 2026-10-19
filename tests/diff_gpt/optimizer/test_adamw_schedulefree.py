@@ -1,12 +1,20 @@
-import torch
+# Copyright 2025 Mikhail Borisov
+"""Tests for the schedule-free AdamW optimizer."""
+
 import pytest
+import torch
 from torch.testing import assert_close
 
 from diff_gpt.optimizer.adamw_schedulefree import AdamWScheduleFree
 
+# Max abs gap between the scheduled lr and the linear warmup ramp.
+LR_TOLERANCE = 1e-6
 
-def test_optimizer_convergence_quadratic():
+
+def test_optimizer_convergence_quadratic() -> None:
     r"""
+    Check that 100 steps on a quadratic bring the norm below 1 in train and eval mode.
+
     Minimize convex objective: $\mathcal{L}(\theta) = \|\theta\|^2$.
     $\theta^* = \mathbf{0}$.
     Verify: $\lim_{t \to \infty} \|\theta_t\| < \epsilon$.
@@ -32,13 +40,16 @@ def test_optimizer_convergence_quadratic():
     assert torch.norm(theta) < 1.0
 
 
-def test_state_transitions_train_eval():
+def test_state_transitions_train_eval() -> None:
     r"""
+    Check that eval() moves the weights off y and train() restores them.
+
     Verify interpolation between auxiliary states.
     Optimizer maintains $y$ (train) and $z$ (anchor).
 
     $\text{Eval}: \theta \leftarrow x = \text{lerp}(y, z, 1 - \frac{1}{\beta_1})$
-    $\text{Train}: \theta \leftarrow y = \text{lerp}(x, z, 1 - \beta_1)^{-1} \text{ (effectively restoring } y \text{)}$
+    $\text{Train}: \theta \leftarrow y = \text{lerp}(x, z, 1 - \beta_1)^{-1}
+       \text{ (effectively restoring } y \text{)}$
 
     Verify: $\theta_{\text{train}} \neq \theta_{\text{eval}}$ after update.
     """
@@ -74,8 +85,10 @@ def test_state_transitions_train_eval():
     assert_close(val_train, val_train_restored)
 
 
-def test_warmup_linearity():
+def test_warmup_linearity() -> None:
     r"""
+    Check that scheduled_lr equals lr * t / warmup_steps at each warmup step t.
+
     Verify Learning Rate schedule $\eta_t$.
     $\eta_t = \eta_{max} \cdot \frac{t}{T_{warmup}} \quad \forall t < T_{warmup}$
     """
@@ -96,11 +109,13 @@ def test_warmup_linearity():
         current_lr = opt.param_groups[0]["scheduled_lr"]
         expected_lr = LR_max * (t / T_warmup)
 
-        assert abs(current_lr - expected_lr) < 1e-6
+        assert abs(current_lr - expected_lr) < LR_TOLERANCE
 
 
-def test_execution_guard_raises():
+def test_execution_guard_raises() -> None:
     r"""
+    Check that step() raises RuntimeError while the optimizer is in eval mode.
+
     Verify Mode Guard.
     $\text{step}() \implies \text{Error if } \neg \text{TrainMode}$
     """
@@ -110,14 +125,14 @@ def test_execution_guard_raises():
     # Default init sets train_mode=False via defaults, but let's be explicit
     opt.eval()
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(RuntimeError, match="Optimizer was not in train mode"):
         opt.step()
 
-    assert "Optimizer was not in train mode" in str(excinfo.value)
 
-
-def test_weight_decay_application():
+def test_weight_decay_application() -> None:
     r"""
+    Check that a zero-gradient step with weight decay shrinks the parameter norm.
+
     Verify $L_2$ Regularization.
     $\mathcal{L}(\theta) = 0 \implies \nabla \mathcal{L} = 0$.
     Update: $\theta_{t+1} \leftarrow \theta_t - \eta \lambda \theta_t$.
@@ -138,8 +153,10 @@ def test_weight_decay_application():
     assert new_norm < prev_norm
 
 
-def test_amsgrad_state_and_monotonic_max():
+def test_amsgrad_state_and_monotonic_max() -> None:
     """
+    Check that amsgrad's max_exp_avg_sq exists, never decreases and is >= exp_avg_sq.
+
     With amsgrad=True the optimizer must allocate `max_exp_avg_sq` and it
     must be a non-decreasing element-wise max of `exp_avg_sq` across steps.
     """
@@ -166,7 +183,7 @@ def test_amsgrad_state_and_monotonic_max():
         prev_max = current_max
 
 
-def test_amsgrad_no_state_when_disabled():
+def test_amsgrad_no_state_when_disabled() -> None:
     """amsgrad=False must not allocate max_exp_avg_sq state."""
     param = torch.randn(4, requires_grad=True)
     opt = AdamWScheduleFree([param], lr=0.01, amsgrad=False, foreach=False)
@@ -176,7 +193,7 @@ def test_amsgrad_no_state_when_disabled():
     assert "max_exp_avg_sq" not in opt.state[param]
 
 
-def test_amsgrad_default_is_true():
+def test_amsgrad_default_is_true() -> None:
     """Default should now allocate max_exp_avg_sq state (amsgrad on by default)."""
     param = torch.randn(4, requires_grad=True)
     opt = AdamWScheduleFree([param], lr=0.01, foreach=False)
@@ -186,11 +203,11 @@ def test_amsgrad_default_is_true():
     assert "max_exp_avg_sq" in opt.state[param]
 
 
-def test_amsgrad_foreach_parity():
-    """foreach and loop paths must agree when amsgrad=True."""
+def test_amsgrad_foreach_parity() -> None:
+    """Foreach and loop paths must agree when amsgrad=True."""
     torch.manual_seed(0)
     params_a = [torch.randn(10, 10, requires_grad=True) for _ in range(3)]
-    params_b = [p.clone().detach().requires_grad_(True) for p in params_a]
+    params_b = [p.clone().detach().requires_grad_() for p in params_a]
     grads = [torch.randn_like(p) for p in params_a]
 
     opt_a = AdamWScheduleFree(params_a, lr=0.01, amsgrad=True, foreach=True)
@@ -206,9 +223,9 @@ def test_amsgrad_foreach_parity():
         opt_a.step()
         opt_b.step()
 
-    for pa, pb in zip(params_a, params_b):
+    for pa, pb in zip(params_a, params_b, strict=True):
         assert_close(pa, pb, atol=1e-6, rtol=1e-6)
-    for pa, pb in zip(params_a, params_b):
+    for pa, pb in zip(params_a, params_b, strict=True):
         assert_close(
             opt_a.state[pa]["max_exp_avg_sq"],
             opt_b.state[pb]["max_exp_avg_sq"],
@@ -217,7 +234,7 @@ def test_amsgrad_foreach_parity():
         )
 
 
-def test_amsgrad_converges_on_quadratic():
+def test_amsgrad_converges_on_quadratic() -> None:
     """Sanity: amsgrad variant still minimizes a simple convex target."""
     theta = torch.tensor([10.0, -10.0], requires_grad=True)
     opt = AdamWScheduleFree([theta], lr=1.0, warmup_steps=10, amsgrad=True)
@@ -230,13 +247,15 @@ def test_amsgrad_converges_on_quadratic():
     assert torch.norm(theta) < 1.0
 
 
-def test_foreach_parity():
+def test_foreach_parity() -> None:
     r"""
+    Check that the foreach and loop paths give the same weights after one step.
+
     Verify implementation consistency.
     $f_{\text{foreach}}(\theta) \equiv f_{\text{loop}}(\theta)$
     """
     params_a = [torch.randn(10, 10, requires_grad=True) for _ in range(3)]
-    params_b = [p.clone().detach().requires_grad_(True) for p in params_a]
+    params_b = [p.clone().detach().requires_grad_() for p in params_a]
 
     grad = [torch.randn_like(p) for p in params_a]
 
@@ -256,5 +275,5 @@ def test_foreach_parity():
     opt_a.step()
     opt_b.step()
 
-    for pa, pb in zip(params_a, params_b):
+    for pa, pb in zip(params_a, params_b, strict=True):
         assert_close(pa, pb, atol=1e-6, rtol=1e-6)

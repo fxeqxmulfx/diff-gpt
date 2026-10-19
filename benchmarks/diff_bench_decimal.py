@@ -1,3 +1,4 @@
+# Copyright 2025 Mikhail Borisov
 """
 Decimal-precision variant of diff_bench.py.
 
@@ -18,6 +19,7 @@ from diff_gpt.model.gpt import GPT
 
 
 def mae(x: np.ndarray, y: np.ndarray) -> float:
+    """Return the MAE of `x` against `y`: the per-column MAE averaged over columns."""
     result = np.mean(np.abs(x - y), axis=0)
     return float(np.mean(result))
 
@@ -30,6 +32,11 @@ def mae(x: np.ndarray, y: np.ndarray) -> float:
 
 
 def main() -> None:
+    """
+    Train three models on sin/cos and print their mean val_loss, time and MAE.
+
+    Same runs as diff_bench.main, with use_decimal=True throughout.
+    """
     torch.set_float32_matmul_precision("high")
     n_embd = 64
     block_size = 32
@@ -52,7 +59,7 @@ def main() -> None:
         {
             "sin": np.sin(idx),
             "cos": np.cos(idx),
-        }
+        },
     )
     domain_of_definition = get_domain_of_definition(
         np_to_decimal(inp.to_numpy(dtype=np.float64)),
@@ -108,13 +115,15 @@ def main() -> None:
         val_loss_array[i] = val_loss
         train_time_array[i] = train_time
         mae_loss_array[i] = mae(
-            np_to_decimal(inp[-8:].to_numpy()), result_df[-8:].to_numpy()
+            np_to_decimal(inp[-8:].to_numpy()),
+            result_df[-8:].to_numpy(),
         )
     val_loss = float(torch.mean(val_loss_array))
     train_time = float(torch.mean(train_time_array))
     mae_loss = float(torch.mean(mae_loss_array))
     print(
-        f"val_loss={round(val_loss, 2)} train_time={round(train_time, 2)} MAE={round(mae_loss, 4)}"
+        f"val_loss={round(val_loss, 2)} train_time={round(train_time, 2)} "
+        f"MAE={round(mae_loss, 4)}",
     )
 
 

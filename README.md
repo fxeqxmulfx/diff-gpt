@@ -107,7 +107,9 @@ dfs: list[pd.DataFrame] = [...]
 order = 1  # scalar, OR np.array([0, 1, 2]) for per-column
 all_data = np.concatenate([df.to_numpy(dtype=np.float64) for df in dfs], axis=0)
 domain = get_domain_of_definition(
-    inp=all_data, order_of_derivative=order, use_decimal=False,
+    inp=all_data,
+    order_of_derivative=order,
+    use_decimal=False,
 )
 
 # Construct GPT + DiffGPT wrapper.
@@ -144,10 +146,14 @@ model.train(loader=loader, max_iters=20_000, eval_interval=500)
 # "smape", or "owa" with M4's Naive2 references).
 context = dfs[0].iloc[-96:]
 prediction = model.predict_point(
-    df=context, max_new_points=48, metric="mae", num_samples=100,
+    df=context,
+    max_new_points=48,
+    metric="mae",
+    num_samples=100,
 )
 # Deterministic single-path readouts are still available:
 from diff_gpt.sampler.median import MedianSampler
+
 path = model.predict(df=context, max_new_points=48, sampler=MedianSampler())
 ```
 
@@ -176,10 +182,14 @@ samples = model.predict_samples(
 # each per-step distribution before sampling. Tightens forecast bands
 # without any retraining (−25% MSIS on M4 Hourly at p=0.9).
 nucleus = NucleusSampler(
-    p=0.9, sampler=TemperatureSampler(temperature=1.0),
+    p=0.9,
+    sampler=TemperatureSampler(temperature=1.0),
 )
 samples_nucleus = model.predict_samples(
-    df=context, max_new_points=48, num_samples=100, sampler=nucleus,
+    df=context,
+    max_new_points=48,
+    num_samples=100,
+    sampler=nucleus,
 )
 
 # Or directly as quantile bands {0.1, 0.5, 0.9}: each a DataFrame of shape (H, F).
@@ -230,7 +240,7 @@ scores = model.anomaly_scores(df)
 # First max_k rows are NaN (the derivative prefix); the first encoded
 # token at column 0 is also NaN (no preceding context).
 
-row_surprise = scores.sum(axis=1, skipna=True)     # per-step aggregate
+row_surprise = scores.sum(axis=1, skipna=True)  # per-step aggregate
 anomalies = row_surprise[row_surprise > row_surprise.quantile(0.99)]
 ```
 
@@ -259,18 +269,26 @@ one-time graph-tracing cost is amortized. Two rules:
 
 ```python
 base = GPT(
-    vocab_size=256, n_embd=64, block_size=138, n_head=4, n_layer=2,
-    use_checkpoint=False,           # required alongside torch.compile
+    vocab_size=256,
+    n_embd=64,
+    block_size=138,
+    n_head=4,
+    n_layer=2,
+    use_checkpoint=False,  # required alongside torch.compile
 )
 # GPU: max-autotune without cudagraphs — peak Triton/Inductor tuning,
 # no CUDA-graph capture (which breaks under variable shapes, DDP, and
 # KV-cache inference). CPU: max-autotune enables Inductor's CPU GEMM
 # template / tile sweep; cudagraphs is a no-op on CPU either way.
-compile_mode = "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
+compile_mode = (
+    "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
+)
 base = torch.compile(base, mode=compile_mode)
 model = DiffGPT(
-    model=base, order_of_derivative=order,
-    domain_of_definition=domain, use_decimal=False,
+    model=base,
+    order_of_derivative=order,
+    domain_of_definition=domain,
+    use_decimal=False,
 )
 model.train(loader=loader, max_iters=20_000, eval_interval=500)
 ```
@@ -280,8 +298,14 @@ worker DDP-wraps an already-compiled module:
 
 ```python
 def build_gpt(rank: int) -> GPT:
-    gpt = GPT(vocab_size=256, n_embd=64, block_size=138, n_head=4,
-              n_layer=2, use_checkpoint=False)
+    gpt = GPT(
+        vocab_size=256,
+        n_embd=64,
+        block_size=138,
+        n_head=4,
+        n_layer=2,
+        use_checkpoint=False,
+    )
     mode = "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
     return torch.compile(gpt, mode=mode)
 ```
@@ -320,17 +344,26 @@ from diff_gpt.model.gpt import GPT
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 import torch
 
+
 def build_gpt(rank: int) -> GPT:
-    return GPT(vocab_size=256, n_embd=64, block_size=138,
-               n_head=4, n_layer=2)
+    return GPT(vocab_size=256, n_embd=64, block_size=138, n_head=4, n_layer=2)
+
 
 def build_loader(rank: int, world: int) -> DiffDataFrameDataLoader:
     rng = torch.Generator().manual_seed(42 + rank)
     return DiffDataFrameDataLoader(
-        dfs=dfs, block_size=138, batch_size=32, vocab_size=256,
-        order_of_derivative=order, domain_of_definition=domain,
-        use_decimal=False, device="cpu", train_part=0.8, rng=rng,
+        dfs=dfs,
+        block_size=138,
+        batch_size=32,
+        vocab_size=256,
+        order_of_derivative=order,
+        domain_of_definition=domain,
+        use_decimal=False,
+        device="cpu",
+        train_part=0.8,
+        rng=rng,
     )
+
 
 val_loss, _ = DiffGPT.train_numa(
     model_factory=build_gpt,
@@ -339,9 +372,11 @@ val_loss, _ = DiffGPT.train_numa(
     checkpoint_path="best.pt",
 )
 # Rebuild DiffGPT around the trained weights:
-gpt = build_gpt(0); gpt.load_state_dict(torch.load("best.pt"))
-model = DiffGPT(model=gpt, order_of_derivative=order,
-                domain_of_definition=domain, use_decimal=False)
+gpt = build_gpt(0)
+gpt.load_state_dict(torch.load("best.pt"))
+model = DiffGPT(
+    model=gpt, order_of_derivative=order, domain_of_definition=domain, use_decimal=False
+)
 ```
 
 Backend: NCCL on CUDA, Gloo on CPU. Single-node systems short-circuit to

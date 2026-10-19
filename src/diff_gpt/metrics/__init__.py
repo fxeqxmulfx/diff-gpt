@@ -1,3 +1,6 @@
+# Copyright 2025 Mikhail Borisov
+"""Point and probabilistic forecast metrics."""
+
 from diff_gpt.metrics.point import bayes_point
 from diff_gpt.metrics.probabilistic import (
     crps_empirical,

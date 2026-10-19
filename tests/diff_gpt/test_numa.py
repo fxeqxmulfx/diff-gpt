@@ -1,5 +1,9 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the NUMA pinning helpers and NUMA-aware DDP training."""
+
 import os
 import socket
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -19,12 +23,20 @@ from diff_gpt.numa import (
 )
 from diff_gpt.train_ddp import train_numa
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+    from pathlib import Path
+
 
 @pytest.fixture
-def _restore_numa_state():
-    """Pinning mutates process-global state (affinity, thread count, env
+def _restore_numa_state() -> Iterator[None]:
+    """
+    Snapshot and restore the process-global state that NUMA pinning mutates.
+
+    Pinning mutates process-global state (affinity, thread count, env
     vars) that persists across tests. Snapshot and restore so one test
-    doesn't narrow the CPU set for the next."""
+    doesn't narrow the CPU set for the next.
+    """
     threads = torch.get_num_threads()
     affinity = (
         set(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None
@@ -44,26 +56,31 @@ def _restore_numa_state():
                 os.environ[k] = v
 
 
-def test_parse_cpulist_ranges_and_singletons():
+def test_parse_cpulist_ranges_and_singletons() -> None:
+    """Check that _parse_cpulist expands ranges and singletons and maps '' to []."""
     assert _parse_cpulist("0-3") == [0, 1, 2, 3]
     assert _parse_cpulist("0-1,4,6-7") == [0, 1, 4, 6, 7]
     assert _parse_cpulist("5") == [5]
     assert _parse_cpulist("") == []
 
 
-def test_list_numa_nodes_returns_at_least_one():
+def test_list_numa_nodes_returns_at_least_one() -> None:
+    """Check that list_numa_nodes() is non-empty and holds only non-negative ints."""
     nodes = list_numa_nodes()
     assert len(nodes) >= 1
     assert all(isinstance(n, int) and n >= 0 for n in nodes)
 
 
-def test_cpus_on_node_nonempty_for_first_node():
+def test_cpus_on_node_nonempty_for_first_node() -> None:
+    """Check that cpus_on_node gives the first node at least one CPU, all ints >= 0."""
     cpus = cpus_on_node(list_numa_nodes()[0])
     assert len(cpus) >= 1
     assert all(isinstance(c, int) and c >= 0 for c in cpus)
 
 
-def test_pin_to_node_sets_thread_count_and_affinity(_restore_numa_state):
+@pytest.mark.usefixtures("_restore_numa_state")
+def test_pin_to_node_sets_thread_count_and_affinity() -> None:
+    """Check that pin_to_node sets thread count, OMP/MKL env vars and CPU affinity."""
     n = pin_to_node(list_numa_nodes()[0])
     assert n >= 1
     assert torch.get_num_threads() == n
@@ -72,23 +89,25 @@ def test_pin_to_node_sets_thread_count_and_affinity(_restore_numa_state):
     if hasattr(os, "sched_getaffinity"):
         # Pinned affinity must be a subset of the requested node CPUs.
         assert set(os.sched_getaffinity(0)).issubset(
-            set(cpus_on_node(list_numa_nodes()[0]))
+            set(cpus_on_node(list_numa_nodes()[0])),
         )
 
 
-def _make_model_factory():
-    def build(rank: int):
+def _make_model_factory() -> Callable[[int], GPT]:
+    def build(rank: int) -> GPT:
         torch.manual_seed(0 + rank)
         return GPT(vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=1)
 
     return build
 
 
-def _make_loader_factory():
-    def build(rank: int, world: int):
+def _make_loader_factory() -> Callable[[int, int], DiffDataFrameDataLoader]:
+    def build(rank: int, _world: int) -> DiffDataFrameDataLoader:
         df = pd.DataFrame({"c0": np.arange(200, dtype=np.float64)})
         dom = get_domain_of_definition(
-            df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+            df.to_numpy(dtype=np.float64),
+            order_of_derivative=1,
+            use_decimal=False,
         )
         rng = torch.Generator().manual_seed(42 + rank)
         return DiffDataFrameDataLoader(
@@ -108,21 +127,25 @@ def _make_loader_factory():
 
 
 @pytest.fixture
-def _single_rank_gloo_pg():
+def _single_rank_gloo_pg() -> Iterator[None]:
     """
-    Stand up a single-rank gloo process group on a free port, tear it
-    down afterward. Lets tests exercise DDP's reducer (which enforces
-    the unused-parameter check regardless of world size) without
-    spawning child processes.
+    Stand up a single-rank gloo process group on a free port, tear it down afterward.
+
+    Lets tests exercise DDP's reducer (which enforces the unused-parameter
+    check regardless of world size) without spawning child processes.
     """
-    prev = {k: os.environ.get(k) for k in
-            ("MASTER_ADDR", "MASTER_PORT", "RANK", "WORLD_SIZE")}
+    prev = {
+        k: os.environ.get(k)
+        for k in ("MASTER_ADDR", "MASTER_PORT", "RANK", "WORLD_SIZE")
+    }
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
     os.environ.update(
-        MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port),
-        RANK="0", WORLD_SIZE="1",
+        MASTER_ADDR="127.0.0.1",
+        MASTER_PORT=str(port),
+        RANK="0",
+        WORLD_SIZE="1",
     )
     dist.init_process_group(backend="gloo", rank=0, world_size=1)
     try:
@@ -137,8 +160,11 @@ def _single_rank_gloo_pg():
                 os.environ[k] = v
 
 
-def test_plain_ddp_runs_gpt_training_steps(_single_rank_gloo_pg):
+@pytest.mark.usefixtures("_single_rank_gloo_pg")
+def test_plain_ddp_runs_gpt_training_steps() -> None:
     """
+    Check that plain DDP runs two forward+backward cycles and every param gets a grad.
+
     train_ddp wraps the model in a plain `DDP(model)` (no
     find_unused_parameters / static_graph). DDP's reducer raises on the
     second backward if any parameter went without a gradient, so two
@@ -158,9 +184,14 @@ def test_plain_ddp_runs_gpt_training_steps(_single_rank_gloo_pg):
         assert p.grad is not None, name
 
 
-def test_train_numa_single_node_fast_path(tmp_path, _restore_numa_state):
-    """nodes=[0] bypasses spawn and calls train() in-process — exercises
-    the pin-and-train path that handles the common single-socket case."""
+@pytest.mark.usefixtures("_restore_numa_state")
+def test_train_numa_single_node_fast_path(tmp_path: Path) -> None:
+    """
+    Check that single-node train_numa returns a finite loss and writes a checkpoint.
+
+    nodes=[0] bypasses spawn and calls train() in-process — exercises
+    the pin-and-train path that handles the common single-socket case.
+    """
     ckpt = tmp_path / "best.pt"
     val_loss, secs = train_numa(
         model_factory=_make_model_factory(),
@@ -177,4 +208,5 @@ def test_train_numa_single_node_fast_path(tmp_path, _restore_numa_state):
     )
     assert np.isfinite(val_loss)
     assert secs >= 0
-    assert ckpt.exists() and ckpt.stat().st_size > 0
+    assert ckpt.exists()
+    assert ckpt.stat().st_size > 0

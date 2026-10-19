@@ -57,11 +57,12 @@ def encode_saturating(x, V, D):
     scale = (V - 2) / D / 2
     y = np.diff(x, axis=0) * scale
     half = V // 2
-    e = np.zeros(x.shape[1]); out = np.zeros(y.shape, dtype=np.int64)
+    e = np.zeros(x.shape[1])
+    out = np.zeros(y.shape, dtype=np.int64)
     for t in range(y.shape[0]):
         q = np.rint(y[t] - e)
-        q = np.clip(q, -half, V - 1 - half)   # saturate inside the loop
-        e = q - (y[t] - e)                    # error of the emitted token
+        q = np.clip(q, -half, V - 1 - half)  # saturate inside the loop
+        e = q - (y[t] - e)  # error of the emitted token
         out[t] = q + half
     return x[:1].copy(), scale, out
 ```
@@ -99,7 +100,7 @@ dod = get_domain_of_definition(x, 0, use_decimal=False)
 for order in (0, np.array([0])):
     st, sc, enc = encode(x, 256, dod, order, use_decimal=False, tokenizer="mash")
     dec = decode(st, sc, enc, 256, order, use_decimal=False, tokenizer="mash")
-    print(order, np.abs(dec - x).max() * sc[0])   # 0.98 versus 0.50
+    print(order, np.abs(dec - x).max() * sc[0])  # 0.98 versus 0.50
 ```
 
 **Possible change.** Use the same order-zero branch as `_encode_column_tokens`.

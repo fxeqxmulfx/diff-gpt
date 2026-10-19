@@ -1,16 +1,23 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the KV cache: allocation, insertion, growth, prefill and reset."""
+
 import torch
 from torch.testing import assert_close
 
 from diff_gpt.model.kv_cache import KVCache
 
+# insert_kv grows the capacity to a multiple of this many positions.
+GROWTH_MULTIPLE = 1024
 
-def test_kv_cache_resize():
+
+def test_kv_cache_resize() -> None:
     """
+    Check that a full cache grows on insert and keeps the tokens it already stored.
+
     The KV cache was not resized correctly, more information here:
     https://github.com/karpathy/nanochat/pull/186
     This test reproduces the issue and will be merged alongside the fix.
     """
-
     batch_size = 2
     num_heads = 3
     seq_len = 4
@@ -26,7 +33,7 @@ def test_kv_cache_resize():
     )
 
     # Insert a single token with a distinct fill value to all layers
-    def insert_token(token_idx):
+    def insert_token(token_idx: int) -> None:
         for layer_idx in range(num_layers):
             k = torch.full(
                 (batch_size, num_heads, 1, head_dim),
@@ -53,7 +60,8 @@ def test_kv_cache_resize():
     # Verify that the cache actually resized
     new_seq_len = kv_cache.kv_cache.shape[4]
     assert new_seq_len > original_seq_len, (
-        f"Cache did not resize: original seq_len={original_seq_len}, new seq_len={new_seq_len}"
+        f"Cache did not resize: original seq_len={original_seq_len}, "
+        f"new seq_len={new_seq_len}"
     )
 
     # Verify that the original 4 tokens are still intact after resize
@@ -65,10 +73,12 @@ def test_kv_cache_resize():
             actual_k = kv_cache.kv_cache[layer_idx, 0, :, :, token_idx, :]
             actual_v = kv_cache.kv_cache[layer_idx, 1, :, :, token_idx, :]
             assert (actual_k == expected_k).all(), (
-                f"Layer {layer_idx}, token {token_idx}: key corrupted, expected {expected_k}"
+                f"Layer {layer_idx}, token {token_idx}: key corrupted, "
+                f"expected {expected_k}"
             )
             assert (actual_v == expected_v).all(), (
-                f"Layer {layer_idx}, token {token_idx}: value corrupted, expected {expected_v}"
+                f"Layer {layer_idx}, token {token_idx}: value corrupted, "
+                f"expected {expected_v}"
             )
             # And that the original cache matches resized cache
             original_k = original_cache[layer_idx, 0, :, :, token_idx, :]
@@ -81,10 +91,11 @@ def test_kv_cache_resize():
             )
 
 
-def test_initialization_state():
+def test_initialization_state() -> None:
     r"""
-    Verify initial state $S_0$.
-    pos = 0, Cache = \emptyset
+    Check that a new cache is empty at pos 0 and records shape (L, 2, B, H, T, D).
+
+    Initial state $S_0$: pos = 0, Cache = \emptyset
     """
     B, H, T, D, L = 2, 4, 128, 64, 3
     cache = KVCache(B, H, T, D, L)
@@ -95,9 +106,10 @@ def test_initialization_state():
     assert cache.kv_shape == (L, 2, B, H, T, D)
 
 
-def test_insert_kv_lazy_init_and_pos_update():
+def test_insert_kv_lazy_init_and_pos_update() -> None:
     r"""
-    Verify lazy allocation and $pos$ update logic.
+    Check lazy allocation, the last-layer-only pos update and the returned keys.
+
     $pos_{new} = pos_{old} + \Delta t \iff layer == L-1$
     """
     B, H, T, D, L = 1, 2, 10, 8, 2
@@ -108,7 +120,7 @@ def test_insert_kv_lazy_init_and_pos_update():
     v = torch.randn(B, H, 1, D)
 
     # --- Layer 0 ---
-    k_out, v_out = cache.insert_kv(0, k, v)
+    _k_out, _v_out = cache.insert_kv(0, k, v)
 
     # Cache allocated?
     assert cache.kv_cache is not None
@@ -116,7 +128,7 @@ def test_insert_kv_lazy_init_and_pos_update():
     assert cache.get_pos() == 0
 
     # --- Layer 1 (Last) ---
-    k_out_2, v_out_2 = cache.insert_kv(1, k, v)
+    k_out_2, _v_out_2 = cache.insert_kv(1, k, v)
 
     # $pos$ updated now
     assert cache.get_pos() == 1
@@ -126,9 +138,10 @@ def test_insert_kv_lazy_init_and_pos_update():
     assert_close(k_out_2[..., 0:1, :], k)
 
 
-def test_insert_sequence_chunk():
+def test_insert_sequence_chunk() -> None:
     r"""
-    Verify insertion of sequence chunk ($T_{add} > 1$).
+    Check that inserting a chunk ($T_{add} > 1$) advances pos and returns the chunk.
+
     $t_0 = 0, t_1 = 5 \implies pos \to 5$
     """
     B, H, T_init, D, L = 1, 1, 20, 4, 1
@@ -139,18 +152,19 @@ def test_insert_sequence_chunk():
     k = torch.randn(B, H, seq_len_add, D)
     v = torch.randn(B, H, seq_len_add, D)
 
-    out_k, out_v = cache.insert_kv(0, k, v)
+    out_k, _out_v = cache.insert_kv(0, k, v)
 
     # $pos = 5$
-    assert cache.get_pos() == 5
+    assert cache.get_pos() == seq_len_add
     # Output view shape: $... \times 5 \times D$
-    assert out_k.shape[-2] == 5
+    assert out_k.shape[-2] == seq_len_add
     assert_close(out_k, k)
 
 
-def test_dynamic_growth_rounding():
+def test_dynamic_growth_rounding() -> None:
     r"""
-    Verify memory reallocation logic.
+    Check that an overflowing insert grows the capacity to a multiple of 1024.
+
     Condition: $t_1 > T_{capacity}$
     New Size: $\lceil \frac{t_1 + 1024}{1024} \rceil \times 1024$
     """
@@ -162,7 +176,7 @@ def test_dynamic_growth_rounding():
     k0 = torch.randn(B, H, 1, D)
     cache.insert_kv(0, k0, k0)  # pos -> 1, Capacity = 10
 
-    assert cache.kv_cache.shape[4] == 10
+    assert cache.kv_cache.shape[4] == T_init
 
     # Insert big chunk to force resize
     # Current pos=1. Add 20. New pos=21. 21 > 10.
@@ -173,14 +187,16 @@ def test_dynamic_growth_rounding():
     current_capacity = cache.kv_cache.shape[4]
 
     # Verify growth
-    assert current_capacity >= 1024
-    assert current_capacity % 1024 == 0
-    assert cache.get_pos() == 21
+    assert current_capacity >= GROWTH_MULTIPLE
+    assert current_capacity % GROWTH_MULTIPLE == 0
+    assert cache.get_pos() == k0.shape[-2] + k_big.shape[-2]
 
 
-def test_prefill_broadcasting():
+def test_prefill_broadcasting() -> None:
     r"""
-    Verify prefill with batch broadcasting ($B_{src}=1 \to B_{dst}=N$).
+    Check that prefill copies pos and broadcasts a batch-1 cache to every batch row.
+
+    Batch broadcasting: $B_{src}=1 \to B_{dst}=N$
     $KV_{dst}[i] \equiv KV_{src}[0] \quad \forall i$
     """
     # Source: Batch=1, Seq=5
@@ -194,7 +210,7 @@ def test_prefill_broadcasting():
     dst_cache.prefill(src_cache)
 
     # Check pos transfer
-    assert dst_cache.get_pos() == 5
+    assert dst_cache.get_pos() == k.shape[-2]
 
     # Check broadcasting
     # dst memory: [L, 2, B=3, H, T, D]
@@ -204,16 +220,17 @@ def test_prefill_broadcasting():
         assert_close(stored_k, k.squeeze(0))  # remove source batch dim
 
 
-def test_reset():
+def test_reset() -> None:
     r"""
-    Verify reset behavior.
+    Check that reset rewinds pos to 0, so the next insert starts at t=0.
+
     $pos \to 0$
     """
     cache = KVCache(1, 1, 10, 4, 1)
     k = torch.randn(1, 1, 5, 4)
     cache.insert_kv(0, k, k)
 
-    assert cache.get_pos() == 5
+    assert cache.get_pos() == k.shape[-2]
 
     cache.reset()
     assert cache.get_pos() == 0
