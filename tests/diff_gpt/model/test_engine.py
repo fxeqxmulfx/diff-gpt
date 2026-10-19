@@ -188,13 +188,13 @@ def test_generate_rejects_mixed_type_tokens(gpt_model: GPT) -> None:
         )
 
 
-def test_generate_early_return_when_prompt_at_rope_ceiling(gpt_model: GPT) -> None:
+def test_generate_early_return_when_prompt_at_position_ceiling(gpt_model: GPT) -> None:
     """
-    If prompt already fills the RoPE ceiling, effective_max_tokens is 0.
+    If prompt already fills all block_size positions, effective_max_tokens is 0.
     The generator must short-circuit (no yields, no alloc of decode cache).
     """
     engine = Engine(model=gpt_model)
-    ceiling = gpt_model.block_size * 2
+    ceiling = gpt_model.block_size
     prompt = list(range(ceiling))  # exactly at the limit
     results, masks = engine.generate_batch(
         tokens=prompt, num_samples=2, max_tokens=10
@@ -217,18 +217,16 @@ def test_generate_respects_small_max_tokens(gpt_model: GPT) -> None:
     assert len(results[0]) == len(prompt) + max_tokens
 
 
-def test_generate_clamps_max_tokens_to_rope_ceiling(gpt_model: GPT) -> None:
+def test_generate_clamps_max_tokens_to_position_ceiling(gpt_model: GPT) -> None:
     """
-    RoPE frequencies are precomputed for block_size * 2 positions,
-    so total context (prompt + generated) cannot exceed that.
-    An oversized max_tokens must be clamped; previously the engine
-    either stopped at block_size generated (ignoring max_tokens) or
-    would have asserted inside forward.
+    Position embeddings cover block_size positions, so total context
+    (prompt + generated) cannot exceed that. An oversized max_tokens must
+    be clamped instead of asserting inside forward.
     """
     engine = Engine(model=gpt_model)
     block_size = gpt_model.block_size
     prompt = [1, 2, 3]
-    hard_ceiling = block_size * 2 - len(prompt)
+    hard_ceiling = block_size - len(prompt)
     # Ask for way more than supported
     results, _ = engine.generate_batch(
         tokens=prompt, num_samples=1, max_tokens=hard_ceiling + 50
@@ -237,11 +235,11 @@ def test_generate_clamps_max_tokens_to_rope_ceiling(gpt_model: GPT) -> None:
 
 
 def test_generate_no_max_tokens_uses_hard_ceiling(gpt_model: GPT) -> None:
-    """Without max_tokens, generation fills up to the RoPE ceiling."""
+    """Without max_tokens, generation fills up to the position ceiling."""
     engine = Engine(model=gpt_model)
     block_size = gpt_model.block_size
     prompt = [1, 2, 3, 4]
-    hard_ceiling = block_size * 2 - len(prompt)
+    hard_ceiling = block_size - len(prompt)
     results, _ = engine.generate_batch(tokens=prompt, num_samples=1)
     assert len(results[0]) == len(prompt) + hard_ceiling
 

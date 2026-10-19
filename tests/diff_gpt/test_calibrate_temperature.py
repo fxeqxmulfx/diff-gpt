@@ -14,7 +14,7 @@ def _model_and_windows(n_windows=2, ctx=12, horizon=4):
     df = pd.DataFrame({"y": np.sin(idx / 5.0)})
     dod = get_domain_of_definition(df.to_numpy(dtype=np.float64), 1, False)
     base = GPT(vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
-               use_checkpoint=False, head="mixture")
+               use_checkpoint=False)
     model = DiffGPT(model=base, order_of_derivative=1, domain_of_definition=dod, use_decimal=False)
     windows = [
         (df.iloc[i * 20 : i * 20 + ctx], df.iloc[i * 20 + ctx : i * 20 + ctx + horizon].to_numpy())

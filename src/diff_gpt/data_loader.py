@@ -443,8 +443,9 @@ class DiffDataFrameDataLoader:
             if align_windows:
                 # The split point must itself land on a column boundary, or the
                 # val slice starts mid-row and every val window carries a
-                # different column phase than the train windows (which breaks
-                # the channel embedding and the val loss it is selected on).
+                # different column phase than the train windows and the
+                # inference context, which skews the val loss that selects
+                # the checkpoint.
                 n -= n % n_features
             self._train_serieses.append(flat[:n])
             self._val_serieses.append(flat[n:])

@@ -5,7 +5,8 @@ a derivative-based tokenization. The encoder rounds the signal onto a fixed grid
 of step $\Delta$ and emits the $k$-th differences of the grid index
 (level-grid tokenization, LGT: $q_t = \Delta^k\,\mathrm{round}(s\,x_t) + V/2$);
 the decoder integrates the tokens exactly in integer arithmetic. The model is a
-standard GPT — the inductive bias sits entirely in the tokenization.
+plain GPT-2 that reads the token stream as ordinary text — the inductive bias
+sits entirely in the tokenization.
 
 LGT has the same reconstruction bound and vocabulary headroom as the MASH
 $\Sigma\Delta$ encoder used in earlier versions (which is in fact the same
@@ -15,14 +16,6 @@ the full encoding, identical values give identical tokens anywhere in a series,
 and decoding is exact for any $k$ and $T$. The $\Sigma\Delta$ encoder is kept
 for compatibility: `tokenizer="mash"` on `encode`/`decode`, or
 `DIFF_GPT_TOKENIZER=mash` for models trained with it.
-
-See [papers/paper.pdf](papers/paper.pdf) for the full write-up with proofs and benchmarks.
-
-Additional English notes cover [MASH tokenization](papers/mash_how_it_works.md),
-[sequence-to-sequence function families](papers/seq2seq_family.md), and
-[MLPs and transformers](papers/note_mlp_to_transformer.pdf).
-The [Yun et al. (2020) paper](papers/yun2020.pdf) is included with its
-original English sources and a `papers/yun2020.tex` build wrapper.
 
 ## Signal assumption
 
@@ -39,7 +32,6 @@ model on top.
 |---|---|---|
 | ideal CE $\mathcal L^\star(V)$ | $+\log 2 \approx 0.69$ nats | Prop. 2 |
 | reconstruction $\|\hat x - x\|_\infty$ | $\times \tfrac{1}{2}$ | Thm. 1 |
-| ordinal smoothing $\sigma^\star$ | $\times 2$ (hold value-space constant) | §4 |
 
 **Theorem 1 (MASH reconstruction, any $k$).** For any signal with
 $D = \max_t |\Delta^k x_t| > 0$ and $V > 2^k + 2$,
@@ -60,31 +52,12 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 - **Level-grid tokenization**: tight $\Delta/2$ reconstruction bound uniformly
   in $T$ at any order $k$, exact integer decoding, window-consistent tokens.
   The MASH $\Sigma\Delta$ encoder remains available (`tokenizer="mash"`).
-- **Discretised logistic-mixture head** (`GPT(head="mixture")`): the token is
-  the rounding of a continuous quantity, so the head predicts a density over it
-  and assigns each bin the mass of its cell. No smoothing hyper-parameter; on
-  M4 Hourly it halves CRPS (343 → 183) and cuts MSIS from 46 to 10 against the
-  soft-CE softmax head, with better point metrics under the Bayes readout below.
 - **Bayes point readout** (`DiffGPT.predict_point`): the point forecast that
   minimises the expected metric (MAE/MASE, MSE, sMAPE or M4's OWA) under
   $N$ sampled trajectories, instead of feeding argmax/median tokens back.
-- **Exact token features** (`GPT(feature_lags=(24,))`): the decoder recovers
-  the signal by integrating the tokens and the data is seasonal, yet a linear
-  probe shows the trained model represents the running integral only at
-  $R^2 = 0.69$ and the token one season back at $0.40$. Feeding those exact
-  functions of the token prefix as numeric inputs — the running integral, the
-  level change over the lag, and the lagged token — is the single largest win
-  measured here: on M4 Hourly sMAPE $16.91 \to 13.11$, OWA $0.726 \to 0.569$,
-  validation cross-entropy $-0.082$ nats on every seed. They cost no plumbing:
-  the features are computed inside `forward`, and the cross-step state lives in
-  the KV cache, which is what a cache is for.
-- **Channel-aware positions** (`GPT(n_channels=F)`): a multivariate stream
-  interleaves $F$ channels, so absolute position $p$ belongs to channel
-  $p \bmod F$; a learned channel embedding states that instead of leaving the
-  model to infer it. Pair with `DiffDataFrameDataLoader(align_windows=True)`
-  so training windows start on a channel boundary like the inference context.
-  On ETTh1 (7 variates): validation cross-entropy $2.51 \to 2.19$ nats,
-  median-window MSE $-22\%$, CRPS $-8\%$, both seeds.
+- **Channel-aligned windows** (`DiffDataFrameDataLoader(align_windows=True)`):
+  a multivariate stream interleaves $F$ channels, so training windows are cut
+  on a channel boundary, like the inference context.
 - **Free-run temperature calibration** (`DiffGPT.calibrate_temperature`):
   cross-entropy calibrates each one-step distribution, but a rollout feeds its
   own samples back and the joint forecast comes out over-dispersed. Pick the
@@ -92,22 +65,29 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   coverage, which any wide enough band satisfies. On ETTh1 the CRPS criterion
   picks $T = 0.5$ and the sampled readout then beats the deterministic path;
   coverage-matching picks $T = 1$, where MSE is 2.4x worse.
-- **Gaussian ordinal soft-CE** (softmax head): replaces one-hot targets with a
-  discrete Gaussian over bin indices, $p^\text{soft}_i \propto \exp(-(i - y)^2 / 2\sigma^2)$.
-  On M4 Hourly: sMAPE $18.58 \to 17.49$ at $\sigma = 2$. Superseded by the
-  mixture head, which learns the width per position.
 - **Per-column derivative order**: `order_of_derivative` can be an array of shape
   $(F,)$ giving each channel its own $k_c$. Mix $k = 0$ (raw) with $k = 1, 2, \ldots$
   in a single model.
-- **GPT architecture niceties**: RoPE, RMSNorm (no learnable scale), SwiGLU with
-  soft limit, tied embeddings, logit softcap, Block Attention Residuals (Chen et
-  al. 2026), Schedule-Free AMSGrad optimizer.
+- **Plain GPT-2 model** (as in nanoGPT): learned token and position
+  embeddings, pre-LayerNorm blocks with causal self-attention and a GELU MLP,
+  an output head tied to the token embedding, cross-entropy loss and GPT-2
+  initialization — nothing series-specific. Trained with the Schedule-Free
+  AMSGrad optimizer.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates), best-val checkpoint auto-restore.
 - **NUMA-aware training**: single-process CPU-affinity pin via
   `DiffGPT.train(pin_node=...)`, or one-worker-per-node DDP via
   `DiffGPT.train_numa` on multi-socket boxes.
+
+The numbers in this README were measured with earlier versions of the model,
+which carried model-side additions that have since been removed: Gaussian
+ordinal soft-CE, a discretised logistic-mixture head, exact token features,
+channel embeddings and a RoPE/RMSNorm/SwiGLU backbone with Attention
+Residuals. The best of those versions reached sMAPE 13.11, MASE 1.018 and
+OWA 0.569 on M4 Hourly. The plain GPT-2 model has not been re-benchmarked yet;
+`improvement_plan.md` carries the step-by-step ablation of the earlier
+versions.
 
 ## Usage
 
@@ -136,7 +116,6 @@ base = GPT(
     block_size=138,
     n_head=4,
     n_layer=2,
-    head="mixture",             # discretised logistic mixture over the bins
 )
 model = DiffGPT(
     model=base,
@@ -170,13 +149,6 @@ prediction = model.predict_point(
 from diff_gpt.sampler.median import MedianSampler
 path = model.predict(df=context, max_new_points=48, sampler=MedianSampler())
 ```
-
-M4 Hourly, 414 series (mixture head, LGT, exact token features, OWA readout):
-sMAPE **13.11**, MASE **1.018**, OWA **0.569**; CRPS 190, MSIS 7.2,
-coverage@80 0.77 against a nominal 0.80. The soft-CE softmax baseline of
-earlier versions scores 17.49 / 1.659 / OWA 0.822 with the argmax readout, so
-OWA improves by 31%. `improvement_plan.md` carries the step-by-step ablation,
-including the changes that were measured and rejected.
 
 ## Probabilistic forecasting
 
@@ -225,8 +197,8 @@ arbitrary quantile sets at inference time. Since the model predicts the
 *derivative* and the decoder integrates, confidence bands naturally widen
 with horizon as an integral of random-walk uncertainty.
 
-**First-pass M4 Hourly numbers** (same model as the point-forecast row,
-no probabilistic-specific tuning; 414 series, horizon 48, N = 100 samples):
+**First-pass M4 Hourly numbers** (an earlier soft-CE model, no
+probabilistic-specific tuning; 414 series, horizon 48, N = 100 samples):
 
 | metric | T = 1 | T = 1, top-p = 0.9 |
 |---|---|---|
@@ -238,9 +210,9 @@ no probabilistic-specific tuning; 414 series, horizon 48, N = 100 samples):
 
 Nucleus top-p = 0.9 at inference time (zero retraining) tightens every
 metric, MSIS by 25%. Remaining over-coverage reflects the fact that the
-model was tuned for argmax sMAPE; conformal calibration or CRPS-tuned σ /
-temperature closes most of the rest of the gap vs M4 probabilistic winners
-(MSIS ~13–15).
+model was tuned for argmax sMAPE; conformal calibration or a CRPS-tuned
+temperature (`DiffGPT.calibrate_temperature`) closes most of the rest of the
+gap vs M4 probabilistic winners (MSIS ~13–15).
 
 ## Anomaly detection
 
@@ -287,7 +259,6 @@ one-time graph-tracing cost is amortized. Two rules:
 ```python
 base = GPT(
     vocab_size=256, n_embd=64, block_size=138, n_head=4, n_layer=2,
-    label_smoothing_sigma=2.0,
     use_checkpoint=False,           # required alongside torch.compile
 )
 # GPU: max-autotune without cudagraphs — peak Triton/Inductor tuning,
@@ -350,7 +321,7 @@ import torch
 
 def build_gpt(rank: int) -> GPT:
     return GPT(vocab_size=256, n_embd=64, block_size=138,
-               n_head=4, n_layer=2, label_smoothing_sigma=2.0)
+               n_head=4, n_layer=2)
 
 def build_loader(rank: int, world: int) -> DiffDataFrameDataLoader:
     rng = torch.Generator().manual_seed(42 + rank)
@@ -376,6 +347,10 @@ Backend: NCCL on CUDA, Gloo on CPU. Single-node systems short-circuit to
 the in-process pinning path — no spawn, no DDP overhead.
 
 ## Benchmarks
+
+Measured with an earlier version of the model: a RoPE/RMSNorm/SwiGLU backbone
+trained with Gaussian ordinal soft-CE, both since removed. The plain GPT-2
+model has not been re-benchmarked yet.
 
 ### M4 Hourly (short-term, global)
 
@@ -433,18 +408,11 @@ uv run --no-sync pytest
 
 - [youtube.com: Let's build GPT: from scratch, in code, spelled out](https://www.youtube.com/watch?v=kCc8FmEb1nY)
 - [github.com: nanoGPT](https://github.com/karpathy/nanoGPT)
-- [github.com: gpt-oss](https://github.com/openai/gpt-oss)
-- [github.com: gemma_pytorch](https://github.com/google/gemma_pytorch)
 - [github.com: schedule_free](https://github.com/facebookresearch/schedule_free)
 - [github.com: nanochat](https://github.com/karpathy/nanochat)
-- [github.com: Attention-Residuals](https://github.com/MoonshotAI/Attention-Residuals)
 - [github.com: Time-Series-Library](https://github.com/thuml/Time-Series-Library)
 - [arxiv.org: Attention Is All You Need](https://arxiv.org/abs/1706.03762)
-- [arxiv.org: Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467)
-- [arxiv.org: RoFormer: Enhanced Transformer with Rotary Position Embedding](https://arxiv.org/abs/2104.09864)
-- [arxiv.org: GLU Variants Improve Transformer](https://arxiv.org/abs/2002.05202)
+- [openai.com: Language Models are Unsupervised Multitask Learners (GPT-2)](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 - [arxiv.org: The Road Less Scheduled](https://arxiv.org/abs/2405.15682)
 - [arxiv.org: The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)
-- [arxiv.org: Gated Attention for Large Language Models: Non-linearity, Sparsity, and Attention-Sink-Free](https://arxiv.org/abs/2505.06708)
 - [arxiv.org: iTransformer: Inverted Transformers are Effective for Time Series Forecasting](https://arxiv.org/abs/2310.06625)
-- [arxiv.org: Rethinking the Inception Architecture for Computer Vision (label smoothing)](https://arxiv.org/abs/1512.00567)

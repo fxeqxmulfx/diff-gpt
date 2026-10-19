@@ -143,21 +143,11 @@ def main() -> None:
     # train_part=0.8), this gives ~2 tokens/param — a compromise between
     # Chinchilla-optimal (~20) and capacity needed for Hourly's daily +
     # weekly patterns. Tiny (n_embd=32) underfits; big (n_embd=128) overfits.
-    label_smoothing_sigma = float(os.environ.get("M4_LABEL_SMOOTHING_SIGMA", "0.0"))
     vocab_size = int(os.environ.get("M4_VOCAB_SIZE", "256"))
     n_embd = int(os.environ.get("M4_N_EMBD", "64"))
     n_layer = int(os.environ.get("M4_N_LAYER", "2"))
     n_head = int(os.environ.get("M4_N_HEAD", "4"))
-    head = os.environ.get("M4_HEAD", "softmax")
-    mix_k = int(os.environ.get("M4_MIX_K", "8"))
-    embed_once = os.environ.get("M4_ATTNRES_EMBED_ONCE", "0") == "1"
-    lags_env = os.environ.get("M4_FEATURE_LAGS", "")  # e.g. "24" (daily) — step 11
-    feature_lags = tuple(int(x) for x in lags_env.split(",") if x.strip())
-    print(
-        f"tokenizer={DEFAULT_TOKENIZER} | head={head} (K={mix_k}) | "
-        f"sigma={label_smoothing_sigma} | V={vocab_size} | embed_once={embed_once} "
-        f"| feature_lags={feature_lags}"
-    )
+    print(f"tokenizer={DEFAULT_TOKENIZER} | V={vocab_size}")
     base = GPT(
         vocab_size=vocab_size,
         n_embd=n_embd,
@@ -165,11 +155,6 @@ def main() -> None:
         n_head=n_head,
         n_layer=n_layer,
         use_checkpoint=False,
-        label_smoothing_sigma=label_smoothing_sigma,
-        head=head,
-        mixture_components=mix_k,
-        attn_res_commit_embed_once=embed_once,
-        feature_lags=feature_lags,
     ).to(device=device)
     if device == "cuda":
         # M4_COMPILE_MODE: "max-autotune-no-cudagraphs" (default), "max-autotune"

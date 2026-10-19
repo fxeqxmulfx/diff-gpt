@@ -2,8 +2,8 @@
 Per-series diagnostics for saved M4 Hourly checkpoints (see m4_bench.py).
 
 Usage:
-    uv run --no-sync python -m benchmarks.m4_eval runs/a.pt:softmax runs/b.pt:mixture
-Each argument is <state_dict path>:<head>. Data preparation mirrors m4_bench
+    uv run --no-sync python -m benchmarks.m4_eval runs/a.pt runs/b.pt
+Each argument is a state_dict path. Data preparation mirrors m4_bench
 exactly (same normalisation, block_size, domain), the tokenizer comes from
 DIFF_GPT_TOKENIZER. Prints paired per-series comparisons between the first
 checkpoint and every other one.
@@ -55,7 +55,7 @@ def prepare():
                 horizon=horizon, season=SEASONALITY[freq], block_size=block_size, order=order, domain=domain)
 
 
-def load_model(path: str, head: str, data: dict, device: str) -> DiffGPT:
+def load_model(path: str, data: dict, device: str) -> DiffGPT:
     base = GPT(
         vocab_size=int(os.environ.get("M4_VOCAB_SIZE", "256")),
         n_embd=int(os.environ.get("M4_N_EMBD", "64")),
@@ -63,19 +63,9 @@ def load_model(path: str, head: str, data: dict, device: str) -> DiffGPT:
         n_head=int(os.environ.get("M4_N_HEAD", "4")),
         n_layer=int(os.environ.get("M4_N_LAYER", "2")),
         use_checkpoint=False,
-        head=head,
-        mixture_components=int(os.environ.get("M4_MIX_K", "8")),
-        feature_lags=tuple(int(x) for x in os.environ.get("M4_FEATURE_LAGS", "").split(",") if x.strip()),
     )
     sd = torch.load(path, map_location="cpu", weights_only=True)
     sd = {k.removeprefix("_orig_mod."): v for k, v in sd.items()}
-    if "feature_proj.weight" in sd:
-        want = sd["feature_proj.weight"].shape[1]
-        assert base.n_extra_features == want, (
-            f"{path} was trained with {want} token features but M4_FEATURE_LAGS gives "
-            f"{base.n_extra_features}; the lag values are not stored in the checkpoint, "
-            f"set M4_FEATURE_LAGS (e.g. 24) to match the training run"
-        )
     base.load_state_dict(sd)
     base.to(device).eval()
     return DiffGPT(model=base, order_of_derivative=data["order"],
@@ -141,16 +131,14 @@ def readouts_and_scores(model: DiffGPT, data: dict, num_samples: int) -> dict[st
 
 
 def main() -> None:
-    specs = [a.split(":") for a in sys.argv[1:]]
-    # A checkpoint carrying feature_proj was trained with token features; infer the
-    # lag from the projection width (1 + 2·n_lags) so the caller need not repeat it.
-    assert len(specs) >= 1, "need at least one <path>:<head> argument"
+    paths = sys.argv[1:]
+    assert len(paths) >= 1, "need at least one checkpoint path"
     device = os.environ.get("M4_EVAL_DEVICE", "cpu")
     data = prepare()
     print(f"tokenizer={DEFAULT_TOKENIZER} n={len(data['picked'])} block_size={data['block_size']} device={device}")
     results = {}
-    for path, head in specs:
-        model = load_model(path, head, data, device)
+    for path in paths:
+        model = load_model(path, data, device)
         results[path] = forecast(model, data, MedianSampler())
         sm, ms, b = results[path]
         keep = ms <= np.nanquantile(ms, 0.98)
@@ -161,8 +149,8 @@ def main() -> None:
         n_samples = int(os.environ.get("M4_NUM_SAMPLES", "100"))
         print(f"\nBayes readouts from {n_samples} trajectories + proper scores (OWA = ½(sMAPE/{SMAPE_REF} + MASE/{MASE_REF}))")
         print(f"{'checkpoint':28s} {'readout':12s} {'sMAPE':>7} {'MASE':>7} {'OWA':>7}")
-        for path, head in specs:
-            r = readouts_and_scores(load_model(path, head, data, device), data, n_samples)
+        for path in paths:
+            r = readouts_and_scores(load_model(path, data, device), data, n_samples)
             for name, label in (("path", "median path"), ("med", "MC median"), ("sm", "MC sMAPE-B"), ("owa", "MC OWA-B")):
                 sm_, ms_ = r[f"{name}_smape"].mean(), np.nanmean(r[f"{name}_mase"])
                 print(f"{path:28s} {label:12s} {sm_:7.2f} {ms_:7.3f} {0.5 * (sm_ / SMAPE_REF + ms_ / MASE_REF):7.3f}")
@@ -171,9 +159,9 @@ def main() -> None:
         return
     if os.environ.get("M4_EVAL_SUMMARY_ONLY"):
         return
-    ref_path = specs[0][0]
+    ref_path = paths[0]
     sm0, ms0, b0 = results[ref_path]
-    for path, _ in specs[1:]:
+    for path in paths[1:]:
         sm1, ms1, b1 = results[path]
         d_sm, d_ms = sm1 - sm0, ms1 - ms0
         print(f"\n{path} vs {ref_path} (per-series paired differences, negative = better)")

@@ -4,7 +4,7 @@
 cd /home/misha/python_projects/gpt
 echo $$ > runs/step0.pid
 for seed in 0 1; do
-  PYTHONUNBUFFERED=1 M4_N_SERIES=414 M4_MAX_ITERS=20000 M4_LABEL_SMOOTHING_SIGMA=2.0 \
+  PYTHONUNBUFFERED=1 M4_N_SERIES=414 M4_MAX_ITERS=20000 \
   M4_SEED=$seed M4_SAMPLERS=argmax,median M4_SAVE=runs/step0_seed$seed.pt \
     uv run --no-sync python -m benchmarks.m4_bench > runs/step0_seed$seed.log 2>&1 &
   uv_pid=$!

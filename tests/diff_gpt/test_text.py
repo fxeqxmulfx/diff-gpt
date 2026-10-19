@@ -17,6 +17,8 @@ max_iters=5000):
     # CLR project:                      val_loss=1.68  train_time=37.33
     # ADD AMSGrad default (1 run):      val_loss=1.73  train_time=~110 (CPU)
     # ADD Block AttnRes, 1 layer/block:  val_loss=1.72  train_time=~155 (CPU)
+    # UPD plain GPT-2 (1 run):          val_loss=1.99  train_time=64 (CPU)
+    #   same model at lr=3e-3: val_loss=1.83; at lr=1e-3: val_loss=1.96
 
 The test below uses a reduced scale for CI friendliness; the assertions are
 loose enough to accommodate machine variance but tight enough to catch a
@@ -82,9 +84,10 @@ def test_char_encoder_decode_drops_padded_ids():
 def test_text_training_speed_and_loss():
     """
     End-to-end regression guard against the current benchmark:
-      val_loss ≈ 1.73 on the full tinyshakespeare run (5_000 iters) with
-      AMSGrad on by default (was 1.68 with plain Adam — AMSGrad pays a
-      small accuracy cost for its non-increasing effective-LR guarantee).
+      val_loss ≈ 1.99 on the full tinyshakespeare run (5_000 iters) with the
+      plain GPT-2 model at the default lr=1e-2. The earlier model (QK-norm,
+      RoPE, SwiGLU, ...) reached 1.73 at this lr; plain GPT-2 prefers a lower
+      one (1.83 at lr=3e-3).
     A drift in either direction beyond the tolerance means something in the
     training stack changed — intentional or not. Update the tolerance and
     the ledger above together when the architecture changes deliberately.
@@ -123,10 +126,10 @@ def test_text_training_speed_and_loss():
         use_tqdm=False,
     )
 
-    # Current baseline is 1.73 with AMSGrad on. Allow ±0.05 for single-run
-    # / hardware variance.
-    assert abs(val_loss - 1.73) < 0.05, (
-        f"val_loss {val_loss:.3f} drifted from 1.73 baseline"
+    # Current baseline is 1.99 (plain GPT-2, lr=1e-2). Allow ±0.05 for
+    # single-run / hardware variance.
+    assert abs(val_loss - 1.99) < 0.05, (
+        f"val_loss {val_loss:.3f} drifted from 1.99 baseline"
     )
     # Historical wall-clock was ~37s on the reference GPU; leave generous
     # headroom for CPU / slower hardware without making the test useless.

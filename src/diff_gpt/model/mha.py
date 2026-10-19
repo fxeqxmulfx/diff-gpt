@@ -2,12 +2,12 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from diff_gpt.model.rope import apply_rotary_emb
 from diff_gpt.model.kv_cache import KVCache
-from diff_gpt.model.rms_norm import rms_norm
 
 
 class MultiHeadAttention(nn.Module):
+    """Causal multi-head self-attention, as in GPT-2."""
+
     def __init__(
         self,
         n_embd: int,
@@ -16,40 +16,26 @@ class MultiHeadAttention(nn.Module):
     ) -> None:
         super().__init__()
         assert n_embd % n_head == 0
-        # RoPE requires head_dim to be even (pairs of dims are rotated as complex).
-        assert (n_embd // n_head) % 2 == 0
         self.n_embd = n_embd
         self.n_head = n_head
         self.layer_idx = layer_idx
         self.head_dim = self.n_embd // self.n_head
-        self.c_q = nn.Linear(self.n_embd, self.n_head * self.head_dim, bias=False)
-        self.c_k = nn.Linear(self.n_embd, self.n_head * self.head_dim, bias=False)
-        self.c_v = nn.Linear(self.n_embd, self.n_head * self.head_dim, bias=False)
-        self.c_g = nn.Linear(self.n_embd, self.n_embd, bias=False)
-        self.c_proj = nn.Linear(self.n_embd, self.n_embd, bias=False)
+        # Query, key and value projections for all heads in one matmul
+        self.c_attn = nn.Linear(self.n_embd, 3 * self.n_embd)
+        self.c_proj = nn.Linear(self.n_embd, self.n_embd)
 
     def forward(
         self,
         x: torch.Tensor,
-        freqs_cis: torch.Tensor,
-        kv_cache: KVCache,
+        kv_cache: KVCache | None,
     ) -> torch.Tensor:
         B, T, _ = x.size()
         # Project the input to get queries, keys, and values
-        q = self.c_q(x).view(B, T, self.n_head, self.head_dim)
-        k = self.c_k(x).view(B, T, self.n_head, self.head_dim)
-        v = self.c_v(x).view(B, T, self.n_head, self.head_dim)
-        g = self.c_g(x)
-        # Apply Rotary Embeddings to queries and keys to get relative positional encoding
-        q, k = (
-            apply_rotary_emb(q, freqs_cis),
-            apply_rotary_emb(k, freqs_cis),
-        )  # QK rotary embedding
-        q, k = rms_norm(q), rms_norm(k)  # QK norm
+        q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
         q, k, v = (
-            q.transpose(1, 2),
-            k.transpose(1, 2),
-            v.transpose(1, 2),
+            q.view(B, T, self.n_head, self.head_dim).transpose(1, 2),
+            k.view(B, T, self.n_head, self.head_dim).transpose(1, 2),
+            v.view(B, T, self.n_head, self.head_dim).transpose(1, 2),
         )  # make head be batch dim, i.e. (B, T, H, D) -> (B, H, T, D)
         # Apply KV cache: insert current k,v into cache, get the full view so far
         if kv_cache is not None:
@@ -81,6 +67,5 @@ class MultiHeadAttention(nn.Module):
             y = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
         # Re-assemble the heads side by side and project back to residual stream
         y = y.transpose(1, 2).contiguous().view(B, T, -1)
-        y = y * F.sigmoid(g)
         y = self.c_proj(y)
         return y

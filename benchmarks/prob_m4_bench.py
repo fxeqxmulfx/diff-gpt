@@ -1,7 +1,7 @@
 """
 Probabilistic-forecasting variant of m4_bench.py on M4 Hourly.
 
-Same training setup (one global diff-gpt over 414 series, σ=2 soft-CE)
+Same training setup (one global diff-gpt over 414 series)
 but at inference we generate N=100 Monte-Carlo trajectories per series
 at temperature 1 and report probabilistic metrics alongside the point
 metrics:
@@ -111,7 +111,6 @@ def main() -> None:
         all_tokens, order_of_derivative=1, use_decimal=False
     )
 
-    label_smoothing_sigma = float(os.environ.get("M4_LABEL_SMOOTHING_SIGMA", "2.0"))
     vocab_size = int(os.environ.get("M4_VOCAB_SIZE", "256"))
     base = GPT(
         vocab_size=vocab_size,
@@ -120,7 +119,6 @@ def main() -> None:
         n_head=int(os.environ.get("M4_N_HEAD", "4")),
         n_layer=int(os.environ.get("M4_N_LAYER", "2")),
         use_checkpoint=False,
-        label_smoothing_sigma=label_smoothing_sigma,
     ).to(device=device)
     if device == "cuda":
         base.compile(mode="max-autotune-no-cudagraphs")

@@ -8,11 +8,11 @@ def test_ffn_shape_and_gradients():
     r"""
     Verify dimensions and gradient flow.
     FFN maps $x \in \mathbb{R}^{B \times T \times C} \to y \in \mathbb{R}^{B \times T \times C}$.
-    Expansion factor is internal (4x -> 2x -> 1x).
+    Expansion factor is internal (4x -> 1x).
     """
     B, T, C = 2, 10, 32
 
-    model = FeedForward(n_embd=C, swiglu_alpha=1.0, swiglu_limit=10.0)
+    model = FeedForward(n_embd=C)
 
     x = torch.randn(B, T, C, requires_grad=True)
 
@@ -34,7 +34,7 @@ def test_ffn_shape_and_gradients():
     assert model.net[0].weight.grad is not None
     assert torch.norm(model.net[0].weight.grad) > 0
 
-    # net[2] is the projection Linear layer (2n -> n)
+    # net[2] is the projection Linear layer (4n -> n)
     assert model.net[2].weight.grad is not None
     assert torch.norm(model.net[2].weight.grad) > 0
 
@@ -46,7 +46,7 @@ def test_ffn_token_independence():
     $FFN(x)_t$ depends ONLY on $x_t$, not $x_{t-1}$ or $x_{t+1}$.
     """
     B, T, C = 1, 5, 16
-    model = FeedForward(n_embd=C, swiglu_alpha=1.0, swiglu_limit=10.0)
+    model = FeedForward(n_embd=C)
     model.eval()
 
     x = torch.randn(B, T, C)
@@ -82,7 +82,7 @@ def test_ffn_batch_invariance():
     Processing a sample alone vs in a batch should yield identical results.
     """
     T, C = 5, 16
-    model = FeedForward(n_embd=C, swiglu_alpha=1.0, swiglu_limit=10.0)
+    model = FeedForward(n_embd=C)
     model.eval()
 
     # Create two different samples

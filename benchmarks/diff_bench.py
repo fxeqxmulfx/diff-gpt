@@ -33,10 +33,7 @@ def main() -> None:
     eval_interval = 5_000
     eval_iters = 200
     batch_size = 16
-    rope_theta = 10000
     vocab_size = 256
-    swiglu_alpha = 1.702
-    swiglu_limit = 7.0
     train_part = 0.9
     use_checkpoint = True
     use_tqdm = True
@@ -64,9 +61,6 @@ def main() -> None:
             block_size=block_size,
             n_head=n_head,
             n_layer=n_layer,
-            rope_theta=rope_theta,
-            swiglu_alpha=swiglu_alpha,
-            swiglu_limit=swiglu_limit,
             use_checkpoint=use_checkpoint,
         )
         base_model.to(device=device).compile(mode="max-autotune-no-cudagraphs")

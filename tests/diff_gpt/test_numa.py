@@ -137,59 +137,25 @@ def _single_rank_gloo_pg():
                 os.environ[k] = v
 
 
-def test_ddp_without_find_unused_raises_on_block_attn_res_shortcircuit(
-    _single_rank_gloo_pg,
-):
+def test_plain_ddp_runs_gpt_training_steps(_single_rank_gloo_pg):
     """
-    Regression proof: Block(layer_idx=0).attn_res_proj never receives a
-    gradient because `block_attn_res` short-circuits when
-    `partial_block is blocks[0]`. DDP's reducer reports this on the
-    second backward — this test locks in the premise for the fix below.
-    """
-    torch.manual_seed(0)
-    model = GPT(
-        vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=1,
-        use_checkpoint=False,
-    )
-    ddp = DDP(model)  # find_unused_parameters=False by default
-    X = torch.randint(0, 64, (2, 16), dtype=torch.int64)
-    Y = torch.randint(0, 64, (2, 16), dtype=torch.int64)
-    _, loss = ddp(X, Y)
-    loss.backward()
-    # The reducer flags the missing gradient on the next forward/backward.
-    with pytest.raises(RuntimeError, match="unused|find_unused_parameters"):
-        _, loss = ddp(X, Y)
-        loss.backward()
-
-
-def test_ddp_with_static_graph_runs_through_block_attn_res_shortcircuit(
-    _single_rank_gloo_pg,
-):
-    """
-    The fix in train_ddp.py: `static_graph=True` lets DDP record the
-    deterministically-unused param on the first iter and stop checking
-    afterward. Two forward+backward cycles must complete, and the
-    short-circuited param must have either no grad or a zero grad —
-    proving it really is the unused one (so the flag is load-bearing).
+    train_ddp wraps the model in a plain `DDP(model)` (no
+    find_unused_parameters / static_graph). DDP's reducer raises on the
+    second backward if any parameter went without a gradient, so two
+    forward+backward cycles must complete — with activation checkpointing
+    on, as in training — and every parameter must hold a gradient.
     """
     torch.manual_seed(0)
-    model = GPT(
-        vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=1,
-        use_checkpoint=False,
-    )
-    ddp = DDP(model, static_graph=True)
+    model = GPT(vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=2)
+    model.train()
+    ddp = DDP(model)
     X = torch.randint(0, 64, (2, 16), dtype=torch.int64)
     Y = torch.randint(0, 64, (2, 16), dtype=torch.int64)
     for _ in range(2):
         _, loss = ddp(X, Y)
         loss.backward()
-    proj_grad = model.blocks[0].attn_res_proj.weight.grad
-    if proj_grad is not None:
-        assert torch.count_nonzero(proj_grad) == 0, (
-            "block0.attn_res_proj.weight got a nonzero grad — the "
-            "block_attn_res short-circuit no longer applies, so the "
-            "static_graph=True flag may no longer be needed"
-        )
+    for name, p in model.named_parameters():
+        assert p.grad is not None, name
 
 
 def test_train_numa_single_node_fast_path(tmp_path, _restore_numa_state):

@@ -125,17 +125,13 @@ def run_horizon(
     n_head: int,
     batch_size: int,
     device: str,
-    label_smoothing_sigma: float,
     use_checkpoint: bool,
     seed: int = 0,
-    head: str = "softmax",
-    mix_k: int = 8,
     vocab_size: int = 64,
     readouts: list[str] | None = None,
     num_samples: int = 50,
     save_path: str | None = None,
     align_windows: bool = False,
-    n_channels: int = 1,
 ) -> tuple[dict[str, tuple[float, float]], int, float]:
     """Train+evaluate one (dataset, pred_len) cell. Returns ({readout: (mse, mae)}, windows, train_time_s)."""
     readouts = readouts or ["argmax"]
@@ -161,7 +157,7 @@ def run_horizon(
     # Block size must fit (seq_len + pred_len - 1) * n_features tokens.
     n_features = len(FEATURES)
     block_size = (seq_len + pred_len - 1) * n_features
-    # Round up to a small multiple for RoPE cache friendliness.
+    # Round up to a multiple of 64.
     block_size = ((block_size + 63) // 64) * 64
 
     domain = get_domain_of_definition(
@@ -176,10 +172,6 @@ def run_horizon(
         n_head=n_head,
         n_layer=n_layer,
         use_checkpoint=use_checkpoint,
-        label_smoothing_sigma=label_smoothing_sigma,
-        head=head,
-        mixture_components=mix_k,
-        n_channels=n_channels,
     ).to(device=device)
     if device == "cuda" and os.environ.get("ETT_COMPILE", "1") == "1":
         base.compile(mode="max-autotune-no-cudagraphs")
@@ -247,24 +239,19 @@ def main() -> None:
     n_embd = int(os.environ.get("ETT_N_EMBD", "128"))
     n_layer = int(os.environ.get("ETT_N_LAYER", "2"))
     n_head = int(os.environ.get("ETT_N_HEAD", "4"))
-    label_smoothing_sigma = float(os.environ.get("ETT_LABEL_SMOOTHING_SIGMA", "0.0"))
     use_checkpoint = os.environ.get("ETT_USE_CHECKPOINT", "0") == "1"
     batch_size_override = os.environ.get("ETT_BATCH_SIZE")
     seed = int(os.environ.get("ETT_SEED", "0"))
-    head = os.environ.get("ETT_HEAD", "softmax")
-    mix_k = int(os.environ.get("ETT_MIX_K", "8"))
     vocab_size = int(os.environ.get("ETT_VOCAB_SIZE", "64"))
     readouts = os.environ.get("ETT_READOUTS", "argmax").split(",")
     num_samples = int(os.environ.get("ETT_NUM_SAMPLES", "50"))
     save_prefix = os.environ.get("ETT_SAVE")  # e.g. runs/ett_step6 -> runs/ett_step6_p96_seed0.pt
     align_windows = os.environ.get("ETT_ALIGN_WINDOWS", "0") == "1"      # step 7
-    n_channels = int(os.environ.get("ETT_N_CHANNELS", "1"))              # step 8 (7 = one per variate)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device} dataset={dataset} pred_lens={pred_lens} max_iters={max_iters}")
-    print(f"tokenizer={DEFAULT_TOKENIZER} | head={head} (K={mix_k}) | sigma={label_smoothing_sigma} "
-          f"| V={vocab_size} | seed={seed} | readouts={readouts} | align_windows={align_windows} "
-          f"| n_channels={n_channels}")
+    print(f"tokenizer={DEFAULT_TOKENIZER} | V={vocab_size} | seed={seed} | readouts={readouts} "
+          f"| align_windows={align_windows}")
 
     # Summary table.
     rows = []
@@ -291,17 +278,13 @@ def main() -> None:
             n_head=n_head,
             batch_size=batch_size,
             device=device,
-            label_smoothing_sigma=label_smoothing_sigma,
             use_checkpoint=use_checkpoint,
             seed=seed,
-            head=head,
-            mix_k=mix_k,
             vocab_size=vocab_size,
             readouts=readouts,
             num_samples=num_samples,
             save_path=f"{save_prefix}_p{pred_len}_seed{seed}.pt" if save_prefix else None,
             align_windows=align_windows,
-            n_channels=n_channels,
         )
         for name, (mse, mae) in results.items():
             rows.append((pred_len, name, mse, mae, n, t))

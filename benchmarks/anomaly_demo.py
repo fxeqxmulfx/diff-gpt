@@ -94,7 +94,6 @@ def main() -> None:
         n_head=4,
         n_layer=2,
         use_checkpoint=False,
-        label_smoothing_sigma=1.0,
     ).to(device=device)
     model = DiffGPT(
         model=base,

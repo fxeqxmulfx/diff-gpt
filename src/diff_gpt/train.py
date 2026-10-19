@@ -47,6 +47,19 @@ def _all_reduce_mean(t: torch.Tensor) -> torch.Tensor:
     return (work / world).to(t.device)
 
 
+def _param_groups(model: BaseGPT, weight_decay: float) -> list[dict]:
+    """
+    Decay weight matrices and embeddings only, never biases or LayerNorm
+    parameters (the GPT-2 / nanoGPT convention).
+    """
+    params = [p for p in model.parameters() if p.requires_grad]
+    groups = [
+        {"params": [p for p in params if p.dim() >= 2], "weight_decay": weight_decay},
+        {"params": [p for p in params if p.dim() < 2], "weight_decay": 0.0},
+    ]
+    return [g for g in groups if g["params"]]
+
+
 # no_grad rather than inference_mode: inference tensors created here would
 # later break CUDA-graph recording of the training step (in-place update of
 # an inference tensor outside inference mode).
@@ -96,7 +109,7 @@ def train(
     """
     assert grad_accum_steps >= 1, "grad_accum_steps must be >= 1"
     optimizer = AdamWScheduleFree(
-        mut_model.parameters(),
+        _param_groups(mut_model, weight_decay),
         lr=learning_rate,
         betas=betas,
         weight_decay=weight_decay,

@@ -52,10 +52,10 @@ class Engine:
         assert len(tokens) > 0, "tokens must be non-empty"
         assert all(isinstance(t, int) for t in tokens), "tokens must be a list of ints"
 
-        # Compute effective token budget (RoPE ceiling is block_size * 2).
+        # Compute effective token budget: position embeddings cover block_size positions.
         block_size = self.model.block_size
         prompt_len = len(tokens)
-        hard_ceiling = max(0, block_size * 2 - prompt_len)
+        hard_ceiling = max(0, block_size - prompt_len)
         if max_tokens is not None:
             effective_max_tokens = min(max_tokens, hard_ceiling)
         else:
