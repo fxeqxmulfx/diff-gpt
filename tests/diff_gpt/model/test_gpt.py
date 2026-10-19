@@ -1,19 +1,32 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the GPT model: init, forward, KV cache, loss and generation."""
+
 import math
 
 import pytest
 import torch
 import torch.nn.functional as F
+from torch.nn.attention import SDPBackend, sdpa_kernel
 from torch.testing import assert_close
+from torch.utils.flop_counter import FlopCounterMode
 
 from diff_gpt.model.gpt import GPT
 from diff_gpt.model.kv_cache import KVCache
+from diff_gpt.sampler.temperature import TemperatureSampler
+
+# F.cross_entropy's ignore_index; the loader masks non-target columns with it.
+IGNORE_INDEX = -100
+# Loss the model must reach by overfitting a single batch.
+MAX_OVERFIT_LOSS = 0.1
 
 
-def test_gpt_initialization_and_shapes():
+def test_gpt_initialization_and_shapes() -> None:
     r"""
     Verify structural constraints.
+
     1. Weight Tying: $W_{emb} \equiv W_{head}$
-    2. Output Shape: $x \in \mathbb{Z}^{B \times T} \implies \text{logits} \in \mathbb{R}^{B \times T \times V}$
+    2. Output Shape: $x \in \mathbb{Z}^{B \times T} \implies
+       \text{logits} \in \mathbb{R}^{B \times T \times V}$
     """
     B, T, V, C = 2, 10, 128, 32
 
@@ -34,11 +47,13 @@ def test_gpt_initialization_and_shapes():
     assert loss.dim() == 0  # Scalar $\mathcal{L}$
 
 
-def test_gpt2_init():
+def test_gpt_init() -> None:
     r"""
-    GPT-2 init: weights $\sim \mathcal{N}(0, 0.02)$, zero biases, LayerNorm
-    $\gamma = 1, \beta = 0$; the two projections that write into the residual
-    stream use $\sigma = 0.02 / \sqrt{2 n_{layer}}$.
+    Check the initialization of every parameter.
+
+    Init: weights $\sim \mathcal{N}(0, 0.02)$, LayerNorm $\gamma = 1$;
+    the two projections that write into the residual stream use
+    $\sigma = 0.02 / \sqrt{2 n_{layer}}$.
     """
     torch.manual_seed(0)
     n_layer = 4
@@ -47,17 +62,49 @@ def test_gpt2_init():
 
     for name, p in model.named_parameters():
         if ".ln_" in name or name.startswith("ln_f."):
-            fill = 1.0 if name.endswith("weight") else 0.0
-            assert torch.equal(p, torch.full_like(p, fill)), name
-        elif name.endswith("bias"):
-            assert torch.count_nonzero(p) == 0, name
+            assert torch.equal(p, torch.ones_like(p)), name
         else:
             is_residual = name.endswith(("sa.c_proj.weight", "ffwd.net.2.weight"))
             std = residual_std if is_residual else 0.02
             assert p.std().item() == pytest.approx(std, rel=0.1), name
 
 
-def test_gpt_kv_cache_consistency():
+def test_model_has_no_biases() -> None:
+    """Neither Linear nor LayerNorm layers carry a bias: every parameter is a weight."""
+    model = GPT(vocab_size=64, n_embd=16, block_size=8, n_head=2, n_layer=2)
+    names = [name for name, _ in model.named_parameters()]
+    assert names
+    assert all(name.endswith("weight") for name in names), names
+
+
+def test_estimate_flops_matches_flop_counter() -> None:
+    """
+    estimate_flops() agrees with PyTorch's FLOP counter.
+
+    The count covers one forward and backward pass. The math SDPA backend runs
+    attention as plain matmuls the counter can see; the estimate's only surplus
+    is 6 per LayerNorm gain.
+    """
+    torch.manual_seed(0)
+    B, V, T = 2, 64, 16
+    model = GPT(
+        vocab_size=V,
+        n_embd=32,
+        block_size=T,
+        n_head=2,
+        n_layer=2,
+        use_checkpoint=False,
+    )
+    idx = torch.randint(0, V, (B, T))
+    with sdpa_kernel(SDPBackend.MATH), FlopCounterMode(display=False) as counter:
+        _, loss = model(idx, idx)
+        loss.backward()
+
+    expected = model.estimate_flops() * B * T
+    assert counter.get_total_flops() == pytest.approx(expected, rel=0.01)
+
+
+def test_gpt_kv_cache_consistency() -> None:
     r"""
     Verify equivalence between Parallel (Batch) and Serial (Step-by-step) inference.
 
@@ -73,7 +120,12 @@ def test_gpt_kv_cache_consistency():
     H, L = 2, 2
 
     model = GPT(
-        vocab_size=V, n_embd=C, block_size=20, n_layer=L, n_head=H, use_checkpoint=False
+        vocab_size=V,
+        n_embd=C,
+        block_size=20,
+        n_layer=L,
+        n_head=H,
+        use_checkpoint=False,
     )
     model.eval()
 
@@ -102,8 +154,10 @@ def test_gpt_kv_cache_consistency():
     assert_close(logits_full, logits_serial, atol=1e-5, rtol=1e-5)
 
 
-def test_forward_rejects_positions_beyond_block_size():
+def test_forward_rejects_positions_beyond_block_size() -> None:
     """
+    Check that forward rejects positions beyond block_size.
+
     Learned position embeddings exist for block_size positions only — for a
     plain forward and for a KV-cached continuation alike.
     """
@@ -113,21 +167,27 @@ def test_forward_rejects_positions_beyond_block_size():
 
     with torch.no_grad():
         model(torch.randint(0, V, (1, block_size)))  # exactly at the limit
-        with pytest.raises(AssertionError, match="exceed block_size"):
+        with pytest.raises(ValueError, match="exceed block_size"):
             model(torch.randint(0, V, (1, block_size + 1)))
 
         kv = KVCache(
-            batch_size=1, num_heads=H, seq_len=block_size, head_dim=C // H, num_layers=1
+            batch_size=1,
+            num_heads=H,
+            seq_len=block_size,
+            head_dim=C // H,
+            num_layers=1,
         )
         model(torch.randint(0, V, (1, block_size - 2)), kv_cache=kv)
-        with pytest.raises(AssertionError, match="exceed block_size"):
+        with pytest.raises(ValueError, match="exceed block_size"):
             model(torch.randint(0, V, (1, 3)), kv_cache=kv)
 
 
-def test_loss_ignores_masked_targets():
+def test_loss_ignores_masked_targets() -> None:
     """
-    Targets of -100 (the loader's mask for non-target columns) are skipped:
-    the loss equals the cross-entropy over the unmasked positions alone.
+    Check that the loss skips targets of -100.
+
+    The loader masks non-target columns with -100; the loss equals the
+    cross-entropy over the unmasked positions alone.
     """
     torch.manual_seed(0)
     B, T, V = 2, 6, 64
@@ -137,17 +197,19 @@ def test_loss_ignores_masked_targets():
     idx = torch.randint(0, V, (B, T))
     targets = torch.randint(0, V, (B, T))
     masked = targets.clone()
-    masked[:, ::2] = -100
+    masked[:, ::2] = IGNORE_INDEX
 
     with torch.no_grad():
         logits, loss = model(idx, masked)
 
-    keep = masked != -100
+    keep = masked != IGNORE_INDEX
     assert_close(loss, F.cross_entropy(logits[keep], targets[keep]))
 
 
-def test_every_parameter_receives_gradient():
+def test_every_parameter_receives_gradient() -> None:
     """
+    Check that every parameter receives a nonzero gradient.
+
     No dead parameters: train_ddp wraps the model in a plain DDP, which
     requires every parameter to get a gradient on every step.
     """
@@ -165,9 +227,10 @@ def test_every_parameter_receives_gradient():
         assert torch.norm(p.grad) > 0, name
 
 
-def test_gradient_checkpointing_flow():
+def test_gradient_checkpointing_flow() -> None:
     r"""
     Verify backward pass with Activation Checkpointing.
+
     $\frac{\partial \mathcal{L}}{\partial \theta} \neq \mathbf{0}$
     """
     B, T, V = 2, 8, 128
@@ -179,7 +242,7 @@ def test_gradient_checkpointing_flow():
     idx = torch.randint(0, V, (B, T))
     targets = torch.randint(0, V, (B, T))
 
-    logits, loss = model(idx, targets)
+    _, loss = model(idx, targets)
 
     loss.backward()
 
@@ -188,9 +251,10 @@ def test_gradient_checkpointing_flow():
     assert torch.norm(model.token_embedding_table.weight.grad) > 0
 
 
-def test_generation_output_len():
+def test_generation_output_len() -> None:
     r"""
     Verify autoregressive loop termination.
+
     $T_{out} = T_{in} + T_{new}$
     """
     B, T, V, N_new = 1, 5, 64, 3
@@ -205,8 +269,10 @@ def test_generation_output_len():
     assert out_idx.shape == (B, T + N_new)
 
 
-def test_generate_slides_window_past_block_size():
+def test_generate_slides_window_past_block_size() -> None:
     """
+    Check that generate() slides its context window to run past block_size.
+
     generate() conditions on the last block_size tokens only, so it can run
     past block_size without leaving the learned position range.
     """
@@ -221,12 +287,8 @@ def test_generate_slides_window_past_block_size():
     assert torch.equal(out_idx[:, :T], idx)
 
 
-def test_generate_seed_determinism():
-    """
-    Passing the same `seed` must yield identical outputs; different seeds differ.
-    """
-    from diff_gpt.sampler.temperature import TemperatureSampler
-
+def test_generate_seed_determinism() -> None:
+    """Passing the same `seed` must yield identical outputs; different seeds differ."""
     B, T, V = 1, 5, 64
     model = GPT(vocab_size=V, n_embd=32, block_size=16, n_layer=1)
     model.eval()
@@ -242,20 +304,26 @@ def test_generate_seed_determinism():
     assert not torch.equal(a, c)
 
 
-def test_vocab_size_must_be_aligned_to_pad():
-    """GPT asserts the caller supplies a pre-padded vocab_size."""
-    with pytest.raises(AssertionError, match="multiple of"):
+def test_vocab_size_must_be_aligned_to_pad() -> None:
+    """GPT requires the caller to supply a pre-padded vocab_size."""
+    with pytest.raises(ValueError, match="multiple of"):
         GPT(vocab_size=70, n_embd=16, block_size=8, n_layer=1, n_head=2)
 
     # pad=1 disables the check (any vocab_size accepted)
     GPT(
-        vocab_size=70, n_embd=16, block_size=8, n_layer=1, n_head=2, pad_vocab_size_to=1
+        vocab_size=70,
+        n_embd=16,
+        block_size=8,
+        n_layer=1,
+        n_head=2,
+        pad_vocab_size_to=1,
     )
 
 
-def test_overfitting_capability():
+def test_overfitting_capability() -> None:
     r"""
-    Sanity check: Model capacity.
+    Sanity-check the model capacity.
+
     $\lim_{i \to \infty} \mathcal{L}(\theta_i) \to 0$ on a single batch.
     """
     B, T, V = 1, 4, 64
@@ -271,4 +339,4 @@ def test_overfitting_capability():
         loss.backward()
         optimizer.step()
 
-    assert loss.item() < 0.1
+    assert loss.item() < MAX_OVERFIT_LOSS

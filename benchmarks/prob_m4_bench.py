@@ -1,4 +1,5 @@
-"""
+# Copyright 2025 Mikhail Borisov
+r"""
 Probabilistic-forecasting variant of m4_bench.py on M4 Hourly.
 
 Same training setup (one global diff-gpt over 414 series)
@@ -8,7 +9,7 @@ metrics:
 
   - sMAPE, MASE — using the per-step median as the point forecast
   - CRPS        — proper scoring rule; mean over series
-  - MSIS        — M4's mean scaled interval score (α=0.05 → 95% interval)
+  - MSIS        — M4's mean scaled interval score (alpha=0.05 → 95% interval)
   - coverage@80 — empirical frequency of true values inside the P10-P90 band
   - pinball@0.5 — median-level quantile loss
 
@@ -17,7 +18,8 @@ calibrated model should at minimum match this on MSIS/CRPS.
 
 Usage:
     uv run --no-sync python -m benchmarks.prob_m4_bench
-    M4_NUM_SAMPLES=200 M4_N_SERIES=50 uv run --no-sync python -m benchmarks.prob_m4_bench
+    M4_NUM_SAMPLES=200 M4_N_SERIES=50 \
+        uv run --no-sync python -m benchmarks.prob_m4_bench
 """
 
 from __future__ import annotations
@@ -42,26 +44,53 @@ from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.nucleus import NucleusSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
 
+M4_DIR = Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
 
-M4_DIR = (
-    Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
-)
-
-HORIZONS = {"Yearly": 6, "Quarterly": 8, "Monthly": 18, "Weekly": 13, "Daily": 14, "Hourly": 48}
+HORIZONS = {
+    "Yearly": 6,
+    "Quarterly": 8,
+    "Monthly": 18,
+    "Weekly": 13,
+    "Daily": 14,
+    "Hourly": 48,
+}
 # MASE seasonality per M4's own definition (Makridakis et al. 2020): the daily
 # series have a weekly period of 7, but M4 scores Daily with seasonality 1, and
 # using 7 understates MASE by ~2.7x on this data.
-SEASONALITY = {"Yearly": 1, "Quarterly": 4, "Monthly": 12, "Weekly": 1, "Daily": 1, "Hourly": 24}
+SEASONALITY = {
+    "Yearly": 1,
+    "Quarterly": 4,
+    "Monthly": 12,
+    "Weekly": 1,
+    "Daily": 1,
+    "Hourly": 24,
+}
 
 
 def smape(pred: np.ndarray, true: np.ndarray) -> float:
+    """
+    Return the M4 sMAPE (in percent, range 0-200) of `pred` against `true`.
+
+    Points where both values are 0 are skipped; 0.0 if no point is left.
+    """
     num = np.abs(true - pred)
     den = np.abs(true) + np.abs(pred)
     mask = den > 0
     return float(200.0 * np.mean(num[mask] / den[mask])) if mask.any() else 0.0
 
 
-def mase(pred: np.ndarray, true: np.ndarray, insample: np.ndarray, season: int) -> float:
+def mase(
+    pred: np.ndarray,
+    true: np.ndarray,
+    insample: np.ndarray,
+    season: int,
+) -> float:
+    """
+    Return the MASE of `pred` against `true`.
+
+    The scale is the in-sample MAE of the seasonal naive forecast with lag
+    `season`; NaN when `insample` is not longer than `season` or that MAE is 0.
+    """
     if len(insample) <= season:
         return float("nan")
     naive = float(np.mean(np.abs(insample[season:] - insample[:-season])))
@@ -71,6 +100,13 @@ def mase(pred: np.ndarray, true: np.ndarray, insample: np.ndarray, season: int) 
 
 
 def main() -> None:
+    """
+    Train one global diff-gpt on M4 and print point and probabilistic scores.
+
+    Each series gets M4_NUM_SAMPLES trajectories sampled at M4_TEMPERATURE
+    (with nucleus top-p when M4_TOP_P is set); their per-step median is the
+    point forecast.
+    """
     torch.set_float32_matmul_precision("high")
     torch.manual_seed(0)
 
@@ -95,7 +131,7 @@ def main() -> None:
 
     series_raw = [train[i].astype(np.float64) for i in picked]
     stats = [(float(s.mean()), float(s.std() or 1.0)) for s in series_raw]
-    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats)]
+    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats, strict=True)]
     dfs = [pd.DataFrame({"x": s}) for s in series_norm]
 
     train_part = float(os.environ.get("M4_TRAIN_PART", "0.8"))
@@ -104,11 +140,12 @@ def main() -> None:
     target_bs = int(os.environ.get("M4_BLOCK_SIZE", "256"))
     block_size = min(target_bs, min_val_tokens - 1)
     block_size = max(block_size, horizon + 16)
-    assert block_size > horizon
 
     all_tokens = np.concatenate(series_norm, axis=0).reshape(-1, 1)
     domain_of_definition = get_domain_of_definition(
-        all_tokens, order_of_derivative=1, use_decimal=False
+        all_tokens,
+        order_of_derivative=1,
+        use_decimal=False,
     )
 
     vocab_size = int(os.environ.get("M4_VOCAB_SIZE", "256"))
@@ -158,9 +195,12 @@ def main() -> None:
     top_p_env = os.environ.get("M4_TOP_P")
     if top_p_env is not None:
         top_p = float(top_p_env)
-        assert 0.0 < top_p <= 1.0
+        if not 0.0 < top_p <= 1.0:
+            msg = f"M4_TOP_P must be in (0, 1], got {top_p}"
+            raise ValueError(msg)
         sampler = NucleusSampler(
-            p=top_p, sampler=TemperatureSampler(temperature=temperature)
+            p=top_p,
+            sampler=TemperatureSampler(temperature=temperature),
         )
         print(f"sampler: nucleus top-p={top_p} + temperature={temperature}")
     else:
@@ -195,13 +235,13 @@ def main() -> None:
     print("=" * 72)
     print(
         f"M4 {freq} probabilistic | n={len(picked)} | horizon={horizon} "
-        f"| samples={num_samples}"
+        f"| samples={num_samples}",
     )
     print(f"  sMAPE      (median point) = {np.mean(smapes):.3f}")
     print(f"  MASE       (median point) = {np.nanmean(mases):.3f}")
     print(f"  pinball@.5 (= 0.5·MAE)    = {np.mean(pinballs):.4f}")
     print(f"  CRPS                      = {np.mean(crpses):.4f}")
-    print(f"  MSIS       (α=0.05)       = {np.nanmean(msises):.3f}")
+    print(f"  MSIS       (alpha=0.05)   = {np.nanmean(msises):.3f}")
     print(f"  coverage@80 (nominal 0.80) = {np.mean(covs):.3f}")
 
 

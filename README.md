@@ -5,7 +5,7 @@ a derivative-based tokenization. The encoder rounds the signal onto a fixed grid
 of step $\Delta$ and emits the $k$-th differences of the grid index
 (level-grid tokenization, LGT: $q_t = \Delta^k\,\mathrm{round}(s\,x_t) + V/2$);
 the decoder integrates the tokens exactly in integer arithmetic. The model is a
-plain GPT-2 that reads the token stream as ordinary text — the inductive bias
+plain GPT that reads the token stream as ordinary text — the inductive bias
 sits entirely in the tokenization.
 
 LGT has the same reconstruction bound and vocabulary headroom as the MASH
@@ -68,11 +68,12 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 - **Per-column derivative order**: `order_of_derivative` can be an array of shape
   $(F,)$ giving each channel its own $k_c$. Mix $k = 0$ (raw) with $k = 1, 2, \ldots$
   in a single model.
-- **Plain GPT-2 model** (as in nanoGPT): learned token and position
-  embeddings, pre-LayerNorm blocks with causal self-attention and a GELU MLP,
-  an output head tied to the token embedding, cross-entropy loss and GPT-2
-  initialization — nothing series-specific. Trained with the Schedule-Free
-  AMSGrad optimizer.
+- **Plain GPT model** (as in nanoGPT with `bias=False`): learned token and
+  position embeddings, pre-LayerNorm blocks with causal self-attention and a
+  GELU MLP, no biases, an output head tied to the token embedding,
+  cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization with residual
+  projections scaled by $1/\sqrt{2L}$ — nothing series-specific. Trained with
+  the Schedule-Free AMSGrad optimizer.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates), best-val checkpoint auto-restore.
@@ -85,7 +86,7 @@ which carried model-side additions that have since been removed: Gaussian
 ordinal soft-CE, a discretised logistic-mixture head, exact token features,
 channel embeddings and a RoPE/RMSNorm/SwiGLU backbone with Attention
 Residuals. The best of those versions reached sMAPE 13.11, MASE 1.018 and
-OWA 0.569 on M4 Hourly. The plain GPT-2 model has not been re-benchmarked yet;
+OWA 0.569 on M4 Hourly. The plain GPT model has not been re-benchmarked yet;
 `improvement_plan.md` carries the step-by-step ablation of the earlier
 versions.
 
@@ -116,7 +117,7 @@ base = GPT(
     block_size=138,
     n_head=4,
     n_layer=2,
-)
+).to("cuda")  # train() expects the model on the loader's device
 model = DiffGPT(
     model=base,
     order_of_derivative=order,
@@ -349,7 +350,7 @@ the in-process pinning path — no spawn, no DDP overhead.
 ## Benchmarks
 
 Measured with an earlier version of the model: a RoPE/RMSNorm/SwiGLU backbone
-trained with Gaussian ordinal soft-CE, both since removed. The plain GPT-2
+trained with Gaussian ordinal soft-CE, both since removed. The plain GPT
 model has not been re-benchmarked yet.
 
 ### M4 Hourly (short-term, global)
@@ -401,7 +402,8 @@ pip install git+https://github.com/fxeqxmulfx/diff-gpt
 
 ```bash
 uv sync
-uv run --no-sync pytest
+uv run --no-sync pytest            # skips the tests marked slow
+uv run --no-sync pytest --runslow  # runs everything
 ```
 
 ## References
@@ -412,7 +414,7 @@ uv run --no-sync pytest
 - [github.com: nanochat](https://github.com/karpathy/nanochat)
 - [github.com: Time-Series-Library](https://github.com/thuml/Time-Series-Library)
 - [arxiv.org: Attention Is All You Need](https://arxiv.org/abs/1706.03762)
-- [openai.com: Language Models are Unsupervised Multitask Learners (GPT-2)](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
+- [openai.com: Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 - [arxiv.org: The Road Less Scheduled](https://arxiv.org/abs/2405.15682)
 - [arxiv.org: The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)
 - [arxiv.org: iTransformer: Inverted Transformers are Effective for Time Series Forecasting](https://arxiv.org/abs/2310.06625)

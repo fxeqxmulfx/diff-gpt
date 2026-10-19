@@ -1,10 +1,24 @@
+# Copyright 2025 Mikhail Borisov
+"""
+Data loaders that sample (x, y) token windows for `train`.
+
+`DiffSQLiteDataLoader` streams series from SQLite, `DiffDataFrameDataLoader`
+encodes in-memory DataFrames, and `TokenSequenceDataLoader` serves an
+already-tokenized sequence.
+"""
+
 import sqlite3
-from typing import Callable, Sequence
+from typing import TYPE_CHECKING
+
 import numpy as np
-import pandas as pd
 import torch
 
 from diff_gpt.encoder_decoder import encode, np_to_decimal
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    import pandas as pd
 
 
 def _quote_ident(name: str) -> str:
@@ -27,27 +41,27 @@ class DiffSQLiteDataLoader:
     """
 
     __slots__ = (
-        "block_size",
-        "batch_size",
-        "vocab_size",
-        "order_of_derivative",
         "_max_order",
-        "domain_of_definition",
-        "use_decimal",
-        "encode_data",
-        "device",
+        "_val_tables",
+        "batch_size",
+        "block_size",
         "connection",
-        "rng",
         "cursor",
+        "device",
+        "domain_of_definition",
+        "encode_data",
+        "order_of_derivative",
+        "rng",
         "tables",
-        "tables_len",
-        "tables_range",
         "tables_columns_count",
         "tables_dt_diff",
+        "tables_len",
+        "tables_range",
         "tables_tokens_len",
-        "train_part",
         "tables_train_tokens_len",
-        "_val_tables",
+        "train_part",
+        "use_decimal",
+        "vocab_size",
     )
 
     def __init__(
@@ -57,6 +71,7 @@ class DiffSQLiteDataLoader:
         vocab_size: int,
         order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
+        *,
         use_decimal: bool,
         device: str,
         database: str,
@@ -64,6 +79,13 @@ class DiffSQLiteDataLoader:
         rng: torch.Generator | None = None,
         train_part: float = 1.0,
     ) -> None:
+        """
+        Open `database` and read the dt range and size of every table.
+
+        Only tables with more than `block_size + 1` tokens are sampled from.
+        `encode_data` turns raw rows into tokens (`encode` by default); `rng`
+        defaults to a fresh generator seeded with 42.
+        """
         self.block_size = block_size
         self.batch_size = batch_size
         self.vocab_size = vocab_size
@@ -87,38 +109,34 @@ class DiffSQLiteDataLoader:
         tables = tuple(
             row[0]
             for row in self.cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence';"
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name != 'sqlite_sequence';",
             ).fetchall()
         )
-        tables_range = dict(
-            (
-                table,
-                self.cursor.execute(
-                    f"SELECT MIN(dt), MAX(dt) FROM {_quote_ident(table)}"
-                ).fetchone(),
-            )
+        # SQLite cannot bind a table name as a parameter, so the queries below
+        # interpolate it. That is safe: the names come from sqlite_master and
+        # `_quote_ident` quotes them.
+        tables_range = {
+            table: self.cursor.execute(
+                f"SELECT MIN(dt), MAX(dt) FROM {_quote_ident(table)}",  # noqa: S608
+            ).fetchone()
             for table in tables
-        )
+        }
         self.tables_range = tables_range
-        tables_columns_count = dict(
-            (
-                table,
-                self.cursor.execute(
-                    "SELECT ncol FROM pragma_table_list WHERE name = ?", (table,)
-                ).fetchone()[0],
-            )
+        tables_columns_count = {
+            table: self.cursor.execute(
+                "SELECT ncol FROM pragma_table_list WHERE name = ?",
+                (table,),
+            ).fetchone()[0]
             for table in tables
-        )
+        }
         self.tables_columns_count = tables_columns_count
-        tables_row_count = dict(
-            (
-                table,
-                self.cursor.execute(
-                    f"SELECT count(*) FROM {_quote_ident(table)};"
-                ).fetchone()[0],
-            )
+        tables_row_count = {
+            table: self.cursor.execute(
+                f"SELECT count(*) FROM {_quote_ident(table)};",  # noqa: S608
+            ).fetchone()[0]
             for table in tables
-        )
+        }
         tables_dt_diff = {}
         for table in tables:
             count = tables_row_count[table]
@@ -128,22 +146,21 @@ class DiffSQLiteDataLoader:
             else:
                 tables_dt_diff[table] = 0
         self.tables_dt_diff = tables_dt_diff
-        tables_tokens_len = dict(
-            (
-                table,
-                (tables_row_count[table] - self._max_order)
-                * (tables_columns_count[table] - 1),
-            )
+        tables_tokens_len = {
+            table: (tables_row_count[table] - self._max_order)
+            * (tables_columns_count[table] - 1)
             for table in tables
-        )
+        }
         self.tables_tokens_len = tables_tokens_len
         tables = tuple(
-            filter(lambda table: tables_tokens_len[table] > block_size + 1, tables)
+            filter(lambda table: tables_tokens_len[table] > block_size + 1, tables),
         )
         self.tables = tables
         self.tables_len = len(tables)
         # Train/val split (per-table tail holdout).
-        assert 0.0 < train_part <= 1.0, "train_part must be in (0, 1]"
+        if not 0.0 < train_part <= 1.0:
+            msg = "train_part must be in (0, 1]"
+            raise ValueError(msg)
         self.train_part = train_part
         self.tables_train_tokens_len = {
             t: int(tables_tokens_len[t] * train_part) for t in tables
@@ -156,13 +173,22 @@ class DiffSQLiteDataLoader:
         )
 
     def close(self) -> None:
+        """Close the cursor and the database connection."""
         self.cursor.close()
         self.connection.close()
 
     def get_data_len(self, table: str) -> int:
+        """Return the number of tokens in `table`."""
         return self.tables_tokens_len[table]
 
     def get_data(self, table: str, start: int, end: int) -> tuple[int, ...]:
+        """
+        Return the tokens at flat positions [start, end) of `table`.
+
+        Only the rows covering that range, plus the derivative prefix, are read
+        and encoded. If the range runs past the end of the table the result is
+        shorter than `end - start`; it is empty when no rows match.
+        """
         n_columns = self.tables_columns_count[table]
         n_features = n_columns - 1
         effective_start = start + (self._max_order * n_features)
@@ -175,14 +201,17 @@ class DiffSQLiteDataLoader:
         dt_step = self.tables_dt_diff[table]
         t_start = min_dt + (raw_start_row * dt_step)
         t_end = min_dt + (raw_end_row * dt_step)
+        # A table name cannot be bound as a parameter. `table` is a known table
+        # (looked up in `tables_columns_count` above) and `_quote_ident` quotes
+        # it; the dt bounds are bound.
         query = (
-            f"SELECT * FROM {_quote_ident(table)} "
+            f"SELECT * FROM {_quote_ident(table)} "  # noqa: S608
             "WHERE dt BETWEEN ? AND ? ORDER BY dt ASC"
         )
         self.cursor.execute(query, (t_start, t_end))
         rows = self.cursor.fetchall()
         if not rows:
-            return tuple()
+            return ()
         arr = np.array(rows, dtype=np.float64)
         arr = arr[:, 1:]
         encode_data = self.encode_data
@@ -203,21 +232,25 @@ class DiffSQLiteDataLoader:
         return tuple(result.tolist())
 
     def has_val(self) -> bool:
+        """Return True if some table's held-out suffix is longer than `block_size`."""
         return self.train_part < 1.0 and len(self._val_tables) > 0
 
     def get_batch(self, split: str = "train") -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample a batch of windows from `split` as (inputs, next-token targets)."""
         block_size = self.block_size
         if split == "train":
             tables = self.tables
         elif split == "val":
             if not self.has_val():
-                raise RuntimeError(
+                msg = (
                     "no val split available: train_part=1.0 or no table's "
                     "suffix is longer than block_size"
                 )
+                raise RuntimeError(msg)
             tables = self._val_tables
         else:
-            raise ValueError(f"unknown split {split!r}; expected 'train' or 'val'")
+            msg = f"unknown split {split!r}; expected 'train' or 'val'"
+            raise ValueError(msg)
         tables_len = len(tables)
         batch_size = self.batch_size
         x = torch.zeros(size=(batch_size, block_size), dtype=torch.int64)
@@ -231,7 +264,7 @@ class DiffSQLiteDataLoader:
                     high=tables_len,
                     size=(1,),
                     generator=rng,
-                )
+                ),
             )
             table = tables[table_idx]
             train_end = self.tables_train_tokens_len[table]
@@ -248,7 +281,7 @@ class DiffSQLiteDataLoader:
                     high=hi,
                     size=(1,),
                     generator=rng,
-                )
+                ),
             )
             temp = torch.tensor(
                 self.get_data(
@@ -271,17 +304,18 @@ class DiffSQLiteDataLoader:
 class TokenSequenceDataLoader:
     """
     Trivial loader over a flat sequence of already-tokenized integers.
+
     Use when the token sequence is produced by an external encoder (e.g.
     character-level tokenization) and no derivative encoding is needed.
     """
 
     __slots__ = (
-        "block_size",
-        "batch_size",
-        "device",
-        "rng",
         "_train",
         "_val",
+        "batch_size",
+        "block_size",
+        "device",
+        "rng",
     )
 
     def __init__(
@@ -293,6 +327,7 @@ class TokenSequenceDataLoader:
         train_part: float = 0.9,
         rng: torch.Generator | None = None,
     ) -> None:
+        """Split `tokens` at the `train_part` fraction into train and val parts."""
         data = tuple(tokens)
         self.block_size = block_size
         self.batch_size = batch_size
@@ -303,35 +338,38 @@ class TokenSequenceDataLoader:
         self._val = data[n:]
 
     def has_val(self) -> bool:
+        """Return True if the val part is longer than `block_size`."""
         return len(self._val) > self.block_size
 
     def get_batch(self, split: str = "train") -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample a batch of windows from `split` as (inputs, next-token targets)."""
         if split == "train":
             data = self._train
         elif split == "val":
             data = self._val
         else:
-            raise ValueError(f"unknown split {split!r}; expected 'train' or 'val'")
+            msg = f"unknown split {split!r}; expected 'train' or 'val'"
+            raise ValueError(msg)
         if len(data) <= self.block_size:
-            raise ValueError(
-                f"data length ({len(data)}) must be > block_size ({self.block_size})"
-            )
+            msg = f"data length ({len(data)}) must be > block_size ({self.block_size})"
+            raise ValueError(msg)
         ix = torch.randint(
-            0, len(data) - self.block_size, (self.batch_size,), generator=self.rng
+            0,
+            len(data) - self.block_size,
+            (self.batch_size,),
+            generator=self.rng,
         ).tolist()
         x = torch.stack(
             [
                 torch.tensor(data[i : i + self.block_size], dtype=torch.int64)
                 for i in ix
-            ]
+            ],
         )
         y = torch.stack(
             [
-                torch.tensor(
-                    data[i + 1 : i + self.block_size + 1], dtype=torch.int64
-                )
+                torch.tensor(data[i + 1 : i + self.block_size + 1], dtype=torch.int64)
                 for i in ix
-            ]
+            ],
         )
         return x.to(device=self.device), y.to(device=self.device)
 
@@ -343,7 +381,8 @@ def _mask_targets(
     target_columns: Sequence[int] | None,
     phase: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Mask (with -100) every position of `y` that is not a target column.
+    """
+    Mask (with -100) every position of `y` that is not a target column.
 
     Position j of row i holds the column `(phase[i] + j) % n_features`, where
     `phase[i]` is the column of that row's first target token. Windows are cut
@@ -353,13 +392,17 @@ def _mask_targets(
     if target_columns is None:
         return y
     targets = tuple(target_columns)
-    assert len(targets) > 0, "target_columns must be non-empty when provided"
-    assert all(0 <= c < n_features for c in targets), (
-        f"target_columns {targets} out of range for n_features {n_features}"
-    )
+    if len(targets) == 0:
+        msg = "target_columns must be non-empty when provided"
+        raise ValueError(msg)
+    if not all(0 <= c < n_features for c in targets):
+        msg = f"target_columns {targets} out of range for n_features {n_features}"
+        raise ValueError(msg)
     if phase is None:
         phase = torch.zeros(y.shape[0], dtype=torch.long)
-    col = (phase.to(torch.long).unsqueeze(1) + torch.arange(block_size).unsqueeze(0)) % n_features
+    col = (
+        phase.to(torch.long).unsqueeze(1) + torch.arange(block_size).unsqueeze(0)
+    ) % n_features
     tgt = torch.tensor(targets, dtype=torch.long)
     keep = (col.unsqueeze(-1) == tgt).any(dim=-1)  # (B, block_size)
     return y.masked_fill(~keep, -100)
@@ -386,15 +429,15 @@ class DiffDataFrameDataLoader:
     """
 
     __slots__ = (
-        "block_size",
-        "batch_size",
-        "n_features",
-        "target_columns",
-        "align_windows",
-        "device",
-        "rng",
         "_train_serieses",
         "_val_serieses",
+        "align_windows",
+        "batch_size",
+        "block_size",
+        "device",
+        "n_features",
+        "rng",
+        "target_columns",
     )
 
     def __init__(
@@ -405,6 +448,7 @@ class DiffDataFrameDataLoader:
         vocab_size: int,
         order_of_derivative: int | np.ndarray,
         domain_of_definition: np.ndarray,
+        *,
         use_decimal: bool,
         device: str,
         train_part: float = 0.9,
@@ -412,15 +456,20 @@ class DiffDataFrameDataLoader:
         rng: torch.Generator | None = None,
         align_windows: bool = False,
     ) -> None:
-        assert len(dfs) > 0, "dfs must be non-empty"
+        """Encode every DataFrame once and split each series at `train_part`."""
+        if len(dfs) == 0:
+            msg = "dfs must be non-empty"
+            raise ValueError(msg)
         n_features = dfs[0].shape[1]
-        assert all(df.shape[1] == n_features for df in dfs), (
-            "all dataframes must have the same number of columns"
-        )
+        if any(df.shape[1] != n_features for df in dfs):
+            msg = "all dataframes must have the same number of columns"
+            raise ValueError(msg)
         self.block_size = block_size
         self.batch_size = batch_size
         self.n_features = n_features
-        self.target_columns = tuple(target_columns) if target_columns is not None else None
+        self.target_columns = (
+            tuple(target_columns) if target_columns is not None else None
+        )
         self.align_windows = align_windows
         self.device = device
         self.rng = rng if rng is not None else torch.Generator().manual_seed(42)
@@ -451,23 +500,31 @@ class DiffDataFrameDataLoader:
             self._val_serieses.append(flat[n:])
 
     def has_val(self) -> bool:
+        """Return True if any val series is longer than `block_size`."""
         return any(len(s) > self.block_size for s in self._val_serieses)
 
     def get_batch(self, split: str = "train") -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Sample a batch of windows from `split` as (inputs, next-token targets).
+
+        Positions of `y` outside `target_columns` are masked with -100.
+        """
         if split == "train":
             pool = self._train_serieses
         elif split == "val":
             pool = self._val_serieses
         else:
-            raise ValueError(f"unknown split {split!r}; expected 'train' or 'val'")
+            msg = f"unknown split {split!r}; expected 'train' or 'val'"
+            raise ValueError(msg)
         block_size = self.block_size
         eligible = [s for s in pool if len(s) > block_size]
         if not eligible:
             max_len = max((len(s) for s in pool), default=0)
-            raise ValueError(
+            msg = (
                 f"No {split!r} series long enough: block_size={block_size}, "
                 f"max_series_len={max_len}"
             )
+            raise ValueError(msg)
         F = self.n_features
         step = F if self.align_windows else 1
         # Valid window starts: local + block_size + 1 <= len(s), stepping by `step`.
@@ -479,7 +536,10 @@ class DiffDataFrameDataLoader:
         y = torch.zeros((batch_size, block_size), dtype=torch.int64)
         phase = torch.zeros(batch_size, dtype=torch.long)
         picks = torch.randint(
-            0, total_starts, (batch_size,), generator=self.rng
+            0,
+            total_starts,
+            (batch_size,),
+            generator=self.rng,
         ).tolist()
         for i, r in enumerate(picks):
             sidx = int(np.searchsorted(cum, r, side="right"))
@@ -487,7 +547,8 @@ class DiffDataFrameDataLoader:
             s = eligible[sidx]
             x[i] = torch.tensor(s[local : local + block_size], dtype=torch.int64)
             y[i] = torch.tensor(
-                s[local + 1 : local + block_size + 1], dtype=torch.int64
+                s[local + 1 : local + block_size + 1],
+                dtype=torch.int64,
             )
             phase[i] = (local + 1) % F  # column of y[i, 0]
         y = _mask_targets(y, block_size, F, self.target_columns, phase)

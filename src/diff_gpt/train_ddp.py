@@ -1,6 +1,8 @@
+# Copyright 2025 Mikhail Borisov
 """
-NUMA-aware multi-process training: one worker process per NUMA node,
-gradients averaged across workers via `torch.distributed` DDP.
+NUMA-aware multi-process training: one worker process per NUMA node.
+
+Gradients are averaged across workers via `torch.distributed` DDP.
 
 Each worker pins itself to its node's CPUs (see `numa.pin_to_node`),
 builds its own model and loader from user-supplied factories, wraps the
@@ -28,18 +30,24 @@ Pattern:
         checkpoint_path="best.pt",
     )
 """
+
 import os
 import socket
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from diff_gpt.model.gpt import BaseGPT
 from diff_gpt.numa import list_numa_nodes, pin_to_node
-from diff_gpt.train import DataLoader, train
+from diff_gpt.train import train
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from diff_gpt.model.gpt import BaseGPT
+    from diff_gpt.train import DataLoader
 
 
 def _free_port() -> int:
@@ -58,7 +66,7 @@ def _worker(
     master_addr: str,
     master_port: int,
     checkpoint_path: str | None,
-    result_queue: "mp.Queue",
+    result_queue: mp.Queue,
 ) -> None:
     pin_to_node(node_ids[rank])
 
@@ -79,8 +87,8 @@ def _worker(
         model = model_factory(rank)
         loader = loader_factory(rank, world_size)
         ddp = DDP(model)
-        # DDP forwards every BaseGPT attribute / method used by train()
-        # (parameters, state_dict, train/eval, __call__, load_state_dict)
+        # DDP forwards every BaseGPT attribute / method used by train(), such
+        # as parameters, state_dict, train/eval, __call__ and load_state_dict,
         # but isn't a BaseGPT subclass, hence the ignore.
         result = train(ddp, loader, **train_kwargs)  # pyright: ignore[reportArgumentType]
         if rank == 0:
@@ -104,8 +112,9 @@ def train_numa(
     master_port: int | None = None,
 ) -> tuple[float, int]:
     """
-    Spawn one worker per entry in `nodes` (default: every detected NUMA
-    node), pin each to its node's CPUs, and train via DDP.
+    Spawn a worker per entry in `nodes`, pin each to its node's CPUs and train via DDP.
+
+    `nodes` defaults to every detected NUMA node.
 
     `model_factory(rank) -> BaseGPT` constructs the model *inside* the
     worker. Using a factory (instead of a pre-built model) avoids
@@ -129,7 +138,9 @@ def train_numa(
     """
     if nodes is None:
         nodes = list_numa_nodes()
-    assert len(nodes) >= 1, "nodes must be non-empty"
+    if len(nodes) == 0:
+        msg = "nodes must be non-empty"
+        raise ValueError(msg)
     world = len(nodes)
     train_kwargs = dict(train_kwargs or {})
 
@@ -146,7 +157,7 @@ def train_numa(
         master_port = _free_port()
 
     ctx = mp.get_context("spawn")
-    q: "mp.Queue" = ctx.Queue()
+    q: mp.Queue = ctx.Queue()
     procs = []
     for r in range(world):
         p = ctx.Process(
@@ -171,7 +182,6 @@ def train_numa(
         p.join()
     for p in procs:
         if p.exitcode != 0:
-            raise RuntimeError(
-                f"NUMA worker (pid {p.pid}) exited with code {p.exitcode}"
-            )
+            msg = f"NUMA worker (pid {p.pid}) exited with code {p.exitcode}"
+            raise RuntimeError(msg)
     return q.get()

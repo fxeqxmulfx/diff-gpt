@@ -1,27 +1,38 @@
-from datetime import datetime
-from typing import Protocol
+# Copyright 2025 Mikhail Borisov
+"""
+Training loop that drives a `BaseGPT` with batches from a `DataLoader`.
+
+Uses schedule-free AdamW with periodic train/val evaluation, optional early
+stopping and best-checkpoint restore. The same loop runs inside DDP workers
+(`train_ddp`), where eval losses are averaged across ranks.
+"""
+
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Protocol
 
 import torch
 import torch.distributed as dist
 from tqdm.autonotebook import tqdm
 
-from diff_gpt.model.gpt import BaseGPT
 from diff_gpt.optimizer.adamw_schedulefree import AdamWScheduleFree
+
+if TYPE_CHECKING:
+    from diff_gpt.model.gpt import BaseGPT
 
 
 class DataLoader(Protocol):
-    """
-    Minimal protocol every loader must satisfy for `train` to drive it.
-    """
+    """Minimal protocol every loader must satisfy for `train` to drive it."""
 
     block_size: int
     batch_size: int
 
-    def get_batch(
-        self, split: str = "train"
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    def get_batch(self, split: str = "train") -> tuple[torch.Tensor, torch.Tensor]:
+        """Return an (inputs, next-token targets) batch from `split`."""
+        ...
 
-    def has_val(self) -> bool: ...
+    def has_val(self) -> bool:
+        """Return True if the loader can serve the 'val' split."""
+        ...
 
 
 def _dist_active() -> bool:
@@ -34,7 +45,8 @@ def _is_main_rank() -> bool:
 
 def _all_reduce_mean(t: torch.Tensor) -> torch.Tensor:
     """
-    All-reduce a scalar to the global mean across ranks. No-op outside DDP.
+    All-reduce a scalar to the global mean across ranks; no-op outside DDP.
+
     All ranks must see the same eval-loss value so early-stop and save-best
     fire on the same iteration — otherwise ranks desync and DDP deadlocks.
     """
@@ -47,15 +59,28 @@ def _all_reduce_mean(t: torch.Tensor) -> torch.Tensor:
     return (work / world).to(t.device)
 
 
+# Parameters with at least this many dimensions (weight matrices, embeddings)
+# are weight-decayed; vectors such as LayerNorm gains are not.
+_MIN_DECAY_NDIM = 2
+
+
 def _param_groups(model: BaseGPT, weight_decay: float) -> list[dict]:
     """
-    Decay weight matrices and embeddings only, never biases or LayerNorm
-    parameters (the GPT-2 / nanoGPT convention).
+    Split the trainable parameters into weight-decay and no-decay groups.
+
+    Decay weight matrices and embeddings only, never LayerNorm gains (the
+    nanoGPT convention).
     """
     params = [p for p in model.parameters() if p.requires_grad]
     groups = [
-        {"params": [p for p in params if p.dim() >= 2], "weight_decay": weight_decay},
-        {"params": [p for p in params if p.dim() < 2], "weight_decay": 0.0},
+        {
+            "params": [p for p in params if p.dim() >= _MIN_DECAY_NDIM],
+            "weight_decay": weight_decay,
+        },
+        {
+            "params": [p for p in params if p.dim() < _MIN_DECAY_NDIM],
+            "weight_decay": 0.0,
+        },
     ]
     return [g for g in groups if g["params"]]
 
@@ -65,7 +90,10 @@ def _param_groups(model: BaseGPT, weight_decay: float) -> list[dict]:
 # an inference tensor outside inference mode).
 @torch.no_grad()
 def _estimate_loss(
-    model: BaseGPT, loader: DataLoader, eval_iters: int, split: str
+    model: BaseGPT,
+    loader: DataLoader,
+    eval_iters: int,
+    split: str,
 ) -> torch.Tensor:
     losses = torch.zeros(eval_iters)
     for k in range(eval_iters):
@@ -84,6 +112,7 @@ def train(
     max_iters: int = 5_000,
     eval_interval: int = 5_000,
     eval_iters: int = 200,
+    *,
     use_tqdm: bool = True,
     use_early_stopping: bool = True,
     grad_accum_steps: int = 1,
@@ -107,7 +136,9 @@ def train(
     optimum without losing the best model (useful when val is noisy).
     Returns the best val_loss instead of the final one when active.
     """
-    assert grad_accum_steps >= 1, "grad_accum_steps must be >= 1"
+    if grad_accum_steps < 1:
+        msg = "grad_accum_steps must be >= 1"
+        raise ValueError(msg)
     optimizer = AdamWScheduleFree(
         _param_groups(mut_model, weight_decay),
         lr=learning_rate,
@@ -115,7 +146,7 @@ def train(
         weight_decay=weight_decay,
     )
     has_val = loader.has_val()
-    start = datetime.now()
+    start = datetime.now(tz=UTC)
     is_main = _is_main_rank()
     pbar = tqdm(range(max_iters)) if (use_tqdm and is_main) else range(max_iters)
     last_reported_loss: torch.Tensor = torch.tensor(float("inf"))
@@ -125,8 +156,8 @@ def train(
     best_step = -1
     mut_model.train()
     optimizer.train()
-    for iter in pbar:
-        if iter % eval_interval == 0 or iter == max_iters - 1:
+    for step in pbar:
+        if step % eval_interval == 0 or step == max_iters - 1:
             mut_model.eval()
             optimizer.eval()
             train_loss = _estimate_loss(mut_model, loader, eval_iters, "train")
@@ -142,23 +173,25 @@ def train(
                     best_state_dict = {
                         k: v.detach().clone() for k, v in mut_model.state_dict().items()
                     }
-                    best_step = iter
+                    best_step = step
                     improved = "  (best)"
                 status = (
-                    f"step {iter}: train loss {train_loss:.4f}, "
+                    f"step {step}: train loss {train_loss:.4f}, "
                     f"val loss {val_loss:.4f}{improved}"
                 )
             else:
                 last_reported_loss = train_loss
-                status = f"step {iter}: train loss {train_loss:.4f}"
+                status = f"step {step}: train loss {train_loss:.4f}"
             mut_model.train()
             optimizer.train()
             if isinstance(pbar, tqdm):
                 pbar.set_description(status)
             elif is_main:
                 print(status)
-            if has_val and use_early_stopping and last_val_loss < float(
-                last_reported_loss
+            if (
+                has_val
+                and use_early_stopping
+                and last_val_loss < float(last_reported_loss)
             ):
                 break
             last_val_loss = float(last_reported_loss)
@@ -172,7 +205,7 @@ def train(
         if grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(mut_model.parameters(), grad_clip_norm)
         optimizer.step()
-    train_time_s = int((datetime.now() - start).total_seconds())
+    train_time_s = int((datetime.now(tz=UTC) - start).total_seconds())
     # Schedule-free: parameters hold the fast "y" sequence while training; move
     # them to the averaged "x" point before handing the model back. Without
     # this the returned weights are the y point whenever no best-snapshot is
@@ -181,7 +214,10 @@ def train(
     mut_model.eval()
     if save_best and best_state_dict is not None:
         mut_model.load_state_dict(best_state_dict)
-        msg = f"restored best checkpoint from step {best_step} (val_loss={best_val_loss:.4f})"
+        msg = (
+            f"restored best checkpoint from step {best_step} "
+            f"(val_loss={best_val_loss:.4f})"
+        )
         if isinstance(pbar, tqdm):
             pbar.write(msg)
         elif is_main:

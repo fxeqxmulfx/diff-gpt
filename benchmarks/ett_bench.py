@@ -1,3 +1,4 @@
+# Copyright 2025 Mikhail Borisov
 """
 Long-term forecasting on ETT (multivariate) — iTransformer-style protocol.
 
@@ -32,13 +33,11 @@ import torch
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import get_domain_of_definition
-from diff_gpt.model.gpt import GPT
-from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER
+from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER, get_domain_of_definition
 from diff_gpt.metrics import bayes_point
+from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.median import MedianSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
-
 
 ETT_DIR = (
     Path(__file__).resolve().parents[1]
@@ -63,6 +62,7 @@ FEATURES = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
 
 
 def mse_mae(pred: np.ndarray, true: np.ndarray) -> tuple[float, float]:
+    """Return (MSE, MAE) of `pred` against `true`, averaged over all elements."""
     err = pred - true
     return float(np.mean(err**2)), float(np.mean(np.abs(err)))
 
@@ -76,7 +76,8 @@ def _evaluate(
     readouts: list[str],
     num_samples: int,
 ) -> tuple[dict[str, tuple[float, float]], int]:
-    """Slide a (seq_len + pred_len) window over test_df; MSE / MAE per readout.
+    """
+    Slide a (seq_len + pred_len) window over test_df; MSE / MAE per readout.
 
     Readouts: "argmax" and "median" feed one token back per step; "mc" draws
     `num_samples` trajectories once and reports the Bayes points for MSE
@@ -85,9 +86,8 @@ def _evaluate(
     total = len(test_df)
     max_start = total - seq_len - pred_len
     if max_start <= 0:
-        raise RuntimeError(
-            f"test split too small: need >={seq_len + pred_len}, got {total}"
-        )
+        msg = f"test split too small: need >={seq_len + pred_len}, got {total}"
+        raise RuntimeError(msg)
     starts = list(range(0, max_start + 1, stride))
     acc: dict[str, list[tuple[float, float]]] = {}
     for s in starts:
@@ -96,21 +96,43 @@ def _evaluate(
         preds: dict[str, np.ndarray] = {}
         for r in readouts:
             if r == "argmax":
-                preds[r] = model.predict(df=ctx, max_new_points=pred_len,
-                                         sampler=TemperatureSampler(0.0)).iloc[-pred_len:].to_numpy()
+                preds[r] = (
+                    model.predict(
+                        df=ctx,
+                        max_new_points=pred_len,
+                        sampler=TemperatureSampler(0.0),
+                    )
+                    .iloc[-pred_len:]
+                    .to_numpy()
+                )
             elif r == "median":
-                preds[r] = model.predict(df=ctx, max_new_points=pred_len,
-                                         sampler=MedianSampler()).iloc[-pred_len:].to_numpy()
+                preds[r] = (
+                    model.predict(
+                        df=ctx,
+                        max_new_points=pred_len,
+                        sampler=MedianSampler(),
+                    )
+                    .iloc[-pred_len:]
+                    .to_numpy()
+                )
             elif r == "mc":
-                samp = model.predict_samples(df=ctx, max_new_points=pred_len, num_samples=num_samples,
-                                             sampler=TemperatureSampler(1.0))
+                samp = model.predict_samples(
+                    df=ctx,
+                    max_new_points=pred_len,
+                    num_samples=num_samples,
+                    sampler=TemperatureSampler(1.0),
+                )
                 preds["mc-mean"] = bayes_point(samp, "mse")
                 preds["mc-median"] = bayes_point(samp, "mae")
             else:
-                raise ValueError(f"unknown readout {r!r}")
+                msg = f"unknown readout {r!r}"
+                raise ValueError(msg)
         for name, pred in preds.items():
             acc.setdefault(name, []).append(mse_mae(pred, truth))
-    out = {name: (float(np.mean([m for m, _ in v])), float(np.mean([a for _, a in v]))) for name, v in acc.items()}
+    out = {
+        name: (float(np.mean([m for m, _ in v])), float(np.mean([a for _, a in v])))
+        for name, v in acc.items()
+    }
     return out, len(starts)
 
 
@@ -125,6 +147,7 @@ def run_horizon(
     n_head: int,
     batch_size: int,
     device: str,
+    *,
     use_checkpoint: bool,
     seed: int = 0,
     vocab_size: int = 64,
@@ -133,11 +156,17 @@ def run_horizon(
     save_path: str | None = None,
     align_windows: bool = False,
 ) -> tuple[dict[str, tuple[float, float]], int, float]:
-    """Train+evaluate one (dataset, pred_len) cell. Returns ({readout: (mse, mae)}, windows, train_time_s)."""
+    """
+    Train and evaluate one (dataset, pred_len) cell.
+
+    Returns ({readout: (mse, mae)}, windows, train_time_s).
+    """
     readouts = readouts or ["argmax"]
     torch.manual_seed(seed)
     csv = ETT_DIR / f"{dataset}.csv"
-    assert csv.exists(), f"missing {csv}"
+    if not csv.exists():
+        msg = f"missing {csv}"
+        raise FileNotFoundError(msg)
     train_end, val_end, test_end = BOUNDARIES[dataset]
     df = pd.read_csv(csv)[FEATURES].iloc[:test_end].reset_index(drop=True)
 
@@ -220,20 +249,28 @@ def run_horizon(
     )
     for name, (mse, mae) in results.items():
         print(
-            f"{dataset:5s} pred={pred_len:4d} seq={seq_len:3d} seed={seed} readout={name:9s} "
-            f"MSE={mse:.4f} MAE={mae:.4f} "
-            f"windows={n_windows} val_loss={val_loss:.3f} train_s={train_time_s}"
+            f"{dataset:5s} pred={pred_len:4d} seq={seq_len:3d} seed={seed} "
+            f"readout={name:9s} MSE={mse:.4f} MAE={mae:.4f} "
+            f"windows={n_windows} val_loss={val_loss:.3f} train_s={train_time_s}",
         )
     return results, n_windows, train_time_s
 
 
 def main() -> None:
+    """
+    Train and evaluate one model per horizon in ETT_PRED_LENS.
+
+    All settings come from ETT_* environment variables; prints the per-readout
+    results of every horizon as it finishes and a summary table at the end.
+    """
     torch.set_float32_matmul_precision("high")
     torch.manual_seed(0)
 
     dataset = os.environ.get("ETT_DATASET", "ETTh1")
     seq_len = int(os.environ.get("ETT_SEQ_LEN", "96"))
-    pred_lens = [int(x) for x in os.environ.get("ETT_PRED_LENS", "96,192,336,720").split(",")]
+    pred_lens = [
+        int(x) for x in os.environ.get("ETT_PRED_LENS", "96,192,336,720").split(",")
+    ]
     stride_env = os.environ.get("ETT_STRIDE")
     max_iters = int(os.environ.get("ETT_MAX_ITERS", "2000"))
     n_embd = int(os.environ.get("ETT_N_EMBD", "128"))
@@ -245,13 +282,20 @@ def main() -> None:
     vocab_size = int(os.environ.get("ETT_VOCAB_SIZE", "64"))
     readouts = os.environ.get("ETT_READOUTS", "argmax").split(",")
     num_samples = int(os.environ.get("ETT_NUM_SAMPLES", "50"))
-    save_prefix = os.environ.get("ETT_SAVE")  # e.g. runs/ett_step6 -> runs/ett_step6_p96_seed0.pt
-    align_windows = os.environ.get("ETT_ALIGN_WINDOWS", "0") == "1"      # step 7
+    save_prefix = os.environ.get(
+        "ETT_SAVE",
+    )  # e.g. runs/ett_step6 -> runs/ett_step6_p96_seed0.pt
+    align_windows = os.environ.get("ETT_ALIGN_WINDOWS", "0") == "1"  # step 7
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"device={device} dataset={dataset} pred_lens={pred_lens} max_iters={max_iters}")
-    print(f"tokenizer={DEFAULT_TOKENIZER} | V={vocab_size} | seed={seed} | readouts={readouts} "
-          f"| align_windows={align_windows}")
+    print(
+        f"device={device} dataset={dataset} pred_lens={pred_lens} "
+        f"max_iters={max_iters}",
+    )
+    print(
+        f"tokenizer={DEFAULT_TOKENIZER} | V={vocab_size} | seed={seed} "
+        f"| readouts={readouts} | align_windows={align_windows}",
+    )
 
     # Summary table.
     rows = []
@@ -283,7 +327,9 @@ def main() -> None:
             vocab_size=vocab_size,
             readouts=readouts,
             num_samples=num_samples,
-            save_path=f"{save_prefix}_p{pred_len}_seed{seed}.pt" if save_prefix else None,
+            save_path=f"{save_prefix}_p{pred_len}_seed{seed}.pt"
+            if save_prefix
+            else None,
             align_windows=align_windows,
         )
         for name, (mse, mae) in results.items():
@@ -291,7 +337,10 @@ def main() -> None:
 
     print("=" * 60)
     print(f"{dataset} (multivariate, 7 channels) | seq_len={seq_len} | seed={seed}")
-    print(f"{'pred_len':>8}  {'readout':>9}  {'MSE':>7}  {'MAE':>7}  {'windows':>8}  {'train_s':>8}")
+    print(
+        f"{'pred_len':>8}  {'readout':>9}  {'MSE':>7}  {'MAE':>7}  "
+        f"{'windows':>8}  {'train_s':>8}",
+    )
     for pred_len, name, mse, mae, n, t in rows:
         print(f"{pred_len:>8}  {name:>9}  {mse:7.4f}  {mae:7.4f}  {n:>8}  {t:>8}")
 

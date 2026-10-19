@@ -1,3 +1,6 @@
+# Copyright 2025 Mikhail Borisov
+"""DiffGPT training, point and probabilistic forecasting, and anomaly scores."""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,8 +9,16 @@ import torch
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
 from diff_gpt.encoder_decoder import get_domain_of_definition
+from diff_gpt.metrics import empirical_coverage
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
+
+# Max abs error between teacher-forced covariates and the supplied future
+# values (derivative quantization only).
+COVARIATE_TOLERANCE = 0.1
+# The argmax forecast must fall inside the 80% sample band on more than this
+# share of steps.
+MIN_ARGMAX_COVERAGE = 0.5
 
 
 def _make_toy(n_rows: int = 80) -> pd.DataFrame:
@@ -17,7 +28,7 @@ def _make_toy(n_rows: int = 80) -> pd.DataFrame:
             "cov0": np.sin(idx / 3.0),
             "cov1": np.cos(idx / 5.0),
             "y": np.sin(idx / 7.0),
-        }
+        },
     )
 
 
@@ -28,10 +39,18 @@ def _make_model(
     torch.manual_seed(0)
     df = _make_toy(n_rows=60)
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=1,
+        use_decimal=False,
     )
     model = DiffGPT(
-        model=GPT(vocab_size=vocab_size, n_embd=16, block_size=block_size, n_head=2, n_layer=1),
+        model=GPT(
+            vocab_size=vocab_size,
+            n_embd=16,
+            block_size=block_size,
+            n_head=2,
+            n_layer=1,
+        ),
         order_of_derivative=1,
         domain_of_definition=dod,
         use_decimal=False,
@@ -39,9 +58,9 @@ def _make_model(
     return model, dod
 
 
-def test_train_runs_with_target_columns_by_name():
+def test_train_runs_with_target_columns_by_name() -> None:
     """A DiffDataFrameDataLoader with target_columns=['y'] trains OK."""
-    model, dod = _make_model()
+    model, _dod = _make_model()
     dfs = [_make_toy(n_rows=60) for _ in range(3)]
     loader = DiffDataFrameDataLoader(
         dfs=dfs,
@@ -66,8 +85,10 @@ def test_train_runs_with_target_columns_by_name():
     assert np.isfinite(val_loss)
 
 
-def test_predict_teacher_forced_shape_and_covariate_fidelity():
+def test_predict_teacher_forced_shape_and_covariate_fidelity() -> None:
     """
+    Check the shape and covariate fidelity of teacher-forced predict.
+
     predict(future_covariates_df=..., target_columns=['y']) teacher-forces
     the covariates, so the decoded covariate values in the future rows
     must match the supplied future_cov modulo derivative quantization.
@@ -76,10 +97,17 @@ def test_predict_teacher_forced_shape_and_covariate_fidelity():
     df = _make_toy(n_rows=80)
     seq_len, pred_len = 20, 8
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=1,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=256, n_embd=16, block_size=128, n_head=2, n_layer=1, use_checkpoint=False
+        vocab_size=256,
+        n_embd=16,
+        block_size=128,
+        n_head=2,
+        n_layer=1,
+        use_checkpoint=False,
     )
     model = DiffGPT(
         model=base,
@@ -102,21 +130,28 @@ def test_predict_teacher_forced_shape_and_covariate_fidelity():
     for col in ("cov0", "cov1"):
         pred = result[col].iloc[seq_len:].to_numpy()
         truth = future_cov[col].to_numpy()
-        assert np.max(np.abs(pred - truth)) < 0.1, (
+        assert np.max(np.abs(pred - truth)) < COVARIATE_TOLERANCE, (
             f"{col}: max err {np.max(np.abs(pred - truth)):.3f}"
         )
 
 
-def test_predict_autoregressive_shape():
-    """predict with just max_new_points generates every column by sampling."""
+def test_predict_autoregressive_shape() -> None:
+    """Predict with just max_new_points generates every column by sampling."""
     torch.manual_seed(0)
     df = _make_toy(n_rows=80)
     seq_len, pred_len = 10, 5
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=1,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=64, n_embd=16, block_size=128, n_head=2, n_layer=1, use_checkpoint=False
+        vocab_size=64,
+        n_embd=16,
+        block_size=128,
+        n_head=2,
+        n_layer=1,
+        use_checkpoint=False,
     )
     model = DiffGPT(
         model=base,
@@ -124,19 +159,17 @@ def test_predict_autoregressive_shape():
         domain_of_definition=dod,
         use_decimal=False,
     )
-    result = model.predict(
-        df=df.iloc[:seq_len], max_new_points=pred_len, sampler=None
-    )
+    result = model.predict(df=df.iloc[:seq_len], max_new_points=pred_len, sampler=None)
     assert result.shape == (seq_len + pred_len, 3)
 
 
-def test_predict_rejects_both_modes_together():
+def test_predict_rejects_both_modes_together() -> None:
     """max_new_points is redundant when future_covariates_df is given."""
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=30)
     future = df.iloc[10:15]
     # max_new_points mismatch must raise.
-    with pytest.raises(AssertionError, match="must equal"):
+    with pytest.raises(ValueError, match="must equal"):
         model.predict(
             df=df.iloc[:10],
             max_new_points=99,
@@ -145,11 +178,12 @@ def test_predict_rejects_both_modes_together():
         )
 
 
-def test_predict_teacher_forced_mismatched_columns_raises():
+def test_predict_teacher_forced_mismatched_columns_raises() -> None:
+    """Check that predict rejects future covariates with mismatched columns."""
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=30)
     wrong = df.rename(columns={"y": "z"})
-    with pytest.raises(AssertionError, match="same columns"):
+    with pytest.raises(ValueError, match="same columns"):
         model.predict(
             df=df.iloc[:10],
             future_covariates_df=wrong.iloc[10:15],
@@ -157,23 +191,31 @@ def test_predict_teacher_forced_mismatched_columns_raises():
         )
 
 
-def test_per_column_order_train_and_predict_autoregressive():
-    """End-to-end train + autoregressive predict with per-column k
-    vector (e.g., [1, 1, 2] giving one column a 2nd-derivative
-    tokenization while the others use 1st). All downstream paths —
-    loader.encode, DiffGPT.train, DiffGPT.predict — must thread the
-    array through without error, and the round-trip through encoder/
-    decoder must reproduce the context portion of the input exactly
-    (up to quantization)."""
+def test_per_column_order_train_and_predict_autoregressive() -> None:
+    """
+    Check end-to-end train + autoregressive predict with a per-column k vector.
+
+    The vector (e.g., [1, 1, 2]) gives one column a 2nd-derivative tokenization
+    while the others use 1st. All downstream paths — loader.encode,
+    DiffGPT.train, DiffGPT.predict — must thread the array through without
+    error, and the round-trip through encoder/decoder must reproduce the
+    context portion of the input exactly (up to quantization).
+    """
     torch.manual_seed(0)
     df = _make_toy(n_rows=120)
     order = np.array([1, 1, 2], dtype=np.int64)
     # Use V=64 (MASH needs V > 2^2 + 2 = 6 for the k=2 column; trivially met).
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=order, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=order,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+        vocab_size=64,
+        n_embd=16,
+        block_size=64,
+        n_head=2,
+        n_layer=1,
         use_checkpoint=False,
     )
     model = DiffGPT(
@@ -205,24 +247,34 @@ def test_per_column_order_train_and_predict_autoregressive():
     # Predict a few points; max_k = 2 so need ctx ≥ 2.
     ctx = df.iloc[:10]
     result = model.predict(
-        df=ctx, max_new_points=4,
+        df=ctx,
+        max_new_points=4,
         sampler=TemperatureSampler(temperature=0.0),
     )
     assert result.shape == (14, 3)
 
 
-def test_per_column_order_predict_teacher_forced():
-    """Teacher-forced mode must respect per-column orders for token
-    layout and covariate fidelity."""
+def test_per_column_order_predict_teacher_forced() -> None:
+    """
+    Check that teacher-forced mode respects per-column orders.
+
+    Both the token layout and covariate fidelity must follow the orders.
+    """
     torch.manual_seed(0)
     df = _make_toy(n_rows=80)
     seq_len, pred_len = 20, 8
     order = np.array([1, 1, 2], dtype=np.int64)
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=order, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=order,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=256, n_embd=16, block_size=128, n_head=2, n_layer=1,
+        vocab_size=256,
+        n_embd=16,
+        block_size=128,
+        n_head=2,
+        n_layer=1,
         use_checkpoint=False,
     )
     model = DiffGPT(
@@ -242,13 +294,16 @@ def test_per_column_order_predict_teacher_forced():
     assert result.shape == (seq_len + pred_len, 3)
 
 
-def test_per_column_order_shape_mismatch_raises():
-    """A per-column order of wrong length must fail loudly, not
-    silently read past the end of the array."""
+def test_per_column_order_shape_mismatch_raises() -> None:
+    """
+    Check that a per-column order of wrong length fails loudly.
+
+    It must not silently read past the end of the array.
+    """
     torch.manual_seed(0)
     df = _make_toy(n_rows=30)
     # df has 3 columns; pass a length-2 order array.
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="order_of_derivative shape"):
         get_domain_of_definition(
             df.to_numpy(dtype=np.float64),
             order_of_derivative=np.array([1, 1], dtype=np.int64),
@@ -256,11 +311,14 @@ def test_per_column_order_shape_mismatch_raises():
         )
 
 
-def test_predict_samples_shape_and_distinct_trajectories():
-    """predict_samples returns (num_samples, H, F) and at positive
-    temperature the trajectories are actually distinct (not all mode
-    collapse). At temperature=0, all trajectories must collapse to the
-    same argmax path."""
+def test_predict_samples_shape_and_distinct_trajectories() -> None:
+    """
+    Check that predict_samples returns (num_samples, H, F) trajectories.
+
+    At positive temperature the trajectories are actually distinct (not all
+    mode collapse). At temperature=0, all trajectories must collapse to the
+    same argmax path.
+    """
     torch.manual_seed(0)
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=20)
@@ -292,10 +350,12 @@ def test_predict_samples_shape_and_distinct_trajectories():
         )
 
 
-def test_predict_quantiles_shape_and_ordering():
-    """predict_quantiles returns a dict keyed by quantile level, each a
-    DataFrame with the right shape. P10 ≤ P50 ≤ P90 must hold per step
-    (empirical quantiles are monotone in α)."""
+def test_predict_quantiles_shape_and_ordering() -> None:
+    """
+    Check that predict_quantiles maps each quantile level to a right-shaped DataFrame.
+
+    P10 ≤ P50 ≤ P90 must hold per step (empirical quantiles are monotone in alpha).
+    """
     torch.manual_seed(0)
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=20)
@@ -307,7 +367,7 @@ def test_predict_quantiles_shape_and_ordering():
         sampler=TemperatureSampler(temperature=1.0),
     )
     assert set(quantile_bands.keys()) == {0.1, 0.5, 0.9}
-    for q, qdf in quantile_bands.items():
+    for qdf in quantile_bands.values():
         assert qdf.shape == (5, 3)
         assert list(qdf.columns) == list(df.columns)
     p10 = quantile_bands[0.1].to_numpy()
@@ -317,13 +377,13 @@ def test_predict_quantiles_shape_and_ordering():
     assert np.all(p50 <= p90 + 1e-9), "P50 must not exceed P90"
 
 
-def test_predict_quantiles_rejects_out_of_range_quantile():
+def test_predict_quantiles_rejects_out_of_range_quantile() -> None:
     """Quantiles in (0, 1). Boundary or out-of-range values rejected."""
     torch.manual_seed(0)
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=20)
     for bad_q in (0.0, 1.0, -0.1, 1.5):
-        with pytest.raises(AssertionError, match="quantile"):
+        with pytest.raises(ValueError, match="quantile"):
             model.predict_quantiles(
                 df=df.iloc[:10],
                 max_new_points=3,
@@ -333,26 +393,37 @@ def test_predict_quantiles_rejects_out_of_range_quantile():
             )
 
 
-def test_predict_samples_matches_predict_when_n_equals_one_at_argmax():
-    """N=1 + temperature=0 must yield the same future rows as predict()
-    with the same argmax sampler — the two paths share _generate_future_samples."""
+def test_predict_samples_matches_predict_when_n_equals_one_at_argmax() -> None:
+    """
+    Check that N=1 + temperature=0 yields the same future rows as predict().
+
+    predict() runs with the same argmax sampler — the two paths share
+    _generate_future_samples.
+    """
     torch.manual_seed(0)
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=20).iloc[:10]
     sampler = TemperatureSampler(temperature=0.0)
 
     samples = model.predict_samples(
-        df=df, max_new_points=4, num_samples=1, sampler=sampler,
+        df=df,
+        max_new_points=4,
+        num_samples=1,
+        sampler=sampler,
     )
     point = model.predict(df=df, max_new_points=4, sampler=sampler)
     point_future = point.iloc[-4:].to_numpy()
     assert np.allclose(samples[0], point_future, atol=1e-10)
 
 
-def test_anomaly_scores_shape_and_nan_positions():
-    """anomaly_scores returns (T, F) with NaN at (a) the first max_order
-    prefix rows and (b) column 0 of the first encoded row (which has no
-    preceding token to condition on). Everywhere else must be finite."""
+def test_anomaly_scores_shape_and_nan_positions() -> None:
+    """
+    Check that anomaly_scores returns (T, F) with NaN only where it cannot score.
+
+    The NaN sit at (a) the first max_order prefix rows and (b) column 0 of the
+    first encoded row (which has no preceding token to condition on).
+    Everywhere else must be finite.
+    """
     torch.manual_seed(0)
     model, _ = _make_model(block_size=256)
     df = _make_toy(n_rows=40)
@@ -370,19 +441,29 @@ def test_anomaly_scores_shape_and_nan_positions():
     assert scores.iloc[-5:].notna().all().all()
 
 
-def test_anomaly_scores_spike_is_higher_than_baseline_after_training():
-    """After a brief training run on clean data, injecting an out-of-
+def test_anomaly_scores_spike_is_higher_than_baseline_after_training() -> None:
+    """
+    Check that a spike's NLL exceeds the median baseline after brief training.
+
+    After a brief training run on clean data, injecting an out-of-
     distribution spike raises that row's NLL above the median baseline.
     (Untrained models produce near-uniform output and cannot detect
     anomalies — the test sanity-checks that learning calibrated per-step
-    distributions actually enables detection.)"""
+    distributions actually enables detection.)
+    """
     torch.manual_seed(0)
     df_clean = _make_toy(n_rows=100)
     dod = get_domain_of_definition(
-        df_clean.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+        df_clean.to_numpy(dtype=np.float64),
+        order_of_derivative=1,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=64, n_embd=16, block_size=256, n_head=2, n_layer=1,
+        vocab_size=64,
+        n_embd=16,
+        block_size=256,
+        n_head=2,
+        n_layer=1,
         use_checkpoint=False,
     )
     model = DiffGPT(
@@ -405,8 +486,12 @@ def test_anomaly_scores_spike_is_higher_than_baseline_after_training():
         train_part=0.9,
     )
     model.train(
-        loader=loader, max_iters=200, eval_interval=200, eval_iters=2,
-        use_tqdm=False, use_early_stopping=False,
+        loader=loader,
+        max_iters=200,
+        eval_interval=200,
+        eval_iters=2,
+        use_tqdm=False,
+        use_early_stopping=False,
     )
     # Inject a large spike at a known row, then score.
     df_spiked = df_clean.copy()
@@ -428,13 +513,22 @@ def _train_and_prob_predict(
     num_samples: int,
     max_iters: int = 500,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Helper: train briefly on df then return (samples, truth) pair
-    for the last pred_len rows. Used by probabilistic-calibration tests."""
+    """
+    Train briefly on df, then return (samples, truth) for the last pred_len rows.
+
+    Helper used by the probabilistic-calibration tests.
+    """
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=1,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+        vocab_size=64,
+        n_embd=16,
+        block_size=64,
+        n_head=2,
+        n_layer=1,
         use_checkpoint=False,
     )
     model = DiffGPT(
@@ -444,7 +538,7 @@ def _train_and_prob_predict(
         use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
-        dfs=[df.iloc[: -pred_len]],
+        dfs=[df.iloc[:-pred_len]],
         block_size=base.block_size,
         batch_size=2,
         vocab_size=base.vocab_size,
@@ -455,8 +549,12 @@ def _train_and_prob_predict(
         train_part=0.9,
     )
     model.train(
-        loader=loader, max_iters=max_iters, eval_interval=max_iters,
-        eval_iters=2, use_tqdm=False, use_early_stopping=False,
+        loader=loader,
+        max_iters=max_iters,
+        eval_interval=max_iters,
+        eval_iters=2,
+        use_tqdm=False,
+        use_early_stopping=False,
     )
     context = df.iloc[-ctx_len - pred_len : -pred_len]
     truth = df.iloc[-pred_len:].to_numpy()
@@ -469,21 +567,29 @@ def _train_and_prob_predict(
     return samples, truth
 
 
-def test_probabilistic_sharpness_grows_with_horizon():
-    """Interval width must grow monotonically with forecast horizon.
+def test_probabilistic_sharpness_grows_with_horizon() -> None:
+    """
+    Check that interval width grows monotonically with forecast horizon.
+
     Derivative tokenization integrates random-walk uncertainty, so
-    Var[Ĥ_{T+h}] ∝ h."""
+    Var[Ĥ_{T+h}] ∝ h.
+    """
     torch.manual_seed(0)
     idx = np.arange(160, dtype=np.float64)
     df = pd.DataFrame(
-        {"y": np.sin(idx / 5.0) + 0.05 * np.random.default_rng(0).normal(size=160)}
+        {"y": np.sin(idx / 5.0) + 0.05 * np.random.default_rng(0).normal(size=160)},
     )
     samples, _ = _train_and_prob_predict(
-        df=df, ctx_len=30, pred_len=20, num_samples=80,
+        df=df,
+        ctx_len=30,
+        pred_len=20,
+        num_samples=80,
     )
     # samples: (80, 20, 1) — take the target column.
     widths = np.quantile(samples[..., 0], 0.9, axis=0) - np.quantile(
-        samples[..., 0], 0.1, axis=0
+        samples[..., 0],
+        0.1,
+        axis=0,
     )
     # Monotone growth on average: compare early to late steps.
     early = float(np.mean(widths[:4]))
@@ -491,77 +597,118 @@ def test_probabilistic_sharpness_grows_with_horizon():
     assert late > early, f"late width {late} should exceed early {early}"
 
 
-def test_probabilistic_argmax_inside_median_band():
-    """The argmax (temperature-0) forecast should lie inside the
-    corresponding interval predicted by temperature-1 samples — a weak
-    calibration check that mode and median aren't wildly divergent."""
-    torch.manual_seed(0)
-    from diff_gpt.metrics import empirical_coverage
+@pytest.mark.slow
+def test_probabilistic_argmax_inside_median_band() -> None:
+    """
+    Check that the argmax (temperature-0) forecast mostly lies inside the sample band.
 
+    The band is the corresponding interval predicted by temperature-1 samples —
+    a weak calibration check that mode and median aren't wildly divergent.
+    """
+    torch.manual_seed(0)
     idx = np.arange(160, dtype=np.float64)
     df = pd.DataFrame({"y": np.sin(idx / 5.0)})
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=1, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=1,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1,
+        vocab_size=64,
+        n_embd=16,
+        block_size=64,
+        n_head=2,
+        n_layer=1,
         use_checkpoint=False,
     )
     model = DiffGPT(
-        model=base, order_of_derivative=1,
-        domain_of_definition=dod, use_decimal=False,
+        model=base,
+        order_of_derivative=1,
+        domain_of_definition=dod,
+        use_decimal=False,
     )
     loader = DiffDataFrameDataLoader(
         dfs=[df],
-        block_size=base.block_size, batch_size=2, vocab_size=base.vocab_size,
-        order_of_derivative=1, domain_of_definition=dod,
-        use_decimal=False, device=base.device_type, train_part=0.9,
+        block_size=base.block_size,
+        batch_size=2,
+        vocab_size=base.vocab_size,
+        order_of_derivative=1,
+        domain_of_definition=dod,
+        use_decimal=False,
+        device=base.device_type,
+        train_part=0.9,
     )
     # No val split here (16 val tokens < block_size), so train() returns the
     # schedule-free x point (uniform average of the iterates). At 500 iters
     # that average is still dragged by early iterates and the calibration
     # check below is not meaningful; 2000 iters is enough for it to converge.
     model.train(
-        loader=loader, max_iters=2000, eval_interval=2000, eval_iters=2,
-        use_tqdm=False, use_early_stopping=False,
+        loader=loader,
+        max_iters=2000,
+        eval_interval=2000,
+        eval_iters=2,
+        use_tqdm=False,
+        use_early_stopping=False,
     )
     ctx = df.iloc[-50:-20]
-    argmax_pred = model.predict(
-        df=ctx, max_new_points=20, sampler=TemperatureSampler(temperature=0.0),
-    ).iloc[-20:].to_numpy()
+    argmax_pred = (
+        model.predict(
+            df=ctx,
+            max_new_points=20,
+            sampler=TemperatureSampler(temperature=0.0),
+        )
+        .iloc[-20:]
+        .to_numpy()
+    )
     samples = model.predict_samples(
-        df=ctx, max_new_points=20, num_samples=80,
+        df=ctx,
+        max_new_points=20,
+        num_samples=80,
         sampler=TemperatureSampler(temperature=1.0),
     )
     # Argmax-prediction coverage inside 80% band should be high on a
     # well-calibrated model — it's the mode, which is near the median.
     cov = empirical_coverage(samples[..., 0], argmax_pred[..., 0], level=0.8)
-    assert cov > 0.5, (
+    assert cov > MIN_ARGMAX_COVERAGE, (
         f"argmax outside the 80% band too often: coverage={cov:.2f}"
     )
 
 
-def test_anomaly_scores_signal_longer_than_block_size_raises():
-    """anomaly_scores runs a single forward pass; sequences longer than
-    block_size must error rather than silently truncating or looping."""
+def test_anomaly_scores_signal_longer_than_block_size_raises() -> None:
+    """
+    Check that anomaly_scores rejects a signal longer than block_size.
+
+    anomaly_scores runs a single forward pass; sequences longer than
+    block_size must error rather than silently truncating or looping.
+    """
     torch.manual_seed(0)
     model, _ = _make_model(block_size=32)  # very small
     df = _make_toy(n_rows=40)  # 40 * 3 = 120 tokens ≫ 32
-    with pytest.raises(AssertionError, match="block_size"):
+    with pytest.raises(ValueError, match="block_size"):
         model.anomaly_scores(df)
 
 
-def test_teacher_forced_max_order_exceeds_context_raises():
-    """When one column needs k derivatives of history but the context
-    is shorter than k, the teacher-forced path must reject loudly."""
+def test_teacher_forced_max_order_exceeds_context_raises() -> None:
+    """
+    Check that teacher-forced predict rejects a context shorter than the max order.
+
+    When one column needs k derivatives of history but the context
+    is shorter than k, the teacher-forced path must reject loudly.
+    """
     torch.manual_seed(0)
     df = _make_toy(n_rows=30)
     order = np.array([1, 1, 3], dtype=np.int64)
     dod = get_domain_of_definition(
-        df.to_numpy(dtype=np.float64), order_of_derivative=order, use_decimal=False
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=order,
+        use_decimal=False,
     )
     base = GPT(
-        vocab_size=64, n_embd=16, block_size=128, n_head=2, n_layer=1,
+        vocab_size=64,
+        n_embd=16,
+        block_size=128,
+        n_head=2,
+        n_layer=1,
         use_checkpoint=False,
     )
     model = DiffGPT(
@@ -571,7 +718,7 @@ def test_teacher_forced_max_order_exceeds_context_raises():
         use_decimal=False,
     )
     # Context of only 2 rows — less than max_order=3.
-    with pytest.raises(AssertionError, match="max order"):
+    with pytest.raises(ValueError, match="max order"):
         model.predict(
             df=df.iloc[:2],
             future_covariates_df=df.iloc[2:5],
@@ -579,8 +726,10 @@ def test_teacher_forced_max_order_exceeds_context_raises():
         )
 
 
-def test_train_save_best_restores_best_val():
+def test_train_save_best_restores_best_val() -> None:
     """
+    Check that save_best restores the weights with the best val_loss.
+
     After training past the val minimum (use_early_stopping=False), the
     restored model must reproduce the best val_loss seen — proving the
     snapshot was captured and reloaded, not the noisier final state.
@@ -624,7 +773,7 @@ def test_train_save_best_restores_best_val():
     )
 
 
-def test_train_save_best_false_returns_final_loss():
+def test_train_save_best_false_returns_final_loss() -> None:
     """save_best=False keeps the final model and returns its val_loss."""
     model, _ = _make_model(block_size=32)
     dfs = [_make_toy(n_rows=200)]
@@ -651,7 +800,7 @@ def test_train_save_best_false_returns_final_loss():
     assert np.isfinite(final_loss)
 
 
-def test_train_grad_accum_runs():
+def test_train_grad_accum_runs() -> None:
     """grad_accum_steps + grad_clip_norm wired through DiffGPT.train."""
     model, _ = _make_model()
     dfs = [_make_toy(n_rows=60) for _ in range(2)]
@@ -679,21 +828,38 @@ def test_train_grad_accum_runs():
     assert np.isfinite(val_loss)
 
 
-def test_predict_point_mae_equals_per_step_median_of_samples():
-    """predict_point(metric="mae") is the per-horizon median of predict_samples
-    (same fixed generation seed, so the trajectories are identical)."""
+def test_predict_point_mae_equals_per_step_median_of_samples() -> None:
+    """
+    Check that predict_point(metric="mae") is the per-horizon median of the samples.
+
+    The samples come from predict_samples with the same fixed generation seed,
+    so the trajectories are identical. The sMAPE point must also stay within
+    the per-step range of the samples.
+    """
     torch.manual_seed(0)
     model, _ = _make_model(block_size=64)
     df = _make_toy(n_rows=20)
     samples = model.predict_samples(
-        df=df.iloc[:10], max_new_points=5, num_samples=16,
+        df=df.iloc[:10],
+        max_new_points=5,
+        num_samples=16,
         sampler=TemperatureSampler(temperature=1.0),
     )
-    point = model.predict_point(df=df.iloc[:10], max_new_points=5, metric="mae", num_samples=16)
+    point = model.predict_point(
+        df=df.iloc[:10],
+        max_new_points=5,
+        metric="mae",
+        num_samples=16,
+    )
     assert point.shape == (5, 3)
     assert list(point.columns) == ["cov0", "cov1", "y"]
     assert np.allclose(point.to_numpy(), np.median(samples, axis=0))
-    smape_pt = model.predict_point(df=df.iloc[:10], max_new_points=5, metric="smape", num_samples=16)
+    smape_pt = model.predict_point(
+        df=df.iloc[:10],
+        max_new_points=5,
+        metric="smape",
+        num_samples=16,
+    )
     assert smape_pt.shape == (5, 3)
     assert (smape_pt.to_numpy() >= samples.min(axis=0)).all()
     assert (smape_pt.to_numpy() <= samples.max(axis=0)).all()

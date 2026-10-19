@@ -15,7 +15,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=9.1.1"]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
 
 [[tool.uv.index]]
 name = "pytorch-cu126"
@@ -30,3 +33,32 @@ torch = [
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.ruff.lint]
+# Strictest stable set: every rule.
+select = ["ALL"]
+ignore = [
+    # Mutually exclusive pairs: keep D211 (no blank line before a class
+    # docstring), since `ruff format` deletes that line, and D213 (multi-line
+    # summary on the second line), which the code follows.
+    "D203",
+    "D212",
+    # Naming: math-style tensor names (B, T, C) and torch aliases (F, DDP).
+    "N",
+    # Complexity limits: transformer code is argument- and branch-heavy.
+    "C90",
+    "PLR09",
+    "PLR1702",
+    # print is the output of the benchmark scripts.
+    "T20",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest checks with bare assert.
+"tests/**" = ["S101"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true

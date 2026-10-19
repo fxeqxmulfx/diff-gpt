@@ -1,4 +1,5 @@
-"""
+# Copyright 2025 Mikhail Borisov
+r"""
 Short-term forecasting on M4 with ONE global diff-gpt per frequency group.
 
 For each frequency (Hourly, Daily, etc.):
@@ -16,7 +17,8 @@ the competitive setup.
 Usage:
     uv run --no-sync python -m benchmarks.m4_bench
     M4_FREQ=Daily  M4_N_SERIES=200 uv run --no-sync python -m benchmarks.m4_bench
-    M4_SEED=1 M4_SAMPLERS=argmax,median M4_SAVE=runs/m4.pt uv run --no-sync python -m benchmarks.m4_bench
+    M4_SEED=1 M4_SAMPLERS=argmax,median M4_SAVE=runs/m4.pt \
+        uv run --no-sync python -m benchmarks.m4_bench
 """
 
 from __future__ import annotations
@@ -36,10 +38,7 @@ from diff_gpt.sampler.median import MedianSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
 from diff_gpt.train import train as train_loop
 
-
-M4_DIR = (
-    Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
-)
+M4_DIR = Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
 
 HORIZONS = {
     "Yearly": 6,
@@ -53,19 +52,39 @@ HORIZONS = {
 # series have a weekly period of 7, but M4 scores Daily with seasonality 1, and
 # using 7 understates MASE by ~2.7x on this data.
 SEASONALITY = {
-    "Yearly": 1, "Quarterly": 4, "Monthly": 12,
-    "Weekly": 1, "Daily": 1, "Hourly": 24,
+    "Yearly": 1,
+    "Quarterly": 4,
+    "Monthly": 12,
+    "Weekly": 1,
+    "Daily": 1,
+    "Hourly": 24,
 }
 
 
 def smape(pred: np.ndarray, true: np.ndarray) -> float:
+    """
+    Return the M4 sMAPE (in percent, range 0-200) of `pred` against `true`.
+
+    Points where both values are 0 are skipped; 0.0 if no point is left.
+    """
     num = np.abs(true - pred)
     den = np.abs(true) + np.abs(pred)
     mask = den > 0
     return float(200.0 * np.mean(num[mask] / den[mask])) if mask.any() else 0.0
 
 
-def mase(pred: np.ndarray, true: np.ndarray, insample: np.ndarray, season: int) -> float:
+def mase(
+    pred: np.ndarray,
+    true: np.ndarray,
+    insample: np.ndarray,
+    season: int,
+) -> float:
+    """
+    Return the MASE of `pred` against `true`.
+
+    The scale is the in-sample MAE of the seasonal naive forecast with lag
+    `season`; NaN when `insample` is not longer than `season` or that MAE is 0.
+    """
     if len(insample) <= season:
         return float("nan")
     naive = np.mean(np.abs(insample[season:] - insample[:-season]))
@@ -75,6 +94,12 @@ def mase(pred: np.ndarray, true: np.ndarray, insample: np.ndarray, season: int) 
 
 
 def main() -> None:
+    """
+    Train one global diff-gpt on the picked M4 series and print its scores.
+
+    Settings come from the M4_* environment variables (see the module
+    docstring); sMAPE and MASE are printed for each readout in M4_SAMPLERS.
+    """
     torch.set_float32_matmul_precision("high")
     seed = int(os.environ.get("M4_SEED", "0"))
     torch.manual_seed(seed)
@@ -94,7 +119,9 @@ def main() -> None:
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device} | freq={freq} | n_series={len(picked)} | horizon={horizon}")
-    train_module = None  # set when a CUDA-graph compile mode wraps the model for training
+    train_module = (
+        None  # set when a CUDA-graph compile mode wraps the model for training
+    )
 
     # Per-series normalization stats computed on the training history.
     # We store them so we can invert before scoring.
@@ -108,7 +135,7 @@ def main() -> None:
         picked = np.array(keep)
     series_raw = [train[i].astype(np.float64) for i in picked]
     stats = [(float(s.mean()), float(s.std() or 1.0)) for s in series_raw]
-    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats)]
+    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats, strict=True)]
     dfs = [pd.DataFrame({"x": s}) for s in series_norm]
 
     # Block size: every series's VAL portion must be larger than block_size
@@ -121,12 +148,9 @@ def main() -> None:
     target_bs = int(os.environ.get("M4_BLOCK_SIZE", "256"))
     block_size = min(target_bs, min_val_tokens - 1)
     block_size = max(block_size, horizon + 16)
-    assert block_size > horizon, (
-        f"block_size {block_size} <= horizon {horizon}; min series too short"
-    )
     print(
         f"block_size={block_size} | min_val_tokens={min_val_tokens} "
-        f"| train_part={train_part}"
+        f"| train_part={train_part}",
     )
 
     order_of_derivative = int(os.environ.get("M4_ORDER", "1"))
@@ -134,7 +158,9 @@ def main() -> None:
     all_tokens = np.concatenate(series_norm, axis=0).reshape(-1, 1)
     dq = os.environ.get("M4_DOMAIN_QUANTILE")
     domain_of_definition = get_domain_of_definition(
-        all_tokens, order_of_derivative=order_of_derivative, use_decimal=False,
+        all_tokens,
+        order_of_derivative=order_of_derivative,
+        use_decimal=False,
         quantile=float(dq) if dq else None,
     )
     print(f"domain={domain_of_definition.round(4)} (quantile={dq or 'max'})")
@@ -180,7 +206,10 @@ def main() -> None:
     # so the test set is identical across training-set sizes.
     n_train_series = int(os.environ.get("M4_TRAIN_SERIES", "0")) or len(dfs)
     if n_train_series < len(dfs):
-        print(f"M4_TRAIN_SERIES={n_train_series}: training on {n_train_series} of {len(dfs)} series")
+        print(
+            f"M4_TRAIN_SERIES={n_train_series}: "
+            f"training on {n_train_series} of {len(dfs)} series",
+        )
     loader = DiffDataFrameDataLoader(
         dfs=dfs[:n_train_series],
         block_size=block_size,
@@ -193,17 +222,17 @@ def main() -> None:
         train_part=train_part,
         rng=torch.Generator().manual_seed(42 + seed),
     )
-    train_kwargs = dict(
-        loader=loader,
-        learning_rate=1e-2,
-        betas=(0.9, 0.95),
-        weight_decay=0.1,
-        max_iters=max_iters,
-        eval_interval=eval_interval,
-        eval_iters=40,
-        use_tqdm=False,
-        use_early_stopping=False,
-    )
+    train_kwargs = {
+        "loader": loader,
+        "learning_rate": 1e-2,
+        "betas": (0.9, 0.95),
+        "weight_decay": 0.1,
+        "max_iters": max_iters,
+        "eval_interval": eval_interval,
+        "eval_iters": 40,
+        "use_tqdm": False,
+        "use_early_stopping": False,
+    }
     if train_module is not None:
         val_loss, train_time_s = train_loop(mut_model=train_module, **train_kwargs)
     else:
@@ -242,7 +271,7 @@ def main() -> None:
         print(
             f"M4 {freq} (global) | n={len(picked)} series | horizon={horizon} | "
             f"seed={seed} | readout={name} | "
-            f"sMAPE={np.mean(smapes):.2f} MASE={np.nanmean(mases):.3f}"
+            f"sMAPE={np.mean(smapes):.2f} MASE={np.nanmean(mases):.3f}",
         )
 
 

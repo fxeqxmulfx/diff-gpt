@@ -1,14 +1,17 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the inference Engine: batch, streaming and forced generation."""
+
 import pytest
 import torch
 
-from diff_gpt.model.gpt import GPT
 from diff_gpt.model.engine import Engine
+from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 
 @pytest.fixture(scope="module")
 def model_config() -> dict[str, int]:
-    """Provides a shared, small model configuration for tests."""
+    """Provide a shared, small model configuration for tests."""
     return {
         "vocab_size": 64,
         "n_embd": 32,
@@ -20,7 +23,7 @@ def model_config() -> dict[str, int]:
 
 @pytest.fixture(scope="module")
 def gpt_model(model_config: dict) -> GPT:
-    """Provides a shared, initialized GPT model instance."""
+    """Provide a shared, initialized GPT model instance."""
     model = GPT(**model_config)
     model.eval()
     return model
@@ -34,7 +37,8 @@ def test_engine_initialization(gpt_model: GPT) -> None:
 
 def test_generate_batch_output_shape(gpt_model: GPT) -> None:
     """
-    Checks if the output shape of generate_batch is correct.
+    Check that the output shape of generate_batch is correct.
+
     Let R be the result tokens, M be the masks.
     Let B be num_samples, T_prompt be prompt length, T_max be max_tokens.
     We verify:
@@ -50,7 +54,7 @@ def test_generate_batch_output_shape(gpt_model: GPT) -> None:
     # T_prompt = |prompt|
     T_prompt = len(prompt)
 
-    # B = num_samples
+    # B is num_samples
     B = num_samples
 
     results, masks = engine.generate_batch(
@@ -71,9 +75,10 @@ def test_generate_batch_output_shape(gpt_model: GPT) -> None:
         assert len(masks[i]) == expected_len
 
 
-def test_generate_determinism(gpt_model):
+def test_generate_determinism(gpt_model: GPT) -> None:
     """
-    Verifies that with the same seed, the generation is deterministic.
+    Verify that with the same seed, the generation is deterministic.
+
     Let G(x_0, s) be the generation function with prompt x_0 and seed s.
     We verify:
     G(x_0, s_1) = G(x_0, s_1)
@@ -82,13 +87,14 @@ def test_generate_determinism(gpt_model):
     engine = Engine(model=gpt_model)
     prompt = [5, 8, 12]
 
-    # Use a sampler with high temperature to increase randomness and make the test more robust.
+    # Use a sampler with high temperature to increase randomness and make the
+    # test more robust.
     # This ensures that different seeds will very likely produce different outcomes.
     # Let S_T(l) be the sampling function with temperature T.
     # P(x_i) \propto exp(l_i / T)
     high_temp_sampler = TemperatureSampler(temperature=20)
 
-    # G(x_0, s_1)
+    # G(x_0, s_1) once
     results1, _ = engine.generate_batch(
         tokens=prompt,
         num_samples=2,
@@ -106,7 +112,7 @@ def test_generate_determinism(gpt_model):
         sampler=high_temp_sampler,
     )
 
-    # G(x_0, s_2)
+    # G(x_0, s_2) with a different seed
     results3, _ = engine.generate_batch(
         tokens=prompt,
         num_samples=2,
@@ -117,14 +123,14 @@ def test_generate_determinism(gpt_model):
 
     # G(x_0, s_1) = G(x_0, s_1)
     assert results1 == results2, "Generation with the same seed should be identical"
-    # G(x_0, s_1) != G(x_0, s_2)
+    # G(x_0, s_1) != G(x_0, s_2) for s_1 != s_2
     assert results1 != results3, "Generation with different seeds should be different"
 
 
-def test_streaming_vs_batch_equivalence(gpt_model):
+def test_streaming_vs_batch_equivalence(gpt_model: GPT) -> None:
     """
-    Ensures that consuming the streaming generator `generate` yields
-    the same result as the `generate_batch` utility function.
+    Check that consuming the streaming `generate` matches the `generate_batch` utility.
+
     Let G_batch(x_0) be the batch generation function.
     Let G_stream(x_0) be the streaming generator.
     We verify:
@@ -167,20 +173,22 @@ def test_streaming_vs_batch_equivalence(gpt_model):
 
 
 def greedy_sampler(logits: torch.Tensor, rng: torch.Generator | None) -> torch.Tensor:
+    """Return the highest-logit token of each row (deterministic argmax)."""
+    del rng  # Part of the sampler interface; argmax needs no randomness.
     return torch.argmax(logits, dim=-1, keepdim=True)
 
 
 def test_generate_rejects_empty_prompt(gpt_model: GPT) -> None:
-    """Empty prompts must raise a clear AssertionError instead of IndexError."""
+    """Empty prompts must raise a clear ValueError instead of IndexError."""
     engine = Engine(model=gpt_model)
-    with pytest.raises(AssertionError, match="non-empty"):
+    with pytest.raises(ValueError, match="non-empty"):
         _ = engine.generate_batch(tokens=[], num_samples=1, max_tokens=2)
 
 
 def test_generate_rejects_mixed_type_tokens(gpt_model: GPT) -> None:
     """All elements must be ints — a rogue float/str in the middle must fail."""
     engine = Engine(model=gpt_model)
-    with pytest.raises(AssertionError, match="list of ints"):
+    with pytest.raises(TypeError, match="list of ints"):
         _ = engine.generate_batch(
             tokens=[1, 2, 3.0],  # type: ignore[list-item]
             num_samples=1,
@@ -190,18 +198,23 @@ def test_generate_rejects_mixed_type_tokens(gpt_model: GPT) -> None:
 
 def test_generate_early_return_when_prompt_at_position_ceiling(gpt_model: GPT) -> None:
     """
-    If prompt already fills all block_size positions, effective_max_tokens is 0.
-    The generator must short-circuit (no yields, no alloc of decode cache).
+    Check that a prompt at the position ceiling makes generation short-circuit.
+
+    If the prompt already fills all block_size positions, effective_max_tokens
+    is 0, so the generator must not yield or allocate the decode cache.
     """
     engine = Engine(model=gpt_model)
     ceiling = gpt_model.block_size
     prompt = list(range(ceiling))  # exactly at the limit
+    num_samples = 2
     results, masks = engine.generate_batch(
-        tokens=prompt, num_samples=2, max_tokens=10
+        tokens=prompt,
+        num_samples=num_samples,
+        max_tokens=10,
     )
-    assert len(results) == 2
+    assert len(results) == num_samples
     # No generation happened — each row is just the prompt.
-    for row, mask in zip(results, masks):
+    for row, mask in zip(results, masks, strict=True):
         assert row == prompt
         assert mask == [0] * len(prompt)
 
@@ -212,16 +225,20 @@ def test_generate_respects_small_max_tokens(gpt_model: GPT) -> None:
     prompt = [1, 2, 3]
     max_tokens = 4
     results, _ = engine.generate_batch(
-        tokens=prompt, num_samples=1, max_tokens=max_tokens
+        tokens=prompt,
+        num_samples=1,
+        max_tokens=max_tokens,
     )
     assert len(results[0]) == len(prompt) + max_tokens
 
 
 def test_generate_clamps_max_tokens_to_position_ceiling(gpt_model: GPT) -> None:
     """
+    Check that an oversized max_tokens is clamped to the position ceiling.
+
     Position embeddings cover block_size positions, so total context
-    (prompt + generated) cannot exceed that. An oversized max_tokens must
-    be clamped instead of asserting inside forward.
+    (prompt + generated) cannot exceed that; the engine must clamp instead of
+    asserting inside forward.
     """
     engine = Engine(model=gpt_model)
     block_size = gpt_model.block_size
@@ -229,7 +246,9 @@ def test_generate_clamps_max_tokens_to_position_ceiling(gpt_model: GPT) -> None:
     hard_ceiling = block_size - len(prompt)
     # Ask for way more than supported
     results, _ = engine.generate_batch(
-        tokens=prompt, num_samples=1, max_tokens=hard_ceiling + 50
+        tokens=prompt,
+        num_samples=1,
+        max_tokens=hard_ceiling + 50,
     )
     assert len(results[0]) == len(prompt) + hard_ceiling
 
@@ -246,7 +265,8 @@ def test_generate_no_max_tokens_uses_hard_ceiling(gpt_model: GPT) -> None:
 
 def test_force_schedule_interleaves_forced_and_sampled(gpt_model: GPT) -> None:
     """
-    force_schedule controls per-step forcing: `None` samples, an int forces.
+    Check per-step forcing by force_schedule: `None` samples, an int forces.
+
     An alternating schedule must produce exactly the forced tokens at the
     forced positions and sampled (non-None, in-range) tokens elsewhere.
     """
@@ -260,13 +280,13 @@ def test_force_schedule_interleaves_forced_and_sampled(gpt_model: GPT) -> None:
         max_tokens=len(schedule),
         force_schedule=schedule,
     )
-    for row, mask in zip(results, masks):
-        tail = row[len(prompt):]
-        assert tail[0] == 7
-        assert tail[2] == 11
-        assert tail[4] == 13
+    for row, mask in zip(results, masks, strict=True):
+        tail = row[len(prompt) :]
+        assert tail[0] == schedule[0]
+        assert tail[2] == schedule[2]
+        assert tail[4] == schedule[4]
         # Forced positions' masks should be 0; sampled ones 1.
-        tail_mask = mask[len(prompt):]
+        tail_mask = mask[len(prompt) :]
         assert tail_mask == [0, 1, 0, 1, 0, 1]
 
 
@@ -282,12 +302,13 @@ def test_force_schedule_all_forced_matches_schedule(gpt_model: GPT) -> None:
         force_schedule=schedule,
     )
     for row in results:
-        assert row[len(prompt):] == schedule
+        assert row[len(prompt) :] == schedule
 
 
 def test_force_schedule_too_short_raises(gpt_model: GPT) -> None:
+    """Check that a force_schedule shorter than the generation raises ValueError."""
     engine = Engine(model=gpt_model)
-    with pytest.raises(AssertionError, match="force_schedule must cover"):
+    with pytest.raises(ValueError, match="force_schedule must cover"):
         engine.generate_batch(
             tokens=[1, 2, 3],
             num_samples=1,
@@ -296,11 +317,12 @@ def test_force_schedule_too_short_raises(gpt_model: GPT) -> None:
         )
 
 
-def test_prefill_clone_equivalence(gpt_model):
+def test_prefill_clone_equivalence(gpt_model: GPT) -> None:
     """
-    Crucial test: Verifies that the "prefill once, then clone KV cache"
-    optimization yields the same result as running N independent generations.
-    We use a deterministic sampler (argmax) to isolate the test to the KV cache logic.
+    Verify that "prefill once, then clone KV cache" equals N independent runs.
+
+    Crucial test of this optimization. We use a deterministic sampler (argmax)
+    to isolate the test to the KV cache logic.
     Let f(x_0, B) be the generation with num_samples=B.
     Let S_greedy be the argmax sampler.
     We verify:
@@ -325,7 +347,7 @@ def test_prefill_clone_equivalence(gpt_model):
     )
 
     # --- 2. Naive batch generation (N separate runs) ---
-    # f(x_0, B=1, sampler=S_greedy)
+    # One run: f(x_0, B=1, sampler=S_greedy)
     single_result, _ = engine.generate_batch(
         tokens=prompt,
         num_samples=1,
@@ -334,7 +356,7 @@ def test_prefill_clone_equivalence(gpt_model):
         seed=seed,
     )
 
-    # [f(x_0, B=1, sampler=S_greedy)] * N
+    # Repeated N times: [f(x_0, B=1, sampler=S_greedy)] * N
     results_naive = single_result * num_samples
 
     # With a greedy sampler, all samples in the batch must be identical.

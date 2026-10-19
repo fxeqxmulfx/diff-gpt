@@ -1,3 +1,6 @@
+# Copyright 2025 Mikhail Borisov
+"""Tests for the transformer Block."""
+
 import torch
 from torch.testing import assert_close
 
@@ -5,10 +8,12 @@ from diff_gpt.model.block import Block
 from diff_gpt.model.kv_cache import KVCache
 
 
-def test_block_forward_and_gradients():
+def test_block_forward_and_gradients() -> None:
     """
-    Block maps (B, T, C) -> (B, T, C); gradient reaches the input and every
-    parameter of attention, MLP and both LayerNorms.
+    Check that Block maps (B, T, C) -> (B, T, C) and backpropagates fully.
+
+    The gradient reaches the input and every parameter of attention, MLP and
+    both LayerNorms.
     """
     B, T, C, H = 2, 8, 32, 4
     model = Block(n_embd=C, n_head=H, layer_idx=0)
@@ -27,17 +32,18 @@ def test_block_forward_and_gradients():
         assert torch.norm(p.grad) > 0, name
 
 
-def test_block_is_identity_when_residual_branches_are_zeroed():
+def test_block_is_identity_when_residual_branches_are_zeroed() -> None:
     """
-    Pre-LN residual stream: the norms sit inside the branches, so with both
-    output projections zeroed the block passes its input through unchanged.
+    Check that the block returns its input unchanged when both branches are zeroed.
+
+    Pre-LN residual stream: the norms sit inside the branches, so zeroing both
+    output projections leaves only the identity path.
     """
     B, T, C, H = 2, 5, 16, 2
     model = Block(n_embd=C, n_head=H, layer_idx=0)
     with torch.no_grad():
         for proj in (model.sa.c_proj, model.ffwd.net[2]):
             proj.weight.zero_()
-            proj.bias.zero_()
 
     x = torch.randn(B, T, C)
     with torch.no_grad():
@@ -46,10 +52,8 @@ def test_block_is_identity_when_residual_branches_are_zeroed():
     assert torch.equal(y, x)
 
 
-def test_block_causality_preservation():
-    """
-    Perturbing the last token must leave every earlier output unchanged.
-    """
+def test_block_causality_preservation() -> None:
+    """Perturbing the last token must leave every earlier output unchanged."""
     B, T, C, H = 1, 5, 16, 2
     model = Block(n_embd=C, n_head=H, layer_idx=0)
     model.eval()
@@ -68,11 +72,8 @@ def test_block_causality_preservation():
     assert not torch.allclose(y_orig[:, -1, :], y_new[:, -1, :])
 
 
-def test_block_kv_cache_step_consistency():
-    """
-    Incremental (single-token) vs batched Block forward must yield the same
-    output.
-    """
+def test_block_kv_cache_step_consistency() -> None:
+    """Check that incremental (single-token) and batched Block forward match."""
     B, T, C, H = 1, 6, 16, 2
     head_dim = C // H
     model = Block(n_embd=C, n_head=H, layer_idx=0)
@@ -83,9 +84,7 @@ def test_block_kv_cache_step_consistency():
     with torch.no_grad():
         y_batch = model(x, kv_cache=None)
 
-    kv = KVCache(
-        batch_size=B, num_heads=H, seq_len=20, head_dim=head_dim, num_layers=1
-    )
+    kv = KVCache(batch_size=B, num_heads=H, seq_len=20, head_dim=head_dim, num_layers=1)
     outputs = []
     for t in range(T):
         x_step = x[:, t : t + 1, :]

@@ -1,29 +1,50 @@
+# Copyright 2025 Mikhail Borisov
+"""KV-cached sampling engine: one prompt prefill, then batched decoding."""
+
 from collections import deque
-from typing import Generator
+from typing import TYPE_CHECKING, TypedDict, Unpack
 
 import torch
 
 from diff_gpt.model.kv_cache import KVCache
-from diff_gpt.model.gpt import BaseGPT
-from diff_gpt.sampler.sampler import Sampler
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from diff_gpt.model.gpt import BaseGPT
+    from diff_gpt.sampler.sampler import Sampler
+
+
+class _GenerateKwargs(TypedDict, total=False):
+    """Keyword arguments of `Engine.generate` that `generate_batch` forwards."""
+
+    max_tokens: int | None
+    sampler: Sampler | None
+    seed: int
+    force_schedule: list[int | None] | None
 
 
 class RowState:
+    """Per-row state tracking during generation."""
+
     __slots__ = (
         "current_tokens",
         "forced_tokens",
     )
 
-    # Per-row state tracking during generation
     def __init__(self, current_tokens: list[int] | None = None) -> None:
-        self.current_tokens = current_tokens or list()
+        """Start the row at `current_tokens` with an empty queue of forced tokens."""
+        self.current_tokens = current_tokens or []
         self.forced_tokens = deque()  # Queue of tokens to force inject
 
 
 class Engine:
-    __slots__ = "model"
+    """Sample continuations of a prompt from a `BaseGPT` with a KV cache."""
+
+    __slots__ = ("model",)
 
     def __init__(self, model: BaseGPT) -> None:
+        """Store the model to sample from."""
         self.model = model
 
     @torch.inference_mode()
@@ -35,7 +56,7 @@ class Engine:
         sampler: Sampler | None = None,
         seed: int = 42,
         force_schedule: list[int | None] | None = None,
-    ) -> Generator[tuple[list[int], list[int]], None, None]:
+    ) -> Generator[tuple[list[int], list[int]]]:
         """
         Streaming generation: single prefill, then clone the KV cache for each sample.
 
@@ -48,11 +69,18 @@ class Engine:
         exogenous forecasting where specific positions (covariate columns)
         are known a priori.
         """
-        assert isinstance(tokens, list), "tokens must be a list of ints"
-        assert len(tokens) > 0, "tokens must be non-empty"
-        assert all(isinstance(t, int) for t in tokens), "tokens must be a list of ints"
+        if not isinstance(tokens, list):
+            msg = "tokens must be a list of ints"
+            raise TypeError(msg)
+        if len(tokens) == 0:
+            msg = "tokens must be non-empty"
+            raise ValueError(msg)
+        if not all(isinstance(t, int) for t in tokens):
+            msg = "tokens must be a list of ints"
+            raise TypeError(msg)
 
-        # Compute effective token budget: position embeddings cover block_size positions.
+        # Compute effective token budget: position embeddings cover block_size
+        # positions.
         block_size = self.model.block_size
         prompt_len = len(tokens)
         hard_ceiling = max(0, block_size - prompt_len)
@@ -62,11 +90,12 @@ class Engine:
             effective_max_tokens = hard_ceiling
         if effective_max_tokens == 0:
             return  # nothing to generate; skip expensive prefill+alloc
-        if force_schedule is not None:
-            assert len(force_schedule) >= effective_max_tokens, (
-                f"force_schedule must cover all generation steps "
+        if force_schedule is not None and len(force_schedule) < effective_max_tokens:
+            msg = (
+                "force_schedule must cover all generation steps "
                 f"(len={len(force_schedule)} < {effective_max_tokens})"
             )
+            raise ValueError(msg)
 
         device = self.model.device_type
         rng = torch.Generator(device=device)
@@ -116,7 +145,9 @@ class Engine:
                 else:
                     probs = torch.softmax(logits, dim=-1)  # (B, C)
                     next_ids = torch.multinomial(
-                        probs, num_samples=1, generator=rng
+                        probs,
+                        num_samples=1,
+                        generator=rng,
                     )  # (B, 1)
                 sampled_tokens = next_ids[:, 0].tolist()
             else:
@@ -125,7 +156,7 @@ class Engine:
 
             # Process each row: choose the next token, update state, optional tool use
             token_column = []  # contains the next token id along each row
-            token_masks = []  # contains the mask (was it sampled (1) or forced (0)?) along each row
+            token_masks = []  # the mask along each row: sampled (1) or forced (0)
             for i, state in enumerate(row_states):
                 # Per-row deque-forcing still wins over sampling (but the
                 # position-forced path above has already replaced the sampled
@@ -148,22 +179,29 @@ class Engine:
 
             # Prepare logits for next iteration
             ids = torch.tensor(token_column, dtype=torch.long, device=device).unsqueeze(
-                1
+                1,
             )
             logits, _ = self.model.forward(ids, kv_cache=kv_cache_decode)
             logits = logits[:, -1, :]  # (B, vocab_size)
 
     def generate_batch(
-        self, tokens: list[int], num_samples: int = 1, **kwargs
+        self,
+        tokens: list[int],
+        num_samples: int = 1,
+        **kwargs: Unpack[_GenerateKwargs],
     ) -> tuple[list[list[int]], list[list[int]]]:
         """
-        Non-streaming batch generation that just returns the final token sequences.
+        Run non-streaming batch generation and return the final token sequences.
+
         Returns (results, masks): each a list of `num_samples` lists of ints.
+        `kwargs` are forwarded to `generate`.
         """
         results = [tokens.copy() for _ in range(num_samples)]
         masks = [[0] * len(tokens) for _ in range(num_samples)]
         for token_column, token_masks in self.generate(tokens, num_samples, **kwargs):
-            for i, (token, mask) in enumerate(zip(token_column, token_masks)):
+            for i, (token, mask) in enumerate(
+                zip(token_column, token_masks, strict=True),
+            ):
                 results[i].append(token)
                 masks[i].append(mask)
         return results, masks
