@@ -1,18 +1,28 @@
 [project]
 name = "diff-gpt"
-version = "0.31.1"
+version = "0.31.2"
 description = "Autoregressive GPT for time-series forecasting with MASH Σ-Δ derivative tokenization"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.txt"]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
-    "numpy>=2.3.3",
-    "pandas>=2.3.3",
-    "torch>=2.8.0",
-    "tqdm>=4.67.1",
-    "typing-extensions>=4.14",
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "torch>=2.14.1",
+    "tqdm>=4.70.1",
+    "typing-extensions>=4.16.0",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.4.2"]
+dev = ["pytest>=9.1.1"]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
