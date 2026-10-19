@@ -59,6 +59,23 @@ def _all_reduce_mean(t: torch.Tensor) -> torch.Tensor:
     return (work / world).to(t.device)
 
 
+def _agree_on_val(*, has_val: bool) -> bool:
+    """
+    Return `has_val` after checking that every rank has the same answer.
+
+    A rank with a val split runs one more all-reduce per evaluation than a rank
+    without, so ranks that disagree abort (gloo) or hang (NCCL) at that
+    collective; raise on every rank instead.
+    """
+    share = float(_all_reduce_mean(torch.tensor(float(has_val))))
+    if 0.0 < share < 1.0:
+        msg = (
+            "loader.has_val() differs across ranks; give every rank a val split or none"
+        )
+        raise ValueError(msg)
+    return has_val
+
+
 # Parameters with at least this many dimensions (weight matrices, embeddings)
 # are weight-decayed; vectors such as LayerNorm gains are not.
 _MIN_DECAY_NDIM = 2
@@ -103,6 +120,54 @@ def _estimate_loss(
     return _all_reduce_mean(losses.mean())
 
 
+class _Evaluation:
+    """Losses that `train` has seen so far and its best-val snapshot."""
+
+    __slots__ = ("best_loss", "best_state", "best_step", "loss")
+
+    def __init__(self) -> None:
+        """Start with no evaluation: every loss is infinite."""
+        self.loss = float("inf")  # reported loss of the latest evaluation
+        self.best_loss = float("inf")
+        self.best_state: dict[str, torch.Tensor] | None = None
+        self.best_step = -1
+
+    def run(
+        self,
+        model: BaseGPT,
+        loader: DataLoader,
+        eval_iters: int,
+        step: int,
+        *,
+        has_val: bool,
+        save_best: bool,
+    ) -> str:
+        """
+        Score the current weights after `step` updates; return the status line.
+
+        The model and the optimizer must be in eval mode. The reported loss is
+        the val loss when `has_val`, else the train loss. With `save_best`, a
+        new best val loss snapshots the weights.
+        """
+        train_loss = float(_estimate_loss(model, loader, eval_iters, "train"))
+        status = f"step {step}: train loss {train_loss:.4f}"
+        if not has_val:
+            self.loss = train_loss
+            return status
+        self.loss = float(_estimate_loss(model, loader, eval_iters, "val"))
+        status += f", val loss {self.loss:.4f}"
+        if save_best and self.loss < self.best_loss:
+            self.best_loss = self.loss
+            # Detached copies, so that resumed training doesn't mutate the
+            # snapshot.
+            self.best_state = {
+                k: v.detach().clone() for k, v in model.state_dict().items()
+            }
+            self.best_step = step
+            status += "  (best)"
+        return status
+
+
 def train(
     mut_model: BaseGPT,
     loader: DataLoader,
@@ -131,16 +196,28 @@ def train(
     `grad_accum_steps` enables gradient accumulation for memory-constrained
     GPUs; `grad_clip_norm` clips the global gradient norm before each step.
 
+    Evaluation runs every `eval_interval` steps, before that step's update,
+    and once more after the last update, so the final weights are scored
+    too (`max_iters=0` scores the initial weights). With `use_early_stopping`
+    and a val split, training stops at the first in-loop evaluation whose
+    val loss is above the previous one.
+
     `save_best` (default True, only meaningful when `has_val`): keep an
     in-memory snapshot of model weights whenever a new best val_loss is
     seen and restore it before returning. Lets training run past the val
     optimum without losing the best model (useful when val is noisy).
-    Returns the best val_loss instead of the final one when active.
+    Returns the best val_loss instead of the final one when active. Either
+    way the returned loss is that of the returned weights.
 
     `optimizer`: a schedule-free AdamW over the parameters of `mut_model`;
     by default one is built from `learning_rate`, `betas` and `weight_decay`,
-    which are ignored when `optimizer` is given. It is left in eval mode,
-    matching the weights handed back.
+    which are ignored when `optimizer` is given. It is left in eval mode.
+    After a best-snapshot restore only the weights come from the snapshot:
+    the optimizer state (z, exp_avg_sq, step count) is that of the last
+    step, so training resumed with it starts from y = β1·x_best +
+    (1 - β1)·z_last.
+
+    In DDP every rank must agree on `loader.has_val()`; ValueError otherwise.
     """
     if grad_accum_steps < 1:
         msg = "grad_accum_steps must be >= 1"
@@ -152,56 +229,44 @@ def train(
             betas=betas,
             weight_decay=weight_decay,
         )
-    has_val = loader.has_val()
+    has_val = _agree_on_val(has_val=loader.has_val())
     start = datetime.now(tz=UTC)
     is_main = _is_main_rank()
     pbar = tqdm(range(max_iters)) if (use_tqdm and is_main) else range(max_iters)
-    last_reported_loss: torch.Tensor = torch.tensor(float("inf"))
-    last_val_loss = torch.inf
-    best_val_loss = float("inf")
-    best_state_dict: dict[str, torch.Tensor] | None = None
-    best_step = -1
+
+    def report(msg: str) -> None:
+        if isinstance(pbar, tqdm):
+            pbar.set_description(msg)
+        elif is_main:
+            print(msg)
+
+    evaluation = _Evaluation()
+    previous_loss = float("inf")
+    stopped_early = False
     mut_model.train()
     optimizer.train()
     for step in pbar:
-        if step % eval_interval == 0 or step == max_iters - 1:
+        if step % eval_interval == 0:
             mut_model.eval()
             optimizer.eval()
-            train_loss = _estimate_loss(mut_model, loader, eval_iters, "train")
-            if has_val:
-                val_loss = _estimate_loss(mut_model, loader, eval_iters, "val")
-                last_reported_loss = val_loss
-                current_val = float(val_loss)
-                improved = ""
-                if save_best and current_val < best_val_loss:
-                    best_val_loss = current_val
-                    # Clone to CPU-agnostic detached copies so resumed
-                    # training doesn't mutate the snapshot.
-                    best_state_dict = {
-                        k: v.detach().clone() for k, v in mut_model.state_dict().items()
-                    }
-                    best_step = step
-                    improved = "  (best)"
-                status = (
-                    f"step {step}: train loss {train_loss:.4f}, "
-                    f"val loss {val_loss:.4f}{improved}"
-                )
-            else:
-                last_reported_loss = train_loss
-                status = f"step {step}: train loss {train_loss:.4f}"
+            report(
+                evaluation.run(
+                    mut_model,
+                    loader,
+                    eval_iters,
+                    step,
+                    has_val=has_val,
+                    save_best=save_best,
+                ),
+            )
+            # Stop while still in eval mode: the weights handed back are then
+            # exactly the scored ones (the train/eval switch rounds).
+            if has_val and use_early_stopping and previous_loss < evaluation.loss:
+                stopped_early = True
+                break
+            previous_loss = evaluation.loss
             mut_model.train()
             optimizer.train()
-            if isinstance(pbar, tqdm):
-                pbar.set_description(status)
-            elif is_main:
-                print(status)
-            if (
-                has_val
-                and use_early_stopping
-                and last_val_loss < float(last_reported_loss)
-            ):
-                break
-            last_val_loss = float(last_reported_loss)
         optimizer.zero_grad(set_to_none=True)
         for _ in range(grad_accum_steps):
             xb, yb = loader.get_batch("train")
@@ -212,22 +277,34 @@ def train(
         if grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(mut_model.parameters(), grad_clip_norm)
         optimizer.step()
-    train_time_s = int((datetime.now(tz=UTC) - start).total_seconds())
     # Schedule-free: parameters hold the fast "y" sequence while training; move
     # them to the averaged "x" point before handing the model back. Without
     # this the returned weights are the y point whenever no best-snapshot is
     # restored (no val split, or save_best=False).
     optimizer.eval()
     mut_model.eval()
-    if save_best and best_state_dict is not None:
-        mut_model.load_state_dict(best_state_dict)
+    if not stopped_early:
+        # Score the last update too; the in-loop evaluations precede it.
+        report(
+            evaluation.run(
+                mut_model,
+                loader,
+                eval_iters,
+                max_iters,
+                has_val=has_val,
+                save_best=save_best,
+            ),
+        )
+    train_time_s = int((datetime.now(tz=UTC) - start).total_seconds())
+    if save_best and evaluation.best_state is not None:
+        mut_model.load_state_dict(evaluation.best_state)
         msg = (
-            f"restored best checkpoint from step {best_step} "
-            f"(val_loss={best_val_loss:.4f})"
+            f"restored best checkpoint from step {evaluation.best_step} "
+            f"(val_loss={evaluation.best_loss:.4f})"
         )
         if isinstance(pbar, tqdm):
             pbar.write(msg)
         elif is_main:
             print(msg)
-        return best_val_loss, train_time_s
-    return float(last_reported_loss), train_time_s
+        return evaluation.best_loss, train_time_s
+    return evaluation.loss, train_time_s

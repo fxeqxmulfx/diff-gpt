@@ -340,3 +340,37 @@ def test_overfitting_capability() -> None:
         optimizer.step()
 
     assert loss.item() < MAX_OVERFIT_LOSS
+
+
+def test_forward_takes_non_contiguous_targets() -> None:
+    """
+    Check that forward accepts targets sliced out of one tensor with the inputs.
+
+    `targets.view(B * T)` raised on the non-contiguous slice x[:, 1:].
+    """
+    torch.manual_seed(0)
+    model = GPT(vocab_size=64, n_embd=16, block_size=16, n_head=2, n_layer=1)
+    x = torch.randint(0, 64, (2, 9))
+    _, loss = model(x[:, :-1], x[:, 1:])
+    _, loss_contiguous = model(x[:, :-1], x[:, 1:].contiguous())
+    assert loss is not None
+    assert torch.equal(loss, loss_contiguous)
+
+
+def test_gpt_rejects_n_layer_below_one() -> None:
+    """
+    Check that a GPT without blocks is rejected.
+
+    Without blocks no insert_kv advances the KV cache, so cached logits
+    went wrong and Engine.generate failed.
+    """
+    with pytest.raises(ValueError, match="n_layer must be >= 1"):
+        GPT(vocab_size=64, n_embd=16, block_size=16, n_head=2, n_layer=0)
+
+
+def test_device_keeps_the_index() -> None:
+    """Check that device names the weights' device, index included."""
+    model = GPT(vocab_size=64, n_embd=16, block_size=16, n_head=2, n_layer=1)
+    assert model.device == torch.device("cpu")
+    if torch.cuda.is_available():
+        assert model.to("cuda").device == torch.device("cuda", 0)

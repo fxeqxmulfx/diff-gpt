@@ -20,9 +20,12 @@ class TemperatureSampler(Sampler):
         logits: torch.Tensor,
         rng: torch.Generator | None = None,
     ) -> torch.Tensor:
-        """Sample from logits."""
+        """Sample one token id per row of `logits` ([..., n_tokens] -> [..., 1])."""
         temperature = self.temperature
         if temperature == 0:
             return torch.argmax(logits, dim=-1, keepdim=True)
-        probs = torch.softmax(logits / self.temperature, dim=-1)
-        return torch.multinomial(probs, num_samples=1, generator=rng)
+        probs = torch.softmax(logits / temperature, dim=-1)
+        # torch.multinomial takes 1-D or 2-D input: flatten the leading dims.
+        flat = probs.reshape(-1, probs.size(-1))
+        ids = torch.multinomial(flat, num_samples=1, generator=rng)
+        return ids.reshape(*probs.shape[:-1], 1)

@@ -11,6 +11,9 @@ loop. `_estimate_loss` all-reduces eval losses so every rank makes the
 same early-stop / save-best decision — without that, ranks desync and
 DDP deadlocks at a collective.
 
+The model's device picks the backend: Gloo for a CPU model, NCCL for a CUDA
+model, which needs a GPU per rank.
+
 Pattern:
 
     from diff_gpt.train_ddp import train_numa
@@ -56,6 +59,30 @@ def _free_port() -> int:
         return int(s.getsockname()[1])
 
 
+def _backend(model: BaseGPT, world_size: int) -> str:
+    """
+    Return the process-group backend for `model`: Gloo on CPU, NCCL on CUDA.
+
+    NCCL refuses two ranks on one GPU ("Duplicate GPU detected"), so a CUDA
+    model with more ranks than GPUs raises ValueError.
+    """
+    if model.device.type != "cuda":
+        return "gloo"
+    n_gpus = torch.cuda.device_count()
+    if world_size > n_gpus:
+        msg = (
+            f"NCCL needs a GPU per rank, but {world_size} ranks share "
+            f"{n_gpus} GPU(s): build the model on the CPU or train on fewer nodes"
+        )
+        raise ValueError(msg)
+    return "nccl"
+
+
+def _unwrapped(model: torch.nn.Module) -> torch.nn.Module:
+    """Return the module that `torch.compile` wrapped, else `model` itself."""
+    return getattr(model, "_orig_mod", model)
+
+
 def _worker(
     rank: int,
     world_size: int,
@@ -75,16 +102,18 @@ def _worker(
     os.environ["RANK"] = str(rank)
     os.environ["WORLD_SIZE"] = str(world_size)
 
-    # When CUDA is present, bind each rank to its own device so NCCL
-    # collectives don't all stack on device 0. Modulo device_count so the
-    # single-GPU case (each NUMA node sharing one GPU) still works.
+    # When CUDA is present, make each rank's own GPU the current device before
+    # the model is built, so that `.to("cuda")` in the factory spreads the
+    # ranks over the GPUs instead of stacking them on device 0.
     if torch.cuda.is_available():
         torch.cuda.set_device(rank % torch.cuda.device_count())
-
-    backend = "nccl" if torch.cuda.is_available() else "gloo"
-    dist.init_process_group(backend=backend, rank=rank, world_size=world_size)
+    model = model_factory(rank)
+    dist.init_process_group(
+        backend=_backend(model, world_size),
+        rank=rank,
+        world_size=world_size,
+    )
     try:
-        model = model_factory(rank)
         loader = loader_factory(rank, world_size)
         ddp = DDP(model)
         # DDP forwards every BaseGPT attribute / method used by train(), such
@@ -93,9 +122,9 @@ def _worker(
         result = train(ddp, loader, **train_kwargs)  # pyright: ignore[reportArgumentType]
         if rank == 0:
             if checkpoint_path is not None:
-                # Unwrap so the saved keys match a standalone load of the
-                # user's bare model class.
-                torch.save(ddp.module.state_dict(), checkpoint_path)
+                # Unwrap DDP and torch.compile, so the saved keys match a
+                # standalone load of the user's bare model class.
+                torch.save(_unwrapped(ddp.module).state_dict(), checkpoint_path)
             result_queue.put(result)
     finally:
         dist.destroy_process_group()
@@ -114,7 +143,7 @@ def train_numa(
     """
     Spawn a worker per entry in `nodes`, pin each to its node's CPUs and train via DDP.
 
-    `nodes` defaults to every detected NUMA node.
+    `nodes` defaults to every NUMA node with a CPU this process may use.
 
     `model_factory(rank) -> BaseGPT` constructs the model *inside* the
     worker. Using a factory (instead of a pre-built model) avoids
@@ -130,8 +159,14 @@ def train_numa(
 
     `checkpoint_path`: rank 0 writes the unwrapped model `state_dict` here
     after training finishes, letting the launcher reload weights without
-    sharing memory with the workers. The returned `(val_loss, secs)` is
-    rank 0's.
+    sharing memory with the workers. The keys are those of the bare model
+    class, also when the factory returns a `torch.compile`d model. The
+    returned `(val_loss, secs)` is rank 0's.
+
+    Workers use Gloo for a CPU model and NCCL for a CUDA model; with NCCL
+    every rank needs a GPU of its own, so a CUDA model with more nodes than
+    GPUs fails. Each rank's current CUDA device is GPU `rank`, so build the
+    model with `.to("cuda")`.
 
     Single-node fast path: if `len(nodes) == 1`, no spawn and no DDP —
     just pin the current process and call `train()` directly.
@@ -150,7 +185,7 @@ def train_numa(
         loader = loader_factory(0, 1)
         result = train(model, loader, **train_kwargs)
         if checkpoint_path is not None:
-            torch.save(model.state_dict(), checkpoint_path)
+            torch.save(_unwrapped(model).state_dict(), checkpoint_path)
         return result
 
     if master_port is None:

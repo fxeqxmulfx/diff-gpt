@@ -128,3 +128,19 @@ def test_statistical_correctness() -> None:
 
     # Check if the empirical distribution is close to the theoretical one
     assert_close(empirical_probs, expected_probs, atol=0.01, rtol=0.1)
+
+
+def test_samples_logits_with_several_leading_dims() -> None:
+    """
+    Check that logits of shape [..., n_tokens] give one sample per row.
+
+    torch.multinomial takes 1-D or 2-D input only, so (2, 3, V) logits
+    raised although the Sampler contract allows any leading dims.
+    """
+    logits = torch.randn(2, 3, 50)
+    rng = torch.Generator().manual_seed(0)
+    ids = TemperatureSampler(temperature=1.0)(logits, rng=rng)
+    assert ids.shape == (2, 3, 1)
+    rng = torch.Generator().manual_seed(0)
+    flat = TemperatureSampler(temperature=1.0)(logits.reshape(6, 50), rng=rng)
+    assert torch.equal(ids.reshape(6, 1), flat)

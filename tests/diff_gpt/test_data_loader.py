@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from diff_gpt.data_loader import DiffSQLiteDataLoader
-from diff_gpt.encoder_decoder import encode
+from diff_gpt.encoder_decoder import encode, np_to_decimal
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -47,6 +47,7 @@ def pass_through_encode(
     order_of_derivative: int,
     *,
     use_decimal: bool,
+    tokenizer: str,
 ) -> tuple[None, None, torch.Tensor]:
     """
     Return the raw values as int64 tokens instead of encoding them.
@@ -56,7 +57,7 @@ def pass_through_encode(
     can verify exact numbers from the DB.
     """
     # Unused: these parameters only mirror encode()'s signature.
-    del vocab_size, domain_of_definition, use_decimal
+    del vocab_size, domain_of_definition, use_decimal, tokenizer
     # Simulate data loss due to derivative order
     if len(inp) <= order_of_derivative:
         return None, None, torch.tensor([], dtype=torch.int64)
@@ -654,4 +655,156 @@ def test_get_batch_tolerates_short_reads_without_recursion(
     assert y.shape == (batch_size, block_size)
     # Loop must have re-tried past the forced short reads
     assert call_counter["n"] > batch_size
+    loader.close()
+
+
+# =============================================================================
+# 8. Splits without room, Decimal rows, per-table domains, the tokenizer
+# =============================================================================
+
+
+def test_get_batch_raises_when_no_train_part_has_room(linear_db_path: str) -> None:
+    """
+    Check that get_batch('train') raises when no table's train part fits a window.
+
+    The table has 198 tokens, more than block_size + 1, so it is sampled from,
+    but train_part=0.7 leaves it a 138-token train part, shorter than
+    block_size. get_batch used to redraw forever.
+    """
+    loader = DiffSQLiteDataLoader(
+        block_size=150,
+        batch_size=2,
+        vocab_size=100,
+        order_of_derivative=1,
+        domain_of_definition=np.array([-1, 1]),
+        use_decimal=False,
+        device="cpu",
+        database=linear_db_path,
+        encode_data=pass_through_encode,
+        train_part=0.7,
+    )
+    assert "sensor_data" in loader.tables
+    assert loader.has_val() is False
+    with pytest.raises(ValueError, match="No 'train' table long enough"):
+        loader.get_batch("train")
+    loader.close()
+
+
+def _wide_rows() -> np.ndarray:
+    """Return the feature rows of the `wide_only_db_path` table."""
+    i = np.arange(200, dtype=np.float64)[:, None]
+    return i + np.array([0.1, 0.2, 0.3, 0.4])
+
+
+def test_use_decimal_encodes_the_rows_as_decimal(wide_only_db_path: str) -> None:
+    """
+    Check that use_decimal=True hands the rows to the encoder as Decimal.
+
+    The rows used to reach `encode` as float64, which it rejects in Decimal
+    mode, so every Decimal SQLite loader failed.
+    """
+    block_size = 8
+    domain = np_to_decimal(np.array([2.0, 2.0, 2.0, 2.0]))
+    loader = DiffSQLiteDataLoader(
+        block_size=block_size,
+        batch_size=2,
+        vocab_size=256,
+        order_of_derivative=1,
+        domain_of_definition=domain,
+        use_decimal=True,
+        device="cpu",
+        database=wide_only_db_path,
+    )
+    _, _, expected = encode(
+        np_to_decimal(_wide_rows()),
+        256,
+        domain,
+        1,
+        use_decimal=True,
+    )
+    data = loader.get_data("wide", 0, block_size + 1)
+    assert data == tuple(expected.reshape(-1)[: block_size + 1].tolist())
+    x, _ = loader.get_batch("train")
+    assert x.shape == (2, block_size)
+    loader.close()
+
+
+def test_tables_of_different_widths_take_a_domain_each(complex_db_path: str) -> None:
+    """
+    Check that a mapping gives every table its own domain_of_definition.
+
+    One domain array served every table, so with the real encoder a 2-column
+    and a 4-column table could not be loaded together.
+    """
+    domains = {
+        "standard": np.array([100.0, 200.0]),
+        "wide": np.array([20.0, 20.0, 20.0, 20.0]),
+    }
+    loader = DiffSQLiteDataLoader(
+        block_size=5,
+        batch_size=16,
+        vocab_size=256,
+        order_of_derivative=0,
+        domain_of_definition=domains,
+        use_decimal=False,
+        device="cpu",
+        database=complex_db_path,
+    )
+    assert set(loader.tables) == {"standard", "wide"}
+    for table, rows in (
+        ("standard", np.array([[i, 2 * i] for i in range(100)], dtype=np.float64)),
+        ("wide", np.arange(20.0)[:, None] + np.array([0.1, 0.2, 0.3, 0.4])),
+    ):
+        _, _, expected = encode(rows, 256, domains[table], 0, use_decimal=False)
+        assert loader.get_data(table, 0, 6) == tuple(
+            expected.reshape(-1)[:6].tolist(),
+        )
+    x, _ = loader.get_batch("train")
+    assert x.shape == (16, 5)
+    loader.close()
+
+
+def test_a_domain_mapping_must_cover_every_sampled_table(complex_db_path: str) -> None:
+    """Check that a domain mapping without a sampled table raises ValueError."""
+    with pytest.raises(ValueError, match=r"no entry for tables \['wide'\]"):
+        DiffSQLiteDataLoader(
+            block_size=5,
+            batch_size=1,
+            vocab_size=256,
+            order_of_derivative=0,
+            domain_of_definition={"standard": np.array([100.0, 200.0])},
+            use_decimal=False,
+            device="cpu",
+            database=complex_db_path,
+        )
+
+
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+def test_sqlite_loader_encodes_with_its_tokenizer(
+    wide_only_db_path: str,
+    tokenizer: str,
+) -> None:
+    """Check that the loader encodes with the tokenizer it was given."""
+    domain = np.array([2.0, 2.0, 2.0, 2.0])
+    rows = _wide_rows()
+    tokens = {
+        tok: encode(rows, 256, domain, 2, use_decimal=False, tokenizer=tok)[2]
+        for tok in ("lgt", "mash")
+    }
+    assert not np.array_equal(tokens["lgt"], tokens["mash"])
+    loader = DiffSQLiteDataLoader(
+        block_size=8,
+        batch_size=1,
+        vocab_size=256,
+        order_of_derivative=2,
+        domain_of_definition=domain,
+        use_decimal=False,
+        device="cpu",
+        database=wide_only_db_path,
+        tokenizer=tokenizer,
+    )
+    n_tokens = loader.get_data_len("wide")
+    assert loader.get_data("wide", 0, n_tokens) == tuple(
+        tokens[tokenizer].reshape(-1).tolist(),
+    )
     loader.close()

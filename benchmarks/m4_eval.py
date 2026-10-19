@@ -4,25 +4,26 @@ Per-series diagnostics for saved M4 Hourly checkpoints (see m4_bench.py).
 
 Usage:
     uv run --no-sync python -m benchmarks.m4_eval runs/a.pt runs/b.pt
-Each argument is a state_dict path. Data preparation mirrors m4_bench
-exactly (same normalisation, block_size, domain), the tokenizer comes from
-DIFF_GPT_TOKENIZER. Prints paired per-series comparisons between the first
-checkpoint and every other one.
+Each argument is a state_dict path. Data preparation is m4_bench's `prepare`
+(same normalisation, block_size, domain), so run with the M4_* settings of the
+training run; the tokenizer comes from DIFF_GPT_TOKENIZER. Prints paired
+per-series comparisons between the first checkpoint and every other one.
 """
 
 from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING, Any
+import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import torch
 
-from benchmarks.m4_bench import HORIZONS, M4_DIR, SEASONALITY, mase, smape
+from benchmarks.m4_bench import mase, prepare, smape
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER, get_domain_of_definition
+from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER, TokenClippingWarning
 from diff_gpt.metrics import bayes_point, crps_empirical, empirical_coverage, msis
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.median import MedianSampler
@@ -33,58 +34,6 @@ if TYPE_CHECKING:
 
 # M4 Hourly Naive2 reference values (Makridakis et al. 2020), used for OWA.
 SMAPE_REF, MASE_REF = 18.383, 2.395
-
-
-def prepare() -> dict[str, Any]:
-    """
-    Load the picked M4 series and preprocess them as m4_bench does.
-
-    Reads M4_FREQ, M4_N_SERIES, M4_TRAIN_PART, M4_BLOCK_SIZE and M4_ORDER from
-    the environment. Returns the picked series indices, their raw values,
-    per-series (mean, std), z-scored DataFrames, the test split, horizon,
-    seasonality, block_size, derivative order and domain of definition.
-    """
-    freq = os.environ.get("M4_FREQ", "Hourly")
-    n_series = int(os.environ.get("M4_N_SERIES", "414"))
-    info = pd.read_csv(M4_DIR / "M4-info.csv")
-    train = np.load(M4_DIR / "training.npz", allow_pickle=True)
-    test = np.load(M4_DIR / "test.npz", allow_pickle=True)
-    idx = info.index[info["SP"] == freq].to_numpy()
-    picked = np.random.default_rng(0).choice(
-        idx,
-        size=min(n_series, len(idx)),
-        replace=False,
-    )
-    series_raw = [train[i].astype(np.float64) for i in picked]
-    stats = [(float(s.mean()), float(s.std() or 1.0)) for s in series_raw]
-    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats, strict=True)]
-    dfs = [pd.DataFrame({"x": s}) for s in series_norm]
-    train_part = float(os.environ.get("M4_TRAIN_PART", "0.8"))
-    min_val_tokens = int(min(len(s) for s in series_norm) * (1 - train_part))
-    horizon = HORIZONS[freq]
-    block_size = max(
-        min(int(os.environ.get("M4_BLOCK_SIZE", "256")), min_val_tokens - 1),
-        horizon + 16,
-    )
-    order = int(os.environ.get("M4_ORDER", "1"))
-    domain = get_domain_of_definition(
-        np.concatenate(series_norm, axis=0).reshape(-1, 1),
-        order_of_derivative=order,
-        use_decimal=False,
-    )
-    return {
-        "freq": freq,
-        "picked": picked,
-        "series_raw": series_raw,
-        "stats": stats,
-        "dfs": dfs,
-        "test": test,
-        "horizon": horizon,
-        "season": SEASONALITY[freq],
-        "block_size": block_size,
-        "order": order,
-        "domain": domain,
-    }
 
 
 def load_model(path: str, data: dict, device: str) -> DiffGPT:
@@ -238,6 +187,9 @@ def main() -> None:
         raise SystemExit(msg)
     device = os.environ.get("M4_EVAL_DEVICE", "cpu")
     data = prepare()
+    if data["quantile"] is not None:
+        # A quantile domain clips the steps beyond it on purpose.
+        warnings.filterwarnings("ignore", category=TokenClippingWarning)
     print(
         f"tokenizer={DEFAULT_TOKENIZER} n={len(data['picked'])} "
         f"block_size={data['block_size']} device={device}",

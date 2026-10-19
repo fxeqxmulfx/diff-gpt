@@ -1,6 +1,7 @@
 # Copyright 2025 Mikhail Borisov
 """Tests for the KV cache: allocation, insertion, growth, prefill and reset."""
 
+import pytest
 import torch
 from torch.testing import assert_close
 
@@ -246,3 +247,23 @@ def test_reset() -> None:
     # Compare full tensors to avoid rank mismatch
     # out_k \in \mathbb{R}^{1 \times 1 \times 1 \times 4}
     assert_close(out_k, k_new)
+
+
+def test_prefill_from_a_grown_cache_checks_cached_positions_not_capacity() -> None:
+    """
+    Check that prefill compares the destination's capacity with other.pos.
+
+    It compared the two capacities, so a source that had grown to 2048
+    slots could not prefill a 16-slot cache although it held 5 positions.
+    """
+    src = KVCache(1, 2, 4, 4, 1)
+    k = torch.randn(1, 2, 5, 4)
+    src.insert_kv(0, k, k)  # 5 positions overflow the 4 slots: the cache grows
+    dst = KVCache(2, 2, 16, 4, 1)
+    assert src.kv_shape[4] > dst.kv_shape[4]
+    dst.prefill(src)
+    assert dst.get_pos() == k.shape[-2]
+    assert_close(dst.kv_cache[0, 0, 1, :, :5, :], k.squeeze(0))
+    too_small = KVCache(2, 2, 4, 4, 1)
+    with pytest.raises(ValueError, match="capacity 4 < 5 cached positions"):
+        too_small.prefill(src)

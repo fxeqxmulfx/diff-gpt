@@ -26,7 +26,8 @@ decode = partial(_decode, tokenizer="mash")
 # vocabulary (MASH cascade, when V > 2^k + 2).
 MIN_HEADROOM_ORDER = 2
 # Empirical maxima of the round-trip error.
-SIN_COS_ORDER_0_MAX_ERR = 0.007873033862000018
+# Order 0 stays within Δ/2 = D / (V - 2) ≈ 1/254 (README Theorem 1).
+SIN_COS_ORDER_0_MAX_ERR = 0.003937002946875687
 SIN_COS_ORDER_1_MAX_ERR = 0.003775003594016138
 SIN_COS_ORDER_2_MAX_ERR = 0.000225
 SIN_COS_ORDER_3_MAX_ERR = 1.35e-5

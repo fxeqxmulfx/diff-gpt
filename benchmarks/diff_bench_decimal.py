@@ -114,9 +114,10 @@ def main() -> None:
         )
         val_loss_array[i] = val_loss
         train_time_array[i] = train_time
+        # predict returns float64 whatever use_decimal is; score in float.
         mae_loss_array[i] = mae(
-            np_to_decimal(inp[-8:].to_numpy()),
-            result_df[-8:].to_numpy(),
+            inp[-8:].to_numpy(dtype=np.float64),
+            result_df[-8:].to_numpy(dtype=np.float64),
         )
     val_loss = float(torch.mean(val_loss_array))
     train_time = float(torch.mean(train_time_array))

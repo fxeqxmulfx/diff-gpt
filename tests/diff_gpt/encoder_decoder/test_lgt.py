@@ -1,10 +1,13 @@
 # Copyright 2025 Mikhail Borisov
 """Level-grid tokenization (tokenizer="lgt")."""
 
+import warnings
+
 import numpy as np
 import pytest
 
 from diff_gpt.encoder_decoder import (
+    TokenClippingWarning,
     decode,
     encode,
     get_domain_of_definition,
@@ -211,3 +214,29 @@ def test_quantile_domain_per_column_and_decimal_guard() -> None:
     assert d[1] > 5 * d[0]
     with pytest.raises(ValueError, match="float64-only"):
         get_domain_of_definition(np_to_decimal(x), 1, use_decimal=True, quantile=0.99)
+
+
+@pytest.mark.parametrize("use_decimal", [False, True])
+def test_lgt_k1_keeps_the_bound_when_every_level_is_a_rounding_tie(
+    *,
+    use_decimal: bool,
+) -> None:
+    """
+    Check the k=1 Δ/2 bound on an integer walk, where levels sit on ties.
+
+    With D = 2 and V = 256 the scale is 63.5, so every odd value lands on
+    n + 1/2. Rounding half to even let a step of exactly D reach the level
+    step V/2, token V: 261 of 4999 steps clipped and the decode error
+    reached 523·Δ/2.
+    """
+    V = 256
+    rng = np.random.default_rng(0)
+    x = np.cumsum(rng.integers(-2, 3, size=(5000, 1)), axis=0).astype(np.float64)
+    dod = np.array([2.0])
+    inp, dom = (np_to_decimal(x), np_to_decimal(dod)) if use_decimal else (x, dod)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", TokenClippingWarning)
+        st, sc, tok = encode(inp, V, dom, 1, use_decimal=use_decimal, tokenizer="lgt")
+    dec = decode(st, sc, tok, V, 1, use_decimal=use_decimal, tokenizer="lgt")
+    err = np.abs(np.asarray(dec, dtype=np.float64) - x).max()
+    assert err <= _bound(2.0, V, 1) * (1 + 1e-12)

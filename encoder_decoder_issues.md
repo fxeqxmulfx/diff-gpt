@@ -6,19 +6,22 @@ The measurements below used white noise, random walks, smooth sinusoids,
 and half-integer rounding ties, with T = 1200–20000, V in {8, 16, 64, 256},
 k = 0–5, in float64 and Decimal. References to legacy behavior describe
 the audited MASH tokenizer; later fixes and LGT findings are recorded below.
+Fixes from the review of 2026-10-19 are marked in the overview and in each
+section.
 
 ## Overview
 
-| # | Severity | Location | Finding |
-|---|---|---|---|
-| 1 | High | `_sigma_delta_k`, `encode`, `_encode_column_tokens` | Silent out-of-domain clipping leaves a persistent level error |
-| 2 | Medium | Scalar `encode` at k=0 | Carry scheme instead of rounding: error up to one bin, history-dependent tokens |
-| 3 | Medium | `integrate`, `differentiate` docstring | The `start` representation is not detected; mismatched representations silently produce incorrect output |
-| 4 | Medium | `_sigma_delta_k` docstring, `integrate` | The float64 precision limit is understated: k=4 already degrades at T around 10000 |
-| 5 | Observation | Tokenization as a whole | Modulator state makes separately encoded windows differ from slices of the full encoding |
-| 6 | Low | `get_domain_of_definition` | At T=k, the scalar path raises ValueError while the per-column path returns zero |
-| 7 | Low | `encode` | Token zero is never emitted for in-domain inputs |
-| 8 | Low | `_sigma_delta_k` docstring | Described as "fast vectorized", but loops over T in Python |
+| # | Severity | Location | Finding | Status |
+|---|---|---|---|---|
+| 1 | High | `_sigma_delta_k`, `encode`, `_encode_column_tokens` | Silent out-of-domain clipping leaves a persistent level error | Reported by a warning; MASH at k=1 saturates and makes the step up; `predict` no longer affected |
+| 2 | Medium | Scalar `encode` at k=0 | Carry scheme instead of rounding: error up to one bin, history-dependent tokens | Fixed |
+| 3 | Medium | `integrate`, `differentiate` docstring | The `start` representation is not detected; mismatched representations silently produce incorrect output | Fixed |
+| 4 | Medium | `_sigma_delta_k` docstring, `integrate` | The float64 precision limit is understated: k=4 already degrades at T around 10000 | Docstring fixed |
+| 5 | Observation | Tokenization as a whole | Modulator state makes separately encoded windows differ from slices of the full encoding | LGT, the default, has no modulator state |
+| 6 | Low | `get_domain_of_definition` | At T=k, the scalar path raises ValueError while the per-column path returns zero | Fixed |
+| 7 | Low | `encode` | Token zero is never emitted for in-domain inputs | No action planned |
+| 8 | Low | `_sigma_delta_k` docstring | Described as "fast vectorized", but loops over T in Python | Docstring fixed |
+| 11 | High | `_round_levels` (LGT) | At k=1, rounding ties overflow the vocabulary and lower the decoded level for good | Fixed |
 
 ## 1. Silent out-of-domain clipping and persistent level error
 
@@ -72,6 +75,19 @@ and the error returns to Δ/2 after 39 steps while sufficient amplitude
 headroom remains. Saturation inside a k≥2 MASH cascade needs a separate
 stability analysis; a clipping flag is the minimum change there.
 
+**Fixed in part (2026-10-19).** `encode` emits a `TokenClippingWarning` with the
+number of clipped tokens (change 1). `predict` decodes only the generated
+tokens, anchored at the last `max_k` context rows, so a clipped context step no
+longer shifts the forecast. MASH at k=1 saturates inside its carry loop (change
+2): a series inside its domain keeps its tokens bit for bit, and a cut step is
+made up over the next ones. On a 40·D jump at V=64 the error exceeds Δ/2 on the
+38 values from the jump on, then stays within it. Teacher-forced `predict`
+encodes the future from the same anchor rows, so a catch-up still running at the
+end of the context does not offset the covariates it returns. The k≥2 cascade
+and LGT still only warn, so a clipped step leaves a level error in `decode`
+there: the cascade needs the stability analysis above, and LGT has no state to
+carry the cut part, which keeps its windows consistent (issue 5).
+
 ## 2. Scalar k=0 uses the carry scheme
 
 **Location.** The scalar `encode` path in
@@ -107,6 +123,10 @@ for order in (0, np.array([0])):
 The original `test_diff_encoder_decoder_sin_cos` threshold is about one bin
 (0.007873 for a 0.007874 bin) and could then be halved.
 
+**Fixed (2026-10-19).** A scalar order 0 takes the order-zero branch, so
+scalar `0` and `[0]` give the same tokens. The sin/cos threshold is halved to
+0.003937, just below Δ/2.
+
 ## 3. `integrate` does not detect the representation of `start`
 
 **Location.** Dispatch on the type of `order_of_derivative` in `integrate`.
@@ -126,6 +146,9 @@ to both functions, so this mismatch does not occur on its normal path.
 **Possible change.** Validate the representation explicitly, or use a raw
 prefix for both paths. The per-column integrator already computes initial
 derivative values from that prefix.
+
+**Fixed (2026-10-19).** Both paths return the raw prefix `inp[:max_k]` as
+`start`, and `integrate` raises `ValueError` on a `start` of the wrong shape.
 
 ## 4. Float64 decoder precision is overstated
 
@@ -154,6 +177,9 @@ Using `np.cumsum(..., dtype=np.longdouble)` may help on platforms with a wider
 mantissa; on the audited x86 system it offered roughly 2000 times less
 roundoff. `test_kth_order_mash_bound_is_tight_and_uniform_in_T` already allows
 a factor-of-two margin for this effect.
+
+**Fixed (2026-10-19).** The `_sigma_delta_k` docstring states the dependence:
+float64 degrades at k = 4 from T of about 10^4; use Decimal there.
 
 ## 5. Modulator state makes tokenization window-dependent
 
@@ -192,6 +218,9 @@ The scalar path reduces an empty array with `np.max` and raises
 The per-column path returns zero. The behavior should be consistent,
 preferably with an explicit validation message.
 
+**Fixed (2026-10-19).** Both paths raise `ValueError`: the series needs more
+than k rows.
+
 ## 7. Token zero is unused
 
 In 80000 tokens at V=16, k=0–3, token zero never appeared. At k≥2, tokens 1
@@ -208,6 +237,9 @@ channels. A first-order stage can be expressed through `S = cumsum(u)`,
 half-integer ties and under floating-point rounding was not verified;
 this remains a proposal.
 
+**Fixed (2026-10-19).** The docstring now says the loop runs in Python over
+T·k steps and vectorizes over columns only.
+
 ## 9. Findings while making LGT the default (2026-09-05)
 
 Both findings appeared when running the Sigma-Delta encoder tests with LGT.
@@ -217,7 +249,7 @@ encoder can fall back to a first-order carry scheme with ±1 headroom.
 For LGT, the term Δᵏζ always needs ±2^(k−1) bins. At V=4, k=2, x=t²,
 overflowing tokens were clipped and the decoder returned x/2.
 **Fixed:** `_compute_scale(..., lgt=True)` reserves the required headroom
-and raises an AssertionError suggesting `tokenizer='mash'` when V is too small.
+and raises a ValueError suggesting `tokenizer='mash'` when V is too small.
 
 **9b. Constant columns (D=0).** Sigma-Delta uses scale 1 and preserves the
 level through `start`. LGT initially rounded a constant such as 0.01 to the
@@ -256,6 +288,29 @@ Clipping at k≥1 leaves an integrated level error; at k=0 it causes local
 saturation and prevents continuation of a trend. Order zero is therefore
 an option for stationary-level series rather than a general default.
 
+## 11. LGT at k=1 overflows the vocabulary on rounding ties (2026-10-19)
+
+**Location.** `_round_levels` rounded half to even, and `_compute_scale`
+gives k ≤ 1 the scale (V−2)/(2D).
+
+**Problem.** When s·x is exactly n + 1/2, a step of exactly D gives
+ΔL = V/2, that is token V, which the clip turns into V−1. Every such clip
+lowers the decoded level by one bin for the rest of the series. This broke
+the README's Δ/2 bound for the default tokenizer at k=1, the order every
+benchmark uses, on integer or grid-valued data, where ties are exact.
+
+**Reproduction.** x = [3, 5], D = 2, V = 256 give s = 63.5 and levels 190
+and 318 (190.5 and 317.5 round to even), so ΔL = 128 and token 256 clips to
+255. On an integer walk with steps −2..2 and T = 5000, 261 of 4999 steps
+clipped and the decode error reached 4.12, that is 523·Δ/2. MASH on the same
+data stays within Δ/2, and Decimal mode behaved like float64. k = 0 and k ≥ 2
+stayed within Δ/2 on tie-heavy data.
+
+**Fixed (2026-10-19).** Levels round half up, L = floor(s·x + 1/2), in float
+and in Decimal. Then |ΔL| ≤ (V−2)/2 at k=1, and the k=0 and k≥2 bounds still
+hold because |ζ| ≤ 1/2. Tokens change only at exact ties. `test_lgt.py`
+checks the integer walk in both modes.
+
 ## Checks that passed in the original audit
 
 | Check | Result |
@@ -274,7 +329,8 @@ an option for stationary-level series rather than a general default.
 
 ## Appendix: confirmed issues outside `encoder_decoder.py`
 
-These were found in the wider review and checked with scripts.
+These were found in the wider review and checked with scripts. Item B, on
+the attention residuals, went away with the move to the plain GPT.
 
 **A. `train()` returned the schedule-free y weights instead of x.**
 After the last `optimizer.step()`, no `optimizer.eval()` was called. Without
@@ -282,14 +338,6 @@ best-snapshot restoration, the model remained at the extrapolated point.
 The optimizer returned with `train_mode=True`, and weights differed from x
 by 4e-3 after six iterations. Snapshots were correctly taken in eval mode.
 The change adds `optimizer.eval()` after training and before snapshot restore.
-
-**B. The embedding appears twice among attention-residual candidates.**
-`GPT.forward` commits the embedding as block zero and also initializes
-`partial_block` with it. Layer zero commits that partial block again.
-Subsequent mixtures contain two copies, equivalent to adding ln 2 to its
-logit. `test_block_commits_at_layer_boundary` records this behavior.
-The single-commit alternative was evaluated under a flag and rejected;
-see [the improvement plan](improvement_plan.md).
 
 **C. `DiffDataFrameDataLoader.target_columns` ignored window phase.**
 **Fixed on 2026-09-05:** `_mask_targets` receives a phase per batch row;
@@ -312,6 +360,12 @@ missed this. Passing `(local + 1) % n_features` per batch row fixes the
 mask. Aligning window starts to channel boundaries also matches inference,
 whose context starts at channel zero. `_predict_teacher_forced` already
 used absolute token positions and was unaffected.
+
+**Completed on 2026-10-19.** The phase is relative to the val slice, whose
+start `n` lay on a column boundary only with `align_windows=True`. With the
+default `align_windows=False` and n % F ≠ 0 (3 columns, 335 rows, k=1,
+train_part=0.7 give n = 701), the val loss scored the neighbouring column.
+The split point is now always rounded down to a whole row.
 
 **D. Smaller issues.** `train_time_s` used `timedelta.seconds` and wrapped
 after a day. Sampling entry points did not forward a seed, so Engine's

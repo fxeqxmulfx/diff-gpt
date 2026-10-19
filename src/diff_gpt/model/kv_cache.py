@@ -66,7 +66,8 @@ class KVCache:
         self_layers, self_kv, self_batch, self_heads, self_seq, self_head_dim = (
             self.kv_shape
         )
-        other_layers, other_kv, other_batch, other_heads, other_seq, other_head_dim = (
+        # other's capacity is irrelevant: only its cached positions get copied
+        other_layers, other_kv, other_batch, other_heads, _, other_head_dim = (
             other.kv_shape
         )
 
@@ -92,9 +93,13 @@ class KVCache:
             )
             raise ValueError(msg)
 
-        # Sequence length: self must be longer than other
-        if self_seq < other_seq:
-            msg = f"Sequence length mismatch: {self_seq} < {other_seq}"
+        # Sequence length: self must hold every position cached in other (its
+        # capacity may be larger, after it grew)
+        if self_seq < other.pos:
+            msg = (
+                f"Sequence length mismatch: capacity {self_seq} < "
+                f"{other.pos} cached positions"
+            )
             raise ValueError(msg)
 
         # 2) initialize the cache

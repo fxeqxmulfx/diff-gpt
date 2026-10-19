@@ -7,6 +7,7 @@ GPT continues the token stream, and the generated tokens are decoded back into
 values; `anomaly_scores` reads the token likelihoods instead.
 """
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,7 +15,13 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
-from diff_gpt.encoder_decoder import decode, encode, np_to_decimal
+from diff_gpt.encoder_decoder import (
+    decode,
+    encode,
+    integrate,
+    np_to_decimal,
+    resolve_tokenizer,
+)
 from diff_gpt.metrics.point import bayes_point
 from diff_gpt.metrics.probabilistic import crps_empirical, empirical_coverage
 from diff_gpt.model.engine import Engine
@@ -34,19 +41,72 @@ if TYPE_CHECKING:
 _MIN_CALIBRATION_SAMPLES = 2
 
 
+def _target_indices(
+    target_columns: list[str] | list[int],
+    columns: list,
+) -> set[int]:
+    """
+    Resolve `target_columns` (names or positions) to column positions.
+
+    Negative positions count from the end, as in Python; a position out of
+    range or an unknown name raises ValueError.
+    """
+    n_features = len(columns)
+    target_set: set[int] = set()
+    for c in target_columns:
+        if isinstance(c, str):
+            if c not in columns:
+                msg = f"target column {c!r} not found in {columns}"
+                raise ValueError(msg)
+            target_set.add(columns.index(c))
+            continue
+        pos = int(c)
+        if not -n_features <= pos < n_features:
+            msg = f"target column {pos} out of range for {n_features} columns"
+            raise ValueError(msg)
+        target_set.add(pos % n_features)
+    return target_set
+
+
+def _differing_settings(
+    saved: dict[str, object],
+    current: dict[str, object],
+) -> list[str]:
+    """Return the names of the encoder settings that differ; domains by value."""
+    differing = []
+    for name, value in current.items():
+        other = saved.get(name)
+        if name == "domain_of_definition":
+            same = (
+                isinstance(other, list)
+                and isinstance(value, list)
+                and len(other) == len(value)
+                and all(
+                    Decimal(a) == Decimal(b) for a, b in zip(other, value, strict=True)
+                )
+            )
+        else:
+            same = other == value
+        if not same:
+            differing.append(name)
+    return differing
+
+
 class DiffGPT:
     """
     GPT forecaster over derivative-encoded time series.
 
     Holds the model together with the encoder settings it was trained with
-    (`order_of_derivative`, `domain_of_definition`, `use_decimal`), so that
-    every prediction encodes the context and decodes the output the same way.
+    (`order_of_derivative`, `domain_of_definition`, `use_decimal`,
+    `tokenizer`), so that every prediction encodes the context and decodes the
+    output the same way.
     """
 
     __slots__ = (
         "domain_of_definition",
         "model",
         "order_of_derivative",
+        "tokenizer",
         "use_decimal",
     )
 
@@ -57,17 +117,78 @@ class DiffGPT:
         domain_of_definition: np.ndarray,
         *,
         use_decimal: bool,
+        tokenizer: str | None = None,
     ) -> None:
         """
         Wrap `model` with the encoder settings used for training and prediction.
 
         `order_of_derivative`: scalar for uniform k across columns, or a
         length-F array for per-column k.
+
+        `tokenizer`: "lgt" or "mash", the one the model was trained with. None
+        resolves to `encoder_decoder.DEFAULT_TOKENIZER` now and keeps it, so
+        the model decodes with its own tokenizer whatever the process default
+        (DIFF_GPT_TOKENIZER) is later.
         """
         self.model = model
         self.order_of_derivative = order_of_derivative
         self.domain_of_definition = domain_of_definition
         self.use_decimal = use_decimal
+        self.tokenizer = resolve_tokenizer(tokenizer)
+
+    def _max_order(self, n_features: int) -> int:
+        """Return the highest derivative order, checking a per-column order's shape."""
+        order = self.order_of_derivative
+        if isinstance(order, (int, np.integer)):
+            return int(order)
+        order_arr = np.asarray(order)
+        if order_arr.shape != (n_features,):
+            msg = (
+                f"order_of_derivative shape {order_arr.shape} must match "
+                f"columns {n_features}"
+            )
+            raise ValueError(msg)
+        return int(order_arr.max())
+
+    def _to_input(self, df: pd.DataFrame) -> np.ndarray:
+        """Return the values of `df` as the encoder takes them: float64 or Decimal."""
+        inp = df.to_numpy(dtype=np.float64)
+        return np_to_decimal(inp) if self.use_decimal else inp
+
+    def _encode(self, inp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Encode `inp` with the model's encoder settings."""
+        return encode(
+            inp=inp,
+            vocab_size=self.model.vocab_size,
+            domain_of_definition=self.domain_of_definition,
+            order_of_derivative=self.order_of_derivative,
+            use_decimal=self.use_decimal,
+            tokenizer=self.tokenizer,
+        )
+
+    def _decode_future(
+        self,
+        anchor: np.ndarray,
+        scale: np.ndarray,
+        tokens: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Decode `tokens` as the rows that follow `anchor`, as float64.
+
+        `anchor` holds the last max_k raw rows before the tokens. Decoding
+        from them, not from the start of the context, keeps a context step
+        that was clipped from shifting the decoded future.
+        """
+        decoded = decode(
+            start=anchor,
+            scale=scale,
+            inp=tokens,
+            vocab_size=self.model.vocab_size,
+            order_of_derivative=self.order_of_derivative,
+            use_decimal=self.use_decimal,
+            tokenizer=self.tokenizer,
+        )
+        return np.asarray(decoded[len(anchor) :], dtype=np.float64)
 
     def train(
         self,
@@ -98,7 +219,17 @@ class DiffGPT:
         (via `numa.pin_to_node`) before training. Cheap way to cut
         cross-socket memory traffic on CPU training. For multi-node DDP
         across all NUMA nodes, use `diff_gpt.train_ddp.train_numa` instead.
+
+        A loader that has a `tokenizer` (the derivative loaders) must encode
+        with the model's; ValueError otherwise.
         """
+        loader_tokenizer = getattr(loader, "tokenizer", None)
+        if loader_tokenizer is not None and loader_tokenizer != self.tokenizer:
+            msg = (
+                f"the loader encodes with tokenizer {loader_tokenizer!r}, but "
+                f"the model decodes with {self.tokenizer!r}"
+            )
+            raise ValueError(msg)
         if pin_node is not None:
             pin_to_node(pin_node)
         return train(
@@ -147,7 +278,8 @@ class DiffGPT:
             gpt = build_gpt(0)
             gpt.load_state_dict(torch.load("best.pt"))
             model = DiffGPT(model=gpt, order_of_derivative=...,
-                            domain_of_definition=..., use_decimal=...)
+                            domain_of_definition=..., use_decimal=...,
+                            tokenizer=...)
         """
         return _train_numa(
             model_factory=model_factory,
@@ -175,13 +307,16 @@ class DiffGPT:
              is required; `future_covariates_df` and `target_columns` must
              be None.
           2. TimeXer-style teacher-forced: pass `future_covariates_df` and
-             `target_columns`. Non-target columns in the future are
+             `target_columns` (names, or positions; negative positions count
+             from the end). Non-target columns in the future are
              teacher-forced from `future_covariates_df`; only target
-             columns are sampled. `max_new_points` is derived from
-             `len(future_covariates_df)` (or must match it if given).
+             columns are sampled, and their values in
+             `future_covariates_df` are ignored. `max_new_points` is derived
+             from `len(future_covariates_df)` (or must match it if given).
 
-        Returns a DataFrame with (`len(df)` + pred_len) rows and the same
-        columns as `df`.
+        Returns a float64 DataFrame with (`len(df)` + pred_len) rows and the
+        same columns as `df`: the rows of `df`, then the decoded future, which
+        continues from the last rows of `df`.
         """
         if future_covariates_df is None:
             if target_columns is not None:
@@ -234,22 +369,11 @@ class DiffGPT:
             msg = f"num_samples must be >= 1, got {num_samples}"
             raise ValueError(msg)
         columns = df.shape[1]
-        order = self.order_of_derivative
-        if isinstance(order, (int, np.integer)):
-            max_order = int(order)
-        else:
-            order_arr = np.asarray(order)
-            if order_arr.shape != (columns,):
-                msg = (
-                    f"order_of_derivative shape {order_arr.shape} must match "
-                    f"columns {columns}"
-                )
-                raise ValueError(msg)
-            max_order = int(order_arr.max())
-        if max_order > df.shape[0]:
+        max_order = self._max_order(columns)
+        if max_order >= df.shape[0]:
             msg = (
-                f"max order {max_order} > context length {df.shape[0]}: "
-                "not enough history to compute the k-th derivative prefix"
+                f"max order {max_order} >= context length {df.shape[0]}: the "
+                "context needs a row past the k-th derivative prefix"
             )
             raise ValueError(msg)
         total_positions = (df.shape[0] + max_new_points - max_order) * columns
@@ -260,18 +384,9 @@ class DiffGPT:
                 f"context positions, but block_size is {self.model.block_size}"
             )
             raise ValueError(msg)
-        vocab_size = self.model.vocab_size
-        inp = df.to_numpy(dtype=np.float64)
-        if self.use_decimal:
-            inp = np_to_decimal(inp)
-        start, scale, encoded_data = encode(
-            inp=inp,
-            vocab_size=vocab_size,
-            domain_of_definition=self.domain_of_definition,
-            order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
-        )
-        context_tokens = encoded_data.reshape(-1).astype(np.int64).tolist()
+        inp = self._to_input(df)
+        _, scale, encoded_data = self._encode(inp)
+        context_tokens = encoded_data.reshape(-1).tolist()
         # Engine.generate_batch natively expands one prompt into num_samples
         # parallel trajectories (KV-cache-accelerated).
         engine = Engine(model=self.model)
@@ -282,20 +397,17 @@ class DiffGPT:
             sampler=sampler,
             seed=seed,
         )
+        # The generated tokens continue from the last max_order context rows.
+        # Slice by length: inp[-0:] would be the whole context.
+        anchor = inp[len(inp) - max_order :]
+        n_prompt = len(context_tokens)
         futures = np.empty((num_samples, max_new_points, columns), dtype=np.float64)
         for s in range(num_samples):
-            generated = np.asarray(results[s], dtype=np.int64).reshape(-1, columns)
-            decoded = decode(
-                start=start,
-                scale=scale,
-                inp=generated,
-                vocab_size=vocab_size,
-                order_of_derivative=self.order_of_derivative,
-                use_decimal=self.use_decimal,
-            )
-            futures[s] = np.asarray(
-                decoded[df.shape[0] : df.shape[0] + max_new_points],
-                dtype=np.float64,
+            generated = np.asarray(results[s][n_prompt:], dtype=np.int64)
+            futures[s] = self._decode_future(
+                anchor,
+                scale,
+                generated.reshape(max_new_points, columns),
             )
         return futures
 
@@ -364,32 +476,12 @@ class DiffGPT:
         """
         columns = df.shape[1]
         T = df.shape[0]
-        order = self.order_of_derivative
-        if isinstance(order, (int, np.integer)):
-            max_order = int(order)
-        else:
-            order_arr = np.asarray(order)
-            if order_arr.shape != (columns,):
-                msg = (
-                    f"order_of_derivative shape {order_arr.shape} must match "
-                    f"columns {columns}"
-                )
-                raise ValueError(msg)
-            max_order = int(order_arr.max())
-        if max_order > T:
-            msg = f"max order {max_order} > signal length {T}"
+        max_order = self._max_order(columns)
+        if max_order >= T:
+            msg = f"max order {max_order} >= signal length {T}: nothing to score"
             raise ValueError(msg)
 
-        inp = df.to_numpy(dtype=np.float64)
-        if self.use_decimal:
-            inp = np_to_decimal(inp)
-        _, _, encoded = encode(
-            inp=inp,
-            vocab_size=self.model.vocab_size,
-            domain_of_definition=self.domain_of_definition,
-            order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
-        )
+        _, _, encoded = self._encode(self._to_input(df))
         N = encoded.size
         if self.model.block_size < N:
             msg = (
@@ -397,11 +489,10 @@ class DiffGPT:
                 "chunk the input manually for longer sequences"
             )
             raise ValueError(msg)
-        device = torch.device(self.model.device_type)
         tokens = torch.as_tensor(
-            encoded.reshape(-1).astype(np.int64),
+            encoded.reshape(-1),
             dtype=torch.int64,
-            device=device,
+            device=self.model.device,
         ).unsqueeze(0)  # (1, N)
         was_training = self.model.training
         self.model.eval()
@@ -574,39 +665,17 @@ class DiffGPT:
             msg = "context and future must have the same columns"
             raise ValueError(msg)
         n_features = len(columns_list)
-
-        # Resolve names / ints → index set.
-        target_set: set[int] = set()
-        for c in target_columns:
-            if isinstance(c, str):
-                if c not in columns_list:
-                    msg = f"target column {c!r} not found in {columns_list}"
-                    raise ValueError(msg)
-                target_set.add(columns_list.index(c))
-            else:
-                target_set.add(int(c))
+        target_set = _target_indices(target_columns, columns_list)
 
         ctx_len = len(context_df)
         pred_len = len(future_covariates_df)
-        order = self.order_of_derivative
         # With per-column k the encoder aligns all columns to the shortest
-        # valid window, which is (T - max_k). Treat `order` as scalar or
-        # take its max for the token-count calculus.
-        if isinstance(order, (int, np.integer)):
-            max_order = int(order)
-        else:
-            order_arr = np.asarray(order)
-            if order_arr.shape != (n_features,):
-                msg = (
-                    f"order_of_derivative shape {order_arr.shape} must match "
-                    f"n_features {n_features}"
-                )
-                raise ValueError(msg)
-            max_order = int(order_arr.max())
-        if max_order > ctx_len:
+        # valid window, which is (T - max_k).
+        max_order = self._max_order(n_features)
+        if max_order >= ctx_len:
             msg = (
-                f"max order {max_order} > context length {ctx_len}: "
-                "not enough history to compute the k-th derivative prefix"
+                f"max order {max_order} >= context length {ctx_len}: the "
+                "context needs a row past the k-th derivative prefix"
             )
             raise ValueError(msg)
 
@@ -619,28 +688,36 @@ class DiffGPT:
             )
             raise ValueError(msg)
 
-        # Build the full concatenated input; zero out target columns in the
-        # future portion so their encoded tokens are placeholders. Covariate
-        # entries in encoded_full are correct (both endpoints known); target
-        # entries are bogus but we'll overwrite them during generation.
-        full_df = pd.concat(
-            [context_df, future_covariates_df],
-            ignore_index=True,
-        ).copy()
-        for c in target_set:
-            full_df.iloc[ctx_len:, c] = 0.0
-
-        inp = full_df.to_numpy(dtype=np.float64)
+        # Encode the context, and the future from the last max_order context
+        # rows, the rows `_decode_future` starts from. The covariate tokens of
+        # the future then decode to the supplied values, also after a context
+        # that ends while MASH at k = 1 still makes up a cut step: one frame
+        # carried that catch-up into the future tokens and offset them. The
+        # target futures get placeholders that the sampled tokens replace: the
+        # context continued with zero k-th differences, which encode in range,
+        # so they cause no clipping warning, whatever values the caller
+        # supplied there.
+        ctx_inp = self._to_input(context_df)
+        # A copy: under pandas copy-on-write to_numpy gives a read-only view.
+        future_inp = self._to_input(future_covariates_df).copy()
+        # Slice by length: ctx_inp[-0:] would be the whole context.
+        anchor = ctx_inp[ctx_len - max_order :]
+        zero_steps = np.zeros((pred_len, n_features), dtype=np.float64)
         if self.use_decimal:
-            inp = np_to_decimal(inp)
-        start, scale, encoded_full = encode(
-            inp=inp,
-            vocab_size=self.model.vocab_size,
-            domain_of_definition=self.domain_of_definition,
-            order_of_derivative=order,
+            zero_steps = np_to_decimal(zero_steps)
+        continuation = integrate(
+            start=anchor,
+            diff=zero_steps,
+            order_of_derivative=self.order_of_derivative,
             use_decimal=self.use_decimal,
+        )[max_order:]
+        targets = sorted(target_set)
+        future_inp[:, targets] = continuation[:, targets]
+        _, scale, ctx_tokens = self._encode(ctx_inp)
+        _, _, future_tokens = self._encode(
+            np.concatenate([anchor, future_inp], axis=0),
         )
-        encoded_flat = encoded_full.reshape(-1).astype(np.int64).copy()
+        encoded_flat = np.concatenate([ctx_tokens, future_tokens], axis=0).reshape(-1)
 
         # First (ctx_len - max_order) token rows depend only on the observed
         # history — that's the prefill prompt. The remaining positions are
@@ -662,22 +739,63 @@ class DiffGPT:
             sampler=sampler,
             force_schedule=force_schedule,
         )
-        encoded_final = np.asarray(results[0], dtype=np.int64).reshape(-1, n_features)
-        decoded = decode(
-            start=start,
-            scale=scale,
-            inp=encoded_final,
-            vocab_size=self.model.vocab_size,
-            order_of_derivative=self.order_of_derivative,
-            use_decimal=self.use_decimal,
+        generated = np.asarray(results[0][ctx_token_count:], dtype=np.int64)
+        future = self._decode_future(
+            anchor,
+            scale,
+            generated.reshape(pred_len, n_features),
         )
-        return pd.DataFrame(decoded, columns=columns_list)
+        full = np.concatenate([context_df.to_numpy(dtype=np.float64), future], axis=0)
+        return pd.DataFrame(full, columns=columns_list)
+
+    def _encoder_settings(self) -> dict[str, object]:
+        """Return the settings the tokens depend on, as plain per-column values."""
+        domain = np.asarray(self.domain_of_definition).reshape(-1)
+        order = np.asarray(self.order_of_derivative).reshape(-1)
+        if order.size == 1:
+            order = np.full(domain.shape, order[0])
+        return {
+            "tokenizer": self.tokenizer,
+            "use_decimal": self.use_decimal,
+            "order_of_derivative": [int(k) for k in order],
+            "domain_of_definition": [str(d) for d in domain],
+        }
 
     def save(self, path: str = "diff-gpt.bin") -> None:
-        """Save the model's state dict to `path`."""
-        torch.save(self.model.state_dict(), path)
+        """
+        Save the model's state dict and the encoder settings to `path`.
+
+        The weights decode right only with the settings they were trained
+        with, so `load` checks them.
+        """
+        checkpoint = {
+            "model": self.model.state_dict(),
+            "encoder": self._encoder_settings(),
+        }
+        torch.save(checkpoint, path)
 
     def load(self, path: str = "diff-gpt.bin") -> None:
-        """Load the model's state dict from `path` and switch it to eval mode."""
-        self.model.load_state_dict(torch.load(path, weights_only=True))
+        """
+        Load the weights in `path` and switch the model to eval mode.
+
+        A file that `save` wrote must hold this DiffGPT's encoder settings
+        (a per-column order equal to a scalar one counts as equal), or
+        ValueError is raised and the weights stay as they were. A bare state
+        dict, such as the checkpoint of `train_numa`, loads unchecked.
+        """
+        checkpoint = torch.load(path, weights_only=True)
+        if set(checkpoint) == {"model", "encoder"}:
+            current = self._encoder_settings()
+            differing = _differing_settings(checkpoint["encoder"], current)
+            if differing:
+                saved = ", ".join(
+                    f"{n}={checkpoint['encoder'].get(n)!r}" for n in differing
+                )
+                expected = ", ".join(f"{n}={current[n]!r}" for n in differing)
+                msg = (
+                    f"{path} holds weights for {saved}, but this DiffGPT has {expected}"
+                )
+                raise ValueError(msg)
+            checkpoint = checkpoint["model"]
+        self.model.load_state_dict(checkpoint)
         self.model.eval()

@@ -100,42 +100,66 @@ def test_aligned_windows_with_target_mask() -> None:
     assert (y[:, 2] == IGNORE_INDEX).all()
 
 
-def test_aligned_split_point_keeps_val_windows_on_column_zero() -> None:
-    """
-    Check that the aligned split lands on a column boundary and val starts at column 0.
+# 335 rows give 334 token rows at k=1, 1002 tokens; train_part=0.7 cuts them at
+# int(1002 * 0.7) = 701, mid-row (701 % 3 = 2), unless the split rounds down to
+# a row boundary.
+MID_ROW_T = 335
+MID_ROW_TRAIN_PART = 0.7
+_mid_t = np.arange(MID_ROW_T, dtype=np.float64)
+MID_ROW_DF = pd.DataFrame({"c0": np.zeros(MID_ROW_T), "c1": _mid_t, "c2": -_mid_t})
+assert int((MID_ROW_T - 1) * N_COLUMNS * MID_ROW_TRAIN_PART) % N_COLUMNS != 0
 
-    The train/val cut must land on a column boundary: otherwise val windows
-    start mid-row and carry a different column phase than the train windows.
-    """
-    # 401 rows * 3 columns = 1200 tokens; train_part 0.7 -> 840, already a
-    # multiple of 3, so use a length whose 70% is not.
-    T2 = 335
-    t = np.arange(T2, dtype=np.float64)
-    df = pd.DataFrame({"c0": np.zeros(T2), "c1": t, "c2": -t})
-    common = {
-        "dfs": [df],
-        "block_size": 12,
-        "batch_size": 8,
-        "vocab_size": 64,
-        "order_of_derivative": 1,
-        "domain_of_definition": DOD,
-        "use_decimal": False,
-        "device": "cpu",
-        "train_part": 0.7,
-    }
-    plain = DiffDataFrameDataLoader(**common, rng=torch.Generator().manual_seed(0))
-    aligned = DiffDataFrameDataLoader(
-        **common,
-        align_windows=True,
+
+def _mid_row_loader(**kw: Unpack[_LoaderKwargs]) -> DiffDataFrameDataLoader:
+    return DiffDataFrameDataLoader(
+        dfs=[MID_ROW_DF],
+        block_size=12,
+        batch_size=16,
+        vocab_size=64,
+        order_of_derivative=1,
+        domain_of_definition=DOD,
+        use_decimal=False,
+        device="cpu",
+        train_part=MID_ROW_TRAIN_PART,
         rng=torch.Generator().manual_seed(0),
+        **kw,
     )
-    # No public API exposes the split point, so read the train series directly.
-    n_plain = len(plain._train_serieses[0])  # noqa: SLF001
-    n_aligned = len(aligned._train_serieses[0])  # noqa: SLF001
-    assert n_plain % N_COLUMNS != 0, "pick a length where the naive split is misaligned"
-    assert n_aligned % N_COLUMNS == 0
-    assert 0 <= n_plain - n_aligned < N_COLUMNS
+
+
+def test_val_target_mask_keeps_the_target_column_after_a_mid_row_cut() -> None:
+    """
+    Check that both splits keep only the target column where a naive cut is mid-row.
+
+    The mask takes a position's column from its offset in the slice, so a val
+    slice that started mid-row kept a neighbouring column instead of the
+    target, and val loss, early stopping and save_best followed a covariate.
+    """
+    for align_windows in (False, True):
+        for target in (0, 1, 2):
+            loader = _mid_row_loader(
+                target_columns=[target],
+                align_windows=align_windows,
+            )
+            for split in ("train", "val"):
+                for _ in range(5):
+                    _, y = loader.get_batch(split)
+                    kept = y[y != IGNORE_INDEX]
+                    assert kept.numel() > 0
+                    assert (kept == TOKEN[target]).all(), (
+                        f"{split}, target {target}, align {align_windows}: "
+                        f"unmasked tokens {kept.unique().tolist()}"
+                    )
+
+
+def test_aligned_val_windows_start_at_column_zero_after_a_mid_row_cut() -> None:
+    """
+    Check that aligned val windows start at column 0 where a naive cut is mid-row.
+
+    Otherwise val windows carry a different column phase than the train
+    windows and the inference context.
+    """
+    loader = _mid_row_loader(align_windows=True)
     for _ in range(10):
-        x, _ = aligned.get_batch("val")
+        x, _ = loader.get_batch("val")
         assert (x[:, 0] == TOKEN[0]).all()
         assert (x[:, 1] == TOKEN[1]).all()

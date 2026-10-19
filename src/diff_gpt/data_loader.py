@@ -8,12 +8,13 @@ already-tokenized sequence.
 """
 
 import sqlite3
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
 
-from diff_gpt.encoder_decoder import encode, np_to_decimal
+from diff_gpt.encoder_decoder import encode, np_to_decimal, resolve_tokenizer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -37,11 +38,13 @@ class DiffSQLiteDataLoader:
 
     If `train_part` < 1.0, each table is split chronologically at
     floor(n_tokens * train_part); `get_batch('train')` samples windows from
-    the prefix and `get_batch('val')` samples from the suffix.
+    the prefix and `get_batch('val')` samples from the suffix. A split draws
+    only from tables whose part is longer than `block_size`.
     """
 
     __slots__ = (
         "_max_order",
+        "_train_tables",
         "_val_tables",
         "batch_size",
         "block_size",
@@ -59,6 +62,7 @@ class DiffSQLiteDataLoader:
         "tables_range",
         "tables_tokens_len",
         "tables_train_tokens_len",
+        "tokenizer",
         "train_part",
         "use_decimal",
         "vocab_size",
@@ -70,7 +74,7 @@ class DiffSQLiteDataLoader:
         batch_size: int,
         vocab_size: int,
         order_of_derivative: int | np.ndarray,
-        domain_of_definition: np.ndarray,
+        domain_of_definition: np.ndarray | Mapping[str, np.ndarray],
         *,
         use_decimal: bool,
         device: str,
@@ -78,13 +82,18 @@ class DiffSQLiteDataLoader:
         encode_data: Callable = encode,
         rng: torch.Generator | None = None,
         train_part: float = 1.0,
+        tokenizer: str | None = None,
     ) -> None:
         """
         Open `database` and read the dt range and size of every table.
 
         Only tables with more than `block_size + 1` tokens are sampled from.
-        `encode_data` turns raw rows into tokens (`encode` by default); `rng`
-        defaults to a fresh generator seeded with 42.
+        `domain_of_definition` serves every table, or maps each sampled table
+        to its own (tables of different widths need their own). `encode_data`
+        turns raw rows into tokens (`encode` by default) with `tokenizer`
+        ("lgt" or "mash"; None picks `encoder_decoder.DEFAULT_TOKENIZER`).
+        With `use_decimal`, the rows reach it as Decimal. `rng` defaults to a
+        fresh generator seeded with 42.
         """
         self.block_size = block_size
         self.batch_size = batch_size
@@ -100,6 +109,7 @@ class DiffSQLiteDataLoader:
         self.domain_of_definition = domain_of_definition
         self.use_decimal = use_decimal
         self.encode_data = encode_data
+        self.tokenizer = resolve_tokenizer(tokenizer)
         self.device = device
         # Construct a fresh generator per instance. Using a mutable default here
         # would share state across loaders in the same process.
@@ -157,6 +167,11 @@ class DiffSQLiteDataLoader:
         )
         self.tables = tables
         self.tables_len = len(tables)
+        if isinstance(domain_of_definition, Mapping):
+            missing = [t for t in tables if t not in domain_of_definition]
+            if missing:
+                msg = f"domain_of_definition has no entry for tables {missing}"
+                raise ValueError(msg)
         # Train/val split (per-table tail holdout).
         if not 0.0 < train_part <= 1.0:
             msg = "train_part must be in (0, 1]"
@@ -165,7 +180,10 @@ class DiffSQLiteDataLoader:
         self.tables_train_tokens_len = {
             t: int(tables_tokens_len[t] * train_part) for t in tables
         }
-        # A table contributes to val iff its suffix has room for a window.
+        # A table contributes to a split iff its part has room for a window.
+        self._train_tables = tuple(
+            t for t in tables if self.tables_train_tokens_len[t] > block_size
+        )
         self._val_tables = tuple(
             t
             for t in tables
@@ -176,6 +194,11 @@ class DiffSQLiteDataLoader:
         """Close the cursor and the database connection."""
         self.cursor.close()
         self.connection.close()
+
+    def _domain(self, table: str) -> np.ndarray:
+        """Return the domain of definition that `table` is encoded with."""
+        domain = self.domain_of_definition
+        return domain[table] if isinstance(domain, Mapping) else domain
 
     def get_data_len(self, table: str) -> int:
         """Return the number of tokens in `table`."""
@@ -212,15 +235,14 @@ class DiffSQLiteDataLoader:
         rows = self.cursor.fetchall()
         if not rows:
             return ()
-        arr = np.array(rows, dtype=np.float64)
-        arr = arr[:, 1:]
-        encode_data = self.encode_data
-        _, _, encoded = encode_data(
-            inp=arr,
+        arr = np.array(rows, dtype=np.float64)[:, 1:]
+        _, _, encoded = self.encode_data(
+            inp=np_to_decimal(arr) if self.use_decimal else arr,
             vocab_size=self.vocab_size,
-            domain_of_definition=self.domain_of_definition,
+            domain_of_definition=self._domain(table),
             order_of_derivative=self.order_of_derivative,
             use_decimal=self.use_decimal,
+            tokenizer=self.tokenizer,
         )
         encoded = encoded.flatten()
         local_offset = effective_start % n_features
@@ -239,7 +261,13 @@ class DiffSQLiteDataLoader:
         """Sample a batch of windows from `split` as (inputs, next-token targets)."""
         block_size = self.block_size
         if split == "train":
-            tables = self.tables
+            if not self._train_tables:
+                msg = (
+                    f"No 'train' table long enough: block_size={block_size}, "
+                    "and no table's train part is longer"
+                )
+                raise ValueError(msg)
+            tables = self._train_tables
         elif split == "val":
             if not self.has_val():
                 msg = (
@@ -268,13 +296,12 @@ class DiffSQLiteDataLoader:
             )
             table = tables[table_idx]
             train_end = self.tables_train_tokens_len[table]
+            # Every table of `tables` has room for a window: hi > lo.
             if split == "train":
                 lo, hi = 0, train_end - block_size
             else:
                 total = self.tables_tokens_len[table]
                 lo, hi = train_end, total - block_size
-            if hi <= lo:
-                continue  # this table has no room in the requested split
             data_idx = int(
                 torch.randint(
                     low=lo,
@@ -413,10 +440,11 @@ class DiffDataFrameDataLoader:
     In-memory multi-series data loader driven by pandas DataFrames.
 
     Each DataFrame is encoded once at construction time using the same
-    (vocab_size, domain_of_definition, order_of_derivative). Every series is
-    then split chronologically at `train_part`, and `get_batch('train'|'val')`
-    samples windows uniformly across all series belonging to the requested
-    split (weighted by number of valid window starts).
+    (vocab_size, domain_of_definition, order_of_derivative, tokenizer). Every
+    series is then split chronologically at `train_part`, rounded down to a
+    whole row, and `get_batch('train'|'val')` samples windows uniformly across
+    all series belonging to the requested split (weighted by number of valid
+    window starts).
 
     If `target_columns` is set, only positions that belong to those columns
     contribute to the loss (TimeXer-style exogenous forecasting) — covariate
@@ -438,6 +466,7 @@ class DiffDataFrameDataLoader:
         "n_features",
         "rng",
         "target_columns",
+        "tokenizer",
     )
 
     def __init__(
@@ -455,8 +484,14 @@ class DiffDataFrameDataLoader:
         target_columns: Sequence[int] | None = None,
         rng: torch.Generator | None = None,
         align_windows: bool = False,
+        tokenizer: str | None = None,
     ) -> None:
-        """Encode every DataFrame once and split each series at `train_part`."""
+        """
+        Encode every DataFrame once and split each series at `train_part`.
+
+        `tokenizer`: "lgt" or "mash", as for `encode`; None picks
+        `encoder_decoder.DEFAULT_TOKENIZER`. Use the `DiffGPT`'s tokenizer.
+        """
         if len(dfs) == 0:
             msg = "dfs must be non-empty"
             raise ValueError(msg)
@@ -471,6 +506,7 @@ class DiffDataFrameDataLoader:
             tuple(target_columns) if target_columns is not None else None
         )
         self.align_windows = align_windows
+        self.tokenizer = resolve_tokenizer(tokenizer)
         self.device = device
         self.rng = rng if rng is not None else torch.Generator().manual_seed(42)
         # Encode each DataFrame into a flat token tuple, then split.
@@ -486,16 +522,16 @@ class DiffDataFrameDataLoader:
                 domain_of_definition=domain_of_definition,
                 order_of_derivative=order_of_derivative,
                 use_decimal=use_decimal,
+                tokenizer=self.tokenizer,
             )
             flat = tuple(encoded.reshape(-1).tolist())
+            # Split on a row boundary, so that the val slice starts with column
+            # 0 like the train slice. `get_batch` takes a position's column from
+            # its offset in the slice: with a mid-row split the val target mask
+            # would keep a covariate, and aligned val windows would carry
+            # another phase than the inference context.
             n = int(len(flat) * train_part)
-            if align_windows:
-                # The split point must itself land on a column boundary, or the
-                # val slice starts mid-row and every val window carries a
-                # different column phase than the train windows and the
-                # inference context, which skews the val loss that selects
-                # the checkpoint.
-                n -= n % n_features
+            n -= n % n_features
             self._train_serieses.append(flat[:n])
             self._val_serieses.append(flat[n:])
 

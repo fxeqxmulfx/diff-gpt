@@ -14,8 +14,10 @@ rounding relative to a polynomial extrapolated from the window prefix), but the
 token at $t$ depends only on $x_{t-k..t}$: encoding a window equals the slice of
 the full encoding, identical values give identical tokens anywhere in a series,
 and decoding is exact for any $k$ and $T$. The $\Sigma\Delta$ encoder is kept
-for compatibility: `tokenizer="mash"` on `encode`/`decode`, or
-`DIFF_GPT_TOKENIZER=mash` for models trained with it.
+for compatibility: pass `tokenizer="mash"` to `encode`/`decode`, `DiffGPT` and
+the data loaders, or set `DIFF_GPT_TOKENIZER=mash` to make it the default.
+`DiffGPT` and the loaders keep the tokenizer they were built with, and
+`DiffGPT.train` refuses a loader that encodes with another.
 
 ## Signal assumption
 
@@ -36,10 +38,18 @@ model on top.
 **Theorem 1 (MASH reconstruction, any $k$).** For any signal with
 $D = \max_t |\Delta^k x_t| > 0$ and $V > 2^k + 2$,
 
-$$\|\hat x - x\|_\infty \le \frac{D}{V - 2 - 2^k} = \frac{\Delta}{2}$$
+$$\|\hat x - x\|_\infty \le \frac{\Delta}{2} = \begin{cases} D/(V - 2) & k \le 1 \\ D/(V - 2 - 2^k) & k \ge 2 \end{cases}$$
 
 uniformly in horizon $T$. Vocabulary doubling halves reconstruction error at any
 order $k$.
+
+The bound needs a `domain_of_definition` of at least $D$. A smaller one (a
+quantile, say) clips the larger steps, and `encode` reports how many with a
+`TokenClippingWarning`. At $k \ge 1$ a clipped step offsets every decoded
+value after it, except with MASH at $k = 1$, which saturates inside its
+feedback loop and makes the cut part up over the next steps. `predict` decodes
+the forecast from the last context rows, so clipped context steps do not shift
+it.
 
 **Proposition 2 (achievable CE).** In the fine-quantization limit,
 $\mathcal L^\star(V) = h(X_t \mid \text{ctx}) + \log V - \log(2D) + o(1)$.
@@ -310,6 +320,9 @@ def build_gpt(rank: int) -> GPT:
     return torch.compile(gpt, mode=mode)
 ```
 
+The checkpoint that `train_numa` writes holds the bare `GPT`'s keys, so load
+it into a plain `GPT` (or into the compiled module's `_orig_mod`).
+
 The first 1–2 training iterations are dominated by tracing and kernel
 compilation; benchmark step time from iteration 10+ for a fair number.
 Inference (`predict`, `predict_samples`, `anomaly_scores`) still works
@@ -324,16 +337,17 @@ On multi-socket CPU boxes, cross-socket memory traffic and thread migration
 dominate wall-clock for this size of model. Two entry points:
 
 **Single-process pin.** Pass a NUMA node id to `train()` — pins CPU affinity
-and aligns `torch.set_num_threads` / `OMP_NUM_THREADS` to that node's core
-count before the hot loop:
+to the node's CPUs that the process may use (a cpuset or a SLURM job may allow
+fewer than the node has) and aligns `torch.set_num_threads` /
+`OMP_NUM_THREADS` to their count before the hot loop:
 
 ```python
 model.train(loader=loader, max_iters=20_000, pin_node=0)
 ```
 
 **One process per NUMA node (DDP).** For linear scaling across sockets,
-`DiffGPT.train_numa` spawns one worker per detected NUMA node, pins each to
-its CPUs, and wraps the inner GPT in `DistributedDataParallel`. Both
+`DiffGPT.train_numa` spawns one worker per NUMA node with a CPU the process
+may use, pins each to those CPUs, and wraps the inner GPT in `DistributedDataParallel`. Both
 factories run *inside* the pinned worker so allocations land on local
 memory; seed the loader by `rank` so workers draw different batches
 (otherwise DDP averages identical gradients).
@@ -379,8 +393,10 @@ model = DiffGPT(
 )
 ```
 
-Backend: NCCL on CUDA, Gloo on CPU. Single-node systems short-circuit to
-the in-process pinning path — no spawn, no DDP overhead.
+Backend: Gloo for a CPU model, NCCL for a CUDA model. NCCL needs a GPU per
+rank: rank r runs on GPU r, so build the model with `.to("cuda")` in the
+factory. Single-node systems short-circuit to the in-process pinning path — no
+spawn, no DDP overhead.
 
 ## Benchmarks
 

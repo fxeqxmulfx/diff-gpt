@@ -8,7 +8,7 @@ import torch
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import get_domain_of_definition
+from diff_gpt.encoder_decoder import TokenClippingWarning, get_domain_of_definition
 from diff_gpt.metrics import empirical_coverage
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
@@ -496,7 +496,9 @@ def test_anomaly_scores_spike_is_higher_than_baseline_after_training() -> None:
     # Inject a large spike at a known row, then score.
     df_spiked = df_clean.copy()
     df_spiked.iloc[50, 2] = df_clean.iloc[50, 2] + 5.0
-    scores = model.anomaly_scores(df_spiked.iloc[:70])
+    # The spike steps outside the domain, so its steps clip, with a warning.
+    with pytest.warns(TokenClippingWarning):
+        scores = model.anomaly_scores(df_spiked.iloc[:70])
     row_scores = scores.sum(axis=1, skipna=True).to_numpy()
     # Skip prefix rows (NaN summed → 0) and the first encoded row (partial NaN).
     baseline_median = np.median(row_scores[2:50])

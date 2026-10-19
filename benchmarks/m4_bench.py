@@ -5,7 +5,7 @@ Short-term forecasting on M4 with ONE global diff-gpt per frequency group.
 For each frequency (Hourly, Daily, etc.):
   1. z-score normalize each series using its own training mean/std
   2. Train a single diff-gpt on the collection of normalized training series
-     via DiffGPT.train_multi (windows sampled across all series)
+     (a DiffDataFrameDataLoader samples windows across all series)
   3. For each held-out series, condition on its training tail and forecast
      the known horizon; un-normalize before scoring
   4. Report sMAPE, MASE averaged over series
@@ -24,7 +24,9 @@ Usage:
 from __future__ import annotations
 
 import os
+import warnings
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -32,7 +34,11 @@ import torch
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER, get_domain_of_definition
+from diff_gpt.encoder_decoder import (
+    DEFAULT_TOKENIZER,
+    TokenClippingWarning,
+    get_domain_of_definition,
+)
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.median import MedianSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
@@ -93,6 +99,80 @@ def mase(
     return float(np.mean(np.abs(true - pred)) / naive)
 
 
+def prepare() -> dict[str, Any]:
+    """
+    Load the picked M4 series and preprocess them for training and scoring.
+
+    Reads M4_FREQ, M4_N_SERIES, M4_MIN_LEN, M4_TRAIN_PART, M4_BLOCK_SIZE,
+    M4_ORDER and M4_DOMAIN_QUANTILE from the environment. Returns the picked
+    series indices, their raw values, per-series (mean, std), z-scored
+    DataFrames, the test split, horizon, seasonality, train_part,
+    min_val_tokens, block_size, derivative order, domain of definition and
+    its quantile (None for the max). m4_eval shares it, so that a checkpoint
+    is scored with the block size and domain it was trained with.
+    """
+    freq = os.environ.get("M4_FREQ", "Hourly")
+    n_series = int(os.environ.get("M4_N_SERIES", "50"))
+    info = pd.read_csv(M4_DIR / "M4-info.csv")
+    train = np.load(M4_DIR / "training.npz", allow_pickle=True)
+    test = np.load(M4_DIR / "test.npz", allow_pickle=True)
+    idx = info.index[info["SP"] == freq].to_numpy()
+    rng = np.random.default_rng(0)
+    picked = rng.choice(idx, size=min(n_series, len(idx)), replace=False)
+
+    # Drop very short series before sizing the context: block_size is capped by
+    # the SHORTEST series' val portion, so one 93-point series would shrink the
+    # context for all 4227 of them (M4_MIN_LEN=0 keeps every series).
+    min_len = int(os.environ.get("M4_MIN_LEN", "0"))
+    if min_len > 0:
+        keep = [i for i in picked if len(train[i]) >= min_len]
+        print(f"M4_MIN_LEN={min_len}: kept {len(keep)} of {len(picked)} series")
+        picked = np.array(keep)
+    # Per-series normalization stats computed on the training history.
+    # We store them so we can invert before scoring.
+    series_raw = [train[i].astype(np.float64) for i in picked]
+    stats = [(float(s.mean()), float(s.std() or 1.0)) for s in series_raw]
+    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats, strict=True)]
+    dfs = [pd.DataFrame({"x": s}) for s in series_norm]
+
+    # Block size: every series's VAL portion must be larger than block_size
+    # for val-loss estimation. With train_part=0.8 on Hourly's shortest
+    # series (700 tokens), val = 140 → block_size caps at 139.
+    horizon = HORIZONS[freq]
+    train_part = float(os.environ.get("M4_TRAIN_PART", "0.8"))
+    min_val_tokens = int(min(len(s) for s in series_norm) * (1 - train_part))
+    # Target block_size (overridable via env); clamp down if val is too short.
+    target_bs = int(os.environ.get("M4_BLOCK_SIZE", "256"))
+    block_size = max(min(target_bs, min_val_tokens - 1), horizon + 16)
+
+    order = int(os.environ.get("M4_ORDER", "1"))
+    # Global domain_of_definition over the union of normalized training data.
+    dq = os.environ.get("M4_DOMAIN_QUANTILE")
+    quantile = float(dq) if dq else None
+    domain = get_domain_of_definition(
+        np.concatenate(series_norm, axis=0).reshape(-1, 1),
+        order_of_derivative=order,
+        use_decimal=False,
+        quantile=quantile,
+    )
+    return {
+        "freq": freq,
+        "picked": picked,
+        "series_raw": series_raw,
+        "stats": stats,
+        "dfs": dfs,
+        "test": test,
+        "horizon": horizon,
+        "season": SEASONALITY[freq],
+        "train_part": train_part,
+        "min_val_tokens": min_val_tokens,
+        "block_size": block_size,
+        "order": order,
+        "domain": domain,
+        "quantile": quantile,
+    }
+
+
 def main() -> None:
     """
     Train one global diff-gpt on the picked M4 series and print its scores.
@@ -104,66 +184,36 @@ def main() -> None:
     seed = int(os.environ.get("M4_SEED", "0"))
     torch.manual_seed(seed)
 
-    freq = os.environ.get("M4_FREQ", "Hourly")
-    n_series = int(os.environ.get("M4_N_SERIES", "50"))
-    horizon = HORIZONS[freq]
-    season = SEASONALITY[freq]
-
-    info = pd.read_csv(M4_DIR / "M4-info.csv")
-    train = np.load(M4_DIR / "training.npz", allow_pickle=True)
-    test = np.load(M4_DIR / "test.npz", allow_pickle=True)
-
-    idx = info.index[info["SP"] == freq].to_numpy()
-    rng = np.random.default_rng(0)
-    picked = rng.choice(idx, size=min(n_series, len(idx)), replace=False)
+    data = prepare()
+    freq = data["freq"]
+    picked = data["picked"]
+    series_raw = data["series_raw"]
+    stats = data["stats"]
+    dfs = data["dfs"]
+    test = data["test"]
+    horizon = data["horizon"]
+    season = data["season"]
+    train_part = data["train_part"]
+    block_size = data["block_size"]
+    order_of_derivative = data["order"]
+    domain_of_definition = data["domain"]
+    if data["quantile"] is not None:
+        # A quantile domain clips the steps beyond it on purpose.
+        warnings.filterwarnings("ignore", category=TokenClippingWarning)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device} | freq={freq} | n_series={len(picked)} | horizon={horizon}")
     train_module = (
         None  # set when a CUDA-graph compile mode wraps the model for training
     )
-
-    # Per-series normalization stats computed on the training history.
-    # We store them so we can invert before scoring.
-    # Drop very short series before sizing the context: block_size is capped by
-    # the SHORTEST series' val portion, so one 93-point series would shrink the
-    # context for all 4227 of them (M4_MIN_LEN=0 keeps every series).
-    min_len = int(os.environ.get("M4_MIN_LEN", "0"))
-    if min_len > 0:
-        keep = [i for i in picked if len(train[i]) >= min_len]
-        print(f"M4_MIN_LEN={min_len}: kept {len(keep)} of {len(picked)} series")
-        picked = np.array(keep)
-    series_raw = [train[i].astype(np.float64) for i in picked]
-    stats = [(float(s.mean()), float(s.std() or 1.0)) for s in series_raw]
-    series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats, strict=True)]
-    dfs = [pd.DataFrame({"x": s}) for s in series_norm]
-
-    # Block size: every series's VAL portion must be larger than block_size
-    # for val-loss estimation. With train_part=0.8 on Hourly's shortest
-    # series (700 tokens), val = 140 → block_size caps at 139.
-    train_part = float(os.environ.get("M4_TRAIN_PART", "0.8"))
-    min_series_len = min(len(s) for s in series_norm)
-    min_val_tokens = int(min_series_len * (1 - train_part))
-    # Target block_size (overridable via env); clamp down if val is too short.
-    target_bs = int(os.environ.get("M4_BLOCK_SIZE", "256"))
-    block_size = min(target_bs, min_val_tokens - 1)
-    block_size = max(block_size, horizon + 16)
     print(
-        f"block_size={block_size} | min_val_tokens={min_val_tokens} "
+        f"block_size={block_size} | min_val_tokens={data['min_val_tokens']} "
         f"| train_part={train_part}",
     )
-
-    order_of_derivative = int(os.environ.get("M4_ORDER", "1"))
-    # Global domain_of_definition over the union of normalized training data.
-    all_tokens = np.concatenate(series_norm, axis=0).reshape(-1, 1)
-    dq = os.environ.get("M4_DOMAIN_QUANTILE")
-    domain_of_definition = get_domain_of_definition(
-        all_tokens,
-        order_of_derivative=order_of_derivative,
-        use_decimal=False,
-        quantile=float(dq) if dq else None,
+    print(
+        f"domain={domain_of_definition.round(4)} "
+        f"(quantile={data['quantile'] or 'max'})",
     )
-    print(f"domain={domain_of_definition.round(4)} (quantile={dq or 'max'})")
 
     # Small model: ~130k params. At ~280k training tokens (414 series * ~850 *
     # train_part=0.8), this gives ~2 tokens/param — a compromise between

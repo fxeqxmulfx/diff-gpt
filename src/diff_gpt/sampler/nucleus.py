@@ -33,6 +33,10 @@ class NucleusSampler(Sampler):
         rng: torch.Generator | None = None,
     ) -> torch.Tensor:
         """Sample from logits with Nucleus Sampling."""
+        if self.p >= 1:
+            # The nucleus is the whole vocabulary; the float32 cumsum would
+            # reach 1 early and drop the tail.
+            return self.sampler(logits, rng=rng)
         probs = self.softmax(logits)
         sorted_probs, indices = torch.sort(probs, dim=-1, descending=True)
         cum_sum_probs = torch.cumsum(sorted_probs, dim=-1)

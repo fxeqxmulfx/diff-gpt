@@ -4,6 +4,7 @@
 import torch
 
 from diff_gpt.sampler.nucleus import NucleusSampler
+from diff_gpt.sampler.sampler import Sampler
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 
@@ -140,3 +141,41 @@ def test_edge_case_p_very_small_is_argmax() -> None:
     expected_tokens = torch.argmax(logits, dim=-1, keepdim=True)
 
     assert torch.equal(sampled_tokens, expected_tokens)
+
+
+class _LogitsProbe(Sampler):
+    """Inner sampler that keeps the logits it is given and picks token 0."""
+
+    def __init__(self) -> None:
+        self.seen: torch.Tensor | None = None
+
+    def __call__(
+        self,
+        logits: torch.Tensor,
+        rng: torch.Generator | None = None,
+    ) -> torch.Tensor:
+        del rng
+        self.seen = logits.clone()
+        return torch.zeros((*logits.shape[:-1], 1), dtype=torch.long)
+
+
+def test_p_equals_one_passes_every_logit_through() -> None:
+    """
+    Check that p=1 hands the inner sampler the logits unchanged.
+
+    The float32 cumsum reaches 1 before the last token, so p=1 used to mask
+    the least likely tokens with -inf, dropping up to 4e-7 of the mass.
+    """
+    logits = torch.cat([torch.full((1, 8), 20.0), torch.zeros(1, 2000)], dim=-1)
+    probe = _LogitsProbe()
+    NucleusSampler(p=1.0, sampler=probe)(logits)
+    assert probe.seen is not None
+    assert torch.equal(probe.seen, logits)
+
+
+def test_nucleus_samples_logits_with_several_leading_dims() -> None:
+    """Check that (2, 3, V) logits give (2, 3, 1) samples, as the contract says."""
+    logits = torch.randn(2, 3, 50)
+    sampler = NucleusSampler(p=0.9, sampler=TemperatureSampler(temperature=1.0))
+    ids = sampler(logits, rng=torch.Generator().manual_seed(0))
+    assert ids.shape == (2, 3, 1)

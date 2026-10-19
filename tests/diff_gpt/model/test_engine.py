@@ -200,8 +200,9 @@ def test_generate_early_return_when_prompt_at_position_ceiling(gpt_model: GPT) -
     """
     Check that a prompt at the position ceiling makes generation short-circuit.
 
-    If the prompt already fills all block_size positions, effective_max_tokens
-    is 0, so the generator must not yield or allocate the decode cache.
+    If the prompt already fills all block_size positions, max_tokens=None
+    leaves 0 tokens to generate, so the generator must not yield or allocate
+    the decode cache.
     """
     engine = Engine(model=gpt_model)
     ceiling = gpt_model.block_size
@@ -210,7 +211,7 @@ def test_generate_early_return_when_prompt_at_position_ceiling(gpt_model: GPT) -
     results, masks = engine.generate_batch(
         tokens=prompt,
         num_samples=num_samples,
-        max_tokens=10,
+        max_tokens=None,
     )
     assert len(results) == num_samples
     # No generation happened — each row is just the prompt.
@@ -232,25 +233,44 @@ def test_generate_respects_small_max_tokens(gpt_model: GPT) -> None:
     assert len(results[0]) == len(prompt) + max_tokens
 
 
-def test_generate_clamps_max_tokens_to_position_ceiling(gpt_model: GPT) -> None:
+def test_generate_rejects_max_tokens_past_position_ceiling(gpt_model: GPT) -> None:
     """
-    Check that an oversized max_tokens is clamped to the position ceiling.
+    Check that a max_tokens past the position ceiling raises ValueError.
 
     Position embeddings cover block_size positions, so total context
-    (prompt + generated) cannot exceed that; the engine must clamp instead of
-    asserting inside forward.
+    (prompt + generated) cannot exceed that. The engine used to cap
+    max_tokens silently, returning fewer tokens than asked for.
     """
     engine = Engine(model=gpt_model)
-    block_size = gpt_model.block_size
     prompt = [1, 2, 3]
-    hard_ceiling = block_size - len(prompt)
-    # Ask for way more than supported
+    hard_ceiling = gpt_model.block_size - len(prompt)
+    with pytest.raises(ValueError, match="exceeds"):
+        _ = engine.generate_batch(
+            tokens=prompt,
+            num_samples=1,
+            max_tokens=hard_ceiling + 1,
+        )
     results, _ = engine.generate_batch(
         tokens=prompt,
         num_samples=1,
-        max_tokens=hard_ceiling + 50,
+        max_tokens=hard_ceiling,
     )
-    assert len(results[0]) == len(prompt) + hard_ceiling
+    assert len(results[0]) == gpt_model.block_size
+
+
+def test_generate_rejects_prompt_longer_than_block_size(gpt_model: GPT) -> None:
+    """A prompt past block_size raises instead of coming back unchanged."""
+    engine = Engine(model=gpt_model)
+    prompt = list(range(gpt_model.block_size + 1))
+    with pytest.raises(ValueError, match="block_size"):
+        _ = engine.generate_batch(tokens=prompt, num_samples=1, max_tokens=None)
+
+
+def test_generate_rejects_negative_max_tokens(gpt_model: GPT) -> None:
+    """A negative max_tokens raises ValueError."""
+    engine = Engine(model=gpt_model)
+    with pytest.raises(ValueError, match=">= 0"):
+        _ = engine.generate_batch(tokens=[1, 2], num_samples=1, max_tokens=-1)
 
 
 def test_generate_no_max_tokens_uses_hard_ceiling(gpt_model: GPT) -> None:

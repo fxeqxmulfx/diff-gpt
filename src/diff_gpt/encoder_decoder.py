@@ -10,6 +10,7 @@ Values are float64 arrays or, for exact arithmetic, `Decimal` object arrays
 
 import math
 import os
+import warnings
 from decimal import Decimal
 
 import numpy as np
@@ -29,15 +30,12 @@ def np_is_decimal(inp: np.ndarray) -> bool:
     """
     Return True if `inp` holds `Decimal` values.
 
-    Only the first element is checked; a 0-d or empty array counts if its dtype
-    is object.
+    Only the first element is checked; an empty array counts if its dtype is
+    object.
     """
-    len_inp_shape = len(inp.shape)
-    if len_inp_shape == 0 or inp.shape[0] == 0:
-        return inp.dtype == "object"
-    if len_inp_shape == 1:
-        return isinstance(inp[0], Decimal)
-    return isinstance(inp[0, 0], Decimal)
+    if inp.size == 0:
+        return inp.dtype == object
+    return isinstance(inp.flat[0], Decimal)
 
 
 def np_is_float64(inp: np.ndarray) -> bool:
@@ -53,6 +51,17 @@ def _check_dtype(name: str, inp: np.ndarray, *, use_decimal: bool) -> None:
     if not use_decimal and not np_is_float64(inp):
         msg = f"{name} must be float64 when use_decimal=False, got {inp.dtype}"
         raise TypeError(msg)
+
+
+def _check_finite(name: str, inp: np.ndarray, *, use_decimal: bool) -> None:
+    """Reject NaN and infinities: they would turn into arbitrary tokens."""
+    if use_decimal:
+        finite = all(v.is_finite() for v in inp.flat)
+    else:
+        finite = bool(np.isfinite(inp).all())
+    if not finite:
+        msg = f"{name} must be finite, but it holds NaN or infinity"
+        raise ValueError(msg)
 
 
 # Smallest vocabulary the tokenizers accept (V must also be even).
@@ -94,12 +103,70 @@ def _check_order(order: np.ndarray, n_features: int) -> None:
 
 
 # Which tokenizer `encode`/`decode` use when the caller does not say:
-#   "mash": prefix-anchored Σ-Δ (carry scheme for k<=1, MASH cascade for k>=2).
+#   "mash": prefix-anchored Σ-Δ (rounding at k=0, a saturating carry scheme at
+#           k=1, the MASH cascade for k>=2).
 #   "lgt":  level-grid tokenization, q_t = Δ^k round(s·x_t) + V/2 (see `encode_lgt`).
 # Default is "lgt" (since 0.32): same Δ/2 bound and headroom as MASH, but local,
 # window-consistent and exactly decodable in integers. Set DIFF_GPT_TOKENIZER=mash
 # (or pass tokenizer="mash") to reproduce models trained with the Σ-Δ encoder.
 DEFAULT_TOKENIZER = os.environ.get("DIFF_GPT_TOKENIZER", "lgt")
+_TOKENIZERS = ("lgt", "mash")
+
+
+def resolve_tokenizer(tokenizer: str | None) -> str:
+    """Return `tokenizer`, or `DEFAULT_TOKENIZER` for None; reject unknown names."""
+    tok = DEFAULT_TOKENIZER if tokenizer is None else tokenizer
+    if tok not in _TOKENIZERS:
+        msg = f"unknown tokenizer {tok!r}; expected 'mash' or 'lgt'"
+        raise ValueError(msg)
+    return tok
+
+
+class TokenClippingWarning(UserWarning):
+    """Some k-th differences fell outside the domain and their tokens were clipped."""
+
+
+def _clip_tokens(
+    tokens: np.ndarray,
+    vocab_size: int,
+    *,
+    n_saturated: int = 0,
+) -> np.ndarray:
+    """
+    Clip `tokens` to [0, V-1] in place and warn with the number clipped.
+
+    A clipped token stands for a step outside `domain_of_definition`; the
+    excess is lost, so at k >= 1 every later decoded value is off by it.
+    `n_saturated` steps were already cut by a saturating loop (MASH at
+    k = 1), which makes their excess up later; the warning counts them too.
+    """
+    n_out = int(np.count_nonzero((tokens < 0) | (tokens >= vocab_size)))
+    n_clipped = n_out + n_saturated
+    if n_clipped > 0:
+        msg = (
+            f"{n_clipped} of {tokens.size} tokens fell outside [0, {vocab_size - 1}] "
+            "and were clipped: the series steps outside domain_of_definition, and "
+            "at k >= 1 each clipped step offsets the decoded values after it "
+            "(MASH at k = 1 makes the offset up over the next steps)"
+        )
+        warnings.warn(msg, TokenClippingWarning, stacklevel=3)
+    np.clip(tokens, 0, vocab_size - 1, out=tokens)
+    return tokens
+
+
+def _to_tokens(values: np.ndarray, vocab_size: int, *, use_decimal: bool) -> np.ndarray:
+    """
+    Convert integer-valued (N, F) token values to int64, before clipping.
+
+    Values are first limited to [-1, V], so a token out of range stays out of
+    range for `_clip_tokens` to count, without overflowing int64.
+    """
+    if use_decimal:
+        return np.array(
+            [[min(max(int(v), -1), vocab_size) for v in row] for row in values],
+            dtype=np.int64,
+        ).reshape(values.shape)
+    return np.clip(np.rint(values), -1, vocab_size).astype(np.int64)
 
 
 def _order_array(order_of_derivative: int | np.ndarray, n_features: int) -> np.ndarray:
@@ -172,17 +239,55 @@ def _compute_scale(
     return scale
 
 
+# Levels must stay below 2^(62 - k) in magnitude: then the int64 levels and
+# their k-th differences (at most 2^k times larger) cannot overflow.
+_LEVEL_BITS = 62
+# Fractional part from which `_round_levels` rounds up.
+_ROUND_HALF = 0.5
+
+
 def _round_levels(
     x_col: np.ndarray,
     s: float | Decimal,
     *,
     use_decimal: bool,
+    order: int,
 ) -> np.ndarray:
-    """L = round(s·x) as int64 (banker's rounding in both float64 and Decimal)."""
+    """
+    L = floor(s·x + 1/2) as int64: round half up, in float64 and in Decimal.
+
+    Half up rather than half to even keeps ζ = L - s·x in (-1/2, 1/2]. At
+    k = 1 the scale bounds |s·Δx| by m = (V-2)/2, so the integer
+    ΔL = s·Δx + Δζ lies strictly between -(m+1) and m+1, that is within ±m,
+    and the token stays in [1, V-1]. With ties to even ζ reaches -1/2 as
+    well, and a step of exactly D with a tie at both ends gives ΔL = m + 1:
+    token V, which clips.
+
+    Raises ValueError when |s·x| reaches 2^(62 - `order`), where the levels
+    or their `order`-th differences would overflow int64.
+    """
+    u = x_col * s
+    limit = 2 ** (_LEVEL_BITS - order)
     if use_decimal:
-        vals = ufunc_round(x_col * s)
-        return np.array([int(v) for v in vals], dtype=np.int64)
-    return np.rint(x_col * s).astype(np.int64)
+        peak = max((abs(v) for v in u), default=Decimal(0))
+    else:
+        peak = float(np.max(np.abs(u), initial=0.0))
+    if peak >= limit:
+        msg = (
+            f"the level grid needs |s·x| < 2^{_LEVEL_BITS - order} at "
+            f"order_of_derivative {order}, but scale s = {float(s):.3g} gives "
+            f"{float(peak):.3g}: subtract the series level, or widen a "
+            "near-zero domain_of_definition"
+        )
+        raise ValueError(msg)
+    if use_decimal:
+        half = Decimal("0.5")
+        return np.array([math.floor(v + half) for v in u], dtype=np.int64)
+    f = np.floor(u)
+    # The test compares the true fractional part with 1/2: u - f is exact
+    # (Sterbenz) except for -1/2 < u < 0, where it exceeds 1/2 either way.
+    # floor(u + 0.5) would round the sum first, e.g. to 1 at u = 0.5 - 2^-54.
+    return (f + (u - f >= _ROUND_HALF)).astype(np.int64)
 
 
 def encode_lgt(
@@ -200,17 +305,20 @@ def encode_lgt(
     and emit the k-th differences of the grid index: q_t = Δ^k L_t + V/2.
 
     Same scale and headroom as the MASH path, same bound ‖x̂ - x‖∞ ≤ 1/(2s),
-    because Δ^k L = s·Δ^k x + Δ^k ζ with |ζ| ≤ 1/2 and |Δ^k ζ| ≤ 2^(k-1).
-    The headroom is mandatory: k >= 2 requires vocab_size > 2^k + 2 (there is
-    no carry-scheme fallback here). Constant columns (D = 0) use a fine level
+    because Δ^k L = s·Δ^k x + Δ^k ζ with ζ = L - s·x. Levels round half up,
+    so ζ lies in (-1/2, 1/2]: at k = 1 the integer ΔL stays within ±(V-2)/2
+    even when a step of exactly D meets rounding ties, and at k >= 2
+    |Δ^k ζ| < 2^(k-1) fits the headroom (see `_round_levels`). The headroom
+    is mandatory: k >= 2 requires vocab_size > 2^k + 2 (there is no
+    carry-scheme fallback here). Constant columns (D = 0) use a fine level
     grid (`LGT_CONSTANT_COLUMN_SCALE`) so their level survives the round trip.
     Unlike Σ-Δ the token at t depends only on x_{t-k..t}: encoding a window
     equals the slice of the full encoding, identical values give identical
     tokens anywhere in the series, and the decoder is exact integer cumsum.
 
-    `start` is the raw prefix inp[:max_k] for both scalar and per-column
-    orders (the decoder re-rounds it). Token row r corresponds to raw time
-    r + max_k, as in the Σ-Δ path.
+    `start` is the raw prefix inp[:max_k] (the decoder re-rounds it). Token
+    row r corresponds to raw time r + max_k, as in the Σ-Δ path. Tokens out of
+    range are clipped with a `TokenClippingWarning`.
     """
     _check_vocab_size(vocab_size)
     T, F = inp.shape
@@ -232,12 +340,11 @@ def encode_lgt(
     tokens = np.zeros((N, F), dtype=np.int64)
     for c in range(F):
         k_c = int(order_arr[c])
-        L = _round_levels(inp[:, c], scale[c], use_decimal=use_decimal)
-        q = np.diff(L, n=k_c) if k_c > 0 else L
-        tokens[:, c] = q[-N:] if N > 0 else q[:0]
+        L = _round_levels(inp[:, c], scale[c], use_decimal=use_decimal, order=k_c)
+        q = np.diff(L, n=k_c)
+        tokens[:, c] = q[len(q) - N :]
     tokens += vocab_size // 2
-    np.clip(tokens, 0, vocab_size - 1, out=tokens)
-    return start, scale, tokens
+    return start, scale, _clip_tokens(tokens, vocab_size)
 
 
 def decode_lgt(
@@ -266,7 +373,7 @@ def decode_lgt(
     for c in range(F):
         k_c = int(order_arr[c])
         L_pre = (
-            _round_levels(start[:, c], scale[c], use_decimal=use_decimal)
+            _round_levels(start[:, c], scale[c], use_decimal=use_decimal, order=k_c)
             if max_k > 0
             else np.zeros(0, dtype=np.int64)
         )
@@ -299,56 +406,31 @@ def differentiate(
     """
     Per-column k-th finite differences.
 
-    `order_of_derivative` is either a scalar (applied uniformly) or a 1D
-    array of shape (F,) giving per-column orders.
+    `order_of_derivative` is either a scalar (applied to every column) or a
+    1D array of shape (F,) giving per-column orders.
 
-    When all columns share the same k, returns the classical form:
-    `start` is the k-row stack of each order's first value,
-    `diff` is the uniformly differenced (T - k, F) array.
-
-    When orders differ, returns:
-    `start` as the raw prefix inp[:max_k] (length max_k),
-    `diff` with per-column trimming so all columns share length T - max_k.
-    (`integrate` detects which form it received and inverts accordingly.)
+    Returns `start`, the raw prefix inp[:max_k], and `diff` of shape
+    (T - max_k, F): column c holds the last T - max_k of its k_c-th
+    differences, so row r of every column belongs to time r + max_k.
+    `integrate` inverts this.
     """
-    if _is_scalar_order(order_of_derivative):
-        k = int(order_of_derivative)
-        if not 0 <= k <= inp.shape[0]:
-            msg = (
-                f"order_of_derivative {k} must be between 0 and the series length "
-                f"{inp.shape[0]}"
-            )
-            raise ValueError(msg)
-        _check_dtype("inp", inp, use_decimal=use_decimal)
-        diff = inp
-        start = np.zeros((0, inp.shape[1]), dtype=inp.dtype)
-        for _ in range(k):
-            start = np.concat((start, np.expand_dims(diff[0], axis=0)), axis=0)
-            diff = np.diff(diff, axis=0)
-        return start, diff
-
-    order = np.asarray(order_of_derivative, dtype=np.int64)
-    _check_order(order, inp.shape[1])
-    max_k = int(order.max())
-    if max_k > inp.shape[0]:
-        msg = f"order_of_derivative {max_k} exceeds the series length {inp.shape[0]}"
+    T, F = inp.shape
+    order = _order_array(order_of_derivative, F)
+    max_k = int(order.max()) if F > 0 else 0
+    if max_k > T:
+        msg = f"order_of_derivative {max_k} exceeds the series length {T}"
         raise ValueError(msg)
     _check_dtype("inp", inp, use_decimal=use_decimal)
-    # Raw prefix of length max_k is the universal start for the array path.
     start = inp[:max_k].copy()
-    F = inp.shape[1]
-    N = inp.shape[0] - max_k
+    N = T - max_k
     if use_decimal:
         diff = np_to_decimal(np.zeros((N, F), dtype=np.float64))
     else:
         diff = np.zeros((N, F), dtype=inp.dtype)
     for c in range(F):
-        k_c = int(order[c])
-        d = inp[:, c]
-        for _ in range(k_c):
-            d = np.diff(d)
-        # d has length T - k_c ≥ N. Take last N values.
-        diff[:, c] = d[-N:] if N > 0 else d[:0]
+        d = np.diff(inp[:, c], n=int(order[c]))
+        # d has length T - k_c >= N; keep its last N values.
+        diff[:, c] = d[len(d) - N :]
     return start, diff
 
 
@@ -359,29 +441,23 @@ def integrate(
     *,
     use_decimal: bool,
 ) -> np.ndarray:
-    """Inverse of `differentiate`, supporting scalar or per-column orders."""
-    if _is_scalar_order(order_of_derivative):
-        k = int(order_of_derivative)
-        if k != start.shape[0]:
-            msg = f"start has {start.shape[0]} rows but order_of_derivative is {k}"
-            raise ValueError(msg)
-        _check_dtype("start", start, use_decimal=use_decimal)
-        _check_dtype("diff", diff, use_decimal=use_decimal)
-        result = diff
-        for i in range(k):
-            _start = start[-i - 1]
-            result = np.concat((np.expand_dims(_start, axis=0), result), axis=0)
-            result = np.cumsum(result, axis=0)
-        return result
+    """
+    Inverse of `differentiate`, for scalar or per-column orders.
 
-    order = np.asarray(order_of_derivative, dtype=np.int64)
-    _check_order(order, diff.shape[1])
+    `start` is the raw prefix of the series, at least max_k rows; the result
+    has `len(start) + len(diff)` rows.
+    """
+    N, F = diff.shape
+    order = _order_array(order_of_derivative, F)
     max_k = start.shape[0]
     if (order > max_k).any():
         msg = f"order_of_derivative {order} exceeds the {max_k}-row start prefix"
         raise ValueError(msg)
-    F = diff.shape[1]
-    N = diff.shape[0]
+    if start.shape[1:] != (F,):
+        msg = f"start has shape {start.shape}, but diff has {F} columns"
+        raise ValueError(msg)
+    _check_dtype("start", start, use_decimal=use_decimal)
+    _check_dtype("diff", diff, use_decimal=use_decimal)
     T = N + max_k
     if use_decimal:
         out = np_to_decimal(np.zeros((T, F), dtype=np.float64))
@@ -389,10 +465,9 @@ def integrate(
         out = np.zeros((T, F), dtype=diff.dtype)
     for c in range(F):
         k_c = int(order[c])
-        # Derivative starts for column c are derived on the fly from the raw
-        # prefix. raw_c[0..k_c] suffices: (i)-th-diff first value =
-        # (np.diff^i(raw_c))[0] for i = 0, ..., k_c-1.
-        raw_c = start[max_k - k_c : max_k, c] if k_c > 0 else start[:0, c]
+        # Derivative starts for column c come from its last k_c prefix values:
+        # the i-th difference starts at (np.diff^i(raw_c))[0], i = 0..k_c-1.
+        raw_c = start[max_k - k_c : max_k, c]
         der_starts = []
         d = raw_c
         for _ in range(k_c):
@@ -431,10 +506,14 @@ def _sigma_delta_k(
     integrations the residual is bounded uniformly in T. The cascade avoids
     the unconditional instability of direct high-order EFM at k ≥ 3.
 
-    Supports both float64 (`use_decimal=False`, fast vectorized) and Decimal
-    (`use_decimal=True`, slower but arbitrary precision — needed for k ≥ 5
-    where float64's 53-bit mantissa loses bits faster than noise-shaping
-    recovers them in the k-fold decoder cumsum).
+    Vectorized over columns only: the feedback loop runs in Python over T·k
+    (time, stage) steps, in float64 (`use_decimal=False`) and in Decimal
+    (`use_decimal=True`, exact). Float64 does not hold the bound for every
+    order and length: rounding in the decoder's k-fold cumsum grows roughly
+    as T^(k-1)·eps, and at k = 4 it already shows from T of about 10^4. Use
+    Decimal there.
+
+    Returns unclipped tokens; `encode` clips them.
     """
     if k < 1:
         msg = f"the MASH cascade needs k >= 1, got {k}"
@@ -477,14 +556,44 @@ def _sigma_delta_k(
             else:
                 combined[j:] = combined[j:] + coef * q_stage[i, : T - j]
 
-    if use_decimal:
-        # Decimal values are already integer-valued (sum of ints); just cast.
-        tokens = np.array([[int(v) for v in row] for row in combined], dtype=np.int64)
-    else:
-        tokens = np.rint(combined).astype(np.int64)
-    tokens = tokens + half
-    np.clip(tokens, 0, vocab_size - 1, out=tokens)
-    return tokens
+    # Decimal values are already integer-valued (sums of ints).
+    return _to_tokens(combined + half, vocab_size, use_decimal=use_decimal)
+
+
+def _saturate_steps(steps: np.ndarray, vocab_size: int) -> tuple[np.ndarray, int]:
+    """
+    Fit the integer first-order `steps` (N, F') into the token range.
+
+    A step past the range is cut to its edge, and the cut part is added to
+    the next steps until their running sum is back at that of `steps`: the
+    loop saturates inside, so a step outside the domain costs a few steps of
+    lag instead of an offset in every later decoded value. Up to the first
+    step out of range, and after each catch-up, the steps stay as they are.
+    Returns the steps and the number of them that were out of range.
+    """
+    half = vocab_size // 2
+    lo, hi = -half, vocab_size - 1 - half
+    out_of_range = (steps < lo) | (steps > hi)
+    n_out = int(np.count_nonzero(out_of_range))
+    if n_out == 0:
+        return steps, 0
+    rows = np.flatnonzero(out_of_range.any(axis=1))
+    fitted = steps.copy()
+    lag = steps[0] * 0  # the part of the running sum still to make up
+    t = int(rows[0])
+    while t < len(steps):
+        want = steps[t] + lag
+        fitted[t] = np.minimum(np.maximum(want, lo), hi)
+        lag = want - fitted[t]
+        t += 1
+        if not (lag != 0).any():
+            # Caught up: the steps stay as they are until the next one out
+            # of range.
+            later = rows[rows >= t]
+            if later.size == 0:
+                break
+            t = int(later[0])
+    return fitted, n_out
 
 
 def _encode_column_tokens(
@@ -493,49 +602,45 @@ def _encode_column_tokens(
     vocab_size: int,
     *,
     use_decimal: bool,
-) -> np.ndarray:
+) -> tuple[np.ndarray, int]:
     """
-    Apply the appropriate Σ-Δ variant to one column's scaled diffs.
+    Apply the appropriate Σ-Δ variant to the scaled diffs of columns of order `k`.
 
-    - k = 0: plain quantization (round, shift, clip).
-    - k = 1 or insufficient V: legacy carry-based 1st-order scheme.
+    - k = 0: plain quantization (round, shift).
+    - k = 1: legacy carry-based 1st-order scheme, saturating inside the loop
+      (`_saturate_steps`).
+    - k ≥ 2 with insufficient V: the same scheme without saturation, since
+      after k integrations a made-up step still leaves an offset.
     - k ≥ 2 with sufficient V: MASH cascade (tight uniform bound).
 
-    Returns shape (N, 1) int64 token array.
+    Takes (N, F') and returns the (N, F') int64 tokens, unclipped, with the
+    number of steps that the saturation cut (0 unless k = 1).
     """
     use_mash = k >= _MIN_HEADROOM_ORDER and vocab_size > 2**k + 2
     if k == 0:
         # No noise-shaping needed (no integration at decode).
         rounded = ufunc_round(scaled_col) if use_decimal else np.rint(scaled_col)
-        if use_decimal:
-            tokens = np.array(
-                [[int(v) for v in row] for row in rounded],
-                dtype=np.int64,
-            )
-        else:
-            tokens = rounded.astype(np.int64)
-        tokens = tokens + vocab_size // 2
-        np.clip(tokens, 0, vocab_size - 1, out=tokens)
-        return tokens
-    if not use_mash:
-        # Legacy carry-based Σ-Δ.
-        trunced = np.trunc(scaled_col)
-        residual = scaled_col - trunced
-        residual = np.cumsum(residual, axis=0)
-        residual = ufunc_round(residual) if use_decimal else np.rint(residual)
-        residual = np.concat(
-            (
-                np.zeros(shape=(1, residual.shape[1]), dtype=residual.dtype),
-                residual,
-            ),
-            axis=0,
+        tokens = _to_tokens(
+            rounded + vocab_size // 2, vocab_size, use_decimal=use_decimal
         )
-        residual = np.diff(residual, axis=0)
-        encoded = trunced + vocab_size // 2 + residual
-        encoded[encoded < 0] = 0
-        encoded[encoded >= vocab_size] = vocab_size - 1
-        return encoded.astype(np.int64)
-    return _sigma_delta_k(scaled_col, k, vocab_size, use_decimal=use_decimal)
+        return tokens, 0
+    if use_mash:
+        return _sigma_delta_k(scaled_col, k, vocab_size, use_decimal=use_decimal), 0
+    # Legacy carry-based Σ-Δ: trunc(y) plus the change of the rounded running
+    # remainder.
+    trunced = np.trunc(scaled_col)
+    residual = np.cumsum(scaled_col - trunced, axis=0)
+    residual = ufunc_round(residual) if use_decimal else np.rint(residual)
+    residual = np.concat(
+        (np.zeros(shape=(1, residual.shape[1]), dtype=residual.dtype), residual),
+        axis=0,
+    )
+    steps = trunced + np.diff(residual, axis=0)
+    n_saturated = 0
+    if k == 1:
+        steps, n_saturated = _saturate_steps(steps, vocab_size)
+    tokens = _to_tokens(steps + vocab_size // 2, vocab_size, use_decimal=use_decimal)
+    return tokens, n_saturated
 
 
 def encode(
@@ -556,14 +661,25 @@ def encode(
 
     `tokenizer`: "mash" (prefix-anchored Σ-Δ, this function's body) or
     "lgt" (`encode_lgt`); None picks `DEFAULT_TOKENIZER`.
+
+    Returns `start` (the raw prefix inp[:max_k]), the per-column `scale` and
+    the (T - max_k, F) int64 tokens. NaN and infinities raise ValueError.
+    Tokens of steps outside `domain_of_definition` are clipped to [0, V-1],
+    with a `TokenClippingWarning` that gives their number. At k = 1 the MASH
+    loop saturates instead and makes the cut part up over the next steps.
     """
     _check_vocab_size(vocab_size)
     F = inp.shape[1]
     _check_domain(domain_of_definition, F)
     _check_dtype("inp", inp, use_decimal=use_decimal)
     _check_dtype("domain_of_definition", domain_of_definition, use_decimal=use_decimal)
-    tok = tokenizer or DEFAULT_TOKENIZER
-    if tok == "lgt":
+    _check_finite("inp", inp, use_decimal=use_decimal)
+    _check_finite(
+        "domain_of_definition",
+        domain_of_definition,
+        use_decimal=use_decimal,
+    )
+    if resolve_tokenizer(tokenizer) == "lgt":
         return encode_lgt(
             inp=inp,
             vocab_size=vocab_size,
@@ -571,9 +687,6 @@ def encode(
             order_of_derivative=order_of_derivative,
             use_decimal=use_decimal,
         )
-    if tok != "mash":
-        msg = f"unknown tokenizer {tok!r}; expected 'mash' or 'lgt'"
-        raise ValueError(msg)
     order_arr = _order_array(order_of_derivative, F)
     scale = _compute_scale(
         vocab_size,
@@ -584,54 +697,25 @@ def encode(
 
     start, diff = differentiate(
         inp=inp,
-        order_of_derivative=order_of_derivative,
+        order_of_derivative=order_arr,
         use_decimal=use_decimal,
     )
     scaled_diff = diff * scale
 
-    if _is_scalar_order(order_of_derivative):
-        # Same k for all columns → existing vectorized path.
-        scalar_k = int(order_of_derivative)
-        use_mash = scalar_k >= _MIN_HEADROOM_ORDER and vocab_size > 2**scalar_k + 2
-        if not use_mash:
-            trunced = np.trunc(scaled_diff)
-            residual = scaled_diff - trunced
-            residual = np.cumsum(residual, axis=0)
-            residual = ufunc_round(residual) if use_decimal else np.rint(residual)
-            residual = np.concat(
-                (
-                    np.zeros(shape=(1, residual.shape[1]), dtype=residual.dtype),
-                    residual,
-                ),
-                axis=0,
-            )
-            residual = np.diff(residual, axis=0)
-            encoded_data = trunced + vocab_size // 2 + residual
-            encoded_data[encoded_data < 0] = 0
-            encoded_data[encoded_data >= vocab_size] = vocab_size - 1
-            encoded_data = encoded_data.astype(np.int64)
-        else:
-            encoded_data = _sigma_delta_k(
-                scaled_diff,
-                scalar_k,
-                vocab_size,
-                use_decimal=use_decimal,
-            )
-        return start, scale, encoded_data
-
-    # Per-column path.
-    N = scaled_diff.shape[0]
-    encoded_data = np.zeros((N, F), dtype=np.int64)
-    for c in range(F):
-        k_c = int(order_arr[c])
-        col_tokens = _encode_column_tokens(
-            scaled_diff[:, c : c + 1],
-            k_c,
+    # Columns of the same order go through the modulator together.
+    tokens = np.zeros(scaled_diff.shape, dtype=np.int64)
+    n_saturated = 0
+    for k in np.unique(order_arr):
+        cols = np.flatnonzero(order_arr == k)
+        col_tokens, n_cut = _encode_column_tokens(
+            scaled_diff[:, cols],
+            int(k),
             vocab_size,
             use_decimal=use_decimal,
         )
-        encoded_data[:, c] = col_tokens[:, 0]
-    return start, scale, encoded_data
+        tokens[:, cols] = col_tokens
+        n_saturated += n_cut
+    return start, scale, _clip_tokens(tokens, vocab_size, n_saturated=n_saturated)
 
 
 def decode(
@@ -649,10 +733,10 @@ def decode(
 
     `start` and `scale` are the values `encode` returned along with the tokens,
     and `tokenizer` must be the one they were encoded with ("mash" or "lgt");
-    None picks `DEFAULT_TOKENIZER`.
+    None picks `DEFAULT_TOKENIZER`. Any max_k consecutive raw rows can serve
+    as `start`: the tokens then continue from them.
     """
-    tok = tokenizer or DEFAULT_TOKENIZER
-    if tok == "lgt":
+    if resolve_tokenizer(tokenizer) == "lgt":
         return decode_lgt(
             start=start,
             scale=scale,
@@ -661,9 +745,6 @@ def decode(
             order_of_derivative=order_of_derivative,
             use_decimal=use_decimal,
         )
-    if tok != "mash":
-        msg = f"unknown tokenizer {tok!r}; expected 'mash' or 'lgt'"
-        raise ValueError(msg)
     _check_vocab_size(vocab_size)
     _check_dtype("start", start, use_decimal=use_decimal)
     _check_dtype("scale", scale, use_decimal=use_decimal)
@@ -694,10 +775,14 @@ def get_domain_of_definition(
     on heavy-tailed collections it makes the grid useless for typical series: on
     M4 Daily the max is 19.5 while the median step is 0.02, and Δ/2 alone comes
     to 3.8 typical steps. A quantile trades a small fraction of clipped values
-    (which the encoder saturates, see the clipping note in the docs) for a grid
-    that can actually represent ordinary moves.
+    (which the encoder clips with a `TokenClippingWarning`) for a grid that
+    can actually represent ordinary moves.
+
+    Raises ValueError when the series has no k-th difference (T <= max k) or
+    holds NaN or infinities.
     """
     _check_dtype("inp", inp, use_decimal=use_decimal)
+    _check_finite("inp", inp, use_decimal=use_decimal)
     if quantile is not None and use_decimal:
         msg = "quantile domain is float64-only"
         raise ValueError(msg)
@@ -709,23 +794,19 @@ def get_domain_of_definition(
         if quantile is None or quantile == 1.0
         else (lambda a: np.quantile(a, quantile, axis=0))
     )
-    if _is_scalar_order(order_of_derivative):
-        k = int(order_of_derivative)
-        if k < 0:
-            msg = f"order_of_derivative must be non-negative, got {k}"
-            raise ValueError(msg)
-        diff = np.diff(inp, n=k, axis=0)
-        return reduce(np.abs(diff))
-    order = np.asarray(order_of_derivative, dtype=np.int64)
-    _check_order(order, inp.shape[1])
-    F = inp.shape[1]
+    T, F = inp.shape
+    order = _order_array(order_of_derivative, F)
+    max_k = int(order.max()) if F > 0 else 0
+    if max_k >= T:
+        msg = (
+            f"order_of_derivative {max_k} needs a series longer than {max_k} rows "
+            f"to have a difference to bound, got {T}"
+        )
+        raise ValueError(msg)
     if use_decimal:
         result = np_to_decimal(np.zeros(F, dtype=np.float64))
     else:
         result = np.zeros(F, dtype=np.float64)
     for c in range(F):
-        k_c = int(order[c])
-        diff_c = np.diff(inp[:, c], n=k_c)
-        if len(diff_c) > 0:
-            result[c] = reduce(np.abs(diff_c))
+        result[c] = reduce(np.abs(np.diff(inp[:, c], n=int(order[c]))))
     return result

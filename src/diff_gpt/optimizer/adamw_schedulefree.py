@@ -57,9 +57,12 @@ class AdamWScheduleFree(torch.optim.Optimizer):
             usage (default True if supported in your PyTorch version).
         amsgrad (bool): If True, use the AMSGrad variant — track the running
             maximum of the second-moment estimate and use that in the
-            denominator. Guarantees the effective per-coord learning rate is
-            non-increasing (Reddi et al., 2018). Costs one extra tensor per
-            parameter. Default True.
+            denominator, as torch's AdamW(amsgrad=True) does (Reddi et al.,
+            2018). The maximum never decreases, but the bias correction
+            divides it by 1 - beta2^k, which grows towards 1, so the
+            effective per-coord learning rate can still rise, by up to
+            1/sqrt(1 - beta2). Costs one extra tensor per parameter.
+            Default True.
 
     """
 
@@ -205,8 +208,9 @@ class AdamWScheduleFree(torch.optim.Optimizer):
                 torch._foreach_addcmul_(exp_avg_sq, grad, grad, value=1 - beta2)
                 if amsgrad:
                     # AMSGrad: track the running max of exp_avg_sq and use it
-                    # in place of exp_avg_sq for the denominator. Keeps the
-                    # effective learning rate non-increasing per coord.
+                    # in place of exp_avg_sq for the denominator. The max never
+                    # decreases; the bias correction can still raise the
+                    # effective learning rate (see the class docstring).
                     max_exp_avg_sq = tuple(
                         self.state[p]["max_exp_avg_sq"] for p in active_p
                     )

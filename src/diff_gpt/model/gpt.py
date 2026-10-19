@@ -70,6 +70,11 @@ class BaseGPT(nn.Module, ABC):
     def device_type(self) -> str:
         """Return the device type of the model weights, such as `cpu` or `cuda`."""
 
+    @property
+    @abstractmethod
+    def device(self) -> torch.device:
+        """Return the device of the model weights, with its index (`cuda:1`)."""
+
 
 class GPT(BaseGPT):
     """
@@ -97,8 +102,12 @@ class GPT(BaseGPT):
 
         `vocab_size` must be a multiple of `pad_vocab_size_to`: the encoder owns
         the vocabulary and pads it. `use_checkpoint` turns on gradient
-        checkpointing of the blocks in training mode.
+        checkpointing of the blocks in training mode. `n_layer` must be at
+        least 1: the KV cache advances its position in the last block.
         """
+        if n_layer < 1:
+            msg = f"n_layer must be >= 1, got {n_layer}"
+            raise ValueError(msg)
         super().__init__(
             block_size=block_size,
             vocab_size=vocab_size,
@@ -191,7 +200,7 @@ class GPT(BaseGPT):
         loss = None
         if targets is not None:
             B, T, C = logits.shape
-            loss = F.cross_entropy(logits.view(B * T, C), targets.view(B * T))
+            loss = F.cross_entropy(logits.view(B * T, C), targets.reshape(B * T))
         return logits, loss
 
     @torch.inference_mode()
@@ -244,3 +253,8 @@ class GPT(BaseGPT):
     def device_type(self) -> str:
         """Return the device type of the model weights, such as `cpu` or `cuda`."""
         return str(self.lm_head.weight.device.type)
+
+    @property
+    def device(self) -> torch.device:
+        """Return the device of the model weights, with its index (`cuda:1`)."""
+        return self.lm_head.weight.device

@@ -68,6 +68,11 @@ class Engine:
         Length must be at least `max_tokens`. Useful for TimeXer-style
         exogenous forecasting where specific positions (covariate columns)
         are known a priori.
+
+        Position embeddings cover `block_size` positions, so prompt and
+        generated tokens together must fit in them: a longer prompt, or a
+        `max_tokens` past `block_size - len(tokens)`, raises ValueError.
+        `max_tokens=None` generates up to that limit.
         """
         if not isinstance(tokens, list):
             msg = "tokens must be a list of ints"
@@ -79,15 +84,26 @@ class Engine:
             msg = "tokens must be a list of ints"
             raise TypeError(msg)
 
-        # Compute effective token budget: position embeddings cover block_size
-        # positions.
+        # Token budget: position embeddings cover block_size positions.
         block_size = self.model.block_size
         prompt_len = len(tokens)
-        hard_ceiling = max(0, block_size - prompt_len)
-        if max_tokens is not None:
-            effective_max_tokens = min(max_tokens, hard_ceiling)
-        else:
+        if prompt_len > block_size:
+            msg = f"prompt has {prompt_len} tokens but block_size is {block_size}"
+            raise ValueError(msg)
+        hard_ceiling = block_size - prompt_len
+        if max_tokens is None:
             effective_max_tokens = hard_ceiling
+        elif max_tokens < 0:
+            msg = f"max_tokens must be >= 0, got {max_tokens}"
+            raise ValueError(msg)
+        elif max_tokens > hard_ceiling:
+            msg = (
+                f"max_tokens {max_tokens} exceeds the {hard_ceiling} positions "
+                f"left after a {prompt_len}-token prompt (block_size {block_size})"
+            )
+            raise ValueError(msg)
+        else:
+            effective_max_tokens = max_tokens
         if effective_max_tokens == 0:
             return  # nothing to generate; skip expensive prefill+alloc
         if force_schedule is not None and len(force_schedule) < effective_max_tokens:
@@ -97,7 +113,7 @@ class Engine:
             )
             raise ValueError(msg)
 
-        device = self.model.device_type
+        device = self.model.device
         rng = torch.Generator(device=device)
         rng.manual_seed(seed)
 
