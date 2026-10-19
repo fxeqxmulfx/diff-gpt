@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Data loaders that sample (x, y) token windows for `train`.
 

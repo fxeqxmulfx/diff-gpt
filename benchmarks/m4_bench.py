@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 r"""
 Short-term forecasting on M4 with ONE global diff-gpt per frequency group.
 

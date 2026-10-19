@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Tests for how predict and anomaly_scores read the context.
 

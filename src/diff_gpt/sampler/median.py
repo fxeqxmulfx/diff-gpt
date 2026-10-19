@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Median readout of the predictive distribution."""
 
 import torch

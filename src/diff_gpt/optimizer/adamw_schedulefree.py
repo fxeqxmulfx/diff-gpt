@@ -3,7 +3,6 @@
 #
 # This source code is licensed under the license found in the LICENSE file of
 # https://github.com/facebookresearch/schedule_free, where it comes from.
-# Modifications copyright 2025 Mikhail Borisov
 """
 Schedule-free AdamW (Defazio et al., "The Road Less Scheduled").
 

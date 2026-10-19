@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Position-wise feed-forward network of a transformer block."""
 
 from typing import TYPE_CHECKING

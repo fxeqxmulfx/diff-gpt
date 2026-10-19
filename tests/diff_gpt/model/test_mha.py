@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for causal multi-head self-attention, with and without the KV cache."""
 
 import torch

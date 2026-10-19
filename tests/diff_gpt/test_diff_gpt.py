@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """DiffGPT training, point and probabilistic forecasting, and anomaly scores."""
 
 import numpy as np

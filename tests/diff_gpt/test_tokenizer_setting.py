@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Tests for the tokenizer that DiffGPT and the DataFrame loader keep.
 

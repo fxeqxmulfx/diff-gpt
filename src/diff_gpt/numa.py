@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 NUMA topology helpers for pinning a process to one node's CPUs.
 

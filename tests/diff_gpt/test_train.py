@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for DiffDataFrameDataLoader batches, splits and target-column masking."""
 
 import numpy as np

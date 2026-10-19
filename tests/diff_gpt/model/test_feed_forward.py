@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the position-wise FeedForward network."""
 
 import torch

@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 NUMA-aware multi-process training: one worker process per NUMA node.
 

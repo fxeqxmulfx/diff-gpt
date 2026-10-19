@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Proper scoring rules and standard probabilistic forecasting metrics.
 

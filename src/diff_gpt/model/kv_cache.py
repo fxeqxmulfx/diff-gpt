@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Per-layer key/value cache for incremental decoding."""
 
 import torch

@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Per-series diagnostics for saved M4 Hourly checkpoints (see m4_bench.py).
 

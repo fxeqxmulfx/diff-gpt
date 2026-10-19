@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Shared pytest configuration: tests marked `slow` run only with `--runslow`.
 

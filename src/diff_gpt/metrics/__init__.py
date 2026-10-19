@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Point and probabilistic forecast metrics."""
 
 from diff_gpt.metrics.point import bayes_point

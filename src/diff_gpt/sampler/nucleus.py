@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Nucleus (top-p) sampling of the next token."""
 
 import torch

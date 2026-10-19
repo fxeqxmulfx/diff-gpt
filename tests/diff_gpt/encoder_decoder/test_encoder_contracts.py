@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Input checks, the clipping report and edge cases of the encoder."""
 
 import warnings

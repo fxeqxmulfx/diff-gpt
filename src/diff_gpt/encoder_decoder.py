@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Derivative tokenizers: encode a (T, F) series as integer tokens and decode it back.
 

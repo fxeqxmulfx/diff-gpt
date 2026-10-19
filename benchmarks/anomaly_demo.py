@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 r"""
 Anomaly detection demo on ETTh1 oil-temperature.
 

@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Sampling-temperature calibration of DiffGPT on held-out windows."""
 
 import numpy as np

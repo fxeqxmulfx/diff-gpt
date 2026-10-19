@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Decimal-precision variant of diff_bench.py.
 

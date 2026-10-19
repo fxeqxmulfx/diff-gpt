@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Level-grid tokenization (tokenizer="lgt")."""
 
 import warnings

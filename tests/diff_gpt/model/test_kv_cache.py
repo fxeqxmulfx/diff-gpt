@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the KV cache: allocation, insertion, growth, prefill and reset."""
 
 import pytest

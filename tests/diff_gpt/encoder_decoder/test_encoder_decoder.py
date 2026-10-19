@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Σ-Δ (MASH) encoder tests.
 

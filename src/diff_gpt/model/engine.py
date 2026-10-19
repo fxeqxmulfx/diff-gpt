@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """KV-cached sampling engine: one prompt prefill, then batched decoding."""
 
 from collections import deque

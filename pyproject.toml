@@ -54,6 +54,8 @@ ignore = [
     # Trailing commas are the formatter's job; ruff warns that COM812
     # conflicts with `ruff format`.
     "COM812",
+    # No copyright header in each file: the license is in LICENSE.txt.
+    "CPY",
 ]
 
 [tool.ruff.lint.per-file-ignores]

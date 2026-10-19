@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Tests for the encoder settings that DiffGPT.save writes and DiffGPT.load checks.
 

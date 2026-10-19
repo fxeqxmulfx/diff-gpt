@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Decoder-only GPT: the `BaseGPT` interface and the plain `GPT` model."""
 
 import math

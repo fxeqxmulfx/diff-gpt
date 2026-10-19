@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the probabilistic metrics: CRPS, pinball loss, coverage and MSIS."""
 
 import numpy as np

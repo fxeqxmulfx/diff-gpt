@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Char-level GPT training on tinyshakespeare against loss and compute budgets.
 

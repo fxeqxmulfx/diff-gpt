@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 `DiffGPT`: a time-series forecaster built from a plain GPT and the tokenizer.
 

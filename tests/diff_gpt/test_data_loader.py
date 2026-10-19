@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the SQLite data loader (DiffSQLiteDataLoader)."""
 
 import sqlite3

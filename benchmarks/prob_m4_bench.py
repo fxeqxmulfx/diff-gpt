@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 r"""
 Probabilistic-forecasting variant of m4_bench.py on M4 Hourly.
 

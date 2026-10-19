@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the Bayes-optimal point readouts from Monte-Carlo samples."""
 
 import numpy as np

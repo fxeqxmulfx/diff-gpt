@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Transformer block: causal self-attention and an MLP on a residual stream."""
 
 from typing import TYPE_CHECKING

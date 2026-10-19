@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Token sampler interface."""
 
 from typing import TYPE_CHECKING

@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Long-term forecasting on ETT (multivariate) — iTransformer-style protocol.
 

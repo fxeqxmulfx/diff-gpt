@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the differentiate/integrate round trip on Decimal series."""
 
 from decimal import Decimal

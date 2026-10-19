@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Training loop that drives a `BaseGPT` with batches from a `DataLoader`.
 

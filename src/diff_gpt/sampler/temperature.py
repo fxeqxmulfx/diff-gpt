@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Temperature sampling of the next token."""
 
 import torch

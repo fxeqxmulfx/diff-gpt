@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Causal multi-head self-attention with an optional KV cache."""
 
 from typing import TYPE_CHECKING

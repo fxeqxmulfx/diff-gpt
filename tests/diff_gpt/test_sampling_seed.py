@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Sampling seed (step 16): the `seed` argument of the Monte-Carlo forecasts.
 

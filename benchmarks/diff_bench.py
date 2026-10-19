@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Sin/cos reference benchmark for diff-gpt.
 

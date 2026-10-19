@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """
 Bayes-optimal point readouts from Monte-Carlo samples of the predictive distribution.
 

@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the GPT model: init, forward, KV cache, loss and generation."""
 
 import math

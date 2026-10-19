@@ -1,4 +1,3 @@
-# Copyright 2025 Mikhail Borisov
 """Tests for the NUMA pinning helpers and NUMA-aware DDP training."""
 
 import os
