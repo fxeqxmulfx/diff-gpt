@@ -47,6 +47,9 @@ trained tokens) instead of wall-clock seconds:
     #   seeds 0-2: 1.64, 1.65, 1.64; means to 3 decimals: 1.660 before,
     #   1.655 with XSA alone, 1.645 with SwiGLU alone, 1.640 with both
     #   SwiGLU hidden 171 = 2/3 of 256: params 204_800 -> 205_056
+    # UPD Peri-RMSNorm and Q/K RMSNorm: val_loss=1.63  train_flops=3.40e12
+    #   seeds 0-2: 1.631, 1.631, 1.629; mean 1.630 (1.640 before)
+    #   seed 0 of the previous model, re-measured here: 1.637
 
 The test below is one run of the benchmark config (seed 0). Its loss tolerance
 covers the spread between seeds (about 0.01) and hardware, yet is tight enough
@@ -71,7 +74,7 @@ PAD_TO = 64
 
 # Current benchmark (see the ledger): mean val_loss over seeds 0-2 on CUDA and
 # the training compute of the benchmark config.
-VAL_LOSS_BASELINE = 1.64
+VAL_LOSS_BASELINE = 1.63
 VAL_LOSS_TOLERANCE = 0.05
 TRAIN_FLOPS_BASELINE = 3.40e12
 
@@ -137,7 +140,7 @@ def test_text_training_flops_and_loss() -> None:
     Check val_loss and training FLOPs against the current benchmark.
 
     End-to-end regression guard: the GPT trained at lr=1e-2 with weight
-    decay 0.03 and 1_000 warmup steps reaches val_loss ≈ 1.64 (mean over
+    decay 0.03 and 1_000 warmup steps reaches val_loss ≈ 1.63 (mean over
     seeds 0-2 on CUDA) on the full tinyshakespeare run (5_000 iters) for
     3.40e12 training FLOPs. These settings are the best of a grid over lr,
     weight decay and warmup, run before XSA and SwiGLU (see the ledger).
