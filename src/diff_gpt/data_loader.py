@@ -13,7 +13,13 @@ from typing import TYPE_CHECKING, NamedTuple
 import numpy as np
 import torch
 
-from diff_gpt.encoder_decoder import encode, prefix_rows, resolve_tokenizer
+from diff_gpt.encoder_decoder import (
+    encode,
+    fill_missing,
+    observed_tokens,
+    prefix_rows,
+    resolve_tokenizer,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -26,6 +32,22 @@ if TYPE_CHECKING:
 def _quote_ident(name: str) -> str:
     """Safely quote a SQLite identifier (table or column name)."""
     return '"' + name.replace('"', '""') + '"'
+
+
+def _fill(inp: np.ndarray) -> np.ndarray:
+    """
+    Fill the NaN of `inp` for the encoder: `fill_missing`, and 0 in a column of NaN.
+
+    Every token of such a column reads a NaN, so no loss sees its values.
+    """
+    return fill_missing(np.where(np.isnan(inp).all(axis=0), 0.0, inp))
+
+
+class Tokens(NamedTuple):
+    """Tokens of a table and, for each, whether it reads no NaN (`observed_tokens`)."""
+
+    values: tuple[int, ...]
+    observed: tuple[bool, ...]
 
 
 class DiffSQLiteDataLoader:
@@ -41,6 +63,10 @@ class DiffSQLiteDataLoader:
     floor(n_tokens * train_part); `get_batch('train')` samples windows from
     the prefix and `get_batch('val')` samples from the suffix. A split draws
     only from tables whose part is longer than `block_size`.
+
+    NULL values, missing ones, are filled within each window that is read
+    (`encoder_decoder.fill_missing`), and the targets whose tokens read one
+    are masked with -100 (`encoder_decoder.observed_tokens`).
     """
 
     __slots__ = (
@@ -197,12 +223,13 @@ class DiffSQLiteDataLoader:
         """Return the number of tokens in `table`."""
         return self.tables_tokens_len[table]
 
-    def get_data(self, table: str, start: int, end: int) -> tuple[int, ...]:
+    def get_data(self, table: str, start: int, end: int) -> Tokens:
         """
         Return the tokens at flat positions [start, end) of `table`.
 
         Only the rows covering that range, plus the derivative prefix, are read
-        and encoded. If the range runs past the end of the table the result is
+        and encoded, with their NaN filled; `observed` tells which tokens read
+        none. If the range runs past the end of the table the result is
         shorter than `end - start`; it is empty when no rows match.
         """
         n_columns = self.tables_columns_count[table]
@@ -227,23 +254,23 @@ class DiffSQLiteDataLoader:
         self.cursor.execute(query, (t_start, t_end))
         rows = self.cursor.fetchall()
         if not rows:
-            return ()
+            return Tokens(values=(), observed=())
         arr = np.array(rows, dtype=np.float64)[:, 1:]
         _, _, encoded = self.encode_data(
-            inp=arr,
+            inp=_fill(arr),
             vocab_size=self.vocab_size,
             domain_of_definition=self._domain(table),
             order_of_derivative=self.order_of_derivative,
             tokenizer=self.tokenizer,
         )
         encoded = encoded.flatten()
+        observed = observed_tokens(arr, self.order_of_derivative).reshape(-1)
         local_offset = effective_start % n_features
-        req_length = end - start
-        if len(encoded) < local_offset + req_length:
-            result = encoded[local_offset:]
-        else:
-            result = encoded[local_offset : local_offset + req_length]
-        return tuple(result.tolist())
+        part = slice(local_offset, local_offset + end - start)
+        return Tokens(
+            values=tuple(encoded[part].tolist()),
+            observed=tuple(observed[part].tolist()),
+        )
 
     def has_val(self) -> bool:
         """Return True if some table's held-out suffix is longer than `block_size`."""
@@ -302,18 +329,17 @@ class DiffSQLiteDataLoader:
                     generator=rng,
                 ),
             )
-            temp = torch.tensor(
-                self.get_data(
-                    table=table,
-                    start=data_idx,
-                    end=data_idx + block_size + 1,
-                ),
-                dtype=torch.int64,
+            tokens = self.get_data(
+                table=table,
+                start=data_idx,
+                end=data_idx + block_size + 1,
             )
-            if temp.size(0) != block_size + 1:
+            if len(tokens.values) != block_size + 1:
                 continue
+            temp = torch.tensor(tokens.values, dtype=torch.int64)
+            observed = torch.tensor(tokens.observed[1:], dtype=torch.bool)
             x[i] = temp[:-1]
-            y[i] = temp[1:]
+            y[i] = temp[1:].masked_fill(~observed, -100)
             i += 1
         device = self.device
         x, y = x.to(device=device), y.to(device=device)
@@ -432,13 +458,15 @@ class _Windows(NamedTuple):
     """The windows of one split: its series in one tensor and every window start."""
 
     tokens: torch.Tensor  # the series of the split, one after another
+    # Whether each token reads no NaN (`observed_tokens`); None where all do.
+    observed: torch.Tensor | None
     starts: torch.Tensor  # the offset in `tokens` of every window
     phases: torch.Tensor  # the column of each window's first target token
     longest: int  # the length of the longest series of the split
 
 
 def _windows(
-    serieses: list[np.ndarray],
+    serieses: list[tuple[np.ndarray, np.ndarray]],
     block_size: int,
     step: int,
     n_features: int,
@@ -447,23 +475,29 @@ def _windows(
     """
     Index the windows of `block_size + 1` tokens that start at a multiple of `step`.
 
-    The series longer than `block_size` go into one tensor, one after
+    `serieses` holds the tokens of each series and whether each reads no
+    NaN. The series longer than `block_size` go into one tensor, one after
     another, and the starts run over them in order, so that no window
     crosses into the next series and a uniform start is a uniform window.
     """
-    eligible = [s for s in serieses if len(s) > block_size]
-    lengths = np.array([len(s) for s in eligible], dtype=np.int64)
+    eligible = [s for s in serieses if len(s[0]) > block_size]
+    lengths = np.array([len(tokens) for tokens, _ in eligible], dtype=np.int64)
     counts = (lengths - block_size - 1) // step + 1
     # Each start's offset within its own series.
     first = np.cumsum(counts) - counts
     local = (np.arange(counts.sum(), dtype=np.int64) - np.repeat(first, counts)) * step
     starts = np.repeat(np.cumsum(lengths) - lengths, counts) + local
-    tokens = np.concatenate(eligible) if eligible else np.zeros(0, dtype=np.int64)
+    tokens = np.zeros(0, dtype=np.int64)
+    observed = np.zeros(0, dtype=bool)
+    if eligible:
+        tokens = np.concatenate([t for t, _ in eligible])
+        observed = np.concatenate([o for _, o in eligible])
     return _Windows(
         tokens=torch.from_numpy(tokens).to(device),
+        observed=None if observed.all() else torch.from_numpy(observed).to(device),
         starts=torch.from_numpy(starts).to(device),
         phases=torch.from_numpy((local + 1) % n_features).to(device),
-        longest=max((len(s) for s in serieses), default=0),
+        longest=max((len(tokens) for tokens, _ in serieses), default=0),
     )
 
 
@@ -482,6 +516,10 @@ class DiffDataFrameDataLoader:
     If `target_columns` is set, only positions that belong to those columns
     contribute to the loss (TimeXer-style exogenous forecasting) — covariate
     positions in `y` are set to -100 (F.cross_entropy's ignore_index).
+
+    NaN marks a missing value: each series is encoded with its NaN filled
+    (`encoder_decoder.fill_missing`), and the targets whose tokens read a
+    NaN are set to -100 too (`encoder_decoder.observed_tokens`).
 
     `align_windows`: cut windows only at token offsets that are multiples of
     `n_features`, so every window starts with column 0 exactly like the
@@ -542,17 +580,19 @@ class DiffDataFrameDataLoader:
         self.device = device
         self.rng = rng if rng is not None else torch.Generator().manual_seed(42)
         # Encode each DataFrame into a flat token array, then split.
-        train_serieses: list[np.ndarray] = []
-        val_serieses: list[np.ndarray] = []
+        train_serieses: list[tuple[np.ndarray, np.ndarray]] = []
+        val_serieses: list[tuple[np.ndarray, np.ndarray]] = []
         for df in dfs:
+            inp = df.to_numpy(dtype=np.float64)
             _, _, encoded = encode(
-                inp=df.to_numpy(dtype=np.float64),
+                inp=_fill(inp),
                 vocab_size=vocab_size,
                 domain_of_definition=domain_of_definition,
                 order_of_derivative=order_of_derivative,
                 tokenizer=self.tokenizer,
             )
             flat = encoded.reshape(-1)
+            observed = observed_tokens(inp, order_of_derivative).reshape(-1)
             # Split on a row boundary, so that the val slice starts with column
             # 0 like the train slice. `get_batch` takes a position's column from
             # its offset in the slice: with a mid-row split the val target mask
@@ -560,8 +600,8 @@ class DiffDataFrameDataLoader:
             # another phase than the inference context.
             n = int(len(flat) * train_part)
             n -= n % n_features
-            train_serieses.append(flat[:n])
-            val_serieses.append(flat[n:])
+            train_serieses.append((flat[:n], observed[:n]))
+            val_serieses.append((flat[n:], observed[n:]))
         step = n_features if align_windows else 1
         self._train_windows = _windows(
             train_serieses,
@@ -580,7 +620,8 @@ class DiffDataFrameDataLoader:
         """
         Sample a batch of windows from `split` as (inputs, next-token targets).
 
-        Positions of `y` outside `target_columns` are masked with -100.
+        Positions of `y` outside `target_columns`, or whose tokens read a NaN,
+        are masked with -100.
         """
         if split == "train":
             windows = self._train_windows
@@ -607,6 +648,8 @@ class DiffDataFrameDataLoader:
         x = windows.tokens[index]
         # y is x shifted by one token; phase is the column of y[:, 0].
         y = windows.tokens[index + 1]
+        if windows.observed is not None:
+            y = y.masked_fill(~windows.observed[index + 1], -100)
         y = _mask_targets(
             y,
             self.block_size,

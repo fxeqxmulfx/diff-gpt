@@ -17,10 +17,10 @@ from diff_gpt.encoder_decoder import (
 V = 64
 
 
-@pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
-def test_encode_and_domain_reject_nan_and_infinity(bad: float) -> None:
+@pytest.mark.parametrize("bad", [np.inf, -np.inf])
+def test_encode_and_domain_reject_infinity(bad: float) -> None:
     """
-    Check that encode and get_domain_of_definition raise on NaN and infinity.
+    Check that encode and get_domain_of_definition raise on infinity.
 
     The domain came out NaN, the column was then taken for a constant one,
     and LGT emitted garbage tokens with only numpy's cast warning.
@@ -28,11 +28,21 @@ def test_encode_and_domain_reject_nan_and_infinity(bad: float) -> None:
     x = np.array([[0.0], [1.0], [bad], [2.0]])
     with pytest.raises(ValueError, match="inp must be finite"):
         encode(x, V, np.array([1.0]), 1)
-    with pytest.raises(ValueError, match="inp must be finite"):
+    with pytest.raises(ValueError, match="holds infinity"):
         get_domain_of_definition(x, 1)
     finite = np.array([[0.0], [1.0], [2.0]])
     with pytest.raises(ValueError, match="domain_of_definition must be finite"):
         encode(finite, V, np.array([bad]), 1)
+
+
+def test_encode_rejects_nan_and_names_the_fill() -> None:
+    """Check that encode raises on NaN, naming fill_missing, and on a NaN domain."""
+    x = np.array([[0.0], [1.0], [np.nan], [2.0]])
+    with pytest.raises(ValueError, match="fill_missing"):
+        encode(x, V, np.array([1.0]), 1)
+    finite = np.array([[0.0], [1.0], [2.0]])
+    with pytest.raises(ValueError, match="domain_of_definition must be finite"):
+        encode(finite, V, np.array([np.nan]), 1)
 
 
 def test_values_other_than_float64_are_rejected() -> None:
@@ -42,9 +52,9 @@ def test_values_other_than_float64_are_rejected() -> None:
         encode(x.astype(object), V, np.array([1.0]), 1)
     with pytest.raises(TypeError, match="inp must be float64"):
         get_domain_of_definition(x.astype(object), 1)
-    st, sc, tok = encode(x, V, np.array([1.0]), 1)
+    st, grid, tok = encode(x, V, np.array([1.0]), 1)
     with pytest.raises(TypeError, match="start must be float64"):
-        decode(st.astype(np.float32), sc, tok, V, 1)
+        decode(st.astype(np.float32), grid, tok, V, 1)
 
 
 # The order from which the int64 limit on the levels, 2^(62 - k), binds
@@ -127,10 +137,10 @@ def test_a_clipped_step_offsets_the_values_after_it(tokenizer: str) -> None:
     x = np.concatenate([np.zeros((1, 1)), np.cumsum(steps, axis=0)])
     dod = np.array([1.0])
     with pytest.warns(TokenClippingWarning, match="1 of 400 tokens"):
-        st, sc, tok = encode(x, V, dod, 1, tokenizer=tokenizer)
+        st, grid, tok = encode(x, V, dod, 1, tokenizer=tokenizer)
     _, _, before = encode(x[:201], V, dod, 1, tokenizer=tokenizer)
     assert np.array_equal(tok[:200], before)
-    err = (decode(st, sc, tok, V, 1, tokenizer=tokenizer) - x)[:, 0]
+    err = (decode(st, grid, tok, V, 1, tokenizer=tokenizer) - x)[:, 0]
     half_step = 1.0 / (V - 2) * (1 + 1e-9)  # Δ/2 = D / (V - 2), D = 1
     assert np.abs(err[:201]).max() <= half_step
     # The excess is a whole number of levels, so after the jump the error
@@ -160,7 +170,7 @@ def test_mash_scalar_order_0_rounds_like_the_per_column_order_0() -> None:
     """
     x = np.random.default_rng(0).normal(size=(2000, 1))
     dod = get_domain_of_definition(x, 0)
-    st, sc, scalar = encode(x, V, dod, 0, tokenizer="mash")
+    st, grid, scalar = encode(x, V, dod, 0, tokenizer="mash")
     _, _, per_column = encode(
         x,
         V,
@@ -169,7 +179,7 @@ def test_mash_scalar_order_0_rounds_like_the_per_column_order_0() -> None:
         tokenizer="mash",
     )
     assert np.array_equal(scalar, per_column)
-    dec = decode(st, sc, scalar, V, 0, tokenizer="mash")
+    dec = decode(st, grid, scalar, V, 0, tokenizer="mash")
     assert np.abs(dec - x).max() <= dod[0] / V * (1 + 1e-12)
 
 
@@ -242,8 +252,8 @@ def test_decode_raises_where_the_tokens_leave_int64(tokenizer: str) -> None:
     past 2^63; the int64 sums would wrap and decode to garbage.
     """
     x = np.random.default_rng(0).normal(size=(10, 1))
-    st, sc, _ = encode(x, V, np.array([10.0]), 3, tokenizer=tokenizer)
+    st, grid, _ = encode(x, V, np.array([10.0]), 3, tokenizer=tokenizer)
     tokens = np.full((3_000_000, 1), V - 1, dtype=np.int64)
     with pytest.raises(ValueError, match="outside int64"):
-        decode(st, sc, tokens, V, 3, tokenizer=tokenizer)
-    assert np.isfinite(decode(st, sc, tokens[:1000], V, 3, tokenizer=tokenizer)).all()
+        decode(st, grid, tokens, V, 3, tokenizer=tokenizer)
+    assert np.isfinite(decode(st, grid, tokens[:1000], V, 3, tokenizer=tokenizer)).all()

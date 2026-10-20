@@ -93,11 +93,11 @@ def _error_in_half_steps(
     """Encode `x` on `domain` with warnings as errors; return max |x̂ - x| / (Δ/2)."""
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        start, scale, tokens = encode(x, vocab_size, domain, order, tokenizer=tokenizer)
+        start, grid, tokens = encode(x, vocab_size, domain, order, tokenizer=tokenizer)
     assert tokens.min() >= 1
     assert tokens.max() <= vocab_size - 1
-    dec = decode(start, scale, tokens, vocab_size, order, tokenizer=tokenizer)
-    return float(np.abs(dec - x).max() * 2 * scale[0])
+    dec = decode(start, grid, tokens, vocab_size, order, tokenizer=tokenizer)
+    return float(np.abs(dec - x).max() * 2 * grid.scale[0])
 
 
 # The k = 1 examples use V = 64, where s·D may reach V/2 - 1 = 31.
@@ -144,8 +144,8 @@ def test_the_scale_rounds_down(tokenizer: str) -> None:
     dod = get_domain_of_definition(x, 1)
     nearest = (V_K1 - 2) / dod[0] / 2
     assert Fraction(nearest) * Fraction(dod[0]) > ROOM_K1
-    _, scale, _ = encode(x, V_K1, dod, 1, tokenizer=tokenizer)
-    assert Fraction(scale[0]) * Fraction(dod[0]) <= ROOM_K1
+    _, grid, _ = encode(x, V_K1, dod, 1, tokenizer=tokenizer)
+    assert Fraction(grid.scale[0]) * Fraction(dod[0]) <= ROOM_K1
     assert _error_in_half_steps(x, V_K1, dod, 1, tokenizer) <= DECODE_SLACK
 
 

@@ -69,10 +69,10 @@ def _assert_theorem_1(
     dod = get_domain_of_definition(x, order)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        start, scale, tokens = encode(x, vocab_size, dod, order, tokenizer=tokenizer)
+        start, grid, tokens = encode(x, vocab_size, dod, order, tokenizer=tokenizer)
     assert tokens.min() >= 1
     assert tokens.max() <= vocab_size - 1
-    dec = decode(start, scale, tokens, vocab_size, order, tokenizer=tokenizer)
+    dec = decode(start, grid, tokens, vocab_size, order, tokenizer=tokenizer)
     p = start.shape[0]
     assert p == sum(order.lags)
     assert np.array_equal(dec[:p], x[:p])
@@ -198,7 +198,7 @@ def test_seasonal_decode_raises_where_the_tokens_leave_int64(tokenizer: str) -> 
     vocab_size = 2**20
     order = Difference(1, 1, DAY)
     x = _hourly(100)
-    start, scale, _ = encode(
+    start, grid, _ = encode(
         x,
         vocab_size,
         get_domain_of_definition(x, order),
@@ -207,8 +207,8 @@ def test_seasonal_decode_raises_where_the_tokens_leave_int64(tokenizer: str) -> 
     )
     tokens = np.full((200_000, 2), vocab_size - 1, dtype=np.int64)
     with pytest.raises(ValueError, match="outside int64"):
-        decode(start, scale, tokens, vocab_size, order, tokenizer=tokenizer)
-    short = decode(start, scale, tokens[:1_000], vocab_size, order, tokenizer=tokenizer)
+        decode(start, grid, tokens, vocab_size, order, tokenizer=tokenizer)
+    short = decode(start, grid, tokens[:1_000], vocab_size, order, tokenizer=tokenizer)
     assert np.isfinite(short).all()
 
 
@@ -272,11 +272,11 @@ def test_order_0_uses_every_token_and_stays_within_d_over_v(tokenizer: str) -> N
     assert dod[0] == ORDER_0_DOMAIN
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        start, scale, tokens = encode(x, ORDER_0_V, dod, 0, tokenizer=tokenizer)
-    assert Fraction(scale[0]) * Fraction(dod[0]) < Fraction(ORDER_0_V, 2)
+        start, grid, tokens = encode(x, ORDER_0_V, dod, 0, tokenizer=tokenizer)
+    assert Fraction(grid.scale[0]) * Fraction(dod[0]) < Fraction(ORDER_0_V, 2)
     assert tokens[:3, 0].tolist() == [0, ORDER_0_V - 1, ORDER_0_V // 2]
-    dec = decode(start, scale, tokens, ORDER_0_V, 0, tokenizer=tokenizer)
-    half_step = 1 / (2 * scale[0])
+    dec = decode(start, grid, tokens, ORDER_0_V, 0, tokenizer=tokenizer)
+    half_step = 1 / (2 * grid.scale[0])
     assert half_step <= ORDER_0_DOMAIN / ORDER_0_V * (1 + 2**-50)
     assert np.abs(dec - x).max() <= half_step * DECODE_SLACK
 

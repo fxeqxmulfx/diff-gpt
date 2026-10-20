@@ -74,6 +74,22 @@ def test_load_compares_the_lags_of_seasonal_operators(tmp_path: Path) -> None:
         other.load(path)
 
 
+def test_load_compares_a_domain_of_ranges_by_its_pairs(tmp_path: Path) -> None:
+    """Check that ranges [lo, hi], shape (F, 2), are saved as pairs and compared."""
+    path = str(tmp_path / "model.bin")
+    ranges = np.array([[-1.0, 1.0], [0.0, 2.0]])
+    saved = _diffgpt(0, domain_of_definition=ranges)
+    saved.save(path)
+    encoder = torch.load(path, weights_only=True)["encoder"]
+    assert encoder["domain_of_definition"] == ranges.tolist()
+    twin = _diffgpt(1, domain_of_definition=ranges.copy())
+    twin.load(path)
+    assert _same(_weights(saved), _weights(twin))
+    other = _diffgpt(1, domain_of_definition=np.array([[-1.0, 1.0], [0.0, 3.0]]))
+    with pytest.raises(ValueError, match="holds weights for domain_of_definition="):
+        other.load(path)
+
+
 @pytest.mark.parametrize(
     ("settings", "name"),
     [

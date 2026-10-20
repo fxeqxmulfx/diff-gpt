@@ -18,7 +18,9 @@ from diff_gpt.encoder_decoder import (
     column_lags,
     decode,
     encode,
+    fill_missing,
     integrate,
+    observed_tokens,
     prefix_rows,
     resolve_tokenizer,
 )
@@ -33,7 +35,7 @@ from diff_gpt.train_ddp import train_numa as _train_numa
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from diff_gpt.encoder_decoder import Order
+    from diff_gpt.encoder_decoder import Grid, Order
     from diff_gpt.model.gpt import BaseGPT
     from diff_gpt.sampler.sampler import Sampler
     from diff_gpt.train import DataLoader, Evaluation
@@ -108,6 +110,10 @@ class DiffGPT:
         sequence with one per column; an order is an int k, for Δ^k, or an
         `encoder_decoder.Difference`, such as the seasonal Difference(24).
 
+        `domain_of_definition`: D per column, shape (F,), for steps in
+        [-D, D], or the ranges [lo, hi], shape (F, 2)
+        (`encoder_decoder.get_domain_of_definition`).
+
         `tokenizer`: "lgt" or "mash", the one the model was trained with. None
         resolves to `encoder_decoder.DEFAULT_TOKENIZER` now and keeps it, so
         the model decodes with its own tokenizer whatever the process default
@@ -128,10 +134,14 @@ class DiffGPT:
         return prefix_rows(self.order_of_derivative, n_features)
 
     def _to_input(self, df: pd.DataFrame) -> np.ndarray:
-        """Return the values of `df` as the encoder takes them: float64."""
-        return df.to_numpy(dtype=np.float64)
+        """
+        Return the values of `df` as the encoder takes them: float64, NaN filled.
 
-    def _encode(self, inp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        `encoder_decoder.fill_missing` fills a gap with the line across it.
+        """
+        return fill_missing(df.to_numpy(dtype=np.float64))
+
+    def _encode(self, inp: np.ndarray) -> tuple[np.ndarray, Grid, np.ndarray]:
         """Encode `inp` with the model's encoder settings."""
         return encode(
             inp=inp,
@@ -144,7 +154,7 @@ class DiffGPT:
     def _decode_future(
         self,
         anchor: np.ndarray,
-        scale: np.ndarray,
+        grid: Grid,
         tokens: np.ndarray,
     ) -> np.ndarray:
         """
@@ -156,7 +166,7 @@ class DiffGPT:
         """
         decoded = decode(
             start=anchor,
-            scale=scale,
+            grid=grid,
             inp=tokens,
             vocab_size=self.model.vocab_size,
             order_of_derivative=self.order_of_derivative,
@@ -372,7 +382,7 @@ class DiffGPT:
                     max_tokens=max_new_points * columns,
                     sampler=sampler,
                 )
-                for i, inp, (_, scale, _), new in zip(
+                for i, inp, (_, grid, _), new in zip(
                     batch,
                     inputs,
                     encoded,
@@ -383,11 +393,14 @@ class DiffGPT:
                     # The generated tokens continue from the last max_order rows.
                     future = self._decode_future(
                         inp[len(inp) - max_order :],
-                        scale,
+                        grid,
                         tokens.reshape(max_new_points, columns),
                     )
                     forecasts[i] = pd.DataFrame(
-                        np.concatenate([inp, future], axis=0),
+                        np.concatenate(
+                            [dfs[i].to_numpy(dtype=np.float64), future],
+                            axis=0,
+                        ),
                         columns=dfs[i].columns,
                     )
         return [forecasts[i] for i in range(len(dfs))]
@@ -440,7 +453,7 @@ class DiffGPT:
         columns = df.shape[1]
         max_order = self._forecast_order(df, max_new_points)
         inp = self._to_input(df)
-        _, scale, encoded_data = self._encode(inp)
+        _, grid, encoded_data = self._encode(inp)
         context_tokens = encoded_data.reshape(-1).tolist()
         # Engine.generate_batch natively expands one prompt into num_samples
         # parallel trajectories (KV-cache-accelerated).
@@ -461,7 +474,7 @@ class DiffGPT:
             generated = np.asarray(results[s][n_prompt:], dtype=np.int64)
             futures[s] = self._decode_future(
                 anchor,
-                scale,
+                grid,
                 generated.reshape(max_new_points, columns),
             )
         return futures
@@ -526,8 +539,10 @@ class DiffGPT:
 
         Shape: (T, F), same columns and index as `df`. Positions that
         cannot be scored are NaN: the first `max_k` rows are the start
-        prefix (no derivative available), and the very first encoded
-        token has no preceding context to condition on.
+        prefix (no derivative available), the very first encoded
+        token has no preceding context to condition on, and a token that
+        reads a NaN of `df` stands for no observed step
+        (`encoder_decoder.observed_tokens`); the context fills the NaN.
         """
         columns = df.shape[1]
         T = df.shape[0]
@@ -537,6 +552,10 @@ class DiffGPT:
             raise ValueError(msg)
 
         _, _, encoded = self._encode(self._to_input(df))
+        observed = observed_tokens(
+            df.to_numpy(dtype=np.float64),
+            self.order_of_derivative,
+        )
         N = encoded.size
         if self.model.block_size < N:
             msg = (
@@ -562,6 +581,7 @@ class DiffGPT:
         flat = np.full(N, np.nan, dtype=np.float64)
         flat[1:] = nll_np
         scores_encoded = flat.reshape(encoded.shape[0], columns)
+        scores_encoded[~observed] = np.nan
 
         out = np.full((T, columns), np.nan, dtype=np.float64)
         out[max_order:] = scores_encoded
@@ -625,7 +645,9 @@ class DiffGPT:
         spread without retraining.
 
         `windows`: (context DataFrame, truth array of shape (H, F)) pairs from
-        a validation split — never the test data being reported.
+        a validation split — never the test data being reported. NaN in the
+        truth marks a missing value: only the others are scored, and a window
+        without any is skipped.
         `criterion`: "crps" minimises the mean empirical CRPS (a proper score);
         "coverage" minimises |empirical coverage - `level`|.
 
@@ -640,21 +662,29 @@ class DiffGPT:
         if num_samples < _MIN_CALIBRATION_SAMPLES:
             msg = "CRPS and coverage need at least 2 samples"
             raise ValueError(msg)
+        scored = []
+        for ctx, raw_truth in windows:
+            truth = np.asarray(raw_truth, dtype=np.float64)
+            observed = ~np.isnan(truth)
+            if observed.any():
+                scored.append((ctx, truth[observed], observed))
+        if not scored:
+            msg = "no calibration window has a truth value that is not NaN"
+            raise ValueError(msg)
         scores: dict[float, float] = {}
         for t in temperatures:
             if t <= 0:
                 msg = "temperature must be positive for sampling"
                 raise ValueError(msg)
             vals = []
-            for ctx, raw_truth in windows:
-                truth = np.asarray(raw_truth, dtype=np.float64)
+            for ctx, truth, observed in scored:
                 samples = self._generate_future_samples(
                     df=ctx,
                     max_new_points=max_new_points,
                     sampler=TemperatureSampler(temperature=t),
                     num_samples=num_samples,
                     seed=seed,  # same draws for every candidate: a paired comparison
-                )
+                )[:, observed]
                 if criterion == "crps":
                     vals.append(crps_empirical(samples, truth))
                 else:
@@ -755,7 +785,7 @@ class DiffGPT:
         # warning, whatever values the caller supplied there.
         ctx_inp = self._to_input(context_df)
         # A copy: under pandas copy-on-write to_numpy gives a read-only view.
-        future_inp = self._to_input(future_covariates_df).copy()
+        future_inp = future_covariates_df.to_numpy(dtype=np.float64).copy()
         # Slice by length: ctx_inp[-0:] would be the whole context.
         anchor = ctx_inp[ctx_len - max_order :]
         continuation = integrate(
@@ -765,7 +795,10 @@ class DiffGPT:
         )[max_order:]
         targets = sorted(target_set)
         future_inp[:, targets] = continuation[:, targets]
-        _, scale, ctx_tokens = self._encode(ctx_inp)
+        # A missing covariate value takes the line from the context across
+        # its gap, as in `_to_input`.
+        future_inp = fill_missing(np.concatenate([ctx_inp, future_inp]))[ctx_len:]
+        _, grid, ctx_tokens = self._encode(ctx_inp)
         _, _, future_tokens = self._encode(
             np.concatenate([anchor, future_inp], axis=0),
         )
@@ -794,7 +827,7 @@ class DiffGPT:
         generated = np.asarray(results[0][ctx_token_count:], dtype=np.int64)
         future = self._decode_future(
             anchor,
-            scale,
+            grid,
             generated.reshape(pred_len, n_features),
         )
         full = np.concatenate([context_df.to_numpy(dtype=np.float64), future], axis=0)
@@ -805,15 +838,15 @@ class DiffGPT:
         Return the settings the tokens depend on, as plain per-column values.
 
         A column's order is the list of its lags: [1, 1] for the order 2,
-        [1, 24] for Difference(1, 24).
+        [1, 24] for Difference(1, 24). Its domain is D, or the pair [lo, hi].
         """
-        domain = np.asarray(self.domain_of_definition).reshape(-1)
+        domain = np.asarray(self.domain_of_definition, dtype=np.float64)
         lags = column_lags(self.order_of_derivative, domain.shape[0])
         return {
             "encoder_version": ENCODER_VERSION,
             "tokenizer": self.tokenizer,
             "order_of_derivative": [list(column) for column in lags],
-            "domain_of_definition": [float(d) for d in domain],
+            "domain_of_definition": domain.tolist(),
         }
 
     def save(self, path: str = "diff-gpt.bin") -> None:

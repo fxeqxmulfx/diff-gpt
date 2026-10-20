@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import torch
 
-from diff_gpt.data_loader import DiffSQLiteDataLoader
+from diff_gpt.data_loader import DiffSQLiteDataLoader, Tokens
 from diff_gpt.encoder_decoder import Difference, encode
 
 if TYPE_CHECKING:
@@ -193,7 +193,7 @@ def test_retrieval_order_0(linear_db_path: str) -> None:
 
     # Row 5 (dt=1050): [5.0, 10.0].
     # Start Index = 5 * 2 = 10.
-    data = loader.get_data("sensor_data", 10, 12)
+    data = loader.get_data("sensor_data", 10, 12).values
     assert len(data) == TOKENS_PER_ROW
     assert data[0] == ROW_5_COL_0
     assert data[1] == ROW_5_COL_1
@@ -216,7 +216,7 @@ def test_retrieval_order_1_offset(linear_db_path: str) -> None:
     # Request first valid tokens (Index 0).
     # Should correspond to Row 1 (calculated from Row 0).
     # Row 1 values: [1.0, 2.0]
-    data = loader.get_data("sensor_data", 0, 2)
+    data = loader.get_data("sensor_data", 0, 2).values
     assert data[0] == 1
     assert data[1] == ROW_1_COL_1
     loader.close()
@@ -238,7 +238,7 @@ def test_sub_row_slicing(linear_db_path: str) -> None:
     # Row 5: [5, 10] (Indices 10, 11)
     # Row 6: [6, 12] (Indices 12, 13)
     # Request indices 11 to 13 -> [10, 6]
-    data = loader.get_data("sensor_data", 11, 13)
+    data = loader.get_data("sensor_data", 11, 13).values
     assert tuple(data) == (10, 6)
     loader.close()
 
@@ -258,7 +258,7 @@ def test_cross_row_slicing(linear_db_path: str) -> None:
 
     # Row 1 last val (2.0) -> Index 3
     # Row 2 first val (2.0) -> Index 4
-    data = loader.get_data("sensor_data", 3, 5)
+    data = loader.get_data("sensor_data", 3, 5).values
     assert tuple(data) == (2, 2)
     loader.close()
 
@@ -277,7 +277,7 @@ def test_exact_boundary_end(linear_db_path: str) -> None:
     )
 
     # Last row is 99. Indices 198, 199.
-    data = loader.get_data("sensor_data", 198, 200)
+    data = loader.get_data("sensor_data", 198, 200).values
     assert len(data) == TOKENS_PER_ROW
     assert data[0] == LAST_ROW_COL_0
     assert data[1] == LAST_ROW_COL_1
@@ -327,7 +327,7 @@ def test_wide_table_flattening(complex_db_path: str) -> None:
 
     # Get 0.3, 0.4, 1.1, 1.2 (Indices 2 to 6)
     # Cast to int by dummy encoder -> 0, 0, 1, 1
-    data = loader.get_data("wide", 2, 6)
+    data = loader.get_data("wide", 2, 6).values
     assert tuple(data) == (0, 0, 1, 1)
     loader.close()
 
@@ -491,7 +491,7 @@ def test_get_data_with_real_encoder_multi_feature(wide_only_db_path: str) -> Non
         encode_data=encode,
     )
 
-    data = loader.get_data("wide", 0, block_size + 1)
+    data = loader.get_data("wide", 0, block_size + 1).values
     assert len(data) == block_size + 1
     assert all(isinstance(v, int) for v in data)
     assert all(0 <= v < vocab_size for v in data)
@@ -592,7 +592,7 @@ def test_sql_identifier_quoting_for_weird_table_name(tmp_path: Path) -> None:
         encode_data=pass_through_encode,
     )
     assert weird_name in loader.tables
-    data = loader.get_data(weird_name, 0, WEIRD_TABLE_READ_LEN)
+    data = loader.get_data(weird_name, 0, WEIRD_TABLE_READ_LEN).values
     assert len(data) == WEIRD_TABLE_READ_LEN
     loader.close()
 
@@ -612,10 +612,10 @@ def test_get_batch_tolerates_short_reads_without_recursion(
     call_counter = {"n": 0}
 
     class FlakyLoader(DiffSQLiteDataLoader):
-        def get_data(self, table: str, start: int, end: int) -> tuple[int, ...]:
+        def get_data(self, table: str, start: int, end: int) -> Tokens:
             call_counter["n"] += 1
             if call_counter["n"] <= FORCED_SHORT_READS:
-                return ()
+                return Tokens(values=(), observed=())
             return super().get_data(table, start, end)
 
     loader = FlakyLoader(
@@ -688,7 +688,7 @@ def test_loader_returns_the_tokens_of_the_real_encoder(wide_only_db_path: str) -
         database=wide_only_db_path,
     )
     _, _, expected = encode(_wide_rows(), 256, domain, 1)
-    data = loader.get_data("wide", 0, block_size + 1)
+    data = loader.get_data("wide", 0, block_size + 1).values
     assert data == tuple(expected.reshape(-1)[: block_size + 1].tolist())
     x, _ = loader.get_batch("train")
     assert x.shape == (2, block_size)
@@ -721,7 +721,7 @@ def test_tables_of_different_widths_take_a_domain_each(complex_db_path: str) -> 
         ("wide", np.arange(20.0)[:, None] + np.array([0.1, 0.2, 0.3, 0.4])),
     ):
         _, _, expected = encode(rows, 256, domains[table], 0)
-        assert loader.get_data(table, 0, 6) == tuple(
+        assert loader.get_data(table, 0, 6).values == tuple(
             expected.reshape(-1)[:6].tolist(),
         )
     x, _ = loader.get_batch("train")
@@ -770,7 +770,7 @@ def test_sqlite_loader_encodes_with_its_tokenizer(
         tokenizer=tokenizer,
     )
     n_tokens = loader.get_data_len("wide")
-    assert loader.get_data("wide", 0, n_tokens) == tuple(
+    assert loader.get_data("wide", 0, n_tokens).values == tuple(
         tokens[tokenizer].reshape(-1).tolist(),
     )
     loader.close()
@@ -816,5 +816,5 @@ def test_sqlite_loader_offsets_follow_the_degree_of_the_operator(
     _, _, tokens = encode(rows, 256, domain, SEASONAL, tokenizer="lgt")
     flat = tokens.reshape(-1).tolist()
     for start, end in ((0, 9), (5, 30), (n_tokens - 7, n_tokens)):
-        assert loader.get_data("hourly", start, end) == tuple(flat[start:end])
+        assert loader.get_data("hourly", start, end).values == tuple(flat[start:end])
     loader.close()

@@ -5,7 +5,8 @@ a derivative-based tokenization. The encoder rounds the signal onto a grid
 of step $\Delta$ and emits the grid index differenced by an integer operator
 $c(B)$, the $k$-th difference $\Delta^k = (1 - B)^k$ or a seasonal one such as
 $1 - B^{24}$ (level-grid tokenization, LGT:
-$q_t = c(B)\,\mathrm{round}(s\,x_t) + V/2$); the decoder integrates the
+$q_t = c(B)\,\mathrm{round}(s\,x_t) + z$, with $z = V/2$ on a domain
+symmetric about 0); the decoder integrates the
 tokens exactly in integer arithmetic. The model is a
 plain GPT that reads the token stream as ordinary text — the inductive bias
 sits entirely in the tokenization.
@@ -80,6 +81,36 @@ values after it, with either tokenizer. `predict` decodes
 the forecast from the last context rows, so clipped context steps do not shift
 it.
 
+**Ranges.** `domain_of_definition` holds $D$ per channel, shape $(F,)$, for
+steps in $[-D, D]$, or a range $[lo, hi]$ per channel, shape $(F, 2)$, that
+need not hold 0 in its middle. The scale then fits $hi - lo$, not
+$2\max(|lo|, |hi|)$, into the $V - \|c\|_1$ levels ($V$ at the order 0), and
+the zero point $z$, the token of a zero step, puts the range in the middle of
+the vocabulary; on $[-D, D]$ the scale is the one above and $z = V/2$, so
+those tokens did not change. Where $(V - \|c\|_1)\,lo/(hi - lo)$ is an
+integer, as on $[-D, D]$, the bound is
+$\Delta/2 = (hi - lo)/(2(V - \|c\|_1))$; elsewhere the grid can lose one
+level, $\Delta/2 \le (hi - lo)/(2(V - \|c\|_1 - 1))$. Steps that lean to one
+side gain the most: counts on $[0, N]$ at the order 0, or a series that only
+rises, get twice the levels of $[-N, N]$.
+`get_domain_of_definition(..., symmetric=False)` returns the exact ranges,
+or with `quantile=q` the central interval between the quantiles $(1 - q)/2$
+and $(1 + q)/2$ of the steps. The Lean proofs cover $[-D, D]$; for ranges
+`level_grid` checks the fit in rationals, and the tests check the bound. A
+range narrow for its distance from 0 makes the levels $s\,x$ large: `encode`
+raises past $2^{53}$, as above, so subtract the series level or widen the
+range.
+
+**Missing values.** NaN marks a missing value, and `encode` takes none:
+`fill_missing` fills each gap with the line across it, and the nearest value
+at either end, and `observed_tokens` marks the tokens whose step $c(B)\,x_t$
+reads no NaN. The data loaders and `DiffGPT` do both. A NaN in a DataFrame,
+or NULL in a SQLite table, is filled for the encoder, and the targets whose
+tokens read it are masked with $-100$; `get_domain_of_definition` bounds only
+the observed steps, `anomaly_scores` is NaN at the others, `predict` reads the
+context as filled and returns it as given, and `calibrate_temperature` scores
+only the truth that is not NaN. An infinity still raises.
+
 **Theorem 2 (no encoder does better).** Take the decoder of Theorem 1: it
 reads the first $p$ values raw and decodes $\hat x_t = A_t + L_t/s$, where the
 levels $L$ integrate the tokens in $[0, V-1]$ and $c(B)$ maps the anchor $A$
@@ -100,7 +131,8 @@ in Lean 4: `le_mul_of_encodes` and `isLeast_encodes` in
 $\mathcal L^\star(V) = h(X_t \mid \text{ctx}) + \log V - \log(2D) + o(1)$.
 Ideal loss is linear in $\log V$, slope 1. Cross-vocab comparisons must subtract
 out $\log V$ to get the vocab-invariant *differential-entropy residual*
-$\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
+$\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$. On a range $[lo, hi]$,
+$hi - lo$ takes the place of $2D$.
 
 ## Key features
 
@@ -108,6 +140,11 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   in $T$ for any operator, exact integer decoding. The default MASH grid is
   anchored at the window prefix; the absolute LGT grid (`tokenizer="lgt"`)
   keeps the same bound and makes the tokens window-consistent.
+- **Per-channel ranges**: a domain of shape $(F, 2)$ gives each channel its
+  own range $[lo, hi]$ of steps, so steps that lean to one side spend no
+  levels on the other.
+- **Missing values**: NaN is filled for the encoder and its steps are left
+  out of the loss and the anomaly scores.
 - **Bayes point readout** (`DiffGPT.predict_point`): the point forecast that
   minimises the expected metric (MAE/MASE, MSE, sMAPE or M4's OWA) under
   $N$ sampled trajectories, instead of feeding argmax/median tokens back.
@@ -168,10 +205,11 @@ from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.encoder_decoder import get_domain_of_definition
 from diff_gpt.sampler.temperature import TemperatureSampler
 
-# Your data as DataFrames (one per series).
+# Your data as DataFrames (one per series); NaN marks a missing value.
 dfs: list[pd.DataFrame] = [...]
 
-# Compute domain (per-channel max |c(B) x|, the k-th difference at order k).
+# Compute domain: per-channel max |c(B) x|, the k-th difference at order k,
+# or with symmetric=False the range [lo, hi] of c(B) x, shape (F, 2).
 order = 1  # int k, OR Difference(1, 24), OR np.array([0, 1, 2]) per column
 all_data = np.concatenate([df.to_numpy(dtype=np.float64) for df in dfs], axis=0)
 domain = get_domain_of_definition(
@@ -303,7 +341,8 @@ observation is typical, high where it surprises the model.
 scores = model.anomaly_scores(df)
 # scores: DataFrame, same shape and columns as df.
 # First max_k rows are NaN (the derivative prefix); the first encoded
-# token at column 0 is also NaN (no preceding context).
+# token at column 0 is also NaN (no preceding context), and so is every
+# step that reads a NaN of df.
 
 row_surprise = scores.sum(axis=1, skipna=True)  # per-step aggregate
 anomalies = row_surprise[row_surprise > row_surprise.quantile(0.99)]

@@ -39,8 +39,8 @@ def _round_trip(
     dod = get_domain_of_definition(inp, order)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        start, scale, tokens = encode(inp, vocab_size, dod, order)
-    return dod, tokens, decode(start, scale, tokens, vocab_size, order)
+        start, grid, tokens = encode(inp, vocab_size, dod, order)
+    return dod, tokens, decode(start, grid, tokens, vocab_size, order)
 
 
 def _assert_theorem_1(
@@ -103,10 +103,11 @@ def test_diff_encoder_sin_cos_different_lenght() -> None:
     vocab_size = 256
     inp = _sin_cos(np.arange(1_000_000, dtype=np.float64))
     dod = get_domain_of_definition(inp, 1)
-    start, scale, tokens = encode(inp, vocab_size, dod, 1)
-    start_2, scale_2, tokens_2 = encode(inp[:16], vocab_size, dod, 1)
+    start, grid, tokens = encode(inp, vocab_size, dod, 1)
+    start_2, grid_2, tokens_2 = encode(inp[:16], vocab_size, dod, 1)
     assert np.array_equal(start, start_2)
-    assert np.array_equal(scale, scale_2)
+    assert np.array_equal(grid.scale, grid_2.scale)
+    assert np.array_equal(grid.zero, grid_2.zero)
     assert np.array_equal(tokens[: len(tokens_2)], tokens_2)
 
 

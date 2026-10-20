@@ -40,10 +40,10 @@ def test_lgt_bound_holds_exactly_in_float64_for_long_series(k: int) -> None:
     V = 256
     x = _walk(100_000, 1, seed=k)
     dod = get_domain_of_definition(x, k)
-    st, sc, tok = encode(x, V, dod, k, tokenizer="lgt")
+    st, grid, tok = encode(x, V, dod, k, tokenizer="lgt")
     assert tok.min() >= (1 if k else 0)
     assert tok.max() <= V - 1
-    dec = decode(st, sc, tok, V, k, tokenizer="lgt")
+    dec = decode(st, grid, tok, V, k, tokenizer="lgt")
     err = np.abs(dec - x).max()
     assert err <= _bound(dod[0], V, k) * (1 + 1e-12)
 
@@ -56,7 +56,7 @@ def test_lgt_window_encoding_equals_slice_of_full_encoding(k: int) -> None:
     dod = get_domain_of_definition(x, k)
     _, _, full = encode(x, V, dod, k, tokenizer="lgt")
     for a in range(100, 4_500, 700):
-        st, _sc, win = encode(
+        st, _grid, win = encode(
             x[a : a + 200],
             V,
             dod,
@@ -90,9 +90,9 @@ def test_lgt_mixed_orders_round_trip_per_column_bound() -> None:
     x = _walk(3_000, 4, seed=3)
     order = np.array([0, 1, 2, 3])
     dod = get_domain_of_definition(x, order)
-    st, sc, tok = encode(x, V, dod, order, tokenizer="lgt")
+    st, grid, tok = encode(x, V, dod, order, tokenizer="lgt")
     assert st.shape == (3, 4)
-    dec = decode(st, sc, tok, V, order, tokenizer="lgt")
+    dec = decode(st, grid, tok, V, order, tokenizer="lgt")
     assert dec.shape == x.shape
     for c in range(4):
         err = np.abs(dec[:, c] - x[:, c]).max()
@@ -104,15 +104,15 @@ def test_lgt_edge_cases_and_constant_column() -> None:
     V = 64
     x = _walk(5, 2, seed=5)
     dod = get_domain_of_definition(_walk(200, 2, seed=6), 2)
-    st, sc, tok = encode(x[:2], V, dod, 2, tokenizer="lgt")  # T == k
+    st, grid, tok = encode(x[:2], V, dod, 2, tokenizer="lgt")  # T == k
     assert tok.shape == (0, 2)
-    dec = decode(st, sc, tok, V, 2, tokenizer="lgt")
-    assert np.abs(dec - x[:2]).max() <= 1 / (2 * sc.min())
+    dec = decode(st, grid, tok, V, 2, tokenizer="lgt")
+    assert np.abs(dec - x[:2]).max() <= 1 / (2 * grid.scale.min())
     xc = np.stack([np.ones(300), _walk(300, 1, seed=7)[:, 0]], axis=1)
     dod = get_domain_of_definition(xc, 1)
-    st, sc, tok = encode(xc, V, dod, 1, tokenizer="lgt")
+    st, grid, tok = encode(xc, V, dod, 1, tokenizer="lgt")
     assert np.unique(tok[:, 0]).tolist() == [V // 2]
-    dec = decode(st, sc, tok, V, 1, tokenizer="lgt")
+    dec = decode(st, grid, tok, V, 1, tokenizer="lgt")
     assert np.abs(dec[:, 0] - 1.0).max() == 0.0
 
 
@@ -138,10 +138,10 @@ def test_lgt_requires_headroom_for_k_ge_2_and_is_bounded_with_it() -> None:
     with pytest.raises(ValueError, match=r"vocab_size > ‖c‖₁ = 4"):
         encode(x, 4, dod, 2, tokenizer="lgt")
     V = 8
-    st, sc, tok = encode(x, V, dod, 2, tokenizer="lgt")
+    st, grid, tok = encode(x, V, dod, 2, tokenizer="lgt")
     assert tok.min() >= 1
     assert tok.max() <= V - 1
-    dec = decode(st, sc, tok, V, 2, tokenizer="lgt")
+    dec = decode(st, grid, tok, V, 2, tokenizer="lgt")
     assert np.array_equal(dec, x)
 
 
@@ -155,10 +155,10 @@ def test_lgt_mixed_columns_bound() -> None:
     )
     V = 256
     dod = get_domain_of_definition(x, 1)
-    st, sc, tok = encode(x, V, dod, 1, tokenizer="lgt")
+    st, grid, tok = encode(x, V, dod, 1, tokenizer="lgt")
     assert tok.min() >= 1
     assert tok.max() <= V - 1
-    dec = decode(st, sc, tok, V, 1, tokenizer="lgt")
+    dec = decode(st, grid, tok, V, 1, tokenizer="lgt")
     err = np.abs(dec - x).max(axis=0)
     for c in range(x.shape[1]):
         # Constant columns (D = 0) sit on the fine level grid: error <= 2^-21.
@@ -203,7 +203,7 @@ def test_lgt_k1_keeps_the_bound_when_every_level_is_a_rounding_tie() -> None:
     dod = np.array([2.0])
     with warnings.catch_warnings():
         warnings.simplefilter("error", TokenClippingWarning)
-        st, sc, tok = encode(x, V, dod, 1, tokenizer="lgt")
-    dec = decode(st, sc, tok, V, 1, tokenizer="lgt")
+        st, grid, tok = encode(x, V, dod, 1, tokenizer="lgt")
+    dec = decode(st, grid, tok, V, 1, tokenizer="lgt")
     err = np.abs(dec - x).max()
     assert err <= _bound(2.0, V, 1) * (1 + 1e-12)
