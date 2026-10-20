@@ -719,9 +719,112 @@ all accuracy/loss observations retain the original measured values.
 Tests check exact fork-state preservation, source immutability and bitwise
 agreement between continuous and resumed training interrupted during the ramp.
 
+### Fast generalization on series
+
+`grokking_plan.md` prioritizes fast learning; long grokking runs are fallbacks
+after unsuccessful 250-epoch screens. The new `benchmarks.grokking.series`
+runner uses the current plain GPT and unchanged ScheduleFreeAdamW. It freezes
+data splits and train-fitted codecs, evaluates every split in both optimizer
+weight states each epoch, reports losses and decoded errors per column, and
+saves exact resume state. Selected settings use GPU seeds 11, 17 and 23.
+
+The experiment loop is paused at the user's request. The measurements below
+are complete, while formula confirmations, Gaussian runs, remaining Fibonacci
+noise settings and multivariate weather extensions are unfinished. Local run
+artifacts and checkpoints remain under `runs/grokking-series`.
+
+Fresh div97 anchors reach 99% at epochs **24 / 36 / 81**. With 1% corrupted
+training answers they reach 99% at **72 / 66 / 66**, and with 5% corruption at
+**111 / 138 / 165**. With 20% corruption all three reach 90% within 250 epochs
+using weight decay 3. These successful fast runs have no required memorization
+plateau. The original Fibonacci setting still satisfies the delayed criterion
+on all three seeds, first reaching 99% at **3511 / 496 / 323**; rate 0.03 reaches
+90% faster, at **159 / 136 / 121**, without reaching 99% within 250 epochs.
+Historical normalization and optimizer changes both predate these fresh runs,
+so this comparison does not isolate either change.
+
+Lattice AR reaches 0.9 expected-CE skill at epochs **34 / 22 / 19**;
+lattice seasonal AR reaches it at **5 / 4 / 4**. The seasonal runs later overfit,
+so keep their validation-selected checkpoints at epochs **5 / 5 / 9**, which
+retain skill **0.912 / 0.917 / 0.929**. Both weight states replay strictly;
+`runs/grokking-series/retained-seasonal-fast-models.json` indexes these models.
+
+The datasets include independent weather equations with held-out token pairs,
+full multivariate weather, exact-floor lattice and Gaussian AR/seasonal AR,
+and low-data weather/ETTh1/M4 Hourly holdouts. Synthetic skill uses expected
+token cross-entropy under the known conditional law. Weather equation ceilings
+use the complete source table, rather than a capped test sample. Multivariate
+weather has restricted-input formula comparators; its full Bayes floor remains
+unknown. Unknown-floor screens use a separate practical target: 10% validation
+CE improvement over the training-fitted unigram.
+
+Independent equations also report literal input copying and a training-fitted
+single-input conditional table. Column normalization makes H2OC close to a copy
+of VPact: the first H2OC screen reaches 0.9 skill at epoch 1, while the single-input
+control already reaches 0.936 skill. That crossing alone does not establish use
+of both operands. Random-label controls retain CE, accuracy and their marginal
+floor; their input-rule skill is undefined.
+
+The selected real-series settings reach that validation target on all three
+seeds, while free-running forecasts trail seasonal naive. Mean training-normalized
+MSE over eight eligible test origins per seed:
+
+| Dataset / horizon | Final GPT | Same-budget validation best | Seasonal naive | Persistence |
+|---|---:|---:|---:|---:|
+| Weather / 144 | 16.344 | 11.668 | 0.367 | 0.336 |
+| ETTh1 / 24 | 1.278 | 1.736 | 0.382 | 1.537 |
+| M4 Hourly / 48 | 1.698 | 1.700 | 0.301 | 1.588 |
+
+The weather GPT sees eight past rows; its seasonal baseline uses 144. ETTh1
+and M4 models and seasonal baselines use 24 past rows. Every shuffled-time
+confirmation misses the 10% validation target. These measurements describe the
+tested low-data settings and internal holdouts; the JSON report retains seed
+spread, coverage exclusions and per-column errors.
+
+```bash
+# Fresh experiments; use a new directory when any training source changes.
+uv run --locked -m benchmarks.grokking.series_suite --device cuda \
+  --stages formula_refined synthetic gaussian noise temporal forecasting temporal_late \
+  --output runs/grokking-series/reproduction
+
+# A small explicit plan, exact continuation, and strict checkpoint replay.
+uv run --locked -m benchmarks.grokking.series --device cuda \
+  --plan benchmarks/grokking/plans/series_fast_initial.json \
+  --output runs/grokking-series/initial
+uv run --locked -m benchmarks.grokking.series --device cuda --resume \
+  --plan path/to/extended-plan.json --output runs/grokking-series/initial
+uv run --locked -m benchmarks.grokking.series --device cuda \
+  --verify path/to/completed-run
+
+# Combine recorded source versions and score free-running forecast horizons.
+uv run --locked -m benchmarks.grokking.series_report \
+  runs/grokking-series/fast-first-current \
+  --include runs/grokking-series/fast-first \
+  runs/grokking-series/formula-batched runs/grokking-series/gaussian-current
+
+# Free-running evaluation for a fresh run using the current source.
+uv run --locked -m benchmarks.grokking.series_rollout \
+  runs/grokking-series/reproduction --device cuda --selected-only
+```
+
+Runs retain immutable source snapshots. Resume and replay reject source or
+data changes; use the recorded snapshot for old checkpoints. Format-2
+checkpoints store the actual scored query weights, avoiding floating-point
+cancellation when reconstructing sharp predictions from optimizer tensors.
+GPU audits confirm bitwise equality of resumed model and optimizer states.
+Reports rank first 0.9/0.99 crossings by training FLOPs and give elapsed times,
+three-seed pass counts, failed screens and validation-selected comparators.
+`confirmed-target-rankings.csv` distinguishes accuracy and the different skill
+references; `confirmed-validation-rankings.csv` separately ranks the practical
+validation target. Each records whether every seed succeeds within 250 epochs.
+The full-budget validation-best checkpoint consumes the same training FLOPs
+as the final model; the first-patience checkpoint has a separately reported,
+smaller cost. Free-running scores use only generated future inputs and compare
+persistence and seasonal naive. M4 scores use internal chronological holdouts.
+
 The M4 Hourly and ETTh1 measurements below use an earlier model with Gaussian
 ordinal soft-CE and other additions since removed. Those forecasting datasets
-have not been re-benchmarked with the current plain GPT yet.
+use different evaluation protocols from the current grokking loop above.
 
 ### M4 Hourly (short-term, global)
 
