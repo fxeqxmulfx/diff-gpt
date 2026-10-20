@@ -3,7 +3,8 @@
 Started: 2026-09-05. Baseline: v0.31.1 (commit 1097617), plus benchmark
 instrumentation (`M4_SEED`, `M4_SAMPLERS`, `M4_SAVE`, `M4_HEAD`, `M4_MIX_K`,
 `M4_ATTNRES_EMBED_ONCE`), `MedianSampler`, and `benchmarks/m4_eval.py`.
-Issue report: [encoder_decoder_issues.md](encoder_decoder_issues.md).
+Issue report (issues 9, 10 and C below): `encoder_decoder_issues.md`, deleted after
+commit 1be1bff; read it with `git show 1be1bff:encoder_decoder_issues.md`.
 The original plan header was updated at 2026-09-05 09:33; the run journal
 continues through 13:52 that day. English edition: 2026-10-19.
 
