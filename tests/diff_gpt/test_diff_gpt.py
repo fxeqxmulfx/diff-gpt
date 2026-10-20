@@ -693,9 +693,10 @@ def test_probabilistic_argmax_inside_median_band() -> None:
         train_part=0.9,
     )
     # No val split here (16 val tokens < block_size), so train() returns the
-    # schedule-free x point (uniform average of the iterates). At 500 iters
-    # that average is still dragged by early iterates and the calibration
-    # check below is not meaningful; 2000 iters is enough for it to converge.
+    # schedule-free x point (the average of the iterates, weighted by their
+    # squared step sizes). At 500 iters that average is still dragged by early
+    # iterates and the calibration check below is not meaningful; 2000 iters
+    # is enough for it to converge.
     model.train(
         loader=loader,
         max_iters=2000,

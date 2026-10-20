@@ -1,5 +1,6 @@
 """Tests for the position-wise FeedForward network."""
 
+import pytest
 import torch
 from torch.testing import assert_close
 
@@ -12,7 +13,7 @@ def test_ffn_shape_and_gradients() -> None:
 
     FFN maps $x \in \mathbb{R}^{B \times T \times C} \to
     y \in \mathbb{R}^{B \times T \times C}$.
-    Expansion factor is internal (4x -> 1x).
+    The hidden size is internal (about 8/3 x).
     """
     B, T, C = 2, 10, 32
 
@@ -34,13 +35,13 @@ def test_ffn_shape_and_gradients() -> None:
     assert x.grad is not None
 
     # Check gradients on weights
-    # net[0] is the expansion Linear layer (n -> 4n)
-    assert model.net[0].weight.grad is not None
-    assert torch.norm(model.net[0].weight.grad) > 0
+    # c_fc holds the gate and value projections (n -> 2 * hidden)
+    assert model.c_fc.weight.grad is not None
+    assert torch.norm(model.c_fc.weight.grad) > 0
 
-    # net[2] is the projection Linear layer (4n -> n)
-    assert model.net[2].weight.grad is not None
-    assert torch.norm(model.net[2].weight.grad) > 0
+    # c_proj is the output projection (hidden -> n)
+    assert model.c_proj.weight.grad is not None
+    assert torch.norm(model.c_proj.weight.grad) > 0
 
 
 def test_ffn_token_independence() -> None:
@@ -110,3 +111,40 @@ def test_ffn_batch_invariance() -> None:
     # Check consistency
     assert_close(y_batch[0:1], y1_ref)
     assert_close(y_batch[1:2], y2_ref)
+
+
+def test_ffn_is_the_swiglu_of_the_paper() -> None:
+    r"""
+    Check FFN_SwiGLU(x) = (Swish_1(x W) ⊗ x V) W_2, where Swish_1(a) = a · sigmoid(a).
+
+    W is the first half of c_fc (the gate), V the second half and W_2 is
+    c_proj (Shazeer, "GLU Variants Improve Transformer", eq. 6).
+    """
+    torch.manual_seed(0)
+    C = 16
+    model = FeedForward(n_embd=C).double()
+    x = torch.randn(2, 5, C, dtype=torch.float64)
+
+    with torch.no_grad():
+        hidden = model.c_proj.in_features
+        w, v = model.c_fc.weight[:hidden].T, model.c_fc.weight[hidden:].T
+        a = x @ w
+        expected = (a * torch.sigmoid(a) * (x @ v)) @ model.c_proj.weight.T
+        assert_close(model(x), expected)
+
+
+@pytest.mark.parametrize("n_embd", [16, 32, 64, 96])
+def test_ffn_hidden_size_keeps_the_parameters_of_a_4x_mlp(n_embd: int) -> None:
+    """
+    Check the hidden size: 2/3 of 4 * n_embd, rounded to the nearest integer.
+
+    The three matrices then hold the 8 * n_embd² parameters of the two
+    matrices of a 4x MLP, give or take n_embd.
+    """
+    model = FeedForward(n_embd=n_embd)
+    hidden = model.c_proj.in_features
+    n_params = sum(p.numel() for p in model.parameters())
+
+    assert abs(3 * hidden - 8 * n_embd) <= 1
+    assert n_params == 3 * n_embd * hidden
+    assert abs(n_params - 8 * n_embd**2) <= n_embd

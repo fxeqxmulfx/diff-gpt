@@ -1,4 +1,4 @@
-"""Causal multi-head self-attention with an optional KV cache."""
+"""Causal multi-head exclusive self-attention with an optional KV cache."""
 
 from typing import TYPE_CHECKING
 
@@ -6,12 +6,21 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from diff_gpt.model.rope import apply_rope
+
 if TYPE_CHECKING:
     from diff_gpt.model.kv_cache import KVCache
 
 
 class MultiHeadAttention(nn.Module):
-    """Causal multi-head self-attention."""
+    """
+    Causal multi-head exclusive self-attention (XSA).
+
+    Zhai, "Exclusive Self Attention", arXiv:2603.09078: each head's output
+    loses its component along the token's own value, so attention carries
+    only the context; the token itself reaches the next layer through the
+    residual stream. XSA adds no parameters.
+    """
 
     def __init__(
         self,
@@ -22,8 +31,9 @@ class MultiHeadAttention(nn.Module):
         """
         Create the fused query/key/value and output projections, without biases.
 
-        `n_embd` must be divisible by `n_head`. `layer_idx` is the index of the
-        owning block; it selects this layer's slot in the KV cache.
+        `n_embd` must split into `n_head` heads of even size, since RoPE
+        rotates channel pairs. `layer_idx` is the index of the owning block; it
+        selects this layer's slot in the KV cache.
         """
         super().__init__()
         if n_embd % n_head != 0:
@@ -33,6 +43,9 @@ class MultiHeadAttention(nn.Module):
         self.n_head = n_head
         self.layer_idx = layer_idx
         self.head_dim = self.n_embd // self.n_head
+        if self.head_dim % 2 != 0:
+            msg = f"head size {self.head_dim} must be even: RoPE rotates pairs"
+            raise ValueError(msg)
         # Query, key and value projections for all heads in one matmul
         self.c_attn = nn.Linear(self.n_embd, 3 * self.n_embd, bias=False)
         self.c_proj = nn.Linear(self.n_embd, self.n_embd, bias=False)
@@ -40,13 +53,19 @@ class MultiHeadAttention(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
         kv_cache: KVCache | None,
     ) -> torch.Tensor:
         """
-        Apply causal self-attention to `x` of shape (B, T, C).
+        Apply causal exclusive self-attention to `x` of shape (B, T, C).
 
-        With `kv_cache`, the new keys/values are appended to this layer's slot
-        and the queries also attend to all cached positions before them.
+        `cos` and `sin` are the RoPE tables of the T positions of `x`, shape
+        (T, head_dim / 2); they rotate the queries and keys. With `kv_cache`,
+        the new keys/values are appended to this layer's slot and the queries
+        also attend to all cached positions before them. Each head's output is
+        then made orthogonal to the token's own value; the first position
+        attends only to itself, so its output is zero.
         """
         B, T, _ = x.size()
         # Project the input to get queries, keys, and values
@@ -56,6 +75,12 @@ class MultiHeadAttention(nn.Module):
             k.view(B, T, self.n_head, self.head_dim).transpose(1, 2),
             v.view(B, T, self.n_head, self.head_dim).transpose(1, 2),
         )  # make head be batch dim, i.e. (B, T, H, D) -> (B, H, T, D)
+        # Rotate queries and keys by their positions; the cache stores keys
+        # already rotated
+        q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
+        # XSA removes the direction of each token's own value, so keep these
+        # values: the cache returns those of every position so far
+        v_unit = F.normalize(v, dim=-1)
         # Apply KV cache: insert current k,v into cache, get the full view so far
         if kv_cache is not None:
             k, v = kv_cache.insert_kv(self.layer_idx, k, v)
@@ -87,6 +112,8 @@ class MultiHeadAttention(nn.Module):
                 torch.ones((Tq, Tq), dtype=torch.bool, device=q.device),
             )
             y = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
+        # XSA: drop each head's component along the token's own value
+        y = y - (y * v_unit).sum(dim=-1, keepdim=True) * v_unit
         # Re-assemble the heads side by side and project back to residual stream
         y = y.transpose(1, 2).contiguous().view(B, T, -1)
         return self.c_proj(y)

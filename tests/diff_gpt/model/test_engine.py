@@ -236,7 +236,7 @@ def test_generate_rejects_max_tokens_past_position_ceiling(gpt_model: GPT) -> No
     """
     Check that a max_tokens past the position ceiling raises ValueError.
 
-    Position embeddings cover block_size positions, so total context
+    The model covers block_size positions, so total context
     (prompt + generated) cannot exceed that. The engine used to cap
     max_tokens silently, returning fewer tokens than asked for.
     """

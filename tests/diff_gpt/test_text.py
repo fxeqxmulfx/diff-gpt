@@ -5,9 +5,10 @@ Verifies that the full training loop actually optimizes, at a pinned training
 compute.
 
 Historical ledger (average over 3 runs unless noted, benchmark config,
-max_iters=5000). Runs with a fixed seed are deterministic on CUDA, so newer
-entries average seeds 0-2 there and report training FLOPs
-(GPT.estimate_flops() * trained tokens) instead of wall-clock seconds:
+max_iters=5000; lr=1e-2, weight decay 0.1 and no warmup until entries change
+them). Runs with a fixed seed are deterministic on CUDA, so newer entries
+average seeds 0-2 there and report training FLOPs (GPT.estimate_flops() *
+trained tokens) instead of wall-clock seconds:
     # INIT:                            val_loss=1.82  train_time=188
     # ADD torch.compile:                val_loss=1.83  train_time=49.67
     # UPD eval_interval = 5_000:        val_loss=1.82  train_time=40.67
@@ -27,9 +28,28 @@ entries average seeds 0-2 there and report training FLOPs
     #   (lr=3e-3: 1.84; lr=1e-3: 1.97)
     # UPD no biases:                    val_loss=1.88  train_flops=3.41e12
     #   same model at lr=3e-3: val_loss=1.84; at lr=1e-3: val_loss=1.98
+    # UPD RMSNorm without parameters:   val_loss=2.02  train_flops=3.40e12
+    #   seeds 0-2: 2.22, 1.89, 1.94 (seed 0 is unstable at lr=1e-2)
+    #   same model at lr=3e-3: val_loss=1.89; at lr=1e-3: val_loss=2.01
+    # UPD benchmark lr 1e-2 -> 3e-3:    val_loss=1.89  train_flops=3.40e12
+    #   seeds 0-2: 1.92, 1.86, 1.88
+    # ADD RoPE (rotate_half):           val_loss=1.79  train_flops=3.40e12
+    #   seeds 0-2: 1.77, 1.81, 1.80
+    #   same model at lr=1e-2: val_loss=1.82; at lr=1e-3: val_loss=1.88
+    #   interleaved pairs instead: val_loss=1.78 (seeds 1.78, 1.78, 1.78)
+    # UPD optimizer ScheduleFreeAdamW:  val_loss=1.76  train_flops=3.40e12
+    #   seeds 0-2: 1.77, 1.76, 1.76 (lean_optim's update, no AMSGrad)
+    # UPD lr, weight decay and warmup:  val_loss=1.66  train_flops=3.40e12
+    #   lr 3e-3 -> 1e-2, weight decay 0.1 -> 0.03, warmup 0 -> 1000 steps
+    #   seeds 0-2: 1.65, 1.66, 1.66
+    #   best of a seed-0 grid over lr 1e-3..2e-2, wd 0..1, warmup 0..2000
+    # ADD XSA and SwiGLU:               val_loss=1.64  train_flops=3.40e12
+    #   seeds 0-2: 1.64, 1.65, 1.64; means to 3 decimals: 1.660 before,
+    #   1.655 with XSA alone, 1.645 with SwiGLU alone, 1.640 with both
+    #   SwiGLU hidden 171 = 2/3 of 256: params 204_800 -> 205_056
 
 The test below is one run of the benchmark config (seed 0). Its loss tolerance
-covers the spread between seeds (about 0.02) and hardware, yet is tight enough
+covers the spread between seeds (about 0.01) and hardware, yet is tight enough
 to catch an optimization regression.
 """
 
@@ -51,9 +71,9 @@ PAD_TO = 64
 
 # Current benchmark (see the ledger): mean val_loss over seeds 0-2 on CUDA and
 # the training compute of the benchmark config.
-VAL_LOSS_BASELINE = 1.88
+VAL_LOSS_BASELINE = 1.64
 VAL_LOSS_TOLERANCE = 0.05
-TRAIN_FLOPS_BASELINE = 3.41e12
+TRAIN_FLOPS_BASELINE = 3.40e12
 
 
 def _ceil_to(n: int, pad: int) -> int:
@@ -116,11 +136,11 @@ def test_text_training_flops_and_loss() -> None:
     """
     Check val_loss and training FLOPs against the current benchmark.
 
-    End-to-end regression guard: the GPT at the default lr=1e-2 reaches
-    val_loss ≈ 1.88 (mean over seeds 0-2 on CUDA) on the full tinyshakespeare
-    run (5_000 iters) for 3.41e12 training FLOPs. The earlier model (QK-norm,
-    RoPE, SwiGLU, ...) reached 1.73 at this lr; the plain GPT does about as
-    well at lr=3e-3 (1.84).
+    End-to-end regression guard: the GPT trained at lr=1e-2 with weight
+    decay 0.03 and 1_000 warmup steps reaches val_loss ≈ 1.64 (mean over
+    seeds 0-2 on CUDA) on the full tinyshakespeare run (5_000 iters) for
+    3.40e12 training FLOPs. These settings are the best of a grid over lr,
+    weight decay and warmup, run before XSA and SwiGLU (see the ledger).
     A drift in either direction beyond the tolerance means something in the
     training stack changed — intentional or not. Update the baselines and
     the ledger above together when the architecture changes deliberately.
@@ -152,10 +172,11 @@ def test_text_training_flops_and_loss() -> None:
         loader=loader,
         learning_rate=1e-2,
         betas=(0.9, 0.95),
-        weight_decay=0.1,
+        weight_decay=0.03,
         max_iters=max_iters,
         eval_interval=5_000,
         eval_iters=200,
+        warmup=1_000,
         use_tqdm=False,
     )
 

@@ -10,6 +10,7 @@ from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
 from diff_gpt.model.block import Block
+from diff_gpt.model.rope import rope_tables
 
 if TYPE_CHECKING:
     from diff_gpt.model.kv_cache import KVCache
@@ -77,13 +78,21 @@ class BaseGPT(nn.Module, ABC):
 
 class GPT(BaseGPT):
     """
-    Plain GPT, as in nanoGPT with bias=False.
+    Plain GPT: nanoGPT with bias=False, parameter-free RMSNorm, RoPE, XSA, SwiGLU.
 
-    Learned token and position embeddings, pre-LayerNorm blocks on a residual
-    stream, a final LayerNorm and an lm_head tied to the token embedding; no
-    biases in Linear or LayerNorm layers. The model reads the token stream as
-    ordinary text; everything series-specific lives in the encoder/decoder.
+    A learned token embedding, pre-norm blocks on a residual stream, a final
+    norm and an lm_head tied to the token embedding. Positions enter only as
+    rotations of the attention queries and keys (RoPE). The attention is
+    exclusive (XSA): each head's output is orthogonal to the token's own
+    value. The MLP is a SwiGLU with the parameter count of a 4x MLP. Every
+    norm is an RMSNorm without learnable parameters, and no Linear layer has
+    a bias. The model reads the token stream as ordinary text; everything
+    series-specific lives in the encoder/decoder.
     """
+
+    # RoPE tables of positions 0..block_size-1, registered in __init__
+    rope_cos: torch.Tensor
+    rope_sin: torch.Tensor
 
     def __init__(
         self,
@@ -126,7 +135,11 @@ class GPT(BaseGPT):
             )
             raise ValueError(msg)
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
-        self.position_embedding_table = nn.Embedding(block_size, n_embd)
+        # RoPE tables, shared by all layers; they follow from the sizes, so
+        # they stay out of the state dict.
+        cos, sin = rope_tables(n_embd // n_head, block_size)
+        self.register_buffer("rope_cos", cos, persistent=False)
+        self.register_buffer("rope_sin", sin, persistent=False)
         self.blocks = nn.ModuleList(
             Block(
                 n_embd=n_embd,
@@ -135,15 +148,15 @@ class GPT(BaseGPT):
             )
             for i in range(n_layer)
         )
-        self.ln_f = nn.LayerNorm(n_embd, bias=False)
+        self.ln_f = nn.RMSNorm(n_embd, elementwise_affine=False)
         self.lm_head = nn.Linear(n_embd, vocab_size, bias=False)
         self.lm_head.weight = self.token_embedding_table.weight
         # Init: N(0, 0.02) weights; the two projections that write into the
-        # residual stream are scaled by 1/sqrt(2·n_layer) so its variance does
-        # not grow with depth.
+        # residual stream (c_proj of attention and of the MLP) are scaled by
+        # 1/sqrt(2·n_layer) so its variance does not grow with depth.
         self.apply(self._init_weights)
         for name, p in self.named_parameters():
-            if name.endswith(("sa.c_proj.weight", "ffwd.net.2.weight")):
+            if name.endswith("c_proj.weight"):
                 nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * n_layer))
         self.use_checkpoint = use_checkpoint
 
@@ -157,13 +170,12 @@ class GPT(BaseGPT):
         Return the model FLOPs per training token, forward and backward.
 
         6 per parameter plus 12·n_layer·n_embd·block_size for attention over
-        the full block (PaLM appendix B, as in nanoGPT and nanochat). The
-        position embedding is a lookup and is left out; the tied token
-        embedding counts once, as the lm_head matmul. Recompute under gradient
-        checkpointing is not counted.
+        the full block (PaLM appendix B, as in nanoGPT and nanochat). The tied
+        token embedding counts once, as the lm_head matmul. Elementwise work
+        such as RoPE, the norms, the XSA projection and the SwiGLU gate is not
+        counted, nor is the recompute under gradient checkpointing.
         """
         n_params = sum(p.numel() for p in self.parameters())
-        n_params -= self.position_embedding_table.weight.numel()
         return 6 * n_params + 12 * self.n_layer * self.n_embd * self.block_size
 
     def forward(
@@ -185,15 +197,16 @@ class GPT(BaseGPT):
         if T_end > self.block_size:
             msg = f"positions up to {T_end} exceed block_size {self.block_size}"
             raise ValueError(msg)
-        pos = torch.arange(T_start, T_end, dtype=torch.long, device=idx.device)
-        tok_emb = self.token_embedding_table(idx)  # (B, T, C)
-        pos_emb = self.position_embedding_table(pos)  # (T, C)
-        x = tok_emb + pos_emb
+        cos = self.rope_cos[T_start:T_end]  # (T, head_dim / 2)
+        sin = self.rope_sin[T_start:T_end]
+        x = self.token_embedding_table(idx)  # (B, T, C)
         for block in self.blocks:
             if self.training and self.use_checkpoint:
-                x = checkpoint(block, x, kv_cache=kv_cache, use_reentrant=False)
+                x = checkpoint(
+                    block, x, cos, sin, kv_cache=kv_cache, use_reentrant=False
+                )
             else:
-                x = block(x, kv_cache=kv_cache)
+                x = block(x, cos, sin, kv_cache=kv_cache)
         x = self.ln_f(x)
         logits = self.lm_head(x)  # (B, T, vocab_size)
         loss = None

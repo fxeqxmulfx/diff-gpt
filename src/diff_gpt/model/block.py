@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class Block(nn.Module):
-    """Pre-LayerNorm transformer block with a residual stream."""
+    """Pre-norm transformer block with a residual stream."""
 
     def __init__(
         self,
@@ -23,26 +23,32 @@ class Block(nn.Module):
         layer_idx: int,
     ) -> None:
         """
-        Create the attention and MLP sublayers, each behind a bias-free LayerNorm.
+        Create the attention and MLP sublayers, each behind a parameter-free RMSNorm.
 
         `layer_idx` is the block's index in the stack; the attention uses it to
         address its layer in the KV cache.
         """
         super().__init__()
-        self.ln_1 = nn.LayerNorm(n_embd, bias=False)
+        self.ln_1 = nn.RMSNorm(n_embd, elementwise_affine=False)
         self.sa = MultiHeadAttention(
             n_embd=n_embd,
             n_head=n_head,
             layer_idx=layer_idx,
         )
-        self.ln_2 = nn.LayerNorm(n_embd, bias=False)
+        self.ln_2 = nn.RMSNorm(n_embd, elementwise_affine=False)
         self.ffwd = FeedForward(n_embd=n_embd)
 
     def forward(
         self,
         x: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
         kv_cache: KVCache | None,
     ) -> torch.Tensor:
-        """Apply attention, then the MLP, each as a pre-LayerNorm residual update."""
-        x = x + self.sa(self.ln_1(x), kv_cache=kv_cache)
+        """
+        Apply attention, then the MLP, each as a pre-norm residual update.
+
+        `cos` and `sin` are the RoPE tables of the positions of `x`.
+        """
+        x = x + self.sa(self.ln_1(x), cos, sin, kv_cache=kv_cache)
         return x + self.ffwd(self.ln_2(x))

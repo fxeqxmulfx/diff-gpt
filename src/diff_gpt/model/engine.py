@@ -68,10 +68,10 @@ class Engine:
         exogenous forecasting where specific positions (covariate columns)
         are known a priori.
 
-        Position embeddings cover `block_size` positions, so prompt and
-        generated tokens together must fit in them: a longer prompt, or a
-        `max_tokens` past `block_size - len(tokens)`, raises ValueError.
-        `max_tokens=None` generates up to that limit.
+        The model covers `block_size` positions (its RoPE tables end there),
+        so prompt and generated tokens together must fit in them: a longer
+        prompt, or a `max_tokens` past `block_size - len(tokens)`, raises
+        ValueError. `max_tokens=None` generates up to that limit.
         """
         if not isinstance(tokens, list):
             msg = "tokens must be a list of ints"
@@ -83,7 +83,7 @@ class Engine:
             msg = "tokens must be a list of ints"
             raise TypeError(msg)
 
-        # Token budget: position embeddings cover block_size positions.
+        # Token budget: the model covers block_size positions.
         block_size = self.model.block_size
         prompt_len = len(tokens)
         if prompt_len > block_size:

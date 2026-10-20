@@ -5,7 +5,7 @@ import torch
 
 from diff_gpt.data_loader import TokenSequenceDataLoader
 from diff_gpt.model.gpt import GPT
-from diff_gpt.optimizer.adamw_schedulefree import AdamWScheduleFree
+from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
 from diff_gpt.train import train
 
 
@@ -33,7 +33,7 @@ def test_train_returns_weights_at_schedule_free_x_point() -> None:
         device="cpu",
         train_part=1.0,
     )
-    opt = AdamWScheduleFree(model.parameters())
+    opt = ScheduleFreeAdamW(model.parameters())
     train(
         model,
         loader,
@@ -45,7 +45,7 @@ def test_train_returns_weights_at_schedule_free_x_point() -> None:
         save_best=True,
         optimizer=opt,
     )
-    assert opt.param_groups[0]["train_mode"] is False
+    assert opt.param_groups[0]["training"] is False
     before = {n: p.detach().clone() for n, p in model.named_parameters()}
     opt.eval()  # already at x: a second eval() must be a no-op
     for n, p in model.named_parameters():
@@ -204,7 +204,7 @@ def test_early_stopping_hands_back_exactly_the_scored_weights() -> None:
     model = _gpt()
     reversed_val = [3 - i % 4 for i in range(BLOCK_SIZE + 1)]
     loader = _ScoredWeightsLoader(_loader(val_tokens=reversed_val), model)
-    opt = AdamWScheduleFree(model.parameters(), lr=1e-2, betas=(0.9, 0.95))
+    opt = ScheduleFreeAdamW(model.parameters(), lr=1e-2, betas=(0.9, 0.95))
     loss, _ = train(
         model,
         loader,
@@ -216,7 +216,7 @@ def test_early_stopping_hands_back_exactly_the_scored_weights() -> None:
         save_best=False,
         optimizer=opt,
     )
-    assert opt.param_groups[0]["k"] < EARLY_STOP_MAX_ITERS
+    assert opt.param_groups[0]["step"] < EARLY_STOP_MAX_ITERS
     for k, v in model.state_dict().items():
         assert torch.equal(loader.scored[k], v), k
     assert loss == _val_loss(model, loader.loader)

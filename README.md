@@ -126,12 +126,14 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   $(1 - B)(1 - B^{24})$. `order_of_derivative` can be an array of shape $(F,)$
   giving each channel its own; mix $k = 0$ (raw) with $k = 1, 2, \ldots$ and
   seasonal operators in a single model.
-- **Plain GPT model** (as in nanoGPT with `bias=False`): learned token and
-  position embeddings, pre-LayerNorm blocks with causal self-attention and a
-  GELU MLP, no biases, an output head tied to the token embedding,
-  cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization with residual
-  projections scaled by $1/\sqrt{2L}$ — nothing series-specific. Trained with
-  the Schedule-Free AMSGrad optimizer.
+- **Plain GPT model** (as in nanoGPT with `bias=False`): a learned token
+  embedding, rotary position embeddings (RoPE) on queries and keys, pre-norm
+  blocks with causal exclusive self-attention (XSA: each head's output is
+  orthogonal to the token's own value) and a SwiGLU MLP, RMSNorm without
+  learnable parameters, no biases, an output head tied to the token
+  embedding, cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization
+  with residual projections scaled by $1/\sqrt{2L}$ — nothing
+  series-specific. Trained with Schedule-Free AdamW.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates), best-val checkpoint auto-restore.
@@ -142,11 +144,10 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 The numbers in this README were measured with earlier versions of the model,
 which carried model-side additions that have since been removed: Gaussian
 ordinal soft-CE, a discretised logistic-mixture head, exact token features,
-channel embeddings and a RoPE/RMSNorm/SwiGLU backbone with Attention
-Residuals. The best of those versions reached sMAPE 13.11, MASE 1.018 and
-OWA 0.569 on M4 Hourly. The plain GPT model has not been re-benchmarked yet;
-`improvement_plan.md` carries the step-by-step ablation of the earlier
-versions.
+channel embeddings and Attention Residuals. The best
+of those versions reached sMAPE 13.11, MASE 1.018 and OWA 0.569 on M4 Hourly.
+The plain GPT model has not been re-benchmarked yet; `improvement_plan.md`
+carries the step-by-step ablation of the earlier versions.
 
 ## Usage
 
@@ -502,11 +503,12 @@ uv run --no-sync pytest --runslow  # runs everything
 
 - [youtube.com: Let's build GPT: from scratch, in code, spelled out](https://www.youtube.com/watch?v=kCc8FmEb1nY)
 - [github.com: nanoGPT](https://github.com/karpathy/nanoGPT)
-- [github.com: schedule_free](https://github.com/facebookresearch/schedule_free)
 - [github.com: nanochat](https://github.com/karpathy/nanochat)
 - [github.com: Time-Series-Library](https://github.com/thuml/Time-Series-Library)
 - [arxiv.org: Attention Is All You Need](https://arxiv.org/abs/1706.03762)
 - [openai.com: Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 - [arxiv.org: The Road Less Scheduled](https://arxiv.org/abs/2405.15682)
+- [arxiv.org: GLU Variants Improve Transformer](https://arxiv.org/abs/2002.05202)
+- [arxiv.org: Exclusive Self Attention](https://arxiv.org/abs/2603.09078)
 - [arxiv.org: The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)
 - [arxiv.org: iTransformer: Inverted Transformers are Effective for Time Series Forecasting](https://arxiv.org/abs/2310.06625)

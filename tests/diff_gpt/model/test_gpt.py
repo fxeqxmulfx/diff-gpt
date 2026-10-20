@@ -5,6 +5,7 @@ import math
 import pytest
 import torch
 import torch.nn.functional as F
+from torch import nn
 from torch.nn.attention import SDPBackend, sdpa_kernel
 from torch.testing import assert_close
 from torch.utils.flop_counter import FlopCounterMode
@@ -50,39 +51,46 @@ def test_gpt_init() -> None:
     r"""
     Check the initialization of every parameter.
 
-    Init: weights $\sim \mathcal{N}(0, 0.02)$, LayerNorm $\gamma = 1$;
-    the two projections that write into the residual stream use
-    $\sigma = 0.02 / \sqrt{2 n_{layer}}$.
+    Init: weights $\sim \mathcal{N}(0, 0.02)$; the two projections that write
+    into the residual stream use $\sigma = 0.02 / \sqrt{2 n_{layer}}$.
     """
     torch.manual_seed(0)
     n_layer = 4
     model = GPT(vocab_size=64, n_embd=64, block_size=32, n_head=4, n_layer=n_layer)
     residual_std = 0.02 / math.sqrt(2 * n_layer)
 
+    residual = {
+        f"blocks.{i}.{branch}.c_proj.weight"
+        for i in range(n_layer)
+        for branch in ("sa", "ffwd")
+    }
+    assert residual <= dict(model.named_parameters()).keys()
+
     for name, p in model.named_parameters():
-        if ".ln_" in name or name.startswith("ln_f."):
-            assert torch.equal(p, torch.ones_like(p)), name
-        else:
-            is_residual = name.endswith(("sa.c_proj.weight", "ffwd.net.2.weight"))
-            std = residual_std if is_residual else 0.02
-            assert p.std().item() == pytest.approx(std, rel=0.1), name
+        std = residual_std if name in residual else 0.02
+        assert p.std().item() == pytest.approx(std, rel=0.1), name
 
 
-def test_model_has_no_biases() -> None:
-    """Neither Linear nor LayerNorm layers carry a bias: every parameter is a weight."""
+def test_model_has_no_biases_or_norm_gains() -> None:
+    """Every parameter is a Linear or Embedding weight: no biases, no norm gains."""
     model = GPT(vocab_size=64, n_embd=16, block_size=8, n_head=2, n_layer=2)
-    names = [name for name, _ in model.named_parameters()]
-    assert names
-    assert all(name.endswith("weight") for name in names), names
+    weights = {
+        id(module.weight)
+        for module in model.modules()
+        if isinstance(module, (nn.Linear, nn.Embedding))
+    }
+    params = list(model.parameters())
+    assert params
+    assert all(id(p) in weights for p in params)
 
 
 def test_estimate_flops_matches_flop_counter() -> None:
     """
-    estimate_flops() agrees with PyTorch's FLOP counter.
+    estimate_flops() equals PyTorch's FLOP counter.
 
     The count covers one forward and backward pass. The math SDPA backend runs
-    attention as plain matmuls the counter can see; the estimate's only surplus
-    is 6 per LayerNorm gain.
+    attention as plain matmuls the counter can see. With no norm gains, every
+    parameter the estimate counts is a matmul weight, so the counts are equal.
     """
     torch.manual_seed(0)
     B, V, T = 2, 64, 16
@@ -99,8 +107,7 @@ def test_estimate_flops_matches_flop_counter() -> None:
         _, loss = model(idx, idx)
         loss.backward()
 
-    expected = model.estimate_flops() * B * T
-    assert counter.get_total_flops() == pytest.approx(expected, rel=0.01)
+    assert counter.get_total_flops() == model.estimate_flops() * B * T
 
 
 def test_gpt_kv_cache_consistency() -> None:
@@ -112,8 +119,8 @@ def test_gpt_kv_cache_consistency() -> None:
 
     Verify: $\Phi(x)_{t} \approx \phi(x_t, S_{t-1})$
 
-    This validates the position offset: step $t$ reads the position
-    embedding at $S_{pos} = t$.
+    This validates the position offset: step $t$ rotates its query and key
+    by RoPE position $S_{pos} = t$.
     """
     B, T, V, C = 1, 5, 64, 16
     H, L = 2, 2
@@ -157,8 +164,8 @@ def test_forward_rejects_positions_beyond_block_size() -> None:
     """
     Check that forward rejects positions beyond block_size.
 
-    Learned position embeddings exist for block_size positions only — for a
-    plain forward and for a KV-cached continuation alike.
+    The RoPE tables cover block_size positions only — for a plain forward
+    and for a KV-cached continuation alike.
     """
     V, C, H, block_size = 64, 16, 2, 8
     model = GPT(vocab_size=V, n_embd=C, block_size=block_size, n_layer=1, n_head=H)
@@ -273,7 +280,7 @@ def test_generate_slides_window_past_block_size() -> None:
     Check that generate() slides its context window to run past block_size.
 
     generate() conditions on the last block_size tokens only, so it can run
-    past block_size without leaving the learned position range.
+    past block_size without leaving the trained position range.
     """
     B, T, V, N_new = 1, 5, 64, 10
     model = GPT(vocab_size=V, n_embd=32, block_size=8, n_layer=1)

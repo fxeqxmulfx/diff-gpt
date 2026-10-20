@@ -13,7 +13,7 @@ import torch
 import torch.distributed as dist
 from tqdm.autonotebook import tqdm
 
-from diff_gpt.optimizer.adamw_schedulefree import AdamWScheduleFree
+from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from diff_gpt.model.gpt import BaseGPT
@@ -73,32 +73,6 @@ def _agree_on_val(*, has_val: bool) -> bool:
         )
         raise ValueError(msg)
     return has_val
-
-
-# Parameters with at least this many dimensions (weight matrices, embeddings)
-# are weight-decayed; vectors such as LayerNorm gains are not.
-_MIN_DECAY_NDIM = 2
-
-
-def _param_groups(model: BaseGPT, weight_decay: float) -> list[dict]:
-    """
-    Split the trainable parameters into weight-decay and no-decay groups.
-
-    Decay weight matrices and embeddings only, never LayerNorm gains (the
-    nanoGPT convention).
-    """
-    params = [p for p in model.parameters() if p.requires_grad]
-    groups = [
-        {
-            "params": [p for p in params if p.dim() >= _MIN_DECAY_NDIM],
-            "weight_decay": weight_decay,
-        },
-        {
-            "params": [p for p in params if p.dim() < _MIN_DECAY_NDIM],
-            "weight_decay": 0.0,
-        },
-    ]
-    return [g for g in groups if g["params"]]
 
 
 # no_grad rather than inference_mode: inference tensors created here would
@@ -172,17 +146,18 @@ def train(
     loader: DataLoader,
     learning_rate: float = 1e-2,
     betas: tuple[float, float] = (0.9, 0.95),
-    weight_decay: float = 0.1,
+    weight_decay: float = 0.03,
     max_iters: int = 5_000,
     eval_interval: int = 5_000,
     eval_iters: int = 200,
     *,
+    warmup: int = 1_000,
     use_tqdm: bool = True,
     use_early_stopping: bool = True,
     grad_accum_steps: int = 1,
     grad_clip_norm: float | None = None,
     save_best: bool = True,
-    optimizer: AdamWScheduleFree | None = None,
+    optimizer: ScheduleFreeAdamW | None = None,
 ) -> tuple[float, int]:
     """
     Train `mut_model` against batches produced by `loader`.
@@ -208,13 +183,15 @@ def train(
     Returns the best val_loss instead of the final one when active. Either
     way the returned loss is that of the returned weights.
 
-    `optimizer`: a schedule-free AdamW over the parameters of `mut_model`;
-    by default one is built from `learning_rate`, `betas` and `weight_decay`,
-    which are ignored when `optimizer` is given. It is left in eval mode.
-    After a best-snapshot restore only the weights come from the snapshot:
-    the optimizer state (z, exp_avg_sq, step count) is that of the last
-    step, so training resumed with it starts from y = β1·x_best +
-    (1 - β1)·z_last.
+    `optimizer`: a ScheduleFreeAdamW over the parameters of `mut_model`;
+    by default one is built from `learning_rate`, `betas`, `weight_decay`
+    and `warmup` (steps of linear lr warmup), which are ignored when
+    `optimizer` is given. The weight decay applies to every parameter: the
+    GPT has only matrices and embeddings. The optimizer is left in eval
+    mode. A best-snapshot restore loads only the weights: the optimizer
+    keeps the iterates of the last step, and its train() and eval() write
+    those into the parameters, so training resumed with it continues from
+    the last step, not from the snapshot.
 
     In DDP every rank must agree on `loader.has_val()`; ValueError otherwise.
     """
@@ -222,11 +199,12 @@ def train(
         msg = "grad_accum_steps must be >= 1"
         raise ValueError(msg)
     if optimizer is None:
-        optimizer = AdamWScheduleFree(
-            _param_groups(mut_model, weight_decay),
+        optimizer = ScheduleFreeAdamW(
+            mut_model.parameters(),
             lr=learning_rate,
             betas=betas,
             weight_decay=weight_decay,
+            warmup=warmup,
         )
     has_val = _agree_on_val(has_val=loader.has_val())
     start = datetime.now(tz=UTC)
@@ -258,8 +236,7 @@ def train(
                     save_best=save_best,
                 ),
             )
-            # Stop while still in eval mode: the weights handed back are then
-            # exactly the scored ones (the train/eval switch rounds).
+            # Stop while still in eval mode, holding the scored weights.
             if has_val and use_early_stopping and previous_loss < evaluation.loss:
                 stopped_early = True
                 break
@@ -276,10 +253,10 @@ def train(
         if grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(mut_model.parameters(), grad_clip_norm)
         optimizer.step()
-    # Schedule-free: parameters hold the fast "y" sequence while training; move
-    # them to the averaged "x" point before handing the model back. Without
-    # this the returned weights are the y point whenever no best-snapshot is
-    # restored (no val split, or save_best=False).
+    # Schedule-free: the parameters hold the query y while training; move
+    # them to the average x before handing the model back. Without this the
+    # returned weights are y whenever no best-snapshot is restored (no val
+    # split, or save_best=False).
     optimizer.eval()
     mut_model.eval()
     if not stopped_early:
