@@ -411,6 +411,45 @@ def test_generate_many_matches_generate_per_prompt(gpt_model: GPT) -> None:
         assert new == alone[0][len(prompt) :]
 
 
+def test_cached_generation_matches_full_forward(
+    model_config: dict[str, int],
+) -> None:
+    """
+    Check cached decoding against full forward passes over the growing sequence.
+
+    Compare `generate_batch` (a batch-1 prefill copied into each row's cache)
+    and `generate_many` to the same argmax continuations.
+    """
+    torch.manual_seed(0)
+    model = GPT(**model_config)
+    model.eval()
+    engine = Engine(model=model)
+    prompts = [[1, 8, 4, 9], [2, 2, 7, 30]]
+    max_tokens = 6
+    expected = []
+    for prompt in prompts:
+        ids = torch.tensor([prompt])
+        with torch.no_grad():
+            for _ in range(max_tokens):
+                logits, _ = model(ids)
+                ids = torch.cat((ids, greedy_sampler(logits[:, -1], None)), dim=1)
+        expected.append(ids[0, len(prompt) :].tolist())
+
+    generated = engine.generate_many(
+        prompts=prompts, max_tokens=max_tokens, sampler=greedy_sampler
+    )
+
+    assert generated == expected
+    for prompt, new in zip(prompts, expected, strict=True):
+        results, _ = engine.generate_batch(
+            tokens=prompt,
+            num_samples=2,
+            max_tokens=max_tokens,
+            sampler=greedy_sampler,
+        )
+        assert [row[len(prompt) :] for row in results] == [new, new]
+
+
 def test_generate_many_is_seeded(gpt_model: GPT) -> None:
     """Sampling without a sampler repeats under one seed."""
     engine = Engine(model=gpt_model)

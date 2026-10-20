@@ -78,11 +78,13 @@ class BaseGPT(nn.Module, ABC):
 
 class GPT(BaseGPT):
     """
-    Plain GPT: nanoGPT with bias=False, parameter-free RMSNorm, RoPE, XSA, SwiGLU.
+    Plain GPT: bias=False, parameter-free Peri-RMSNorm and QK-norm, RoPE, XSA, SwiGLU.
 
-    A learned token embedding, pre-norm blocks on a residual stream, a final
-    norm and an lm_head tied to the token embedding. Positions enter only as
-    rotations of the attention queries and keys (RoPE). The attention is
+    A normalized learned token embedding, Peri-norm blocks on a residual
+    stream, a final norm and an lm_head tied to the token embedding.
+    Each block normalizes both branch inputs and outputs before residual
+    addition. Positions enter only as rotations of the attention queries and
+    keys (RoPE). The attention is
     exclusive (XSA): each head's output is orthogonal to the token's own
     value. The MLP is a SwiGLU with the parameter count of a 4x MLP. Every
     norm is an RMSNorm without learnable parameters, and no Linear layer has
@@ -104,6 +106,7 @@ class GPT(BaseGPT):
         *,
         use_checkpoint: bool = True,
         pad_vocab_size_to: int = 64,
+        rope_layers: tuple[bool, ...] | None = None,
     ) -> None:
         """
         Build the layers and initialize the weights.
@@ -111,10 +114,21 @@ class GPT(BaseGPT):
         `vocab_size` must be a multiple of `pad_vocab_size_to`: the encoder owns
         the vocabulary and pads it. `use_checkpoint` turns on gradient
         checkpointing of the blocks in training mode. `n_layer` must be at
-        least 1: the KV cache advances its position in the last block.
+        least 1: the KV cache advances its position in the last block. `rope_layers`
+        supplies one boolean per layer; None applies RoPE in every layer.
+        A False entry keeps full causal attention without rotating Q/K.
+        Parameter-free Peri-RMSNorm normalizes the embedding stream and both
+        the input and output of every attention and MLP branch.
+        Q/K use per-head RMSNorm followed by standard 1/sqrt(head_dim) scaling.
         """
         if n_layer < 1:
             msg = f"n_layer must be >= 1, got {n_layer}"
+            raise ValueError(msg)
+        if rope_layers is not None and (
+            len(rope_layers) != n_layer
+            or any(not isinstance(enabled, bool) for enabled in rope_layers)
+        ):
+            msg = "rope_layers must contain one boolean per layer"
             raise ValueError(msg)
         super().__init__(
             block_size=block_size,
@@ -145,15 +159,16 @@ class GPT(BaseGPT):
                 n_embd=n_embd,
                 n_head=n_head,
                 layer_idx=i,
+                use_rope=True if rope_layers is None else rope_layers[i],
             )
             for i in range(n_layer)
         )
         self.ln_f = nn.RMSNorm(n_embd, elementwise_affine=False)
+        self.embedding_norm = nn.RMSNorm(n_embd, elementwise_affine=False)
         self.lm_head = nn.Linear(n_embd, vocab_size, bias=False)
         self.lm_head.weight = self.token_embedding_table.weight
-        # Init: N(0, 0.02) weights; the two projections that write into the
-        # residual stream (c_proj of attention and of the MLP) are scaled by
-        # 1/sqrt(2·n_layer) so its variance does not grow with depth.
+        # Keep the N(0, 0.02) initialization and 1/sqrt(2·n_layer) scaling of
+        # c_proj weights. Peri-RMSNorm controls the scale of their outputs.
         self.apply(self._init_weights)
         for name, p in self.named_parameters():
             if name.endswith("c_proj.weight"):
@@ -200,6 +215,7 @@ class GPT(BaseGPT):
         cos = self.rope_cos[T_start:T_end]  # (T, head_dim / 2)
         sin = self.rope_sin[T_start:T_end]
         x = self.token_embedding_table(idx)  # (B, T, C)
+        x = self.embedding_norm(x)
         for block in self.blocks:
             if self.training and self.use_checkpoint:
                 x = checkpoint(

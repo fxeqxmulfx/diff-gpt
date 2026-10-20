@@ -37,7 +37,7 @@ def test_block_is_identity_when_residual_branches_are_zeroed() -> None:
     """
     Check that the block returns its input unchanged when both branches are zeroed.
 
-    Pre-LN residual stream: the norms sit inside the branches, so zeroing both
+    Peri-RMSNorm: the norms sit inside the branches, so zeroing both
     output projections leaves only the identity path.
     """
     B, T, C, H = 2, 5, 16, 2
@@ -77,6 +77,7 @@ def test_block_causality_preservation() -> None:
 
 def test_block_kv_cache_step_consistency() -> None:
     """Check that incremental (single-token) and batched Block forward match."""
+    torch.manual_seed(0)
     B, T, C, H = 1, 6, 16, 2
     head_dim = C // H
     model = Block(n_embd=C, n_head=H, layer_idx=0)

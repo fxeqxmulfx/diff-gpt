@@ -1,12 +1,15 @@
 """Tests for causal multi-head self-attention, with and without the KV cache."""
 
+import math
+
 import pytest
 import torch
+from torch.nn import functional as F
 from torch.testing import assert_close
 
 from diff_gpt.model.kv_cache import KVCache
 from diff_gpt.model.mha import MultiHeadAttention
-from diff_gpt.model.rope import rope_tables
+from diff_gpt.model.rope import apply_rope, rope_tables
 
 # Chunk boundaries for test_chunked_prefill_inference: prefill [0, 2), then a
 # chunk [2, 5) on top of the cached prefix; the last token is decoded alone.
@@ -18,11 +21,11 @@ MIN_CONTEXT_NORM = 1e-3
 
 def test_shape_and_gradients() -> None:
     r"""
-    Check the (B, T, C) output shape and gradient flow through both projections.
+    Check the (B, T, C) output shape and gradient flow to every parameter.
 
     $x \in \mathbb{R}^{B \times T \times C} \implies
     y \in \mathbb{R}^{B \times T \times C}$
-    $\nabla_{W_{attn}} L \neq 0, \quad \nabla_{W_{proj}} L \neq 0$
+    $\nabla_{W_{attn}} L \neq 0, \quad \nabla_{W_{proj}} L \neq 0$.
     """
     B, T, C, H = 2, 10, 32, 4
 
@@ -72,7 +75,8 @@ def test_xsa_output_is_orthogonal_to_the_tokens_own_value() -> None:
     assert (z[:, 1:].norm(dim=-1) > MIN_CONTEXT_NORM).all()
 
 
-def test_xsa_first_position_outputs_zero() -> None:
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.bfloat16])
+def test_xsa_first_position_outputs_zero(dtype: torch.dtype) -> None:
     """
     The first token attends only to itself, so XSA leaves it no output.
 
@@ -80,14 +84,33 @@ def test_xsa_first_position_outputs_zero() -> None:
     """
     torch.manual_seed(0)
     B, T, C, H = 2, 5, 16, 2
-    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0).double()
-    cos, sin = (table.double() for table in rope_tables(C // H, T))
-    x = torch.randn(B, T, C, dtype=torch.float64)
+    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0).to(dtype)
+    cos, sin = (table.to(dtype) for table in rope_tables(C // H, T))
+    x = torch.randn(B, T, C, dtype=dtype)
 
     with torch.no_grad():
         y = model(x, cos, sin, kv_cache=None)
 
-    assert_close(y[:, 0], torch.zeros(B, C, dtype=torch.float64), atol=1e-12, rtol=0)
+    assert torch.count_nonzero(y[:, 0]) == 0
+
+
+def test_without_rope_matches_identity_rotation_and_ignores_positions() -> None:
+    """Disabling RoPE equals identity rotations, regardless of supplied positions."""
+    torch.manual_seed(0)
+    B, T, C, H = 2, 7, 16, 2
+    positional = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
+    content = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0, use_rope=False)
+    content.load_state_dict(positional.state_dict())
+    x = torch.randn(B, T, C)
+    cos, sin = rope_tables(C // H, T + 3)
+    identity_cos = torch.ones_like(cos[:T])
+    identity_sin = torch.zeros_like(sin[:T])
+    with torch.no_grad():
+        expected = positional(x, identity_cos, identity_sin, kv_cache=None)
+        actual = content(x, cos[:T], sin[:T], kv_cache=None)
+        shifted = content(x, cos[3:], sin[3:], kv_cache=None)
+    assert_close(actual, expected, atol=0, rtol=0)
+    assert_close(shifted, expected, atol=0, rtol=0)
 
 
 def test_rejects_odd_head_size() -> None:
@@ -96,12 +119,71 @@ def test_rejects_odd_head_size() -> None:
         MultiHeadAttention(n_embd=12, n_head=4, layer_idx=0)
 
 
+@pytest.mark.parametrize("head_dim", [4, 8, 16])
+def test_qk_norm_logits_are_scaled_cosines(head_dim: int) -> None:
+    r"""
+    With QK-norm, logit scale follows from head size without a temperature parameter.
+
+    $\ell_{ts} = \sqrt{d} \cos(R_t q_t, R_s k_s)$: causal softmax, the values,
+    XSA and the output projection rebuild the module output from it.
+    """
+    torch.manual_seed(0)
+    B, T, H = 2, 7, 2
+    C = H * head_dim
+    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
+    model = model.double()
+    cos, sin = (table.double() for table in rope_tables(C // H, T))
+    # The float32 tables, renormalized in float64, rotate without changing
+    # norms; then normalizing before RoPE, as the module does, or after agree
+    radius = torch.hypot(cos, sin)
+    cos, sin = cos / radius, sin / radius
+    x = torch.randn(B, T, C, dtype=torch.float64)
+
+    with torch.no_grad():
+        y = model(x, cos, sin, kv_cache=None)
+        q, k, v = (
+            t.view(B, T, H, C // H).transpose(1, 2)
+            for t in model.c_attn(x).split(C, dim=2)
+        )
+        q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
+        cosines = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-1, -2)
+        causal = torch.ones(T, T, dtype=torch.bool).tril()
+        p = (math.sqrt(head_dim) * cosines).masked_fill(~causal, -torch.inf).softmax(-1)
+        z = p @ v
+        unit = F.normalize(v, dim=-1)
+        z = z - (z * unit).sum(dim=-1, keepdim=True) * unit
+        rebuilt = model.c_proj(z.transpose(1, 2).reshape(B, T, C))
+
+    assert_close(y, rebuilt, atol=1e-12, rtol=0)
+
+
+def test_qk_norm_ignores_the_scale_of_query_and_key_weights() -> None:
+    """
+    QK-norm makes attention blind to the norm of the query and key weights.
+
+    Shrinking them, as weight decay does, leaves the output unchanged
+    up to the numerical epsilon in RMSNorm.
+    """
+    torch.manual_seed(0)
+    B, T, C, H = 2, 7, 16, 2
+    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0).double()
+    cos, sin = (table.double() for table in rope_tables(C // H, T))
+    x = torch.randn(B, T, C, dtype=torch.float64)
+
+    with torch.no_grad():
+        y = model(x, cos, sin, kv_cache=None)
+        model.c_attn.weight[: 2 * C] *= 0.1
+        y_shrunk = model(x, cos, sin, kv_cache=None)
+
+    assert_close(y, y_shrunk, atol=1e-12, rtol=0)
+
+
 def test_causal_masking_property() -> None:
     r"""
     Check causality: perturbing the last token changes only its output.
 
     Autoregressive property: $y_t = f(x_0, \dots, x_t)$
-    $\frac{\partial y_t}{\partial x_{t+k}} = 0 \quad \forall k > 0$
+    $\frac{\partial y_t}{\partial x_{t+k}} = 0 \quad \forall k > 0$.
     """
     B, T, C, H = 1, 5, 16, 2
     model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
@@ -139,7 +221,11 @@ def test_kv_cache_equivalence_step_by_step() -> None:
     head_dim = C // H
 
     # Important: layer_idx=0 matches num_layers=1 in KVCache to trigger auto-pos update
-    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
+    model = MultiHeadAttention(
+        n_embd=C,
+        n_head=H,
+        layer_idx=0,
+    )
     model.eval()
     cos, sin = rope_tables(head_dim, T)
 
@@ -180,7 +266,11 @@ def test_chunked_prefill_inference() -> None:
     B, T, C, H = 1, 6, 16, 2
     head_dim = C // H
 
-    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
+    model = MultiHeadAttention(
+        n_embd=C,
+        n_head=H,
+        layer_idx=0,
+    )
     model.eval()
     cos, sin = rope_tables(head_dim, T)
 
