@@ -127,13 +127,16 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   giving each channel its own; mix $k = 0$ (raw) with $k = 1, 2, \ldots$ and
   seasonal operators in a single model.
 - **Plain GPT model** (as in nanoGPT with `bias=False`): a learned token
-  embedding, rotary position embeddings (RoPE) on queries and keys, pre-norm
-  blocks with causal exclusive self-attention (XSA: each head's output is
-  orthogonal to the token's own value) and a SwiGLU MLP, RMSNorm without
-  learnable parameters, no biases, an output head tied to the token
-  embedding, cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization
+  embedding, rotary position embeddings (RoPE) on queries and keys,
+  Peri-RMSNorm blocks with causal exclusive self-attention (XSA: each head's
+  output is orthogonal to the token's own value) and a SwiGLU MLP.
+  Parameter-free RMSNorm normalizes the embedding stream and each branch's
+  input and output before residual addition. No biases, an output head tied
+  to the token embedding, cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization
   with residual projections scaled by $1/\sqrt{2L}$ — nothing
-  series-specific. Trained with Schedule-Free AdamW.
+  series-specific. Queries and keys use per-head RMSNorm before RoPE and
+  standard $1/\sqrt{d_{\mathrm{head}}}$ attention scaling, with no temperature
+  parameter. Trained with Schedule-Free AdamW.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates), best-val checkpoint auto-restore.
@@ -141,12 +144,12 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   `DiffGPT.train(pin_node=...)`, or one-worker-per-node DDP via
   `DiffGPT.train_numa` on multi-socket boxes.
 
-The numbers in this README were measured with earlier versions of the model,
+The forecasting numbers in this README come from earlier model versions,
 which carried model-side additions that have since been removed: Gaussian
 ordinal soft-CE, a discretised logistic-mixture head, exact token features,
 channel embeddings and Attention Residuals. The best
 of those versions reached sMAPE 13.11, MASE 1.018 and OWA 0.569 on M4 Hourly.
-The plain GPT model has not been re-benchmarked yet; `improvement_plan.md`
+The plain GPT has not been re-benchmarked on them yet; `improvement_plan.md`
 carries the step-by-step ablation of the earlier versions.
 
 ## Usage
@@ -438,9 +441,286 @@ spawn, no DDP overhead.
 
 ## Benchmarks
 
-Measured with an earlier version of the model: a RoPE/RMSNorm/SwiGLU backbone
-trained with Gaussian ordinal soft-CE, both since removed. The plain GPT
-model has not been re-benchmarked yet.
+The grokking results below were measured at commit a5d16eb, before
+Peri-RMSNorm and Q/K RMSNorm; their checkpoints replay only with that
+commit's model.
+
+### Modular division mod 97 (k=0)
+
+The GPT shows delayed grokking on `q = a * inverse(b) mod 97` with
+order-0 tokenization. Each independent equation supplies two raw values
+`[a, b]`; only the next token `q` is supervised. The codec uses vocabulary
+256 and domain 96: all 97 residues have distinct tokens and round back to
+their original integers. Inputs never contain the answer.
+
+The browser lab's seeded split and sampler are reproduced exactly: 4,656
+training equations, 4,656 test equations, batches of 512 plus a 48-row tail.
+The unmodified GPT has width 128, one XSA/SwiGLU block, four heads and 229,248
+parameters. ScheduleFreeAdamW uses lr 0.01, weight decay 1, betas 0.9/0.98
+and ten warmup updates. A dedicated benchmark loop evaluates both complete
+splits every epoch, without validation-loss early stopping. It scores the
+optimizer's averaged evaluation weights and records query accuracy separately.
+
+Measured on 2026-10-20 in FP32 on an RTX 3050 Laptop GPU:
+
+| Seed | Memorization plateau, epochs | Test 10% to 90%, epochs | First test >=99%, epoch | Final test accuracy |
+|---|---:|---:|---:|---:|
+| 11 | 50 | 25 | 118 | 100% |
+| 17 | 38 | 43 | 184 | 100% |
+| 23 | 71 | 51 | 173 | 99.98% |
+
+The website criterion requires train >=99% and test <=10% for at least 25
+epochs, then a rise to 90% within 250 epochs and a 99% test crossing. All
+three averaged trajectories qualify and remain above 99% for the next 100
+epochs. Query weights fluctuate and do not meet the 25-epoch plateau rule.
+Settings were screened on seed 11 before the seed-17/23 confirmations. A
+random-label control reaches 100% train and 1.03% test after 500 epochs.
+Saved checkpoints replay both weight modes; `DiffGPT.predict_many` verifies
+every test equation in the three confirmation runs. All 20 averaged/query
+trajectories match the actual browser's classifier.
+
+```bash
+# Three seeds and a random-label control; completed runs are retained.
+uv run --locked -m benchmarks.grokking.div97 --device cuda \
+  --plan benchmarks/grokking/plans/div97_confirm.json \
+  --output runs/grokking-div97-confirm
+
+# Curves and compact results; --plot additionally needs matplotlib.
+uv run --locked -m benchmarks.grokking.div97_report \
+  runs/grokking-div97-confirm --output runs/grokking-div97-confirm/summary.json
+```
+
+The five-configuration ScheduleFreeAdamW screening plan is in
+`benchmarks/grokking/plans/div97_screen.json`. Local run directories retain full CSV
+curves, optimizer checkpoints, codec metadata and source hashes. The
+`--verify DIR --full-predict` mode checks a checkpoint through the public
+DiffGPT forecasting interface.
+
+### Recurrent modular division across rows (k >= 1, ongoing)
+
+`benchmarks/grokking/recurrence.py` uses one actual time-series column:
+`x[t+2] = x[t] / x[t+1] mod 97`. Finite differences run down consecutive
+rows; there is no synthetic zero prefix. Complete recurrence orbits are
+held out, including every time shift of each test orbit. The seed-11 split
+has 4,614 training states and 4,602 test states. By default, only the next
+derivative token is supervised; evaluation measures both that token and the decoded
+original integer on the complete splits.
+
+With k=1 and 48 input derivative tokens (49 observed raw rows), the
+GPT reaches **99.83% test accuracy**: 4,594/4,602 correct. Both token and
+decoded accuracy first cross 99% at epoch 50 and stay above it throughout
+the next 100 epochs. The saved epoch-150 checkpoint reproduces all 4,602
+forecasts through `DiffGPT.predict_many` with the native argmax sampler.
+The model has width 128, two blocks and four heads; ScheduleFreeAdamW uses
+lr 0.003, weight decay 1, betas 0.9/0.98 and ten warmup updates. The integer
+grid has vocabulary 256, domain 127 and scale 1.
+
+This result exploits temporal periodicity: exhaustive orbit enumeration
+shows that every division orbit has period dividing 48. Its next derivative
+therefore equals the first observed derivative. Input interventions confirm
+that the network learned this copy rule; transferring these weights to a
+short context gives approximately chance accuracy. This is generalization
+to unseen orbits, without the memorization plateau required for delayed
+grokking. Learning the division rule with a short context remains an open
+experiment. Seed-17/23 confirmations also pass complete public verification:
+99.72% (4,593/4,606) at epoch 105 and 99.89% (4,621/4,626) at epoch 171.
+Both final checkpoints follow 101 consecutive observations above 99%; seed
+23 had an earlier transient crossing. At k=2, context 48 and seed 11, the
+same model configuration reaches 99.24% (4,567/4,602) at epoch 128, after
+101 consecutive observations above 99%. Every forecast also passes public
+verification. This higher-order result uses the same period-copy mechanism.
+
+MASH and LGT produce identical tokens on the exact integer grid. A separate
+paired experiment uses vocabulary 512 and domain 96 (scale 2.65625), where
+32% of their tokens differ and correct target tokens still decode to the
+correct original integers. Samplers are compared on frozen checkpoints,
+for both averaged and query weights. On the exact integer grid with four
+heads, Fibonacci k=1/C=2 at epoch 4,250 gives 96.24% with argmax, 96.13%
+with median, 95.11% with temperature 1, and argmax
+restricted to the known original range 0..96 gives 98.45%. The range control
+uses observed past rows and the support only; it never computes the
+recurrence. These four-head sampler results have not reached the 99% target.
+
+An additional finite-field readout sums model probabilities of equivalent
+residues before emitting the canonical derivative token. It uses the known
+modulus and observed prefix, without computing the recurrence. On the frozen
+Fibonacci epoch-5,000 weights it reaches 98.79%, verified through all 4,704
+public forecasts; native argmax at those weights gives 96.47%.
+
+The non-unit-grid tokenizer comparison now runs both encoders with the same
+seed, raw orbit partition, model, initialization and ScheduleFreeAdamW
+settings. At matched epoch 1,000, decoded test accuracy is 92.39% for MASH
+and 3.42% for LGT. At epoch 3,000 the corresponding values are 93.81% and
+6.42%. These are exploratory seed-11 results; both long native-argmax runs
+continue. `progress-tokenizers.json` records matched budgets and checks
+that the raw data, model sizes and core source versions agree. A one-head
+pair is also in `benchmarks/grokking/plans/recurrence_tokenizer_heads.json`.
+
+The finite-field readout also supports this non-unit grid, using the actual
+codec to encode its chosen canonical continuation. On frozen one-head MASH
+weights at epoch 3,750 it reaches 97.96% (4,608/4,704), confirmed through every
+public forecast; native argmax on the same weights gives 94.43%. The support
+prior helps, but this non-unit-grid case still falls below the 99% target.
+
+With **one attention head**, k=1/C=2, width 128 and one block, the field
+readout shows **delayed grokking**. Training still uses the original token
+cross-entropy and ScheduleFreeAdamW (lr 0.01, weight decay 1, betas 0.9/0.98,
+ten warmup updates). The averaged curve has a 125-epoch memorization plateau,
+then rises from 10% to 90% in 101 epochs; it first crosses 99% at epoch 482.
+All next 100 observations remain above 99%. The final epoch-582 weights give
+**99.21%** (4,667/4,704) for both true derivative tokens and decoded original
+values, confirmed on every test orbit through `DiffGPT.predict_many`.
+
+The field support prior is part of this result: native argmax on those same
+weights gives 96.56%. The sampler sums probabilities of residues modulo 97
+and uses observed decoder anchors to emit a canonical derivative. It never
+evaluates the Fibonacci recurrence. Tests confirm that selecting the readout
+preserves the training weights, optimizer and batch sampler state exactly.
+The 48 Fibonacci orbits each have 196 states, with 24 complete orbits held
+out. All three seeds now pass complete public verification and the site's
+strict grokking criterion on the averaged evaluation weights:
+
+| Seed | Plateau, epochs | Test 10% to 90%, epochs | First test >=99%, epoch | Final epoch | Field readout | Native argmax |
+|---|---:|---:|---:|---:|---:|---:|
+| 11 | 125 | 101 | 482 | 582 | 99.21% | 96.56% |
+| 17 | 157 | 132 | 531 | 631 | 99.38% | 96.11% |
+| 23 | 100 | 75 | 324 | 424 | 99.64% | 96.68% |
+
+Each final checkpoint follows 100 additional epochs above 99%, and its
+4,704 forecasts are rechecked through `DiffGPT.predict_many`. Query weights
+and native-argmax curves remain separate in the reports. The native losses
+and argmax accuracies match all 583 corresponding observations of the
+seed-11 field run exactly.
+
+```bash
+# Reproduce the full-period result.
+uv run --locked -m benchmarks.grokking.recurrence --device cuda \
+  --task division --order 1 --context 48 --width 128 --layers 2 \
+  --learning-rate 0.003 --weight-decay 1 --epochs 3000 \
+  --output runs/grokking-div97-rows-period
+
+# Verify every held-out forecast through the public API.
+uv run --locked -m benchmarks.grokking.recurrence --device cuda --full \
+  --verify runs/grokking-div97-rows-period/division-k1-c48-w128-l2-h4-sf-lr0.003-wd1-b20.98-wu10-s11
+
+# Identical model, data split and initialization; only the tokenizer changes.
+uv run --locked -m benchmarks.grokking.recurrence --device cuda \
+  --plan benchmarks/grokking/plans/recurrence_compare.json \
+  --output runs/grokking-div97-rows-tokenizers
+
+# Reproduce positive-order Fibonacci grokking; verify every public forecast.
+uv run --locked -m benchmarks.grokking.recurrence --device cuda --full \
+  --plan benchmarks/grokking/plans/recurrence_field.json \
+  --output runs/grokking-div97-rows-field
+```
+
+Checkpoints retain the complete optimizer, batch sampler and criterion state;
+`--resume` extends the epoch budget without restarting training. New runs
+require 101 consecutive observations with token and decoded test accuracy
+at least 99% before stopping. `benchmarks.grokking.recurrence_readouts` saves exact
+checkpoint copies for sampler comparisons; `benchmarks.grokking.recurrence_period_probe`
+provides the copy controls. `benchmarks.grokking.recurrence_report` summarizes active
+and completed curves and can export PNG/SVG plots with `--plot`.
+
+`benchmarks.grokking.recurrence_report --confirmed-only` exports only results with
+complete public verification and the required stable tail. Its JSON keeps
+the native-argmax criterion separately from the configured sampler's curve;
+the plot draws native argmax with a dashed line where the sampler differs.
+
+`benchmarks.grokking.recurrence_audit` independently checks every saved raw state
+and transition, closure of both splits under all orbit shifts, equality of
+actual encoder inputs with encoding of observed rows alone, all supervised
+tokens, optimizer iterates and batch sampler state. It then repeats every
+public forecast and records file hashes. The seven confirmed temporal
+results pass this audit; all 14 averaged/query curves match the actual
+browser classifier.
+
+The native four-head Fibonacci control was preserved at epoch 13,250 after
+its last accuracy maximum at epoch 6,485. All 4,704 public forecasts replay
+at 96.39%. Its complete optimizer and data sampler remain in the checkpoint,
+with a hash and archived curve recorded in `deferred.json`; its compute slot
+now trains short-context division with the compact vocabulary. Growing
+controls continue independently.
+The two-block Fibonacci C=4 control was also preserved at epoch 7,000,
+and the balanced short-division control at epoch 2,750. Both retain complete
+optimizer/sampler states and archived curves; their full public forecasts
+were replayed before their slots were reassigned to depth and MASH warmup
+experiments. The original long division baseline and growing controls continue.
+
+Short-context division remains an open experiment. Two differences at k=1
+have an information-theoretic next-token ceiling of 67.55%; three suffice
+to identify every state. Current trials include larger/deeper models,
+causal supervision of intermediate next-token targets, and balanced batches.
+On the frozen two-block k=1/C=4 checkpoint at epoch 8,000, complete-test
+sampler comparisons give 1.02% decoded accuracy with native argmax,
+1.22% with range-restricted argmax and 1.04% with the field readout.
+The Fibonacci sampler improvement does not resolve this short-division case.
+The search prioritizes the earliest stable 99% generalization. A memorization
+plateau is a diagnostic for delayed grokking, not a target to induce. New
+non-unit-grid trials prioritize MASH; LGT remains a paired control.
+`benchmarks/grokking/plans/recurrence_division_tokenizers.json` also compares MASH
+with LGT directly on division, with k=1/C=4, width 128, two blocks and four
+heads on the non-unit grid (vocabulary 512, domain 96). The paired preflight
+checks every state: observed-only inputs match full-window inputs, target
+tokens decode to the correct integers, and both splits and raw rows agree.
+`benchmarks/grokking/plans/recurrence_compact.json` tests an exact unit grid with
+vocabulary 192 and domain 95 for division. Its tokens represent the same
+integer differences as the default vocabulary 256, shifted by 32 token
+indices; 191 classes are used, leaving one unused class instead of 65.
+All 9,216 states pass observed-only encoding and exact target-decoding checks.
+The two settings use balanced batches and ScheduleFreeAdamW weight decay
+1 or 3, with the same learning rate 0.01 and model sizes.
+`benchmarks/grokking/plans/recurrence_depth.json` adds eight- and four-block
+models at width 128 on this same compact grid, raw state space and orbit
+split. Both use learning rate 0.01, weight decay 1 and balanced effective
+batches of at most 512 rows, accumulated in 256-row microbatches. Each has
+a 20,000-epoch budget. The eight-block model has 1,596,416 parameters;
+the four-block model has 810,496. Their preflight checks all 9,216 observed
+inputs and target decodes and exercises a finite forward/backward optimizer
+update. The depth comparison is an experiment; its generalization is not
+yet established.
+`benchmarks/grokking/plans/recurrence_beta1.json` prepares a matched compact-grid
+division comparison of ScheduleFreeAdamW beta1 0.5 and 0.95 against the
+existing beta1 0.9 control. Only that optimizer parameter changes; default
+run names and continuation of checkpoints without a beta1 config field
+remain compatible. These configurations are separate from the depth trial.
+The original seed-11 training set creates nine 512-row batches plus a
+six-row tail. Balanced sampling uses six 461-row batches and four 462-row
+batches, preserving the row order, complete corpus and ten optimizer
+updates. All growing runs retain full resume state and extended budgets.
+
+`benchmarks/grokking/plans/recurrence_full_batch.json` tests one optimizer update
+over all 4,614 training rows per epoch, with a budget of 100,000 epochs.
+Gradients accumulate in 512-row microbatches, weighted by their row counts;
+there is one ScheduleFreeAdamW update after the complete effective batch.
+The monolithic full batch exceeded the available GPU memory before its
+first update; that failed attempt and its epoch-zero checkpoint are retained.
+Tests compare accumulated and monolithic gradients and optimizer states,
+including uneven microbatches and intermediate-target supervision, and
+verify exact continuation of the full-batch optimizer and data sampler.
+
+The current ScheduleFreeAdamW does not decay its nominal learning rate after
+warmup. At the short-division epoch-8,000 checkpoint, its global step is
+80,000, its base rate is still 0.01 and its averaging coefficient is
+0.0000125077. The growing averaging history can slow changes to evaluation
+weights even while base updates remain active.
+`benchmarks.grokking.recurrence_restart` forks a frozen complete checkpoint and ramps
+the learning rate again, without resetting global steps, moments, base and
+evaluation iterates, batch order or RNG state. The original run continues.
+The first trial branches from non-unit-grid MASH division at epoch 1,500,
+raising the rate to 0.03 over 500 additional optimizer updates (50 epochs),
+with an extended budget of 20,000 total epochs. It tests a higher rate with
+a second warmup; this comparison alone does not isolate the ramp from the
+higher peak rate. Its full CSV also records the actual nominal rate, base
+rate and averaging coefficient. Historical scalar diagnostics are reconstructed
+from the constant-rate parent and checked against its saved averaging total;
+all accuracy/loss observations retain the original measured values.
+Tests check exact fork-state preservation, source immutability and bitwise
+agreement between continuous and resumed training interrupted during the ramp.
+
+The M4 Hourly and ETTh1 measurements below use an earlier model with Gaussian
+ordinal soft-CE and other additions since removed. Those forecasting datasets
+have not been re-benchmarked with the current plain GPT yet.
 
 ### M4 Hourly (short-term, global)
 
