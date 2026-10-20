@@ -57,8 +57,7 @@ Everything before that point stays local.
   time: `predict_samples`, `predict_quantiles`, `predict_point` (the marginal
   median for MAE) and `calibrate_temperature`. `predict_many` batches contexts
   of one shape, but it draws only one trajectory per context.
-- Two features are done but not yet merged, in the worktree
-  `.claude/worktrees/asymmetric-domain`:
+- Two features are on master since 2026-10-21 (commit 351f8ca):
   - per-channel ranges [lo, hi], via `get_domain_of_definition(..., symmetric=False)`;
   - missing values: NaN is filled in the input and masked out of the loss.
 
@@ -416,10 +415,11 @@ and hours in M3 and M5, before the full runs are scheduled.
 
 ### M0. Merge the worktree
 
-The asymmetric-domain worktree (ranges and NaN handling) is finished and
-tested but not committed. Merge it after review. The benchmarks that read
-`encode`'s scale as an array (the grokking ones and `m4_bench.py`) must first
-be updated by their owner.
+Done on 2026-10-21: the asymmetric-domain worktree (ranges and NaN handling)
+is commit 351f8ca on master. The benchmarks that read `encode`'s scale as an
+array (the grokking ones, the `series_*` runners among them, and
+`m4_bench.py`) still have to be updated by their owner; their tests fail
+until then.
 
 ### M1. Evaluation environment and seasonal naive
 
