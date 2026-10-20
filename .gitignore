@@ -223,9 +223,9 @@ datasets/
 *.ckpt
 *.safetensors
 
-# Experiment runtime files
-/runs/*.done
-/runs/*.out
+# Experiment outputs: logs, checkpoints, run directories; the launch scripts stay
+/runs/*
+!/runs/*.sh
 
 # Profiler output: Scalene, torch.profiler traces
 scalene-profile.json
