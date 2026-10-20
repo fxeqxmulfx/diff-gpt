@@ -1,5 +1,7 @@
 """DiffGPT training, point and probabilistic forecasting, and anomaly scores."""
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,6 +17,9 @@ from diff_gpt.encoder_decoder import (
 from diff_gpt.metrics import empirical_coverage
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
+
+if TYPE_CHECKING:
+    from diff_gpt.train import Evaluation
 
 # Max abs error between teacher-forced covariates and the supplied future
 # values (derivative quantization only).
@@ -849,6 +854,32 @@ def test_train_save_best_false_returns_final_loss() -> None:
         save_best=False,
     )
     assert np.isfinite(final_loss)
+
+
+def test_train_hands_every_evaluation_to_on_eval() -> None:
+    """DiffGPT.train passes on_eval through and by default returns the last val loss."""
+    model, _ = _make_model(block_size=32)
+    loader = DiffDataFrameDataLoader(
+        dfs=[_make_toy(n_rows=200)],
+        block_size=model.model.block_size,
+        batch_size=4,
+        vocab_size=model.model.vocab_size,
+        order_of_derivative=model.order_of_derivative,
+        domain_of_definition=model.domain_of_definition,
+        device=model.model.device_type,
+        train_part=0.7,
+    )
+    seen: list[Evaluation] = []
+    final_loss, _ = model.train(
+        loader=loader,
+        max_iters=20,
+        eval_interval=10,
+        eval_iters=2,
+        use_tqdm=False,
+        on_eval=seen.append,
+    )
+    assert [e.step for e in seen] == [0, 10, 20]
+    assert final_loss == seen[-1].val_loss
 
 
 def test_train_grad_accum_runs() -> None:

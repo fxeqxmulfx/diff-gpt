@@ -1,5 +1,7 @@
 """Tests for the weights and the loss that train() hands back."""
 
+from typing import TYPE_CHECKING
+
 import pytest
 import torch
 
@@ -7,6 +9,9 @@ from diff_gpt.data_loader import TokenSequenceDataLoader
 from diff_gpt.model.gpt import GPT
 from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
 from diff_gpt.train import train
+
+if TYPE_CHECKING:
+    from diff_gpt.train import Evaluation
 
 
 def test_train_returns_weights_at_schedule_free_x_point() -> None:
@@ -220,3 +225,98 @@ def test_early_stopping_hands_back_exactly_the_scored_weights() -> None:
     for k, v in model.state_dict().items():
         assert torch.equal(loader.scored[k], v), k
     assert loss == _val_loss(model, loader.loader)
+
+
+def test_train_by_default_runs_every_step_and_keeps_the_final_weights() -> None:
+    """
+    Check that train() by default neither stops early nor restores the best weights.
+
+    On the reversed val cycle the val loss rises once the model learns the
+    train cycle's transitions. train() used to stop there and hand back the
+    weights with the lowest val loss, hiding whatever training did later.
+    """
+    model = _gpt()
+    reversed_val = [3 - i % 4 for i in range(BLOCK_SIZE + 1)]
+    loader = _ScoredWeightsLoader(_loader(val_tokens=reversed_val), model)
+    opt = ScheduleFreeAdamW(model.parameters(), lr=1e-2, betas=(0.9, 0.95))
+    seen: list[Evaluation] = []
+    loss, _ = train(
+        model,
+        loader,
+        max_iters=EARLY_STOP_MAX_ITERS,
+        eval_interval=5,
+        eval_iters=1,
+        use_tqdm=False,
+        optimizer=opt,
+        on_eval=seen.append,
+    )
+    assert opt.param_groups[0]["step"] == EARLY_STOP_MAX_ITERS
+    for k, v in model.state_dict().items():
+        assert torch.equal(loader.scored[k], v), k
+    assert loss == seen[-1].val_loss == _val_loss(model, loader.loader)
+    val_losses = [e.val_loss for e in seen if e.val_loss is not None]
+    assert len(val_losses) == len(seen)
+    assert min(val_losses) < loss
+
+
+def test_on_eval_sees_every_evaluation_with_the_scored_weights() -> None:
+    """
+    Check that on_eval gets each evaluation while the model holds the scored weights.
+
+    The model is in eval mode with the schedule-free average x in its
+    parameters, so the val window scored inside the callback reproduces the
+    val loss bit for bit.
+    """
+    model = _gpt()
+    # The same one-window val part; scoring it leaves the rng of `loader` alone.
+    probe = _loader()
+    opt = ScheduleFreeAdamW(model.parameters())
+    seen: list[tuple[Evaluation, float]] = []
+
+    def on_eval(evaluation: Evaluation) -> None:
+        assert not model.training
+        assert opt.param_groups[0]["training"] is False
+        seen.append((evaluation, _val_loss(model, probe)))
+
+    loss, _ = train(
+        model,
+        _loader(),
+        max_iters=20,
+        eval_interval=5,
+        eval_iters=1,
+        use_tqdm=False,
+        optimizer=opt,
+        on_eval=on_eval,
+    )
+    assert [evaluation.step for evaluation, _ in seen] == [0, 5, 10, 15, 20]
+    for evaluation, probed in seen:
+        assert evaluation.val_loss == probed
+    assert loss == seen[-1][0].val_loss
+
+
+def test_on_eval_reports_no_val_loss_without_a_val_split() -> None:
+    """
+    Check that without a val split val_loss is None.
+
+    train() then returns the train loss of the last evaluation.
+    """
+    model = _gpt()
+    loader = TokenSequenceDataLoader(
+        [i % 4 for i in range(N_TRAIN_TOKENS)],
+        block_size=BLOCK_SIZE,
+        batch_size=4,
+        device="cpu",
+        train_part=1.0,
+    )
+    seen: list[Evaluation] = []
+    loss, _ = train(
+        model,
+        loader,
+        max_iters=2,
+        eval_interval=1,
+        eval_iters=1,
+        use_tqdm=False,
+        on_eval=seen.append,
+    )
+    assert [e.val_loss for e in seen] == [None, None, None]
+    assert loss == seen[-1].train_loss

@@ -29,7 +29,7 @@ Pattern:
         model_factory=build_model,
         loader_factory=build_loader,
         train_kwargs={"max_iters": 5000},
-        checkpoint_path="best.pt",
+        checkpoint_path="gpt.pt",
     )
 """
 
@@ -154,7 +154,9 @@ def train_numa(
     they see the same data, DDP averages identical gradients and you get
     no scaling benefit.
 
-    `train_kwargs` is forwarded verbatim to `train()`.
+    `train_kwargs` is forwarded verbatim to `train()`. With more than one
+    node, an `on_eval` in it runs in rank 0's worker process, so it must
+    pickle (a module-level function) and keep what it records in files.
 
     `checkpoint_path`: rank 0 writes the unwrapped model `state_dict` here
     after training finishes, letting the launcher reload weights without

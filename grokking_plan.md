@@ -247,8 +247,10 @@ early-stopping minimum by more than the spread of three seeds.
   argmax decisions through floating-point cancellation. Verify the saved states
   strictly and require bitwise equivalence between interrupted/resumed and
   uninterrupted GPU training.
-- Do not use `diff_gpt.train.train()` for these runs: it restores the best
-  checkpoint by validation loss and so hides late generalization.
+- Keep the final weights, not the best by validation loss, which hides late
+  generalization. `diff_gpt.train.train()` does so by default (its
+  `save_best` and `use_early_stopping` are off), but it neither resumes nor
+  saves the query weights, so these runs keep their own loop.
 - Leakage guards: domain and scale from the training split only; a gap
   between splits of at least the context length; every test token occurs in
   training.

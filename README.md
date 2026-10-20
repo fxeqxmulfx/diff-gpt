@@ -140,7 +140,12 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   parameter. Trained with Schedule-Free AdamW.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
-  covariates), best-val checkpoint auto-restore.
+  covariates).
+- **Checkpoint selection by forecasts** (`DiffGPT.train(on_eval=...)`):
+  training keeps the final weights, without early stopping or a best-val
+  restore, because the one-step val loss can rise for a long stretch before
+  a model generalizes. `on_eval` sees every evaluation with the scored
+  weights in the model, so it can save checkpoints and score forecasts.
 - **NUMA-aware training**: single-process CPU-affinity pin via
   `DiffGPT.train(pin_node=...)`, or one-worker-per-node DDP via
   `DiffGPT.train_numa` on multi-socket boxes.
@@ -427,11 +432,11 @@ val_loss, _ = DiffGPT.train_numa(
     model_factory=build_gpt,
     loader_factory=build_loader,
     train_kwargs={"max_iters": 20_000, "eval_interval": 500},
-    checkpoint_path="best.pt",
+    checkpoint_path="gpt.pt",
 )
 # Rebuild DiffGPT around the trained weights:
 gpt = build_gpt(0)
-gpt.load_state_dict(torch.load("best.pt"))
+gpt.load_state_dict(torch.load("gpt.pt"))
 model = DiffGPT(model=gpt, order_of_derivative=order, domain_of_definition=domain)
 ```
 

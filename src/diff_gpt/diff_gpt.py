@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from diff_gpt.encoder_decoder import Order
     from diff_gpt.model.gpt import BaseGPT
     from diff_gpt.sampler.sampler import Sampler
-    from diff_gpt.train import DataLoader
+    from diff_gpt.train import DataLoader, Evaluation
 
 # CRPS and empirical coverage cannot be estimated from fewer samples.
 _MIN_CALIBRATION_SAMPLES = 2
@@ -176,11 +176,12 @@ class DiffGPT:
         *,
         warmup: int = 1_000,
         use_tqdm: bool = True,
-        use_early_stopping: bool = True,
+        use_early_stopping: bool = False,
         grad_accum_steps: int = 1,
         grad_clip_norm: float | None = None,
-        save_best: bool = True,
+        save_best: bool = False,
         pin_node: int | None = None,
+        on_eval: Callable[[Evaluation], None] | None = None,
     ) -> tuple[float, int]:
         """
         Train the underlying GPT against batches produced by `loader`.
@@ -189,6 +190,11 @@ class DiffGPT:
         DataFrames, a flat token sequence) and handles any encoding, splits,
         and loss masking. DiffGPT only drives the optimization loop and
         holds the encoder metadata used by `predict`.
+
+        The loop is `diff_gpt.train.train`: by default it runs all
+        `max_iters` steps and keeps the final weights. `on_eval` gets every
+        evaluation while the model holds the scored weights, so it can save
+        checkpoints or score forecasts with `predict` to choose one by.
 
         `pin_node`: if set, pin this process to the given NUMA node's CPUs
         (via `numa.pin_to_node`) before training. Cheap way to cut
@@ -222,6 +228,7 @@ class DiffGPT:
             grad_accum_steps=grad_accum_steps,
             grad_clip_norm=grad_clip_norm,
             save_best=save_best,
+            on_eval=on_eval,
         )
 
     @staticmethod
