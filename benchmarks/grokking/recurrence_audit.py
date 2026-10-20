@@ -111,15 +111,8 @@ def audit(directory: Path, device: str) -> dict[str, Any]:
     )
     for identifier, parameter in zip(group["params"], model.parameters(), strict=True):
         state = saved["optimizer"]["state"][identifier]
-        require(
-            {"base", "evaluation", "second"} <= state.keys(),
-            "missing optimizer iterates",
-        )
-        require(
-            torch.equal(parameter, state["evaluation"]),
-            "saved weights are not evaluation weights",
-        )
-        for name in ("base", "evaluation", "second"):
+        require(state.keys() == {"base", "second"}, "optimizer iterates are not z, v")
+        for name in ("base", "second"):
             require(
                 state[name].shape == parameter.shape
                 and torch.isfinite(state[name]).all(),

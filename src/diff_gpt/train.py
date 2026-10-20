@@ -188,10 +188,10 @@ def train(
     and `warmup` (steps of linear lr warmup), which are ignored when
     `optimizer` is given. The weight decay applies to every parameter: the
     GPT has only matrices and embeddings. The optimizer is left in eval
-    mode. A best-snapshot restore loads only the weights: the optimizer
-    keeps the iterates of the last step, and its train() and eval() write
-    those into the parameters, so training resumed with it continues from
-    the last step, not from the snapshot.
+    mode, with its average x in the parameters. A best-snapshot restore
+    overwrites them while the optimizer keeps the z and v of the last step,
+    so its train() would then start y from the snapshot and that z: train
+    on from the returned weights with a new optimizer.
 
     In DDP every rank must agree on `loader.has_val()`; ValueError otherwise.
     """

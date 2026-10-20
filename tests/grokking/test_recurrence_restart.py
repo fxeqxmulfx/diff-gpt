@@ -47,6 +47,8 @@ def test_repeat_warmup_changes_only_rate_before_each_optimizer_update() -> None:
     assert optimizer.param_groups[0]["total"] == previous_total
     assert optimizer.param_groups[0]["step"] == config.restart_step
     expected_rates = [0.0075, 0.015, 0.0225, 0.03, 0.03]
+    # The averaging weights follow the largest rate, so the ramp keeps 0.01.
+    maximum = optimizer.param_groups[0]["maximum"]
     for number, expected in enumerate(expected_rates, start=1):
         update_learning_rate(config, optimizer)
         group = optimizer.param_groups[0]
@@ -54,7 +56,8 @@ def test_repeat_warmup_changes_only_rate_before_each_optimizer_update() -> None:
         parameter.grad = torch.tensor([0.2, -0.1])
         optimizer.step()
         assert group["step"] == config.restart_step + number
-        previous_total += expected**2 * (1 - group["betas"][1] ** group["step"])
+        maximum = max(maximum, expected)
+        previous_total += maximum**2
         assert group["total"] == pytest.approx(previous_total)
 
 

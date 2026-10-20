@@ -50,6 +50,12 @@ trained tokens) instead of wall-clock seconds:
     # UPD Peri-RMSNorm and Q/K RMSNorm: val_loss=1.63  train_flops=3.40e12
     #   seeds 0-2: 1.631, 1.631, 1.629; mean 1.630 (1.640 before)
     #   seed 0 of the previous model, re-measured here: 1.637
+    # UPD schedulefree >= 1.3 update:   val_loss=1.63  train_flops=3.40e12
+    #   bias correction on v, sqrt(v / (1 - β2^t)) + eps, not on the rate;
+    #   averaging weights from the largest rate so far; z and v stored, the
+    #   parameters hold y or x; Meta's AdamWScheduleFree: same losses bitwise
+    #   seeds 0-2: 1.635, 1.632, 1.627; mean 1.631 (1.630 before)
+    #   the same update with x stored rounds differently: mean 1.634
 
 The test below is one run of the benchmark config (seed 0). Its loss tolerance
 covers the spread between seeds (about 0.01) and hardware, yet is tight enough

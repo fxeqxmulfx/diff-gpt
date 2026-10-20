@@ -288,7 +288,7 @@ def test_accumulation_matches_a_full_batch_gradient_and_single_optimizer_update(
     for first, second in zip(whole.parameters(), accumulated.parameters(), strict=True):
         torch.testing.assert_close(first.grad, second.grad, atol=2e-6, rtol=2e-5)
         torch.testing.assert_close(first, second, atol=2e-6, rtol=2e-5)
-        for key in ("base", "evaluation", "second"):
+        for key in ("base", "second"):
             torch.testing.assert_close(
                 optimizers[0].state[first][key],
                 optimizers[1].state[second][key],

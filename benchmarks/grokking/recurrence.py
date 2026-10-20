@@ -372,13 +372,15 @@ def optimizer_progress(optimizer: ScheduleFreeAdamW) -> dict[str, float | int]:
     group = optimizer.param_groups[0]
     step = group["step"]
     ramp = min(1.0, step / group["warmup"]) if group["warmup"] else 1.0
-    rate = group["lr"] * math.sqrt(1 - group["betas"][1] ** step) * ramp
+    rate = group["lr"] * ramp
     return {
         "step": step,
         "learning_rate": group["lr"],
         "base_rate": rate,
         "averaging_total": group["total"],
-        "averaging_coefficient": rate**2 / group["total"] if group["total"] else 0.0,
+        "averaging_coefficient": (
+            group["maximum"] ** 2 / group["total"] if group["total"] else 0.0
+        ),
     }
 
 

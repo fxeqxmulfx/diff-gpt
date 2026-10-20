@@ -372,20 +372,21 @@ class Diagnostics:
             return
         record = self.measure(model)
         record.update(epoch=epoch, state=state, metrics=metrics)
-        distances = [
-            torch.stack(
-                (
-                    (p - optimizer.state[p]["evaluation"]).square().sum(),
-                    (optimizer.state[p]["base"] - optimizer.state[p]["evaluation"])
-                    .square()
-                    .sum(),
+        group = optimizer.param_groups[0]
+        # In training mode the parameters hold y; recover x as eval() does.
+        weight = 1 - 1 / group["betas"][0] if group["training"] else 0.0
+        distances = []
+        for p in model.parameters():
+            base = optimizer.state[p]["base"]
+            average = p.lerp(base, weight)
+            distances.append(
+                torch.stack(
+                    ((p - average).square().sum(), (base - average).square().sum())
                 )
             )
-            for p in model.parameters()
-        ]
         distance = torch.stack(distances).sum(0).sqrt().cpu().tolist()
         record["optimizer"] = {
-            "step": optimizer.param_groups[0]["step"],
+            "step": group["step"],
             "state_to_average_l2": distance[0],
             "base_to_average_l2": distance[1],
         }

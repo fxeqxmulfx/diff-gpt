@@ -62,7 +62,7 @@ def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, obj
     for state in saved["optimizer"]["state"].values():
         if any(
             key not in state or not torch.isfinite(state[key]).all()
-            for key in ("base", "evaluation", "second")
+            for key in ("base", "second")
         ):
             msg = "incomplete or nonfinite optimizer iterates"
             raise ValueError(msg)
@@ -82,14 +82,15 @@ def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, obj
     ):
         msg = "parent curve and checkpoint disagree"
         raise ValueError(msg)
-    # The source has a constant nominal rate. Reconstruct only these past
+    # The source has a constant nominal rate, so its rates never fall and
+    # its averaging weights are their squares. Reconstruct only these past
     # scalar diagnostics; every accuracy/loss observation is copied unchanged.
     total, step, rate = 0.0, 0, 0.0
     for row in rows:
         while step < int(row["step"]):
             step += 1
             ramp = min(1.0, step / original.warmup) if original.warmup else 1.0
-            rate = original.learning_rate * math.sqrt(1 - original.beta2**step) * ramp
+            rate = original.learning_rate * ramp
             total += rate**2
         row.update(
             zip(

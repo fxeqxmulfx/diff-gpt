@@ -9,8 +9,9 @@ from torch.testing import assert_close
 
 from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
 
-# test_step_follows_algorithm_1: hyperparameters far from the defaults, the
-# lr of each step (0 pauses a step) and the gradients of the four entries.
+# test_step_follows_the_update: hyperparameters far from the defaults, the
+# lr of each step (it falls twice, to 0 once) and the gradients of the four
+# entries.
 BETA1, BETA2, EPS, DECAY = 0.6, 0.75, 0.125, 0.3
 RATES = (0.0, 0.2, 0.1, 0.0, 0.3)
 GRADIENTS = (
@@ -29,13 +30,14 @@ def _flat(*tensors: torch.Tensor) -> torch.Tensor:
 
 
 @pytest.mark.parametrize("warmup", [0, 3])
-def test_step_follows_algorithm_1(warmup: int) -> None:
+def test_step_follows_the_update(warmup: int) -> None:
     """
-    Check y, z, x and the rate sum against Algorithm 1 written out per entry.
+    Check y, z, x and the averaging total against the update written out per entry.
 
     The lr changes between steps and is 0 on two of them, so the warmup
-    ramp, the bias correction in the rate, eps on the raw second moment,
-    the decay at y and the squared-rate weights of x all show.
+    ramp, the bias correction of v, eps outside its square root, the decay
+    at y and the weights of x, which follow the largest rate so far, all
+    show. x is read in eval mode after every step.
     """
     p = torch.nn.Parameter(torch.tensor([2.0, -1.0], dtype=torch.float64))
     q = torch.nn.Parameter(torch.tensor([[0.5], [3.0]], dtype=torch.float64))
@@ -49,40 +51,47 @@ def test_step_follows_algorithm_1(warmup: int) -> None:
     z = [2.0, -1.0, 0.5, 3.0]
     x = list(z)
     v = [0.0] * len(z)
-    total = 0.0
+    total = maximum = 0.0
     for t, (lr, g) in enumerate(zip(RATES, GRADIENTS, strict=True), start=1):
         y = [BETA1 * xi + (1 - BETA1) * zi for xi, zi in zip(x, z, strict=True)]
-        assert_close(_flat(p, q), torch.tensor(y, dtype=torch.float64))
-        rate = lr * math.sqrt(1 - BETA2**t) * (min(1, t / warmup) if warmup else 1)
-        total += rate**2
-        c = rate**2 / total if total else 0.0
+        assert_close(
+            _flat(p, q), torch.tensor(y, dtype=torch.float64), atol=EXACT, rtol=EXACT
+        )
+        rate = lr * (min(1, t / warmup) if warmup else 1)
+        maximum = max(maximum, rate)
+        total += maximum**2
+        c = maximum**2 / total if total else 0.0
         for i, gi in enumerate(g):
             v[i] = BETA2 * v[i] + (1 - BETA2) * gi * gi
-            z[i] -= rate * gi / (math.sqrt(v[i]) + EPS) + rate * DECAY * y[i]
+            corrected = math.sqrt(v[i] / (1 - BETA2**t))
+            z[i] -= rate * gi / (corrected + EPS) + rate * DECAY * y[i]
             x[i] = (1 - c) * x[i] + c * z[i]
         p.grad = torch.tensor(g[:2], dtype=torch.float64)
         q.grad = torch.tensor(g[2:], dtype=torch.float64).reshape(2, 1)
         opt.param_groups[0]["lr"] = lr
         opt.step()
-        sp, sq = opt.state[p], opt.state[q]
         assert_close(
-            _flat(sp["base"], sq["base"]),
+            _flat(opt.state[p]["base"], opt.state[q]["base"]),
             torch.tensor(z, dtype=torch.float64),
             atol=EXACT,
             rtol=EXACT,
         )
+        opt.eval()
         assert_close(
-            _flat(sp["evaluation"], sq["evaluation"]),
-            torch.tensor(x, dtype=torch.float64),
-            atol=EXACT,
-            rtol=EXACT,
+            _flat(p, q), torch.tensor(x, dtype=torch.float64), atol=EXACT, rtol=EXACT
         )
+        opt.train()
         assert opt.param_groups[0]["total"] == pytest.approx(total, rel=EXACT)
         assert opt.param_groups[0]["step"] == t
 
 
 def test_eval_writes_x_and_train_writes_y_back() -> None:
-    """Check that eval() writes x, train() writes y, and repeats change nothing."""
+    """
+    Check that eval() writes x, train() writes y, and repeats change nothing.
+
+    eval() recovers x from y = (1 - β1)·z + β1·x, so the round trip gives
+    back y up to rounding.
+    """
     torch.manual_seed(0)
     p = torch.nn.Parameter(torch.randn(3, 4))
     opt = ScheduleFreeAdamW([p], lr=0.1)
@@ -90,13 +99,19 @@ def test_eval_writes_x_and_train_writes_y_back() -> None:
         p.grad = torch.randn_like(p)
         opt.step()
     y = p.detach().clone()
-    for _ in range(2):
-        opt.eval()
-        assert torch.equal(p, opt.state[p]["evaluation"])
-        assert not torch.equal(p, y)
-    for _ in range(2):
-        opt.train()
-        assert torch.equal(p, y)
+    z = opt.state[p]["base"]
+    beta1 = opt.param_groups[0]["betas"][0]
+    opt.eval()
+    x = p.detach().clone()
+    assert_close(x, (y - (1 - beta1) * z) / beta1)
+    assert not torch.equal(x, y)
+    opt.eval()
+    assert torch.equal(p, x)
+    opt.train()
+    assert_close(p, y)
+    back = p.detach().clone()
+    opt.train()
+    assert torch.equal(p, back)
 
 
 def test_switching_modes_before_a_step_keeps_the_weights() -> None:
@@ -120,8 +135,9 @@ def test_zero_gradients_without_decay_keep_every_iterate() -> None:
     for _ in range(20):
         opt.step()
         assert torch.equal(opt.state[p]["base"], initial)
-        assert torch.equal(opt.state[p]["evaluation"], initial)
         assert torch.equal(p, initial)
+    opt.eval()
+    assert torch.equal(p, initial)
 
 
 def test_state_dict_resumes_the_same_steps() -> None:
@@ -129,7 +145,8 @@ def test_state_dict_resumes_the_same_steps() -> None:
     Check that an optimizer loaded from a state dict takes the same next step.
 
     The state dict is saved in eval mode and carries the hyperparameters,
-    the step count and the rate sum along with z, x and v.
+    the step count, the largest rate and the averaging total along with z
+    and v; the weights hold x.
     """
     torch.manual_seed(0)
     p = torch.nn.Parameter(torch.randn(4))
@@ -211,6 +228,7 @@ def test_takes_one_parameter_group() -> None:
         ({"weight_decay": -0.1}, "weight_decay"),
         ({"eps": 0.0}, "eps"),
         ({"betas": (1.0, 0.999)}, "betas"),
+        ({"betas": (0.0, 0.999)}, "betas"),
         ({"betas": (0.9, -0.1)}, "betas"),
         ({"warmup": -1}, "warmup"),
         ({"warmup": 1.5}, "warmup"),
