@@ -43,6 +43,7 @@ from benchmarks.grokking.div97 import (
     BATCH,
     DOMAIN,
     LIBRARY_SOURCES,
+    NORMALIZATION,
     REPLAY_LOSS_TOLERANCE,
     ROOT,
     TOTAL,
@@ -53,6 +54,7 @@ from benchmarks.grokking.div97 import (
     P,
     digest,
     division_rows,
+    require_current_model,
     write_json,
 )
 from benchmarks.grokking.mqar_div97_diagnostics import DiagnosticConfig, Diagnostics
@@ -213,12 +215,7 @@ class RunConfig:
 
 def config_from_record(record: dict[str, Any]) -> RunConfig:
     """Return a saved run's config; reject historical models and data protocols."""
-    if record.get("normalization") != "peri_rms_qk_rms":
-        msg = (
-            "checkpoint architecture differs from the current Peri/QK-RMSNorm model; "
-            "use the run's frozen source/ for historical models"
-        )
-        raise ValueError(msg)
+    require_current_model(record)
     config = RunConfig(**record["config"])
     if config.independent_copy and record.get("data_protocol") != config.data_protocol:
         msg = (
@@ -984,7 +981,7 @@ def _metadata(task: Task, model: GPT, device: str) -> dict[str, Any]:
     tokens_per_epoch = task.sequences * (config.block - 1)
     return {
         "config": asdict(config),
-        "normalization": "peri_rms_qk_rms",
+        "normalization": NORMALIZATION,
         "data_protocol": config.data_protocol,
         "git_head": subprocess.check_output(  # noqa: S603 - fixed git argv, no shell.
             [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
@@ -1176,7 +1173,7 @@ def run_experiment(
             handle.flush()
             status = {
                 "config": asdict(config),
-                "normalization": "peri_rms_qk_rms",
+                "normalization": NORMALIZATION,
                 "data_protocol": config.data_protocol,
                 "epoch": epoch,
                 "seconds": elapsed,
@@ -1208,7 +1205,7 @@ def run_experiment(
             "epoch": epoch,
             "metrics": metrics,
             "config": asdict(config),
-            "normalization": "peri_rms_qk_rms",
+            "normalization": NORMALIZATION,
             "data_protocol": config.data_protocol,
             "sampler_order": task.sampler.order,
             "sampler_rng": task.sampler.random.state,

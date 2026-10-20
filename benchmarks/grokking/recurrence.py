@@ -26,6 +26,7 @@ from torch.nn import functional as F
 
 from benchmarks.grokking.div97 import (
     LIBRARY_SOURCES,
+    NORMALIZATION,
     REPLAY_LOSS_TOLERANCE,
     ROOT,
     TARGET_ACCURACY,
@@ -34,6 +35,7 @@ from benchmarks.grokking.div97 import (
     SplitMix64,
     digest,
     domain,
+    load_checkpoint,
     vocabulary,
     write_json,
 )
@@ -509,6 +511,7 @@ def run(
     slices = batch_slices(train, config.batching, config.batch_size)
     metadata = {
         "config": asdict(config),
+        "normalization": NORMALIZATION,
         "data": data_info,
         "optimizer": "ScheduleFreeAdamW",
         "parameters": sum(p.numel() for p in model.parameters()),
@@ -536,10 +539,32 @@ def run(
         ),
         "evaluation_context_length": config.context,
     }
-    if resume:
-        saved = torch.load(
-            directory / "checkpoint.pt", map_location=device, weights_only=True
+    fields = [
+        "epoch",
+        "step",
+        "seconds",
+        "train_loss",
+        "train_accuracy",
+        "train_decoded_accuracy",
+        "test_loss",
+        "test_accuracy",
+        "test_decoded_accuracy",
+        "query_train_accuracy",
+        "query_test_accuracy",
+    ]
+    if config.readout == "field":
+        fields.extend(
+            [
+                "train_argmax_accuracy",
+                "test_argmax_accuracy",
+                "query_train_argmax_accuracy",
+                "query_test_argmax_accuracy",
+            ]
         )
+    if config.restart_step:
+        fields.extend(RATE_FIELDS)
+    if resume:
+        saved = load_checkpoint(directory / "checkpoint.pt", device)
         prior = asdict(Config(**saved["config"]))
         requested = asdict(config)
         prior.pop("epochs")
@@ -559,9 +584,13 @@ def run(
         elapsed_before = saved["seconds"]
         # Truncate observations beyond the last durable checkpoint, if interrupted.
         with (directory / "history.csv").open(newline="") as handle:
-            old_rows = list(csv.DictReader(handle))
+            reader = csv.DictReader(handle)
+            old_rows = list(reader)
+        if reader.fieldnames != fields:
+            msg = "history.csv has other columns; appending would misalign them"
+            raise ValueError(msg)
         with (directory / "history.csv").open("w", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(old_rows[0]))
+            writer = csv.DictWriter(handle, fieldnames=fields)
             writer.writeheader()
             writer.writerows(row for row in old_rows if int(row["epoch"]) < first_epoch)
         for row in reversed(old_rows):
@@ -589,30 +618,6 @@ def run(
         (directory / "measured_field_sampler.py").write_bytes(
             SOURCE_SNAPSHOT["benchmarks/grokking/recurrence_field_sampler.py"]
         )
-    fields = [
-        "epoch",
-        "step",
-        "seconds",
-        "train_loss",
-        "train_accuracy",
-        "train_decoded_accuracy",
-        "test_loss",
-        "test_accuracy",
-        "test_decoded_accuracy",
-        "query_train_accuracy",
-        "query_test_accuracy",
-    ]
-    if config.readout == "field":
-        fields.extend(
-            [
-                "train_argmax_accuracy",
-                "test_argmax_accuracy",
-                "query_train_argmax_accuracy",
-                "query_test_argmax_accuracy",
-            ]
-        )
-    if config.restart_step:
-        fields.extend(RATE_FIELDS)
     start_time = time.monotonic()
     status = {}
     with (directory / "history.csv").open("a" if resume else "w", newline="") as handle:
@@ -705,6 +710,7 @@ def run(
                         "model": model.state_dict(),
                         "optimizer": optimizer.state_dict(),
                         "config": asdict(config),
+                        "normalization": NORMALIZATION,
                         "raw": torch.from_numpy(raw_array),
                         "train_rows": train,
                         "criterion": asdict(criterion),
@@ -728,9 +734,7 @@ def run(
 @torch.no_grad()
 def verify(directory: Path, device: str, *, full: bool = False) -> dict[str, Any]:
     """Reload both optimizer modes and check the public row-wise DiffGPT decoder."""
-    saved = torch.load(
-        directory / "checkpoint.pt", map_location=device, weights_only=True
-    )
+    saved = load_checkpoint(directory / "checkpoint.pt", device)
     config = Config(**saved["config"])
     model = build(config, device)
     model.load_state_dict(saved["model"])

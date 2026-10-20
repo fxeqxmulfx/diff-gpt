@@ -13,7 +13,7 @@ from pathlib import Path
 
 import torch
 
-from benchmarks.grokking.div97 import write_json
+from benchmarks.grokking.div97 import load_checkpoint, write_json
 from benchmarks.grokking.recurrence import (
     RATE_FIELDS,
     ROOT,
@@ -27,7 +27,7 @@ from benchmarks.grokking.recurrence import (
 def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, object]:
     """Retain every iterate and data state; change only the explicit rate settings."""
     snapshot = parent.read_bytes()
-    saved = torch.load(io.BytesIO(snapshot), map_location="cpu", weights_only=True)
+    saved = load_checkpoint(io.BytesIO(snapshot), "cpu")
     original = Config(**saved["config"])
     allowed = {"learning_rate", "epochs", "restart_step", "restart_warmup"}
     if any(
@@ -176,7 +176,7 @@ def main() -> None:
     args = parser.parse_args()
     torch.set_num_threads(args.threads)
     torch.set_float32_matmul_precision("highest")
-    saved = torch.load(args.parent, map_location="cpu", weights_only=True)
+    saved = load_checkpoint(args.parent, "cpu")
     config = replace(
         Config(**saved["config"]),
         learning_rate=args.learning_rate,

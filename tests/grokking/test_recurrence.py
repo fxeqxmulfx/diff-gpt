@@ -1,5 +1,6 @@
 """Validate temporal differences, disjoint trajectories and resumable training."""
 
+import csv
 from copy import deepcopy
 from dataclasses import replace
 from typing import TYPE_CHECKING
@@ -10,7 +11,6 @@ import torch
 
 from benchmarks.grokking.div97 import domain, vocabulary
 from benchmarks.grokking.recurrence import (
-    BATCH,
     DEFAULT_BETA1,
     Config,
     P,
@@ -41,6 +41,11 @@ from diff_gpt.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+def contents(directory: Path) -> dict[str, bytes]:
+    """Return every file of a run directory by name."""
+    return {path.name: path.read_bytes() for path in directory.iterdir()}
 
 
 @pytest.mark.parametrize("task", ["division", "fibonacci"])
@@ -176,20 +181,9 @@ def test_resume_reproduces_uninterrupted_weights_and_optimizer(
     split = tmp_path / "split"
     whole = tmp_path / "whole"
     run(config, split, "cpu")
-    if (
-        beta1 == DEFAULT_BETA1
-        and readout == "argmax"
-        and batching == "tail"
-        and batch_size == BATCH
-    ):
-        # Existing long runs predate the beta1 and restart config fields.
-        legacy = torch.load(split / "checkpoint.pt", weights_only=True)
-        legacy["config"].pop("beta1")
-        legacy["config"].pop("restart_step")
-        legacy["config"].pop("restart_warmup")
-        torch.save(legacy, split / "checkpoint.pt")
+    if beta1 == DEFAULT_BETA1:
         assert "-b1" not in config.name()
-    if beta1 != DEFAULT_BETA1:
+    else:
         assert f"-b1{beta1:g}" in config.name()
     longer = replace(config, epochs=2)
     resumed = run(longer, split, "cpu", resume=True)
@@ -219,10 +213,44 @@ def test_resume_leaves_a_run_that_reached_its_epochs(tmp_path: Path) -> None:
     config = Config(width=8, layers=1, heads=1, context=4, epochs=1)
     directory = tmp_path / "run"
     run(config, directory, "cpu")
-    files = {path.name: path.read_bytes() for path in directory.iterdir()}
+    files = contents(directory)
     with pytest.raises(ValueError, match="already reached epoch 1"):
         run(config, directory, "cpu", resume=True)
-    assert {path.name: path.read_bytes() for path in directory.iterdir()} == files
+    assert contents(directory) == files
+
+
+def test_resume_rejects_a_history_with_other_columns(tmp_path: Path) -> None:
+    """Rows appended under an older header would land in the wrong columns."""
+    config = Config(width=8, layers=1, heads=1, context=4, epochs=1)
+    directory = tmp_path / "run"
+    run(config, directory, "cpu")
+    history = directory / "history.csv"
+    with history.open(newline="") as handle:
+        rows = list(csv.reader(handle))
+    with history.open("w", newline="") as handle:
+        csv.writer(handle).writerows(row[:-1] for row in rows)
+    files = contents(directory)
+    with pytest.raises(ValueError, match=r"history\.csv has other columns"):
+        run(replace(config, epochs=2), directory, "cpu", resume=True)
+    assert contents(directory) == files
+
+
+def test_a_checkpoint_of_an_earlier_model_cannot_resume_or_verify(
+    tmp_path: Path,
+) -> None:
+    """Its weights would load silently and train on as another model."""
+    config = Config(width=8, layers=1, heads=1, context=4, epochs=1)
+    directory = tmp_path / "run"
+    run(config, directory, "cpu")
+    checkpoint = torch.load(directory / "checkpoint.pt", weights_only=True)
+    assert checkpoint.pop("normalization") == "peri_rms_qk_rms"
+    torch.save(checkpoint, directory / "checkpoint.pt")
+    files = contents(directory)
+    with pytest.raises(ValueError, match="Peri/QK-RMSNorm"):
+        run(replace(config, epochs=2), directory, "cpu", resume=True)
+    with pytest.raises(ValueError, match="Peri/QK-RMSNorm"):
+        verify(directory, "cpu")
+    assert contents(directory) == files
 
 
 def test_balanced_batches_keep_every_sample_and_avoid_the_six_sample_tail() -> None:

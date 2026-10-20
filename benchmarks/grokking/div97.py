@@ -20,7 +20,7 @@ import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, BinaryIO
 
 import numpy as np
 import pandas as pd
@@ -62,6 +62,9 @@ LIBRARY_SOURCES = (
     ROOT / "src/diff_gpt/model/rope.py",
     ROOT / "src/diff_gpt/optimizer/schedule_free.py",
 )
+# Peri-RMSNorm and Q/K RMSNorm have no parameters, so weights of an earlier model
+# load without error and compute another function; saved runs carry this marker.
+NORMALIZATION = "peri_rms_qk_rms"
 
 
 class SplitMix64:
@@ -176,7 +179,7 @@ class RunConfig:
     order: int = 0
 
     def name(self) -> str:
-        """Return a unique readable directory component for these settings."""
+        """Return a readable directory name, without warmup, epochs and after99."""
         return (
             f"{self.labels}{f'-k{self.order}' if self.order else ''}"
             f"-w{self.width}-l{self.layers}-h{self.heads}"
@@ -319,10 +322,28 @@ def digest(array: np.ndarray) -> str:
     return hashlib.sha256(array.astype("<i8", copy=False).tobytes()).hexdigest()
 
 
+def require_current_model(record: dict[str, Any]) -> None:
+    """Reject a run record saved by a model before Peri-RMSNorm and Q/K RMSNorm."""
+    if record.get("normalization") != NORMALIZATION:
+        msg = (
+            "checkpoint architecture differs from the current Peri/QK-RMSNorm model; "
+            "replay it with the source its metadata records"
+        )
+        raise ValueError(msg)
+
+
+def load_checkpoint(source: Path | BinaryIO, device: str) -> dict[str, Any]:
+    """Load a checkpoint, rejecting weights that an earlier model trained."""
+    checkpoint = torch.load(source, map_location=device, weights_only=True)
+    require_current_model(checkpoint)
+    return checkpoint
+
+
 def _metadata(config: RunConfig, rows: np.ndarray, device: str) -> dict[str, Any]:
     sources = [Path(__file__), *LIBRARY_SOURCES]
     return {
         "config": asdict(config),
+        "normalization": NORMALIZATION,
         "git_head": subprocess.check_output(  # noqa: S603 - fixed git argv, no shell.
             [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
             cwd=ROOT,
@@ -365,9 +386,7 @@ def verify_checkpoint(
     """Reload saved averaged weights and replay both splits and DiffGPT.predict."""
     metadata = json.loads((directory / "metadata.json").read_text())
     config = RunConfig(**metadata["config"])
-    checkpoint = torch.load(
-        directory / "checkpoint.pt", map_location=device, weights_only=True
-    )
+    checkpoint = load_checkpoint(directory / "checkpoint.pt", device)
     if metadata["codec"]["encoder_version"] != ENCODER_VERSION:
         msg = "checkpoint was trained with a different encoder version"
         raise ValueError(msg)
@@ -638,6 +657,7 @@ def run_experiment(
             "epoch": epoch,
             "metrics": metrics,
             "config": asdict(config),
+            "normalization": NORMALIZATION,
             "sampler_order": sampler.order,
             "sampler_rng": sampler.random.state,
         },

@@ -8,16 +8,14 @@ from pathlib import Path
 
 import torch
 
-from benchmarks.grokking.div97 import write_json
+from benchmarks.grokking.div97 import load_checkpoint, write_json
 from benchmarks.grokking.recurrence import Config, build, tensors
 
 
 @torch.inference_mode()
 def probe(directory: Path, device: str, samples: int) -> dict[str, object]:
     """Use unseen-orbit contexts, input interventions and synthetic copy controls."""
-    saved = torch.load(
-        directory / "checkpoint.pt", map_location=device, weights_only=True
-    )
+    saved = load_checkpoint(directory / "checkpoint.pt", device)
     config = Config(**saved["config"])
     if config.grid_domain or config.vocab_size:
         msg = "this copy probe requires the exact integer grid"

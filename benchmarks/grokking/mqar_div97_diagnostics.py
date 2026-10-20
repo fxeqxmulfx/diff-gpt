@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 import torch
 from torch.nn import functional as F
 
+from benchmarks.grokking.div97 import NORMALIZATION
 from diff_gpt.model.rope import apply_rope
 
 if TYPE_CHECKING:
@@ -346,7 +347,7 @@ class Diagnostics:
                 self.pending_snapshot = {
                     "epoch": epoch,
                     "config": self.task_config,
-                    "normalization": "peri_rms_qk_rms",
+                    "normalization": NORMALIZATION,
                     "data_protocol": self.data_protocol,
                     "query_model": weights,
                     "query_metrics": metrics,

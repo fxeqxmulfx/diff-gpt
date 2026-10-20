@@ -173,6 +173,17 @@ def test_full_public_verification_keeps_the_original_answers(
         assert "decoded_accuracy" in verified["query_metrics"]["test"]
 
 
+def test_a_checkpoint_of_an_earlier_model_is_rejected(tmp_path: Path) -> None:
+    """Parameter-free norms load into any GPT; only the saved marker differs."""
+    directory = tmp_path / "run"
+    run_experiment(RunConfig(width=8, heads=1, epochs=1), directory)
+    checkpoint = torch.load(directory / "checkpoint.pt", weights_only=True)
+    assert checkpoint.pop("normalization") == "peri_rms_qk_rms"
+    torch.save(checkpoint, directory / "checkpoint.pt")
+    with pytest.raises(ValueError, match="Peri/QK-RMSNorm"):
+        verify_checkpoint(directory)
+
+
 @pytest.mark.parametrize("order", [1, 2])
 def test_positive_order_is_the_actual_codec_and_keeps_all_operands(order: int) -> None:
     """Zero prefixes are fixed; cached differences equal independently encoded rows."""

@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from benchmarks.grokking.div97 import P, digest, write_json
+from benchmarks.grokking.div97 import P, digest, load_checkpoint, write_json
 from benchmarks.grokking.recurrence import (
     Config,
     build,
@@ -286,7 +286,7 @@ def compare(directory: Path, device: str, repeats: int) -> dict[str, object]:
     # Load once: a running trainer can atomically replace checkpoint.pt later.
     checkpoint = directory if directory.is_file() else directory / "checkpoint.pt"
     directory = checkpoint.parent
-    saved = torch.load(checkpoint, map_location=device, weights_only=True)
+    saved = load_checkpoint(checkpoint, device)
     frozen = directory / f"readouts-epoch{saved['epoch']}-checkpoint.pt"
     if not frozen.exists():
         torch.save(saved, frozen)
@@ -387,7 +387,7 @@ def compare(directory: Path, device: str, repeats: int) -> dict[str, object]:
 def verify_readout(directory: Path, name: str, device: str) -> dict[str, object]:
     """Check a selected readout through the actual public DiffGPT API."""
     checkpoint = directory if directory.is_file() else directory / "checkpoint.pt"
-    saved = torch.load(checkpoint, map_location=device, weights_only=True)
+    saved = load_checkpoint(checkpoint, device)
     config = Config(**saved["config"])
     model = build(config, device)
     model.load_state_dict(saved["model"])

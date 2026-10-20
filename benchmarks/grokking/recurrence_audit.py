@@ -13,7 +13,7 @@ import numpy as np
 import torch
 
 from benchmarks.grokking import recurrence as experiment
-from benchmarks.grokking.div97 import digest, write_json
+from benchmarks.grokking.div97 import digest, load_checkpoint, write_json
 from benchmarks.grokking.div97_report import classify, history, replay_browser
 from diff_gpt.encoder_decoder import encode
 
@@ -28,9 +28,7 @@ def require(condition: object, message: str) -> None:
 
 def audit(directory: Path, device: str) -> dict[str, Any]:
     """Check every state, every shift, actual encoder causality and full SF state."""
-    saved = torch.load(
-        directory / "checkpoint.pt", map_location="cpu", weights_only=True
-    )
+    saved = load_checkpoint(directory / "checkpoint.pt", "cpu")
     metadata = json.loads((directory / "metadata.json").read_text())
     config = experiment.Config(**saved["config"])
     raw = saved["raw"].numpy()

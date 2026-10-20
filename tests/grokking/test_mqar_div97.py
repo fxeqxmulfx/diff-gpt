@@ -519,7 +519,7 @@ def test_historical_architectures_cannot_silently_load_as_peri(
     normalization: str | None,
 ) -> None:
     """Parameter-free norms can change the function without changing weight shapes."""
-    with pytest.raises(ValueError, match="frozen source"):
+    with pytest.raises(ValueError, match="Peri/QK-RMSNorm"):
         config_from_record(
             {"config": asdict(RunConfig()), "normalization": normalization}
         )
