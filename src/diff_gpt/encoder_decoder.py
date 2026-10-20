@@ -17,11 +17,12 @@ difference x_t - x_{t-24} of hourly data with a daily period, and
 The anchor lies in the kernel of c (c(B) A = 0), and it is all that differs
 between the tokenizers:
 
-- "lgt" (level grid, the default): A = 0, the absolute grid. The token at t
-  depends only on x_{t-p..t}, so encoding a window gives the matching slice
-  of the full encoding.
-- "mash" (prefix-anchored): A passes through the p prefix values of s·x, so
-  the grid moves with the prefix, as in a MASH Σ-Δ cascade started there.
+- "lgt" (level grid): A = 0, the absolute grid. The token at t depends only
+  on x_{t-p..t}, so encoding a window gives the matching slice of the full
+  encoding.
+- "mash" (prefix-anchored, the default): A passes through the p prefix
+  values of s·x, so the grid moves with the prefix, as in a MASH Σ-Δ
+  cascade started there.
 
 Every token lies in [1, V-1], and the decoder, which inverts c on the levels
 exactly and returns x̂ = (A + L)/s, stays within 1/(2s) = D/(V - ‖c‖₁) of
@@ -212,11 +213,11 @@ def _headroom(lags: tuple[int, ...]) -> int:
     return sum(abs(c) for c in _coefficients(lags)) if lags else 0
 
 
-# Which tokenizer `encode`/`decode` use when the caller does not say: "lgt"
-# (the absolute grid) or "mash" (the grid anchored at the prefix), see the
-# module docstring. Set DIFF_GPT_TOKENIZER=mash, or pass tokenizer="mash", for
+# Which tokenizer `encode`/`decode` use when the caller does not say: "mash"
+# (the grid anchored at the prefix) or "lgt" (the absolute grid), see the
+# module docstring. Set DIFF_GPT_TOKENIZER=lgt, or pass tokenizer="lgt", for
 # the latter.
-DEFAULT_TOKENIZER = os.environ.get("DIFF_GPT_TOKENIZER", "lgt")
+DEFAULT_TOKENIZER = os.environ.get("DIFF_GPT_TOKENIZER", "mash")
 _TOKENIZERS = ("lgt", "mash")
 
 # Version of the token scheme. DiffGPT checkpoints record it, so that weights

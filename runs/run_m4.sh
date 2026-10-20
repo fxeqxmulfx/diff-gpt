@@ -3,7 +3,7 @@
 # PIDs go to runs/<step>.pid; stop ONLY with: kill $(cat runs/<step>.pid)
 step=$1; shift
 cd /home/misha/python_projects/gpt
-export DIFF_GPT_TOKENIZER=${DIFF_GPT_TOKENIZER:-lgt}   # accepted at step 2 (now the package default)
+export DIFF_GPT_TOKENIZER=${DIFF_GPT_TOKENIZER:-lgt}   # accepted at step 2
 echo $$ > runs/$step.pid
 for seed in "$@"; do
   PYTHONUNBUFFERED=1 M4_N_SERIES=${M4_N_SERIES:-414} M4_MAX_ITERS=${M4_MAX_ITERS:-20000} \

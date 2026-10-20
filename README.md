@@ -1,7 +1,7 @@
 # diff-gpt
 
 Autoregressive time-series forecasting with a decoder-only transformer trained on
-a derivative-based tokenization. The encoder rounds the signal onto a fixed grid
+a derivative-based tokenization. The encoder rounds the signal onto a grid
 of step $\Delta$ and emits the grid index differenced by an integer operator
 $c(B)$, the $k$-th difference $\Delta^k = (1 - B)^k$ or a seasonal one such as
 $1 - B^{24}$ (level-grid tokenization, LGT:
@@ -10,19 +10,19 @@ tokens exactly in integer arithmetic. The model is a
 plain GPT that reads the token stream as ordinary text — the inductive bias
 sits entirely in the tokenization.
 
-The second tokenizer, MASH (`tokenizer="mash"`), rounds onto the same grid
+The default tokenizer, MASH (`tokenizer="mash"`), rounds onto the same grid
 anchored at a sequence that $c(B)$ maps to zero through the window prefix;
 for $\Delta^k$ it is a polynomial of degree $< k$, the rounding a MASH
 $\Sigma\Delta$ cascade started there performs. Both share the scale, the
-bound and the exact decoding for any operator and $T$. With LGT the token at
-$t$ depends only on $x_{t-p..t}$ for the degree $p$ of $c$ ($k$ for
-$\Delta^k$): encoding a window equals the slice
+bound and the exact decoding for any operator and $T$. With LGT
+(`tokenizer="lgt"`) the token at $t$ depends only on $x_{t-p..t}$ for the
+degree $p$ of $c$ ($k$ for $\Delta^k$): encoding a window equals the slice
 of the full encoding, and identical values give identical tokens anywhere in a
 series. MASH tokens depend on the prefix as well; in exchange MASH puts the
 prefix values on its grid, so a constant column comes back exactly, where LGT
-rounds it to $2^{-21}$. Pass `tokenizer="mash"` to
+rounds it to $2^{-21}$. Pass `tokenizer="lgt"` to
 `encode`/`decode`, `DiffGPT` and the data loaders, or set
-`DIFF_GPT_TOKENIZER=mash` to make it the default. `DiffGPT` and the loaders
+`DIFF_GPT_TOKENIZER=lgt` to make it the default. `DiffGPT` and the loaders
 keep the tokenizer they were built with, `DiffGPT.train` refuses a loader that
 encodes with another, and `DiffGPT.load` refuses weights trained on another
 token scheme (`ENCODER_VERSION`).
@@ -105,8 +105,9 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 ## Key features
 
 - **Level-grid tokenization**: tight $\Delta/2$ reconstruction bound uniformly
-  in $T$ for any operator, exact integer decoding, window-consistent tokens.
-  The prefix-anchored MASH grid (`tokenizer="mash"`) keeps the same bound.
+  in $T$ for any operator, exact integer decoding. The default MASH grid is
+  anchored at the window prefix; the absolute LGT grid (`tokenizer="lgt"`)
+  keeps the same bound and makes the tokens window-consistent.
 - **Bayes point readout** (`DiffGPT.predict_point`): the point forecast that
   minimises the expected metric (MAE/MASE, MSE, sMAPE or M4's OWA) under
   $N$ sampled trajectories, instead of feeding argmax/median tokens back.
