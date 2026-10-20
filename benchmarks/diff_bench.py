@@ -72,7 +72,7 @@ def main() -> None:
             n_layer=n_layer,
             use_checkpoint=use_checkpoint,
         )
-        base_model.to(device=device).compile(mode="max-autotune-no-cudagraphs")
+        base_model.to(device=device).compile(mode="max-autotune")
         model = DiffGPT(
             base_model,
             order_of_derivative=1,

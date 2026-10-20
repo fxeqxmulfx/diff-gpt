@@ -201,7 +201,7 @@ def run_horizon(
         use_checkpoint=use_checkpoint,
     ).to(device=device)
     if device == "cuda" and os.environ.get("ETT_COMPILE", "1") == "1":
-        base.compile(mode="max-autotune-no-cudagraphs")
+        base.compile(mode="max-autotune")
     model = DiffGPT(
         model=base,
         order_of_derivative=1,

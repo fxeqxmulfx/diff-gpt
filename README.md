@@ -332,14 +332,11 @@ base = GPT(
     n_layer=2,
     use_checkpoint=False,  # required alongside torch.compile
 )
-# GPU: max-autotune without cudagraphs — peak Triton/Inductor tuning,
-# no CUDA-graph capture (which breaks under variable shapes, DDP, and
-# KV-cache inference). CPU: max-autotune enables Inductor's CPU GEMM
-# template / tile sweep; cudagraphs is a no-op on CPU either way.
-compile_mode = (
-    "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
-)
-base = torch.compile(base, mode=compile_mode)
+# max-autotune: peak Triton/Inductor tuning, plus CUDA graphs on GPU (on
+# CPU, Inductor's GEMM template / tile sweep). Module.compile compiles the
+# calls of the module, which training makes at one batch shape; inference
+# calls its forward, so KV-cache decoding, whose length grows, runs eager.
+base.compile(mode="max-autotune")
 model = DiffGPT(
     model=base,
     order_of_derivative=order,
@@ -361,8 +358,7 @@ def build_gpt(rank: int) -> GPT:
         n_layer=2,
         use_checkpoint=False,
     )
-    mode = "max-autotune-no-cudagraphs" if torch.cuda.is_available() else "max-autotune"
-    return torch.compile(gpt, mode=mode)
+    return torch.compile(gpt, mode="max-autotune")
 ```
 
 The checkpoint that `train_numa` writes holds the bare `GPT`'s keys, so load
