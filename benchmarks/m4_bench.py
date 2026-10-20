@@ -191,7 +191,8 @@ def main() -> None:
     Settings come from the M4_* environment variables (see the module
     docstring); sMAPE and MASE are printed for each readout in M4_SAMPLERS.
     """
-    torch.set_float32_matmul_precision("high")
+    # Full FP32 matmuls: TF32 rounds their inputs to 10 bits of mantissa.
+    torch.set_float32_matmul_precision("highest")
     seed = int(os.environ.get("M4_SEED", "0"))
     torch.manual_seed(seed)
 
@@ -284,11 +285,9 @@ def main() -> None:
         train_part=train_part,
         rng=torch.Generator().manual_seed(42 + seed),
     )
+    # The optimizer takes train()'s defaults, tuned for the model.
     train_kwargs = {
         "loader": loader,
-        "learning_rate": 1e-2,
-        "betas": (0.9, 0.95),
-        "weight_decay": 0.1,
         "max_iters": max_iters,
         "eval_interval": eval_interval,
         "eval_iters": 40,
@@ -324,22 +323,20 @@ def main() -> None:
         "argmax": TemperatureSampler(temperature=0.0),
         "median": MedianSampler(),
     }
+    # Use the tail of each normalized training series as context: the
+    # operator's prefix rows, then block_size - horizon tokens.
+    ctx_len = block_size - horizon + prefix_rows(order_of_derivative)
+    contexts = [df.iloc[-min(len(df), ctx_len) :] for df in dfs]
     for name in sampler_names:
         sampler = samplers[name]
+        # In batches of series: each decode step advances every series of one.
+        pred_dfs = model.predict_many(contexts, max_new_points=horizon, sampler=sampler)
         smapes, mases = [], []
         for i_global, series_idx in enumerate(picked):
             insample_raw = series_raw[i_global]
             mu, sd = stats[i_global]
             truth_raw = test[series_idx].astype(np.float64)
-            # Use the tail of the normalized training series as context: the
-            # operator's prefix rows, then block_size - horizon tokens.
-            ctx_len = min(
-                len(dfs[i_global]),
-                block_size - horizon + prefix_rows(order_of_derivative),
-            )
-            context = dfs[i_global].iloc[-ctx_len:]
-            pred_df = model.predict(df=context, max_new_points=horizon, sampler=sampler)
-            pred_norm = pred_df.iloc[-horizon:].to_numpy().reshape(-1)
+            pred_norm = pred_dfs[i_global].iloc[-horizon:].to_numpy().reshape(-1)
             pred_raw = pred_norm * sd + mu
             smapes.append(smape(pred_raw, truth_raw))
             mases.append(mase(pred_raw, truth_raw, insample_raw, season))

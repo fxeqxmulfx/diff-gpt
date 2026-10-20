@@ -1,4 +1,4 @@
-"""KV-cached sampling engine: one prompt prefill, then batched decoding."""
+"""KV-cached sampling engine: one prefill, then batched decoding."""
 
 from collections import deque
 from typing import TYPE_CHECKING, TypedDict, Unpack
@@ -38,7 +38,7 @@ class RowState:
 
 
 class Engine:
-    """Sample continuations of a prompt from a `BaseGPT` with a KV cache."""
+    """Sample continuations of prompts from a `BaseGPT` with a KV cache."""
 
     __slots__ = ("model",)
 
@@ -220,3 +220,73 @@ class Engine:
                 results[i].append(token)
                 masks[i].append(mask)
         return results, masks
+
+    @torch.inference_mode()
+    def generate_many(
+        self,
+        prompts: list[list[int]],
+        max_tokens: int,
+        sampler: Sampler | None = None,
+        seed: int = 42,
+    ) -> list[list[int]]:
+        """
+        Continue each prompt by `max_tokens` tokens; return the new tokens of each.
+
+        The prompts are the rows of one batch: one prefill covers them all and
+        each step decodes the next token of every row, so many prompts take as
+        many model calls as one. They must have one length, and the prompt and
+        its continuation must fit in `block_size`; ValueError otherwise. The
+        rows draw from one generator seeded with `seed` (multinomial when
+        `sampler` is None), so their samples differ from those of `generate`.
+        """
+        if not prompts or not all(prompts):
+            msg = "prompts must be non-empty lists of ints"
+            raise ValueError(msg)
+        if not all(isinstance(t, int) for prompt in prompts for t in prompt):
+            msg = "prompts must be lists of ints"
+            raise TypeError(msg)
+        lengths = sorted({len(prompt) for prompt in prompts})
+        if len(lengths) > 1:
+            msg = f"prompts must have one length, got lengths {lengths}"
+            raise ValueError(msg)
+        prompt_len = lengths[0]
+        room = self.model.block_size - prompt_len
+        if room < 0:
+            msg = (
+                f"prompts have {prompt_len} tokens but block_size is "
+                f"{self.model.block_size}"
+            )
+            raise ValueError(msg)
+        if not 0 <= max_tokens <= room:
+            msg = (
+                f"max_tokens {max_tokens} must lie in [0, {room}], the positions "
+                f"left after a {prompt_len}-token prompt "
+                f"(block_size {self.model.block_size})"
+            )
+            raise ValueError(msg)
+        if max_tokens == 0:
+            return [[] for _ in prompts]
+        device = self.model.device
+        rng = torch.Generator(device=device)
+        rng.manual_seed(seed)
+        m = self.model
+        kv_cache = KVCache(
+            batch_size=len(prompts),
+            num_heads=m.n_head,
+            seq_len=prompt_len + max_tokens,
+            head_dim=m.n_embd // m.n_head,
+            num_layers=m.n_layer,
+        )
+        # The prompts first, then each step's tokens: a (B, 1) column.
+        ids = torch.tensor(prompts, dtype=torch.long, device=device)
+        columns = []
+        for _ in range(max_tokens):
+            logits, _ = m.forward(ids, kv_cache=kv_cache)
+            logits = logits[:, -1, :]  # (B, vocab_size)
+            if sampler is not None:
+                ids = sampler(logits, rng=rng)
+            else:
+                probs = torch.softmax(logits, dim=-1)
+                ids = torch.multinomial(probs, num_samples=1, generator=rng)
+            columns.append(ids)
+        return torch.cat(columns, dim=1).tolist()

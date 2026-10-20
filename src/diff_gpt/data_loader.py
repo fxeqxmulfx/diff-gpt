@@ -8,7 +8,7 @@ already-tokenized sequence.
 
 import sqlite3
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 import torch
@@ -420,11 +420,51 @@ def _mask_targets(
     if phase is None:
         phase = torch.zeros(y.shape[0], dtype=torch.long)
     col = (
-        phase.to(torch.long).unsqueeze(1) + torch.arange(block_size).unsqueeze(0)
+        phase.to(device=y.device, dtype=torch.long).unsqueeze(1)
+        + torch.arange(block_size, device=y.device).unsqueeze(0)
     ) % n_features
-    tgt = torch.tensor(targets, dtype=torch.long)
+    tgt = torch.tensor(targets, dtype=torch.long, device=y.device)
     keep = (col.unsqueeze(-1) == tgt).any(dim=-1)  # (B, block_size)
     return y.masked_fill(~keep, -100)
+
+
+class _Windows(NamedTuple):
+    """The windows of one split: its series in one tensor and every window start."""
+
+    tokens: torch.Tensor  # the series of the split, one after another
+    starts: torch.Tensor  # the offset in `tokens` of every window
+    phases: torch.Tensor  # the column of each window's first target token
+    longest: int  # the length of the longest series of the split
+
+
+def _windows(
+    serieses: list[np.ndarray],
+    block_size: int,
+    step: int,
+    n_features: int,
+    device: str,
+) -> _Windows:
+    """
+    Index the windows of `block_size + 1` tokens that start at a multiple of `step`.
+
+    The series longer than `block_size` go into one tensor, one after
+    another, and the starts run over them in order, so that no window
+    crosses into the next series and a uniform start is a uniform window.
+    """
+    eligible = [s for s in serieses if len(s) > block_size]
+    lengths = np.array([len(s) for s in eligible], dtype=np.int64)
+    counts = (lengths - block_size - 1) // step + 1
+    # Each start's offset within its own series.
+    first = np.cumsum(counts) - counts
+    local = (np.arange(counts.sum(), dtype=np.int64) - np.repeat(first, counts)) * step
+    starts = np.repeat(np.cumsum(lengths) - lengths, counts) + local
+    tokens = np.concatenate(eligible) if eligible else np.zeros(0, dtype=np.int64)
+    return _Windows(
+        tokens=torch.from_numpy(tokens).to(device),
+        starts=torch.from_numpy(starts).to(device),
+        phases=torch.from_numpy((local + 1) % n_features).to(device),
+        longest=max((len(s) for s in serieses), default=0),
+    )
 
 
 class DiffDataFrameDataLoader:
@@ -436,7 +476,8 @@ class DiffDataFrameDataLoader:
     series is then split chronologically at `train_part`, rounded down to a
     whole row, and `get_batch('train'|'val')` samples windows uniformly across
     all series belonging to the requested split (weighted by number of valid
-    window starts).
+    window starts). The tokens of each split live on `device` in one tensor,
+    so a batch is one gather there.
 
     If `target_columns` is set, only positions that belong to those columns
     contribute to the loss (TimeXer-style exogenous forecasting) — covariate
@@ -449,8 +490,8 @@ class DiffDataFrameDataLoader:
     """
 
     __slots__ = (
-        "_train_serieses",
-        "_val_serieses",
+        "_train_windows",
+        "_val_windows",
         "align_windows",
         "batch_size",
         "block_size",
@@ -500,9 +541,9 @@ class DiffDataFrameDataLoader:
         self.tokenizer = resolve_tokenizer(tokenizer)
         self.device = device
         self.rng = rng if rng is not None else torch.Generator().manual_seed(42)
-        # Encode each DataFrame into a flat token tuple, then split.
-        self._train_serieses: list[tuple[int, ...]] = []
-        self._val_serieses: list[tuple[int, ...]] = []
+        # Encode each DataFrame into a flat token array, then split.
+        train_serieses: list[np.ndarray] = []
+        val_serieses: list[np.ndarray] = []
         for df in dfs:
             _, _, encoded = encode(
                 inp=df.to_numpy(dtype=np.float64),
@@ -511,7 +552,7 @@ class DiffDataFrameDataLoader:
                 order_of_derivative=order_of_derivative,
                 tokenizer=self.tokenizer,
             )
-            flat = tuple(encoded.reshape(-1).tolist())
+            flat = encoded.reshape(-1)
             # Split on a row boundary, so that the val slice starts with column
             # 0 like the train slice. `get_batch` takes a position's column from
             # its offset in the slice: with a mid-row split the val target mask
@@ -519,12 +560,21 @@ class DiffDataFrameDataLoader:
             # another phase than the inference context.
             n = int(len(flat) * train_part)
             n -= n % n_features
-            self._train_serieses.append(flat[:n])
-            self._val_serieses.append(flat[n:])
+            train_serieses.append(flat[:n])
+            val_serieses.append(flat[n:])
+        step = n_features if align_windows else 1
+        self._train_windows = _windows(
+            train_serieses,
+            block_size,
+            step,
+            n_features,
+            device,
+        )
+        self._val_windows = _windows(val_serieses, block_size, step, n_features, device)
 
     def has_val(self) -> bool:
         """Return True if any val series is longer than `block_size`."""
-        return any(len(s) > self.block_size for s in self._val_serieses)
+        return self._val_windows.starts.numel() > 0
 
     def get_batch(self, split: str = "train") -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -533,46 +583,35 @@ class DiffDataFrameDataLoader:
         Positions of `y` outside `target_columns` are masked with -100.
         """
         if split == "train":
-            pool = self._train_serieses
+            windows = self._train_windows
         elif split == "val":
-            pool = self._val_serieses
+            windows = self._val_windows
         else:
             msg = f"unknown split {split!r}; expected 'train' or 'val'"
             raise ValueError(msg)
-        block_size = self.block_size
-        eligible = [s for s in pool if len(s) > block_size]
-        if not eligible:
-            max_len = max((len(s) for s in pool), default=0)
+        n_starts = windows.starts.numel()
+        if n_starts == 0:
             msg = (
-                f"No {split!r} series long enough: block_size={block_size}, "
-                f"max_series_len={max_len}"
+                f"No {split!r} series long enough: block_size={self.block_size}, "
+                f"max_series_len={windows.longest}"
             )
             raise ValueError(msg)
-        F = self.n_features
-        step = F if self.align_windows else 1
-        # Valid window starts: local + block_size + 1 <= len(s), stepping by `step`.
-        starts_per = [(len(s) - block_size - 1) // step + 1 for s in eligible]
-        total_starts = sum(starts_per)
-        cum = np.cumsum(starts_per)
-        batch_size = self.batch_size
-        x = torch.zeros((batch_size, block_size), dtype=torch.int64)
-        y = torch.zeros((batch_size, block_size), dtype=torch.int64)
-        phase = torch.zeros(batch_size, dtype=torch.long)
-        picks = torch.randint(
-            0,
-            total_starts,
-            (batch_size,),
-            generator=self.rng,
-        ).tolist()
-        for i, r in enumerate(picks):
-            sidx = int(np.searchsorted(cum, r, side="right"))
-            local = (r - (int(cum[sidx - 1]) if sidx > 0 else 0)) * step
-            s = eligible[sidx]
-            x[i] = torch.tensor(s[local : local + block_size], dtype=torch.int64)
-            y[i] = torch.tensor(
-                s[local + 1 : local + block_size + 1],
-                dtype=torch.int64,
-            )
-            phase[i] = (local + 1) % F  # column of y[i, 0]
-        y = _mask_targets(y, block_size, F, self.target_columns, phase)
-        return x.to(device=self.device), y.to(device=self.device)
+        picks = torch.randint(0, n_starts, (self.batch_size,), generator=self.rng)
+        if picks.device != windows.starts.device:
+            # From pinned memory the copy does not wait for the queued steps.
+            picks = picks.pin_memory().to(windows.starts.device, non_blocking=True)
+        index = windows.starts[picks].unsqueeze(1) + torch.arange(
+            self.block_size,
+            device=windows.starts.device,
+        )
+        x = windows.tokens[index]
+        # y is x shifted by one token; phase is the column of y[:, 0].
+        y = windows.tokens[index + 1]
+        y = _mask_targets(
+            y,
+            self.block_size,
+            self.n_features,
+            self.target_columns,
+            windows.phases[picks],
+        )
+        return x, y

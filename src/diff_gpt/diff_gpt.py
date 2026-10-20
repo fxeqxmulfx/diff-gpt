@@ -323,6 +323,93 @@ class DiffGPT:
             sampler=sampler,
         )
 
+    @torch.inference_mode()
+    def predict_many(
+        self,
+        dfs: list[pd.DataFrame],
+        max_new_points: int,
+        sampler: Sampler | None = None,
+        batch_size: int = 256,
+    ) -> list[pd.DataFrame]:
+        """
+        Forecast each context of `dfs` as `predict` does, `batch_size` at a time.
+
+        Contexts of one shape go through the model together, up to
+        `batch_size` rows to a batch: a prefill, then one decode step per new
+        token for all the rows, so a few hundred series take about as many
+        model calls as one. Returns, in the order of `dfs`, each df's rows
+        followed by its `max_new_points` decoded rows. A batch sums in another
+        order than a lone row, so where two logits tie to within rounding a
+        token can differ from that of `predict`; with `sampler=None` the rows
+        of a batch share a generator, so their samples differ from those of
+        `predict`.
+        """
+        if batch_size < 1:
+            msg = f"batch_size must be >= 1, got {batch_size}"
+            raise ValueError(msg)
+        # Contexts of one shape have as many tokens: they can share a batch.
+        groups: dict[tuple[int, int], list[int]] = {}
+        for i, df in enumerate(dfs):
+            groups.setdefault(df.shape, []).append(i)
+        engine = Engine(model=self.model)
+        forecasts: dict[int, pd.DataFrame] = {}
+        for members in groups.values():
+            columns = dfs[members[0]].shape[1]
+            max_order = self._forecast_order(dfs[members[0]], max_new_points)
+            for start in range(0, len(members), batch_size):
+                batch = members[start : start + batch_size]
+                inputs = [self._to_input(dfs[i]) for i in batch]
+                encoded = [self._encode(inp) for inp in inputs]
+                generated = engine.generate_many(
+                    prompts=[tokens.reshape(-1).tolist() for _, _, tokens in encoded],
+                    max_tokens=max_new_points * columns,
+                    sampler=sampler,
+                )
+                for i, inp, (_, scale, _), new in zip(
+                    batch,
+                    inputs,
+                    encoded,
+                    generated,
+                    strict=True,
+                ):
+                    tokens = np.asarray(new, dtype=np.int64)
+                    # The generated tokens continue from the last max_order rows.
+                    future = self._decode_future(
+                        inp[len(inp) - max_order :],
+                        scale,
+                        tokens.reshape(max_new_points, columns),
+                    )
+                    forecasts[i] = pd.DataFrame(
+                        np.concatenate([inp, future], axis=0),
+                        columns=dfs[i].columns,
+                    )
+        return [forecasts[i] for i in range(len(dfs))]
+
+    def _forecast_order(self, df: pd.DataFrame, max_new_points: int) -> int:
+        """
+        Return the raw rows in front of the tokens of a forecast from `df`.
+
+        ValueError when `df` has no row past them, or when its tokens and those
+        of `max_new_points` new rows need more than `block_size` positions.
+        """
+        columns = df.shape[1]
+        max_order = self._max_order(columns)
+        if max_order >= df.shape[0]:
+            msg = (
+                f"max order {max_order} >= context length {df.shape[0]}: the "
+                "context needs a row past the k-th derivative prefix"
+            )
+            raise ValueError(msg)
+        total_positions = (df.shape[0] + max_new_points - max_order) * columns
+        if total_positions > self.model.block_size:
+            msg = (
+                f"prompt rows ({df.shape[0]}) + new points ({max_new_points}) with "
+                f"{columns} columns (max_order={max_order}) require {total_positions} "
+                f"context positions, but block_size is {self.model.block_size}"
+            )
+            raise ValueError(msg)
+        return max_order
+
     def _generate_future_samples(
         self,
         df: pd.DataFrame,
@@ -344,21 +431,7 @@ class DiffGPT:
             msg = f"num_samples must be >= 1, got {num_samples}"
             raise ValueError(msg)
         columns = df.shape[1]
-        max_order = self._max_order(columns)
-        if max_order >= df.shape[0]:
-            msg = (
-                f"max order {max_order} >= context length {df.shape[0]}: the "
-                "context needs a row past the k-th derivative prefix"
-            )
-            raise ValueError(msg)
-        total_positions = (df.shape[0] + max_new_points - max_order) * columns
-        if total_positions > self.model.block_size:
-            msg = (
-                f"prompt rows ({df.shape[0]}) + new points ({max_new_points}) with "
-                f"{columns} columns (max_order={max_order}) require {total_positions} "
-                f"context positions, but block_size is {self.model.block_size}"
-            )
-            raise ValueError(msg)
+        max_order = self._forecast_order(df, max_new_points)
         inp = self._to_input(df)
         _, scale, encoded_data = self._encode(inp)
         context_tokens = encoded_data.reshape(-1).tolist()

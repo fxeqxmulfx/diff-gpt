@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
+from diff_gpt.encoder_decoder import encode
 
 # F.cross_entropy's ignore_index; the loader masks non-target columns with it.
 IGNORE_INDEX = -100
@@ -141,3 +142,53 @@ def test_dataframe_loader_multi_series_blends() -> None:
     assert (from_a | from_b).all()
     assert from_a.any()
     assert from_b.any()
+
+
+@pytest.mark.parametrize(
+    ("n_features", "align_windows"),
+    [(1, False), (2, False), (2, True)],
+)
+def test_dataframe_loader_draws_every_window_and_only_those(
+    n_features: int,
+    *,
+    align_windows: bool,
+) -> None:
+    """
+    Check that the batches hold every window of every series and nothing else.
+
+    A window is block_size + 1 tokens of one series, x and then y shifted by
+    one: none crosses into the next series, the last one of a series is
+    drawn too, and aligned ones start at multiples of n_features.
+    """
+    block_size, vocab_size = 8, 64
+    domain = np.full(n_features, 8.0)  # above every step of the walks
+    rng = np.random.default_rng(0)
+    dfs = [
+        pd.DataFrame(rng.standard_normal((n_rows, n_features)).cumsum(axis=0))
+        for n_rows in (20, 31)
+    ]
+    loader = DiffDataFrameDataLoader(
+        dfs=dfs,
+        block_size=block_size,
+        batch_size=32,
+        vocab_size=vocab_size,
+        order_of_derivative=1,
+        domain_of_definition=domain,
+        device="cpu",
+        train_part=1.0,
+        rng=torch.Generator().manual_seed(0),
+        align_windows=align_windows,
+    )
+    step = n_features if align_windows else 1
+    expected = set()
+    for df in dfs:
+        _, _, tokens = encode(df.to_numpy(), vocab_size, domain, 1)
+        flat = tokens.reshape(-1).tolist()
+        for start in range(0, len(flat) - block_size, step):
+            expected.add(tuple(flat[start : start + block_size + 1]))
+    drawn = set()
+    for _ in range(100):
+        x, y = loader.get_batch("train")
+        assert (y[:, :-1] == x[:, 1:]).all()
+        drawn |= {tuple(row) for row in torch.cat([x, y[:, -1:]], dim=1).tolist()}
+    assert drawn == expected

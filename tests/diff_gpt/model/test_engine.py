@@ -384,3 +384,76 @@ def test_prefill_clone_equivalence(gpt_model: GPT) -> None:
 
     # The result of the optimized batch must be the same as N naive runs.
     assert results_engine == results_naive
+
+
+def test_generate_many_matches_generate_per_prompt(gpt_model: GPT) -> None:
+    """
+    Check that one batch of prompts continues each as `generate` alone does.
+
+    With the argmax sampler, the new tokens of every row equal those of a
+    batch-1 run on its prompt.
+    """
+    engine = Engine(model=gpt_model)
+    prompts = [[1, 8, 4, 9], [2, 2, 7, 30], [63, 0, 5, 11]]
+    max_tokens = 6
+    generated = engine.generate_many(
+        prompts=prompts,
+        max_tokens=max_tokens,
+        sampler=greedy_sampler,
+    )
+    for prompt, new in zip(prompts, generated, strict=True):
+        alone, _ = engine.generate_batch(
+            tokens=prompt,
+            num_samples=1,
+            max_tokens=max_tokens,
+            sampler=greedy_sampler,
+        )
+        assert new == alone[0][len(prompt) :]
+
+
+def test_generate_many_is_seeded(gpt_model: GPT) -> None:
+    """Sampling without a sampler repeats under one seed."""
+    engine = Engine(model=gpt_model)
+    prompts = [[1, 2, 3], [4, 5, 6]]
+    max_tokens = 8
+    first = engine.generate_many(prompts=prompts, max_tokens=max_tokens, seed=7)
+    again = engine.generate_many(prompts=prompts, max_tokens=max_tokens, seed=7)
+    assert first == again
+    assert all(len(row) == max_tokens for row in first)
+
+
+def test_generate_many_fills_the_positions_left(gpt_model: GPT) -> None:
+    """
+    Check that `max_tokens` may fill `block_size` but not run past it.
+
+    0 returns an empty continuation for every prompt.
+    """
+    engine = Engine(model=gpt_model)
+    prompts = [[1, 2, 3], [4, 5, 6]]
+    room = gpt_model.block_size - len(prompts[0])
+    generated = engine.generate_many(prompts=prompts, max_tokens=room)
+    assert [len(row) for row in generated] == [room, room]
+    assert engine.generate_many(prompts=prompts, max_tokens=0) == [[], []]
+    with pytest.raises(ValueError, match="positions left"):
+        engine.generate_many(prompts=prompts, max_tokens=room + 1)
+    with pytest.raises(ValueError, match="positions left"):
+        engine.generate_many(prompts=prompts, max_tokens=-1)
+
+
+def test_generate_many_rejects_bad_prompts(gpt_model: GPT) -> None:
+    """No prompt, an empty one, two lengths, a non-int token or one too long raise."""
+    engine = Engine(model=gpt_model)
+    with pytest.raises(ValueError, match="non-empty"):
+        engine.generate_many(prompts=[], max_tokens=2)
+    with pytest.raises(ValueError, match="non-empty"):
+        engine.generate_many(prompts=[[1, 2], []], max_tokens=2)
+    with pytest.raises(ValueError, match="one length"):
+        engine.generate_many(prompts=[[1, 2], [1, 2, 3]], max_tokens=2)
+    with pytest.raises(TypeError, match="lists of ints"):
+        engine.generate_many(
+            prompts=[[1, 2], [3, 4.0]],  # type: ignore[list-item]
+            max_tokens=2,
+        )
+    too_long = list(range(gpt_model.block_size + 1))
+    with pytest.raises(ValueError, match="block_size"):
+        engine.generate_many(prompts=[too_long], max_tokens=0)

@@ -913,3 +913,38 @@ def test_predict_point_mae_equals_per_step_median_of_samples() -> None:
     assert smape_pt.shape == (5, 3)
     assert (smape_pt.to_numpy() >= samples.min(axis=0)).all()
     assert (smape_pt.to_numpy() <= samples.max(axis=0)).all()
+
+
+def test_predict_many_matches_predict() -> None:
+    """
+    Check that batched forecasts equal those of `predict`, in input order.
+
+    The contexts have two shapes, and three of one shape take two batches
+    of two, so grouping, batching and reordering all run.
+    """
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=40)
+    contexts = [df.iloc[:10], df.iloc[3:15], df.iloc[5:15], df.iloc[20:30]]
+    sampler = TemperatureSampler(temperature=0.0)
+    forecasts = model.predict_many(
+        contexts,
+        max_new_points=4,
+        sampler=sampler,
+        batch_size=2,
+    )
+    assert len(forecasts) == len(contexts)
+    for ctx, forecast in zip(contexts, forecasts, strict=True):
+        alone = model.predict(df=ctx, max_new_points=4, sampler=sampler)
+        assert forecast.shape == (len(ctx) + 4, 3)
+        assert list(forecast.columns) == list(ctx.columns)
+        assert np.array_equal(forecast.to_numpy(), alone.to_numpy())
+
+
+def test_predict_many_rejects_bad_contexts() -> None:
+    """A context without a row past the prefix, or batch_size 0, raises."""
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20)
+    with pytest.raises(ValueError, match="context needs a row"):
+        model.predict_many([df.iloc[:10], df.iloc[:1]], max_new_points=4)
+    with pytest.raises(ValueError, match="batch_size"):
+        model.predict_many([df.iloc[:10]], max_new_points=4, batch_size=0)
