@@ -248,9 +248,9 @@ def main() -> None:
         use_checkpoint=False,
     ).to(device=device)
     if device == "cuda":
-        # M4_COMPILE_MODE: "max-autotune-no-cudagraphs" (default), "max-autotune"
-        # (adds CUDA graphs; training shapes are static), "reduce-overhead", "none".
-        compile_mode = os.environ.get("M4_COMPILE_MODE", "max-autotune-no-cudagraphs")
+        # M4_COMPILE_MODE: "max-autotune" (default: CUDA graphs, training shapes
+        # are static), "max-autotune-no-cudagraphs", "reduce-overhead", "none".
+        compile_mode = os.environ.get("M4_COMPILE_MODE", "max-autotune")
         if compile_mode in ("reduce-overhead", "max-autotune"):
             # CUDA graphs need static shapes: compile a separate wrapper for the
             # training loop only; inference (KV cache, growing T) stays on `base`.
