@@ -2,17 +2,21 @@
 
 Autoregressive time-series forecasting with a decoder-only transformer trained on
 a derivative-based tokenization. The encoder rounds the signal onto a fixed grid
-of step $\Delta$ and emits the $k$-th differences of the grid index
-(level-grid tokenization, LGT: $q_t = \Delta^k\,\mathrm{round}(s\,x_t) + V/2$);
-the decoder integrates the tokens exactly in integer arithmetic. The model is a
+of step $\Delta$ and emits the grid index differenced by an integer operator
+$c(B)$, the $k$-th difference $\Delta^k = (1 - B)^k$ or a seasonal one such as
+$1 - B^{24}$ (level-grid tokenization, LGT:
+$q_t = c(B)\,\mathrm{round}(s\,x_t) + V/2$); the decoder integrates the
+tokens exactly in integer arithmetic. The model is a
 plain GPT that reads the token stream as ordinary text — the inductive bias
 sits entirely in the tokenization.
 
 The second tokenizer, MASH (`tokenizer="mash"`), rounds onto the same grid
-anchored at a polynomial of degree $< k$ through the window prefix, the
-rounding a MASH $\Sigma\Delta$ cascade started there performs. Both share the
-scale, the bound and the exact decoding for any $k$ and $T$. With LGT the
-token at $t$ depends only on $x_{t-k..t}$: encoding a window equals the slice
+anchored at a sequence that $c(B)$ maps to zero through the window prefix;
+for $\Delta^k$ it is a polynomial of degree $< k$, the rounding a MASH
+$\Sigma\Delta$ cascade started there performs. Both share the scale, the
+bound and the exact decoding for any operator and $T$. With LGT the token at
+$t$ depends only on $x_{t-p..t}$ for the degree $p$ of $c$ ($k$ for
+$\Delta^k$): encoding a window equals the slice
 of the full encoding, and identical values give identical tokens anywhere in a
 series. MASH tokens depend on the prefix as well; in exchange MASH puts the
 prefix values on its grid, so a constant column comes back exactly, where LGT
@@ -36,37 +40,63 @@ model on top.
 
 | quantity | per vocab doubling | reference |
 |---|---|---|
-| ideal CE $\mathcal L^\star(V)$ | $+\log 2 \approx 0.69$ nats | Prop. 2 |
+| ideal CE $\mathcal L^\star(V)$ | $+\log 2 \approx 0.69$ nats | Prop. 3 |
 | reconstruction $\|\hat x - x\|_\infty$ | $\times \tfrac{1}{2}$ | Thm. 1 |
 
-**Theorem 1 (reconstruction, any $k$, both tokenizers).** For any signal with
-$D = \max_t |\Delta^k x_t| > 0$ and $V > \max(2, 2^k)$, every token lies in
-$[1, V-1]$ and
+**Theorem 1 (reconstruction, any operator, both tokenizers).** Let
+$c(B) = \prod_{i=1}^m (1 - B^{S_i})$, $m \ge 1$, with lags $S_i \ge 1$ ($k$
+lags of 1 for $\Delta^k$) have $\|c\|_1 = \sum_j |c_j|$, which is $2^k$ for
+$\Delta^k$. For
+any signal with $D = \max_t |c(B)\,x_t| > 0$ and $V > \|c\|_1$, every token
+lies in $[1, V-1]$ and
 
-$$\|\hat x - x\|_\infty \le \frac{\Delta}{2} = \frac{D}{V - \max(2, 2^k)}$$
+$$\|\hat x - x\|_\infty \le \frac{\Delta}{2} = \frac{D}{V - \|c\|_1}$$
 
-uniformly in horizon $T$. Vocabulary doubling halves reconstruction error at any
-order $k$. The proof is checked in Lean 4: `lean/DiffGPT/LevelGrid.lean` for
-exact arithmetic, and `Float64.lean`, `ExactLevels.lean`, `Int64.lean` and
+uniformly in horizon $T$. No larger scale keeps every token in range: rounding
+errors with the signs of the coefficients of $c$ push one out. The order 0,
+$c = 1$, needs no such room: on the grid shifted by half a step the tokens take
+all of $[0, V-1]$, and the error $\Delta/2$ is a hair above $D/V$, the least
+that $V$ values allow on $[-D, D]$. Vocabulary doubling halves reconstruction
+error for any operator. The proof is checked in Lean 4:
+`lean/DiffGPT/LevelGrid.lean` for exact arithmetic, the sharpness and the
+order 0 included, and `Float64.lean`, `ExactLevels.lean`, `Int64.lean` and
 `Machine.lean` next to it for the float64/int64 implementation, end to end in
-`encode_decode`. There the levels are exact, so every token lies in
-$[1, V-1]$ as in exact arithmetic, `decode` gets the levels back without an
+`encode_decode` (`encode_decode_zero` for the order 0). There the levels are
+exact, so every token lies in
+$[1, V-1]$ ($[0, V-1]$ at the order 0) as in exact arithmetic, `decode` gets
+the levels back without an
 int64 overflow, and the decode adds only the float64 rounding of $(R + F)/s$,
 about $2^{-53}|\hat x|$ per operation:
 
 $$|\hat x_t - x_t| \le \frac{\Delta}{2} + 2^{-52}\left(1 + 2^{-54}\right)\left(|x_t| + \frac{\Delta}{2}\right) + 2^{-1075}\left(1 + \left(1 + 2^{-53}\right)\Delta\right).$$
 
 `encode` raises where the float64 product $s\,x$ reaches
-$2^{\min(53,\,62-k)}$.
+$2^{\min(53,\,62-m)}$ for the $m$ factors of $c$.
 
 The bound needs a `domain_of_definition` of at least $D$. A smaller one (a
 quantile, say) clips the larger steps, and `encode` reports how many with a
-`TokenClippingWarning`. At $k \ge 1$ a clipped step offsets every decoded
-value after it, with either tokenizer. `predict` decodes
+`TokenClippingWarning`. Above the order 0 a clipped step offsets the decoded
+values after it, with either tokenizer. `predict` decodes
 the forecast from the last context rows, so clipped context steps do not shift
 it.
 
-**Proposition 2 (achievable CE).** In the fine-quantization limit,
+**Theorem 2 (no encoder does better).** Take the decoder of Theorem 1: it
+reads the first $p$ values raw and decodes $\hat x_t = A_t + L_t/s$, where the
+levels $L$ integrate the tokens in $[0, V-1]$ and $c(B)$ maps the anchor $A$
+to zero ($A = 0$ for LGT). For $V \ge 2\|c\|_1$, an encoder that keeps every
+series with $\max_t |c(B)\,x_t| \le D$ within $\varepsilon$ has
+
+$$\varepsilon \ge \frac{D}{V - \|c\|_1},$$
+
+whatever the scale, the prefix and the anchor, even if it sees the whole
+series and uses token 0. The level grid attains it, so the bound of Theorem 1
+is the least this decoder allows. Three series force it: a value between two
+levels, a ramp $c(B)\,x = D$ that the tokens have to keep up with, and errors
+with the signs of the coefficients of $c$ at the edge of the domain. Checked
+in Lean 4: `le_mul_of_encodes` and `isLeast_encodes` in
+`lean/DiffGPT/Optimality.lean`.
+
+**Proposition 3 (achievable CE).** In the fine-quantization limit,
 $\mathcal L^\star(V) = h(X_t \mid \text{ctx}) + \log V - \log(2D) + o(1)$.
 Ideal loss is linear in $\log V$, slope 1. Cross-vocab comparisons must subtract
 out $\log V$ to get the vocab-invariant *differential-entropy residual*
@@ -75,7 +105,7 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
 ## Key features
 
 - **Level-grid tokenization**: tight $\Delta/2$ reconstruction bound uniformly
-  in $T$ at any order $k$, exact integer decoding, window-consistent tokens.
+  in $T$ for any operator, exact integer decoding, window-consistent tokens.
   The prefix-anchored MASH grid (`tokenizer="mash"`) keeps the same bound.
 - **Bayes point readout** (`DiffGPT.predict_point`): the point forecast that
   minimises the expected metric (MAE/MASE, MSE, sMAPE or M4's OWA) under
@@ -90,9 +120,12 @@ $\tilde h(V) = \mathcal L(V) - \log V + \log(2D)$.
   coverage, which any wide enough band satisfies. On ETTh1 the CRPS criterion
   picks $T = 0.5$ and the sampled readout then beats the deterministic path;
   coverage-matching picks $T = 1$, where MSE is 2.4x worse.
-- **Per-column derivative order**: `order_of_derivative` can be an array of shape
-  $(F,)$ giving each channel its own $k_c$. Mix $k = 0$ (raw) with $k = 1, 2, \ldots$
-  in a single model.
+- **Per-column operator**: an order is an int $k$, for $\Delta^k$, or a
+  `Difference(*lags)`, for $\prod (1 - B^{S})$: `Difference(24)` is the daily
+  seasonal difference of hourly data, `Difference(1, 24)` the SARIMA one,
+  $(1 - B)(1 - B^{24})$. `order_of_derivative` can be an array of shape $(F,)$
+  giving each channel its own; mix $k = 0$ (raw) with $k = 1, 2, \ldots$ and
+  seasonal operators in a single model.
 - **Plain GPT model** (as in nanoGPT with `bias=False`): learned token and
   position embeddings, pre-LayerNorm blocks with causal self-attention and a
   GELU MLP, no biases, an output head tied to the token embedding,
@@ -128,8 +161,8 @@ from diff_gpt.sampler.temperature import TemperatureSampler
 # Your data as DataFrames (one per series).
 dfs: list[pd.DataFrame] = [...]
 
-# Compute domain (per-channel max |k-th diff|) from training data.
-order = 1  # scalar, OR np.array([0, 1, 2]) for per-column
+# Compute domain (per-channel max |c(B) x|, the k-th difference at order k).
+order = 1  # int k, OR Difference(1, 24), OR np.array([0, 1, 2]) per column
 all_data = np.concatenate([df.to_numpy(dtype=np.float64) for df in dfs], axis=0)
 domain = get_domain_of_definition(
     inp=all_data,

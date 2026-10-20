@@ -320,9 +320,40 @@ on the unfixed code.
   so it clips toward its own side (`toInt_tokenSum`). 105 theorems,
   standard axioms only.
 
+## Token scheme version 4 (2026-10-20)
+
+- [x] **Operators c(B).** An order is an int k, for Δ^k = (1 - B)^k, or a
+  `Difference(*lags)`, for c(B) = (1 - B^S_1)···(1 - B^S_m):
+  `Difference(24)` is the daily seasonal difference of hourly data, and
+  `Difference(1, 24)` the SARIMA one, (1 - B)(1 - B^24). Version 3 carries
+  over with ‖c‖₁ = Σ|c_j| in place of 2^k: the levels, the tokens
+  c(B) L + V/2, s = (V - ‖c‖₁)/(2D), the exact max of |c(B) x|, the
+  decoding by one `_cumsum` per factor, exact in int64, and the MASH anchor
+  A with c(B) A = 0 through the p = S_1 + ... + S_m prefix rows. The guard
+  is 2^min(53, 62 - m) for m factors. `DiffGPT` and the loaders keep the p
+  rows of the largest degree in front of the tokens (`prefix_rows`), and
+  checkpoints record each column's lags.
+- [x] **The order 0 uses all V tokens.** It takes A = 1/2, so the levels
+  are floor(s·x), and s·D < V/2: the tokens lie in [0, V-1], and the error
+  1/(2s) is a hair above D/V, the least that any V values allow on
+  [-D, D]. Version 3 left token 0 unused, with the error D/(V - 2).
+- [x] **Lean.** `LevelGrid.lean`, `Int64.lean` and `Machine.lean` take the
+  list of lags: Theorem 1 with ‖c‖₁ (`abs_diffs_levels_le`), the sharpness
+  of the scale (`exists_levels_ge`), the decoding in int64
+  (`toInt_invertI64`), the uint64 anchor (`anchor_numerators`) and
+  `encode_decode` for any c. `encode_decode_zero` proves the order 0 end to
+  end, and `le_mul_of_forall_exists_abs_sub_le` its optimality.
+  `Optimality.lean` proves Theorem 2: for V >= 2‖c‖₁ no encoder for this
+  decoder, whatever the scale, the prefix and the anchor, keeps every series
+  within less than D/(V - ‖c‖₁) (`le_mul_of_encodes`, `isLeast_encodes`).
+  139 theorems, standard axioms only. Checkpoints record `encoder_version` 4.
+
 ## Observations, no action planned
 
-- Token 0 is never emitted for in-domain input (audit #7).
+- Above the order 0 token 0 is never emitted for in-domain input (audit
+  #7), and no larger scale could use it: one pushes a token past V - 1
+  (`exists_levels_ge`). No other encoder gains by it either (Theorem 2).
+  The order 0 uses it since version 4.
 - MASH tokens depend on the window's prefix, the anchor of its grid, so a
   separately encoded window differs from a slice (audit #5). LGT, the
   default, does not have this.

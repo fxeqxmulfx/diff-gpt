@@ -13,12 +13,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 import torch
 
-from diff_gpt.encoder_decoder import encode, resolve_tokenizer
+from diff_gpt.encoder_decoder import encode, prefix_rows, resolve_tokenizer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     import pandas as pd
+
+    from diff_gpt.encoder_decoder import Order
 
 
 def _quote_ident(name: str) -> str:
@@ -71,7 +73,7 @@ class DiffSQLiteDataLoader:
         block_size: int,
         batch_size: int,
         vocab_size: int,
-        order_of_derivative: int | np.ndarray,
+        order_of_derivative: Order,
         domain_of_definition: np.ndarray | Mapping[str, np.ndarray],
         *,
         device: str,
@@ -95,13 +97,9 @@ class DiffSQLiteDataLoader:
         self.batch_size = batch_size
         self.vocab_size = vocab_size
         self.order_of_derivative = order_of_derivative
-        # Single scalar max for internal row/token-offset arithmetic; the
-        # encoder handles per-column orders downstream.
-        self._max_order = (
-            int(order_of_derivative)
-            if isinstance(order_of_derivative, (int, np.integer))
-            else int(np.asarray(order_of_derivative).max())
-        )
+        # The raw rows in front of the tokens, the largest degree, for the
+        # row and token offsets; the encoder handles per-column orders.
+        self._max_order = prefix_rows(order_of_derivative)
         self.domain_of_definition = domain_of_definition
         self.encode_data = encode_data
         self.tokenizer = resolve_tokenizer(tokenizer)
@@ -469,7 +467,7 @@ class DiffDataFrameDataLoader:
         block_size: int,
         batch_size: int,
         vocab_size: int,
-        order_of_derivative: int | np.ndarray,
+        order_of_derivative: Order,
         domain_of_definition: np.ndarray,
         *,
         device: str,

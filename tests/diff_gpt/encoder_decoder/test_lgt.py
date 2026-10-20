@@ -25,8 +25,8 @@ def _walk(T: int, F: int, seed: int = 0) -> np.ndarray:
 
 
 def _bound(D: float, V: int, k: int) -> float:
-    """Return Δ/2 = 1/(2s) = D / (V - max(2, 2^k)), README Theorem 1."""
-    return D / (V - max(2, 2**k))
+    """Return Δ/2 = 1/(2s) = D / (V - 2^k), or D/V at k = 0, README Theorem 1."""
+    return D / (V - (2**k if k else 0))
 
 
 @pytest.mark.parametrize("k", [0, 1, 2, 3, 4, 5])
@@ -41,7 +41,7 @@ def test_lgt_bound_holds_exactly_in_float64_for_long_series(k: int) -> None:
     x = _walk(100_000, 1, seed=k)
     dod = get_domain_of_definition(x, k)
     st, sc, tok = encode(x, V, dod, k, tokenizer="lgt")
-    assert tok.min() >= 1
+    assert tok.min() >= (1 if k else 0)
     assert tok.max() <= V - 1
     dec = decode(st, sc, tok, V, k, tokenizer="lgt")
     err = np.abs(dec - x).max()
@@ -135,7 +135,7 @@ def test_lgt_requires_headroom_for_k_ge_2_and_is_bounded_with_it() -> None:
     t = np.arange(20_000, dtype=np.float64)
     x = np.square(t)[:, None]
     dod = get_domain_of_definition(x, 2)
-    with pytest.raises(ValueError, match=r"vocab_size > max\(2, 2\^k\)"):
+    with pytest.raises(ValueError, match=r"vocab_size > ‖c‖₁ = 4"):
         encode(x, 4, dod, 2, tokenizer="lgt")
     V = 8
     st, sc, tok = encode(x, V, dod, 2, tokenizer="lgt")

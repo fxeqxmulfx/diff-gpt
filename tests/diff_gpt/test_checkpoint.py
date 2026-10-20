@@ -13,7 +13,7 @@ import pytest
 import torch
 
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import ENCODER_VERSION
+from diff_gpt.encoder_decoder import ENCODER_VERSION, Difference
 from diff_gpt.model.gpt import GPT
 
 if TYPE_CHECKING:
@@ -47,11 +47,31 @@ def test_load_takes_weights_saved_with_the_same_settings(tmp_path: Path) -> None
     path = str(tmp_path / "model.bin")
     saved = _diffgpt(0)
     saved.save(path)
-    for settings in ({}, {"order_of_derivative": np.array([1, 1])}):
+    for settings in (
+        {},
+        {"order_of_derivative": np.array([1, 1])},
+        {"order_of_derivative": [Difference(1), 1]},
+    ):
         twin = _diffgpt(1, **settings)
         twin.load(path)
         assert _same(_weights(saved), _weights(twin))
         assert not twin.model.training
+
+
+def test_load_compares_the_lags_of_seasonal_operators(tmp_path: Path) -> None:
+    """
+    Check that a seasonal order is saved as its lags and compared by them.
+
+    The factors commute, so Difference(24, 1) is Difference(1, 24), but the
+    seasonal difference alone is another operator.
+    """
+    path = str(tmp_path / "model.bin")
+    _diffgpt(0, order_of_derivative=Difference(1, 24)).save(path)
+    _diffgpt(1, order_of_derivative=[Difference(24, 1)] * 2).load(path)
+    other = _diffgpt(1, order_of_derivative=Difference(24))
+    saved = r"order_of_derivative=\[\[1, 24\], \[1, 24\]\]"
+    with pytest.raises(ValueError, match=saved):
+        other.load(path)
 
 
 @pytest.mark.parametrize(

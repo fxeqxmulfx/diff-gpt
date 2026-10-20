@@ -3,8 +3,8 @@ Exact levels: steps within the domain never clip, at rounding ties included.
 
 README Theorem 1 holds in float64 because nothing between x and the tokens
 is rounded: `_levels` reads the levels off fl(s·x) and its exact error, the
-scale rounds down so that s·D <= V/2 - 2^(k-1), and the max of
-`get_domain_of_definition` rounds up so that |Δ^k x| <= D. Version 2 got
+scale rounds down so that s·D <= (V - ‖c‖₁)/2, and the max of
+`get_domain_of_definition` rounds up so that |c(B) x| <= D. Version 2 got
 each of these wrong at some tie, and its token V clipped a step within D.
 """
 
@@ -77,7 +77,7 @@ def test_levels_are_exact_around_rounding_ties(scale: float) -> None:
     )
     x = _nudge(targets / scale, rng.integers(-_HALF_ULPS, _HALF_ULPS + 1, n))
     want = _exact_levels(x, scale, fraction)
-    np.testing.assert_array_equal(_levels(x, scale, fraction, order=0), want)
+    np.testing.assert_array_equal(_levels(x, scale, fraction, factors=0), want)
     u = x * scale - fraction
     rounded_first = (np.floor(u) + (u - np.floor(u) >= _ROUND_UP_FROM)).astype(np.int64)
     assert np.count_nonzero(rounded_first != want) > n // 50

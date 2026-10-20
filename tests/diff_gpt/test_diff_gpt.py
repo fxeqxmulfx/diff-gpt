@@ -7,7 +7,11 @@ import torch
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import TokenClippingWarning, get_domain_of_definition
+from diff_gpt.encoder_decoder import (
+    Difference,
+    TokenClippingWarning,
+    get_domain_of_definition,
+)
 from diff_gpt.metrics import empirical_coverage
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
@@ -279,6 +283,77 @@ def test_per_column_order_predict_teacher_forced() -> None:
         sampler=TemperatureSampler(temperature=0.0),
     )
     assert result.shape == (seq_len + pred_len, 3)
+
+
+# Hourly toy data with a daily period.
+DAY = 24
+
+
+def test_seasonal_orders_train_and_predict() -> None:
+    """
+    Check training and both predict modes with seasonal operators per column.
+
+    Difference(1, 24) reaches 25 rows back, so the context holds more, and
+    the teacher-forced covariate, under Difference(24), decodes to the
+    supplied future values.
+    """
+    torch.manual_seed(0)
+    idx = np.arange(200, dtype=np.float64)
+    phase = 2 * np.pi * idx / DAY
+    df = pd.DataFrame(
+        {
+            "cov": np.sin(phase) + 0.3 * np.sin(idx / 5.0),
+            "y": np.cos(phase) + 0.5 * np.sin(idx / 9.0),
+        },
+    )
+    order = [Difference(DAY), Difference(1, DAY)]
+    dod = get_domain_of_definition(
+        df.to_numpy(dtype=np.float64),
+        order_of_derivative=order,
+    )
+    base = GPT(
+        vocab_size=64,
+        n_embd=16,
+        block_size=64,
+        n_head=2,
+        n_layer=1,
+        use_checkpoint=False,
+    )
+    model = DiffGPT(model=base, order_of_derivative=order, domain_of_definition=dod)
+    loader = DiffDataFrameDataLoader(
+        dfs=[df],
+        block_size=base.block_size,
+        batch_size=2,
+        vocab_size=base.vocab_size,
+        order_of_derivative=order,
+        domain_of_definition=dod,
+        device=base.device_type,
+        train_part=0.7,
+    )
+    val_loss, _ = model.train(
+        loader=loader,
+        max_iters=5,
+        eval_interval=5,
+        eval_iters=2,
+        use_tqdm=False,
+        use_early_stopping=False,
+    )
+    assert np.isfinite(val_loss)
+    seq_len, pred_len = 40, 8
+    ctx = df.iloc[:seq_len]
+    sampler = TemperatureSampler(temperature=0.0)
+    result = model.predict(df=ctx, max_new_points=4, sampler=sampler)
+    assert result.shape == (seq_len + 4, 2)
+    future_cov = df.iloc[seq_len : seq_len + pred_len]
+    result = model.predict(
+        df=ctx,
+        future_covariates_df=future_cov,
+        target_columns=["y"],
+        sampler=sampler,
+    )
+    assert result.shape == (seq_len + pred_len, 2)
+    pred = result["cov"].iloc[seq_len:].to_numpy()
+    assert np.abs(pred - future_cov["cov"].to_numpy()).max() < COVARIATE_TOLERANCE
 
 
 def test_per_column_order_shape_mismatch_raises() -> None:

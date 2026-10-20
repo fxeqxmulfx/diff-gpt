@@ -22,7 +22,11 @@ import torch
 
 from benchmarks.m4_bench import mase, prepare, smape
 from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import DEFAULT_TOKENIZER, TokenClippingWarning
+from diff_gpt.encoder_decoder import (
+    DEFAULT_TOKENIZER,
+    TokenClippingWarning,
+    prefix_rows,
+)
 from diff_gpt.metrics import bayes_point, crps_empirical, empirical_coverage, msis
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.median import MedianSampler
@@ -77,7 +81,10 @@ def forecast(
     for i, series_idx in enumerate(data["picked"]):
         mu, sd = data["stats"][i]
         truth = data["test"][series_idx].astype(np.float64)
-        ctx_len = min(len(data["dfs"][i]), data["block_size"] - data["horizon"])
+        ctx_len = min(
+            len(data["dfs"][i]),
+            data["block_size"] - data["horizon"] + prefix_rows(data["order"]),
+        )
         ctx = data["dfs"][i].iloc[-ctx_len:]
         pred = model.predict(df=ctx, max_new_points=data["horizon"], sampler=sampler)
         pred = pred.iloc[-data["horizon"] :].to_numpy().reshape(-1) * sd + mu
@@ -122,7 +129,10 @@ def readouts_and_scores(
         truth = data["test"][series_idx].astype(np.float64)
         insample = data["series_raw"][i]
         naive = float(np.mean(np.abs(insample[season:] - insample[:-season])))
-        ctx_len = min(len(data["dfs"][i]), data["block_size"] - H)
+        ctx_len = min(
+            len(data["dfs"][i]),
+            data["block_size"] - H + prefix_rows(data["order"]),
+        )
         ctx = data["dfs"][i].iloc[-ctx_len:]
         # 1) median path (current readout)
         p = model.predict(df=ctx, max_new_points=H, sampler=MedianSampler())

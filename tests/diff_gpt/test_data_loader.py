@@ -8,7 +8,7 @@ import pytest
 import torch
 
 from diff_gpt.data_loader import DiffSQLiteDataLoader
-from diff_gpt.encoder_decoder import encode
+from diff_gpt.encoder_decoder import Difference, encode
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -773,4 +773,48 @@ def test_sqlite_loader_encodes_with_its_tokenizer(
     assert loader.get_data("wide", 0, n_tokens) == tuple(
         tokens[tokenizer].reshape(-1).tolist(),
     )
+    loader.close()
+
+
+# A seasonal operator: 25 raw rows in front of the tokens.
+SEASONAL = Difference(1, 24)
+SEASONAL_PREFIX = 25
+
+
+def test_sqlite_loader_offsets_follow_the_degree_of_the_operator(
+    tmp_path: Path,
+) -> None:
+    """
+    Check that a seasonal operator shifts the token offsets by its 25 rows.
+
+    LGT tokens depend only on the rows they difference, so every range the
+    loader encodes on its own matches the encoding of the whole table.
+    """
+    rows = np.cumsum(np.random.default_rng(0).normal(size=(80, 2)), axis=0)
+    db_file = tmp_path / "seasonal.db"
+    conn = sqlite3.connect(db_file)
+    conn.execute("CREATE TABLE hourly (dt INTEGER PRIMARY KEY, a REAL, b REAL)")
+    conn.executemany(
+        "INSERT INTO hourly VALUES (?, ?, ?)",
+        [(3600 * i, float(a), float(b)) for i, (a, b) in enumerate(rows)],
+    )
+    conn.commit()
+    conn.close()
+    domain = np.array([10.0, 10.0])
+    loader = DiffSQLiteDataLoader(
+        block_size=8,
+        batch_size=1,
+        vocab_size=256,
+        order_of_derivative=SEASONAL,
+        domain_of_definition=domain,
+        device="cpu",
+        database=str(db_file),
+        tokenizer="lgt",
+    )
+    n_tokens = (len(rows) - SEASONAL_PREFIX) * rows.shape[1]
+    assert loader.get_data_len("hourly") == n_tokens
+    _, _, tokens = encode(rows, 256, domain, SEASONAL, tokenizer="lgt")
+    flat = tokens.reshape(-1).tolist()
+    for start, end in ((0, 9), (5, 30), (n_tokens - 7, n_tokens)):
+        assert loader.get_data("hourly", start, end) == tuple(flat[start:end])
     loader.close()

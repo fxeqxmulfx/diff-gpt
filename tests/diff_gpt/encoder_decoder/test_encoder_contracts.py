@@ -155,7 +155,8 @@ def test_mash_scalar_order_0_rounds_like_the_per_column_order_0() -> None:
 
     The scalar order went through the carry scheme instead: its tokens
     differed from those of the order [0] and its error reached 1.97·Δ/2,
-    against README Theorem 1.
+    against README Theorem 1. At the order 0 Δ/2 = 1/(2s) is a hair above
+    D/V.
     """
     x = np.random.default_rng(0).normal(size=(2000, 1))
     dod = get_domain_of_definition(x, 0)
@@ -169,8 +170,7 @@ def test_mash_scalar_order_0_rounds_like_the_per_column_order_0() -> None:
     )
     assert np.array_equal(scalar, per_column)
     dec = decode(st, sc, scalar, V, 0, tokenizer="mash")
-    # Δ/2 = 1 / (2s) = D / (V - 2)
-    assert np.abs(dec - x).max() <= dod[0] / (V - 2) * (1 + 1e-12)
+    assert np.abs(dec - x).max() <= dod[0] / V * (1 + 1e-12)
 
 
 def test_integrate_inverts_differentiate_across_order_forms() -> None:
@@ -216,15 +216,19 @@ def test_domain_needs_a_row_past_the_order(order: int | np.ndarray) -> None:
 
 @pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
 @pytest.mark.parametrize(("k", "vocab_size"), [(0, 2), (1, 2), (2, 4), (3, 8)])
-def test_the_vocabulary_must_exceed_max_2_2k(
+def test_the_vocabulary_must_exceed_the_norm_of_c(
     tokenizer: str,
     k: int,
     vocab_size: int,
 ) -> None:
-    """Check that V <= max(2, 2^k), with no room for the rounding noise, raises."""
+    """
+    Check that V <= ‖c‖₁ = 2^k, with no room for the rounding noise, raises.
+
+    The order 0 needs no room, but V must be even and at least 4.
+    """
     x = np.random.default_rng(0).normal(size=(20, 1))
     dod = get_domain_of_definition(x, k)
-    with pytest.raises(ValueError, match=r"vocab_size > max\(2, 2\^k\)|even and >= 4"):
+    with pytest.raises(ValueError, match=r"vocab_size > ‖c‖₁|even and >= 4"):
         encode(x, vocab_size, dod, k, tokenizer=tokenizer)
     encode(x, vocab_size + 2, dod, k, tokenizer=tokenizer)
 

@@ -15,9 +15,11 @@ import torch.nn.functional as F
 
 from diff_gpt.encoder_decoder import (
     ENCODER_VERSION,
+    column_lags,
     decode,
     encode,
     integrate,
+    prefix_rows,
     resolve_tokenizer,
 )
 from diff_gpt.metrics.point import bayes_point
@@ -31,6 +33,7 @@ from diff_gpt.train_ddp import train_numa as _train_numa
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from diff_gpt.encoder_decoder import Order
     from diff_gpt.model.gpt import BaseGPT
     from diff_gpt.sampler.sampler import Sampler
     from diff_gpt.train import DataLoader
@@ -93,7 +96,7 @@ class DiffGPT:
     def __init__(
         self,
         model: BaseGPT,
-        order_of_derivative: int | np.ndarray,
+        order_of_derivative: Order,
         domain_of_definition: np.ndarray,
         *,
         tokenizer: str | None = None,
@@ -101,8 +104,9 @@ class DiffGPT:
         """
         Wrap `model` with the encoder settings used for training and prediction.
 
-        `order_of_derivative`: scalar for uniform k across columns, or a
-        length-F array for per-column k.
+        `order_of_derivative`: one order for every column, or a length-F
+        sequence with one per column; an order is an int k, for Δ^k, or an
+        `encoder_decoder.Difference`, such as the seasonal Difference(24).
 
         `tokenizer`: "lgt" or "mash", the one the model was trained with. None
         resolves to `encoder_decoder.DEFAULT_TOKENIZER` now and keeps it, so
@@ -115,18 +119,13 @@ class DiffGPT:
         self.tokenizer = resolve_tokenizer(tokenizer)
 
     def _max_order(self, n_features: int) -> int:
-        """Return the highest derivative order, checking a per-column order's shape."""
-        order = self.order_of_derivative
-        if isinstance(order, (int, np.integer)):
-            return int(order)
-        order_arr = np.asarray(order)
-        if order_arr.shape != (n_features,):
-            msg = (
-                f"order_of_derivative shape {order_arr.shape} must match "
-                f"columns {n_features}"
-            )
-            raise ValueError(msg)
-        return int(order_arr.max())
+        """
+        Return the raw rows in front of the tokens: the largest degree.
+
+        Δ^k reaches k rows back, Difference(1, 24) 25. Checks a per-column
+        order's shape.
+        """
+        return prefix_rows(self.order_of_derivative, n_features)
 
     def _to_input(self, df: pd.DataFrame) -> np.ndarray:
         """Return the values of `df` as the encoder takes them: float64."""
@@ -720,15 +719,18 @@ class DiffGPT:
         return pd.DataFrame(full, columns=columns_list)
 
     def _encoder_settings(self) -> dict[str, object]:
-        """Return the settings the tokens depend on, as plain per-column values."""
+        """
+        Return the settings the tokens depend on, as plain per-column values.
+
+        A column's order is the list of its lags: [1, 1] for the order 2,
+        [1, 24] for Difference(1, 24).
+        """
         domain = np.asarray(self.domain_of_definition).reshape(-1)
-        order = np.asarray(self.order_of_derivative).reshape(-1)
-        if order.size == 1:
-            order = np.full(domain.shape, order[0])
+        lags = column_lags(self.order_of_derivative, domain.shape[0])
         return {
             "encoder_version": ENCODER_VERSION,
             "tokenizer": self.tokenizer,
-            "order_of_derivative": [int(k) for k in order],
+            "order_of_derivative": [list(column) for column in lags],
             "domain_of_definition": [float(d) for d in domain],
         }
 

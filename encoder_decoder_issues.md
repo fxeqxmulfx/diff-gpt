@@ -10,6 +10,8 @@ Fixes from the review of 2026-10-19 are marked in the overview and in each
 section. Version 2 of the token scheme (2026-10-20, §12) replaced the MASH
 cascade with the level grid and removed the Decimal path. Version 3 (§13)
 computes the levels exactly, so that steps within the domain never clip.
+Version 4 (§14) takes any operator c(B) = (1 − B^S_1)···(1 − B^S_m) in place
+of Δ^k and uses all V tokens at the order 0.
 
 ## Overview
 
@@ -21,11 +23,12 @@ computes the levels exactly, so that steps within the domain never clip.
 | 4 | Medium | `_sigma_delta_k` docstring, `integrate` | The float64 precision limit is understated: k=4 already degrades at T around 10000 | Moot: the decoder sums int64 levels (§12) |
 | 5 | Observation | Tokenization as a whole | Modulator state makes separately encoded windows differ from slices of the full encoding | LGT, the default, has no modulator state; MASH anchors at the window's prefix (§12) |
 | 6 | Low | `get_domain_of_definition` | At T=k, the scalar path raises ValueError while the per-column path returns zero | Fixed |
-| 7 | Low | `encode` | Token zero is never emitted for in-domain inputs | No action planned |
+| 7 | Low | `encode` | Token zero is never emitted for in-domain inputs | Used at the order 0 since §14; above it no larger scale fits |
 | 8 | Low | `_sigma_delta_k` docstring | Described as "fast vectorized", but loops over T in Python | Moot: `_sigma_delta_k` is gone (§12) |
 | 11 | High | `_round_levels` (LGT) | At k=1, rounding ties overflow the vocabulary and lower the decoded level for good | Fixed |
 | 12 | Change | Both tokenizers | Token scheme version 2: one level grid for every k, float64 and int64 only | Done, proved in Lean |
 | 13 | Medium | `_round_levels`, `_compute_scale`, `get_domain_of_definition` | In float64 a step within the domain clips at rounding ties: an offset at k=1, a drift at k=2 | Fixed (version 3), proved in Lean |
+| 14 | Change | Both tokenizers | Token scheme version 4: operators c(B) such as the seasonal 1 − B^24, and all V tokens at the order 0 | Done, proved in Lean |
 
 ## 1. Silent out-of-domain clipping and persistent level error
 
@@ -232,6 +235,12 @@ and V−1 were also absent. Scaling by `(V−2)/(2D)` and rounding/truncation
 keeps signed values within `(V−2)/2`, hence tokens within [1, V−1]. This
 wastes one or more vocabulary slots and motivates revisiting the scale.
 
+**Status (2026-10-20, §14).** At the order 0 version 4 emits token zero:
+the grid shifted by half a step puts the levels ⌊s·x⌋ in [−V/2, V/2 − 1].
+Above the order 0 the slot stays unused, and no larger scale could take it:
+rounding errors with the signs of the coefficients of c then push a token
+past V − 1 (`exists_levels_ge` in `lean/DiffGPT/LevelGrid.lean`).
+
 ## 8. The "fast vectorized" docstring
 
 The MASH float path loops over T·k steps in Python and vectorizes only over
@@ -377,6 +386,54 @@ record `ENCODER_VERSION` = 3.
 **Cost.** At k = 1 on 4·10^6 values, `get_domain_of_definition` takes
 0.19 s instead of 0.03 s, `encode` 0.29 s instead of 0.09 s and `decode`
 0.086 s instead of 0.075 s.
+
+## 14. Operators and the order 0: token scheme version 4 (2026-10-20)
+
+**Change.** Δ^k is the operator (1 − B)^k, and the scheme needs of it only
+integer coefficients and c_0 = 1. `order_of_derivative` now also takes
+`Difference(*lags)`, c(B) = (1 − B^S_1)···(1 − B^S_m): `Difference(24)` is
+the seasonal difference of hourly data with a daily period, and
+`Difference(1, 24)` the SARIMA one. §12–§13 carry over with ‖c‖₁ = Σ|c_j|
+in place of 2^k:
+
+- the levels L = ⌊s·x − A + 1/2⌋ and the tokens c(B) L + V/2, with
+  s = (V − ‖c‖₁)/(2D) rounded down and D the least float at or above the
+  exact max of |c(B) x| (`_max_abs_difference`);
+- every token in [1, V − 1], and no larger scale keeps them there: errors
+  with the signs of the coefficients of c push one past V − 1
+  (`abs_diffs_levels_le`, `exists_levels_ge`);
+- exact int64 decoding: as c_0 = 1, the p = S_1 + ... + S_m prefix values
+  and the steps fix the levels (`eq_of_diffs_eq_of_lt`), and
+  `_invert_difference` undoes each factor by a `_cumsum` along every S-th
+  value, which raises on the first int64 overflow (`toInt_invertI64`);
+- the MASH anchor: the A with c(B) A = 0 through the prefix, continued in
+  uint64 (`anchor_numerators`), with G = min(53, 64 − m) fraction bits;
+- the guard 2^min(53, 62 − m) for m factors.
+
+‖c‖₁ is at most 2^m, and less where terms cancel: (1 − B)(1 − B^2)(1 − B^3)
+has ‖c‖₁ = 6. `DiffGPT` and the loaders keep the p rows of the largest
+degree in front of the tokens (`prefix_rows`), and checkpoints record each
+column's lags.
+
+**The order 0.** c = 1 leaves no noise to make room for, yet version 3 used
+the scale (V − 2)/(2D) there and left token zero unused (§7). Version 4
+takes the anchor A = 1/2, so the levels are ⌊s·x⌋, with s·D < V/2
+strictly: the levels lie in [−V/2, V/2 − 1], the tokens take all of
+[0, V − 1], and x̂ = (L + 1/2)/s stays within 1/(2s), a hair above D/V
+(`floor_mem_of_domain`, `abs_floor_decode_sub_le`). No V values do better:
+covering [−D, D] with V intervals of length 2r needs D ≤ V·r
+(`le_mul_of_forall_exists_abs_sub_le`). At V = 16 the error drops from
+D/14 to D/16.
+
+**Lean.** `LevelGrid.lean`, `Int64.lean` and `Machine.lean` take the list
+of lags. `encode_decode` proves the code as written for any c, and
+`encode_decode_zero` the order 0, from the floats to the decoded values.
+`Optimality.lean` proves README Theorem 2: for V ≥ 2‖c‖₁ an encoder that
+sees the whole series and may use token zero still cannot keep every series
+with |c(B) x| ≤ D within less than D/(V − ‖c‖₁), whatever the scale, the
+prefix and the anchor (`le_mul_of_encodes`), so the level grid is optimal
+for this decoder (`isLeast_encodes`). 139 theorems, standard axioms only.
+Checkpoints record `ENCODER_VERSION` = 4.
 
 ## Checks that passed in the original audit
 

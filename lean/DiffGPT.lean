@@ -6,3 +6,4 @@ public import DiffGPT.Float64
 public import DiffGPT.ExactLevels
 public import DiffGPT.Int64
 public import DiffGPT.Machine
+public import DiffGPT.Optimality

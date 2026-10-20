@@ -1,9 +1,10 @@
 """
 MASH tokenizer tests (tokenizer="mash"): the level grid anchored at the prefix.
 
-MASH keeps README Theorem 1 as LGT does: every token lies in [1, V-1] and the
-error stays within Δ/2 = D/(V - max(2, 2^k)), which `_bound` gives. The
-level-grid encoder (the package default) is covered by test_lgt.py.
+MASH keeps README Theorem 1 as LGT does: every token lies in [1, V-1], or in
+[0, V-1] at k = 0, and the error stays within Δ/2 = D/(V - 2^k), or D/V at
+k = 0, which `_bound` gives. The level-grid encoder (the package default) is
+covered by test_lgt.py.
 """
 
 import warnings
@@ -21,8 +22,8 @@ decode = partial(_decode, tokenizer="mash")
 
 
 def _bound(D: float, V: int, k: int) -> float:
-    """Return Δ/2 = 1/(2s) = D / (V - max(2, 2^k)), README Theorem 1."""
-    return D / (V - max(2, 2**k))
+    """Return Δ/2 = 1/(2s) = D / (V - 2^k), or D/V at k = 0, README Theorem 1."""
+    return D / (V - (2**k if k else 0))
 
 
 def _sin_cos(idx: np.ndarray) -> np.ndarray:
@@ -50,17 +51,18 @@ def _assert_theorem_1(
     """
     Check README Theorem 1 on `inp` and return the per-column errors.
 
-    Every token lies in [1, V-1], the start rows come back as given, and each
-    column stays within its Δ/2. Columns with D = 0 must come back exactly:
-    the anchor passes through their prefix values.
+    Every token lies in [1, V-1], or [0, V-1] at k = 0, the start rows come
+    back as given, and each column stays within its Δ/2. Columns with D = 0
+    at k >= 1 must come back exactly: the anchor passes through their prefix
+    values.
     """
     dod, tokens, dec = _round_trip(inp, vocab_size, order)
-    assert tokens.min() >= 1
-    assert tokens.max() <= vocab_size - 1
+    orders = np.broadcast_to(order, dod.shape)
+    assert (tokens.min(axis=0, initial=vocab_size) >= (orders > 0)).all()
+    assert tokens.max(initial=0) <= vocab_size - 1
     max_k = inp.shape[0] - tokens.shape[0]
     assert np.array_equal(dec[:max_k], inp[:max_k])
     err = np.abs(dec - inp).max(axis=0)
-    orders = np.broadcast_to(order, dod.shape)
     for c in range(inp.shape[1]):
         bound = _bound(dod[c], vocab_size, int(orders[c]))
         assert err[c] <= bound * (1 + 1e-12), f"column {c}: {err[c]} > Δ/2 = {bound}"
@@ -213,7 +215,7 @@ def test_per_column_order_of_derivative_round_trip() -> None:
 
     Mixed per-column k: column A with k=0 (raw), column B with k=1, column C
     with k=2. Each column is tokenized with its own derivative order and
-    scale, and stays within its own Δ/2 = D_c / (V - max(2, 2^k_c)).
+    scale, and stays within its own Δ/2 = D_c / (V - 2^k_c), D_c / V at 0.
     """
     idx = np.arange(5_000, dtype=np.float64)
     inp = np.stack(

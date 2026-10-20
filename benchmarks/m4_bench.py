@@ -18,6 +18,11 @@ Usage:
     M4_FREQ=Daily  M4_N_SERIES=200 uv run --no-sync python -m benchmarks.m4_bench
     M4_SEED=1 M4_SAMPLERS=argmax,median M4_SAVE=runs/m4.pt \
         uv run --no-sync python -m benchmarks.m4_bench
+    M4_LAGS=1,24 uv run --no-sync python -m benchmarks.m4_bench
+
+M4_LAGS takes the operator Difference(*lags) in place of the order M4_ORDER.
+Operators differ in their tokens, so compare them by nll_x = val_loss - log s,
+the NLL of the values, not by val_loss.
 """
 
 from __future__ import annotations
@@ -35,8 +40,11 @@ from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
 from diff_gpt.encoder_decoder import (
     DEFAULT_TOKENIZER,
+    Difference,
     TokenClippingWarning,
+    encode,
     get_domain_of_definition,
+    prefix_rows,
 )
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.median import MedianSampler
@@ -103,10 +111,10 @@ def prepare() -> dict[str, Any]:
     Load the picked M4 series and preprocess them for training and scoring.
 
     Reads M4_FREQ, M4_N_SERIES, M4_MIN_LEN, M4_TRAIN_PART, M4_BLOCK_SIZE,
-    M4_ORDER and M4_DOMAIN_QUANTILE from the environment. Returns the picked
+    M4_ORDER, M4_LAGS and M4_DOMAIN_QUANTILE from the environment. Returns the picked
     series indices, their raw values, per-series (mean, std), z-scored
     DataFrames, the test split, horizon, seasonality, train_part,
-    min_val_tokens, block_size, derivative order, domain of definition and
+    min_val_tokens, block_size, operator, domain of definition and
     its quantile (None for the max). m4_eval shares it, so that a checkpoint
     is scored with the block size and domain it was trained with.
     """
@@ -144,7 +152,12 @@ def prepare() -> dict[str, Any]:
     target_bs = int(os.environ.get("M4_BLOCK_SIZE", "256"))
     block_size = max(min(target_bs, min_val_tokens - 1), horizon + 16)
 
-    order = int(os.environ.get("M4_ORDER", "1"))
+    lags = os.environ.get("M4_LAGS")
+    order = (
+        Difference(*(int(lag) for lag in lags.split(",")))
+        if lags
+        else int(os.environ.get("M4_ORDER", "1"))
+    )
     # Global domain_of_definition over the union of normalized training data.
     dq = os.environ.get("M4_DOMAIN_QUANTILE")
     quantile = float(dq) if dq else None
@@ -200,7 +213,10 @@ def main() -> None:
         warnings.filterwarnings("ignore", category=TokenClippingWarning)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"device={device} | freq={freq} | n_series={len(picked)} | horizon={horizon}")
+    print(
+        f"device={device} | freq={freq} | n_series={len(picked)} | horizon={horizon} "
+        f"| order={order_of_derivative!r}",
+    )
     train_module = (
         None  # set when a CUDA-graph compile mode wraps the model for training
     )
@@ -283,7 +299,18 @@ def main() -> None:
         val_loss, train_time_s = train_loop(mut_model=train_module, **train_kwargs)
     else:
         val_loss, train_time_s = model.train(**train_kwargs)
-    print(f"train: val_loss={val_loss:.4f}  train_time_s={train_time_s}")
+    # A token is a bin of width 1/s, so val_loss - log s is the NLL of the values.
+    _, scale, _ = encode(
+        inp=dfs[0].to_numpy(dtype=np.float64),
+        vocab_size=vocab_size,
+        domain_of_definition=domain_of_definition,
+        order_of_derivative=order_of_derivative,
+    )
+    train_flops = base.estimate_flops() * loader.batch_size * block_size * max_iters
+    print(
+        f"train: val_loss={val_loss:.4f}  nll_x={val_loss - np.log(scale[0]):.4f}  "
+        f"train_flops={train_flops:.3e}  train_time_s={train_time_s}",
+    )
 
     save_path = os.environ.get("M4_SAVE")
     if save_path:
@@ -304,8 +331,12 @@ def main() -> None:
             insample_raw = series_raw[i_global]
             mu, sd = stats[i_global]
             truth_raw = test[series_idx].astype(np.float64)
-            # Use the tail of the normalized training series as context.
-            ctx_len = min(len(dfs[i_global]), block_size - horizon)
+            # Use the tail of the normalized training series as context: the
+            # operator's prefix rows, then block_size - horizon tokens.
+            ctx_len = min(
+                len(dfs[i_global]),
+                block_size - horizon + prefix_rows(order_of_derivative),
+            )
             context = dfs[i_global].iloc[-ctx_len:]
             pred_df = model.predict(df=context, max_new_points=horizon, sampler=sampler)
             pred_norm = pred_df.iloc[-horizon:].to_numpy().reshape(-1)
