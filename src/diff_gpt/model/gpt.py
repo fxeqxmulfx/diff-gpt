@@ -106,6 +106,7 @@ class GPT(BaseGPT):
         *,
         use_checkpoint: bool = True,
         pad_vocab_size_to: int = 64,
+        rope_base: float = 10_000.0,
         rope_layers: tuple[bool, ...] | None = None,
     ) -> None:
         """
@@ -114,15 +115,21 @@ class GPT(BaseGPT):
         `vocab_size` must be a multiple of `pad_vocab_size_to`: the encoder owns
         the vocabulary and pads it. `use_checkpoint` turns on gradient
         checkpointing of the blocks in training mode. `n_layer` must be at
-        least 1: the KV cache advances its position in the last block. `rope_layers`
-        supplies one boolean per layer; None applies RoPE in every layer.
-        A False entry keeps full causal attention without rotating Q/K.
+        least 1: the KV cache advances its position in the last block.
+        `rope_base`, positive and finite, sets the RoPE frequencies: channel
+        pair i turns by rope_base^(-2i / head_dim) radians per position.
+        `rope_layers` supplies one boolean per layer; None applies RoPE in
+        every layer. A False entry keeps full causal attention without
+        rotating Q/K.
         Parameter-free Peri-RMSNorm normalizes the embedding stream and both
         the input and output of every attention and MLP branch.
         Q/K use per-head RMSNorm followed by standard 1/sqrt(head_dim) scaling.
         """
         if n_layer < 1:
             msg = f"n_layer must be >= 1, got {n_layer}"
+            raise ValueError(msg)
+        if not 0 < rope_base < math.inf:
+            msg = f"rope_base must be positive and finite, got {rope_base}"
             raise ValueError(msg)
         if rope_layers is not None and (
             len(rope_layers) != n_layer
@@ -151,7 +158,7 @@ class GPT(BaseGPT):
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         # RoPE tables, shared by all layers; they follow from the sizes, so
         # they stay out of the state dict.
-        cos, sin = rope_tables(n_embd // n_head, block_size)
+        cos, sin = rope_tables(n_embd // n_head, block_size, rope_base)
         self.register_buffer("rope_cos", cos, persistent=False)
         self.register_buffer("rope_sin", sin, persistent=False)
         self.blocks = nn.ModuleList(

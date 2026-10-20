@@ -414,6 +414,31 @@ def test_explicit_rope_layers_preserve_initialization_and_default_outputs() -> N
     assert not torch.equal(mixed, expected)
 
 
+@pytest.mark.parametrize("rope_base", [0.0, -10_000.0, math.inf, math.nan])
+def test_gpt_rejects_invalid_rope_base(rope_base: float) -> None:
+    """The RoPE frequencies need a positive, finite base."""
+    with pytest.raises(ValueError, match="rope_base must be positive and finite"):
+        GPT(vocab_size=64, n_embd=16, n_head=2, n_layer=2, rope_base=rope_base)
+
+
+def test_rope_base_sets_the_frequencies_and_keeps_the_initialization() -> None:
+    """Pair i turns by rope_base^(-2i / head_dim) per position; no weight changes."""
+    settings = {"vocab_size": 64, "n_embd": 16, "block_size": 12, "n_head": 2}
+    torch.manual_seed(0)
+    default = GPT(**settings, n_layer=2).eval()
+    torch.manual_seed(0)
+    model = GPT(**settings, n_layer=2, rope_base=500.0).eval()
+    head_dim = settings["n_embd"] // settings["n_head"]
+    frequencies = 500.0 ** -(torch.arange(0, head_dim, 2) / head_dim)
+    angles = torch.outer(torch.arange(settings["block_size"]), frequencies)
+    assert_close(model.rope_cos, angles.cos())
+    assert_close(model.rope_sin, angles.sin())
+    assert_close(model.state_dict(), default.state_dict(), atol=0, rtol=0)
+    inputs = torch.randint(0, settings["vocab_size"], (2, 8))
+    with torch.no_grad():
+        assert not torch.equal(model(inputs)[0], default(inputs)[0])
+
+
 def test_device_keeps_the_index() -> None:
     """Check that device names the weights' device, index included."""
     model = GPT(vocab_size=64, n_embd=16, block_size=16, n_head=2, n_layer=1)
