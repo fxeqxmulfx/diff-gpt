@@ -1,7 +1,8 @@
 """
 The leaderboard's Seasonal_Naive: statsforecast's SeasonalNaive in the notebook.
 
-A port of StatsForecastPredictor from gift-eval's notebooks/naive.ipynb with
+A port of StatsForecastPredictor from gift-eval's notebooks/naive.ipynb
+(Apache-2.0, a copy of the license in leaderboards/LICENSE-gift-eval) with
 SeasonalNaive as its model, the reference of gate G1. Run in leaderboards/:
 ``uv run python -m leaderboards.gift.official --split test``. --max-length
 cuts each context to its last steps before imputation, as the predictor's

@@ -5,11 +5,12 @@ TempoPFN renders each audio series on a new offline pyo server and never sets
 the server's global seed, so pyo seeds its noise objects (Noise, BrownNoise)
 from the clock: audio_financial_volatility, audio_multi_scale_fractal and
 audio_network_topology came out different on every run. These are TempoPFN's
-`run_offline_pyo` and `normalize_waveform` (Apache-2.0), changed in one
-place: `run_offline_pyo` sets the global seed of the server from numpy's
-global generator. The audio wrappers reseed that generator at the start of
-each batch with the seed of its first series and draw nothing else from it,
-so each series gets its noise from its batch's seed and its index in it.
+`run_offline_pyo` and `normalize_waveform` (Apache-2.0, a copy of the license
+in synthetic/LICENSE-TempoPFN), changed in one place: `run_offline_pyo` sets
+the global seed of the server from numpy's global generator. The audio
+wrappers reseed that generator at the start of each batch with the seed of
+its first series and draw nothing else from it, so each series gets its
+noise from its batch's seed and its index in it.
 """
 
 from __future__ import annotations
