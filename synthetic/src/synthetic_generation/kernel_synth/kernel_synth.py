@@ -83,21 +83,23 @@ def _lag_terms(kernel: Kernel, lag: np.ndarray) -> dict[int, np.ndarray]:
         for power, lags in pairs:
             terms[power] = terms[power] + lags if power in terms else lags
         return terms
-    if isinstance(kernel, ExpSineSquared):
+    # Leaves by their exact type: a subclass has a matrix of its own, as
+    # Matern, a subclass of RBF.
+    if type(kernel) is ExpSineSquared:
         sine = np.sin(np.pi * lag / kernel.periodicity) / kernel.length_scale
         return {0: np.exp(-2 * sine**2)}
-    if isinstance(kernel, RBF):
+    if type(kernel) is RBF:
         return {0: np.exp(-0.5 * (lag / kernel.length_scale) ** 2)}
-    if isinstance(kernel, RationalQuadratic):
+    if type(kernel) is RationalQuadratic:
         base = 1 + lag**2 / (2 * kernel.alpha * kernel.length_scale**2)
         return {0: base**-kernel.alpha}
-    if isinstance(kernel, DotProduct):
+    if type(kernel) is DotProduct:
         return {0: np.full_like(lag, kernel.sigma_0**2), 1: np.ones_like(lag)}
-    if isinstance(kernel, WhiteKernel):
+    if type(kernel) is WhiteKernel:
         white = np.zeros_like(lag)
         white[0] = kernel.noise_level
         return {0: white}
-    if isinstance(kernel, ConstantKernel):
+    if type(kernel) is ConstantKernel:
         return {0: np.full_like(lag, kernel.constant_value)}
     msg = f"{kernel!r} is not a sum or product of the bank's kernels"
     raise TypeError(msg)
