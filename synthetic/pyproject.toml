@@ -4,9 +4,9 @@ version = "0.1.0"
 description = "Synthetic pretraining corpus for diff-gpt, generated with TempoPFN's generators"
 requires-python = ">=3.12,<3.13"
 # TempoPFN (Python < 3.13) imports these on its generation path; its model
-# stack (flash-linear-attention, triton, gluonts) stays out: see src/__init__.py.
+# stack (flash-linear-attention, triton, gluonts) and the cupy of its CauKer
+# stay out: see src/__init__.py.
 dependencies = [
-    "cupy-cuda13x>=14.2.0",
     "gpytorch>=1.15.2",
     "joblib>=1.6.0",
     "networkx>=3.7",

@@ -10,14 +10,14 @@ Each split's base sources grow to the given number of series in `generate`
 processes over ranges of files, cut so that a range takes about
 --part-seconds at the speeds of SECONDS_PER_SERIES or less, longest first.
 At most --jobs run at a time, by default one per CPU of the scheduler's
-affinity, and one CauKer process at a time on the GPU. A job starts only if
-the RSS of the scheduler and its jobs, each job counted at RESERVED_RSS at
-least, stays within --max-rss-gib with it, and MemAvailable stays above
---min-available-gib; once the RSS goes over --max-rss-gib, the scheduler
-kills its jobs and fails. Once all base sources of a split are complete, its
-augmented sources are made from them, replacing earlier ones made from fewer
-base series. Each process logs to logs/<split>/<source>/<first file>.log
-under --root, and the kernel kills it when the scheduler exits.
+affinity. A job starts only if the RSS of the scheduler and its jobs, each
+job counted at RESERVED_RSS at least, stays within --max-rss-gib with it, and
+MemAvailable stays above --min-available-gib; once the RSS goes over
+--max-rss-gib, the scheduler kills its jobs and fails. Once all base sources
+of a split are complete, its augmented sources are made from them, replacing
+earlier ones made from fewer base series. Each process logs to
+logs/<split>/<source>/<first file>.log under --root, and the kernel kills it
+when the scheduler exits.
 """
 
 import argparse
@@ -36,8 +36,9 @@ from typing import NamedTuple
 from tempopfn_corpus import sources
 
 # CPU seconds per series of one single-threaded process, from the pilot's 5120
-# series per source: three jobs on three cores, CauKer on a GPU that other eigh
-# runs shared.
+# series per source, three jobs on three cores. Those of kernel and
+# cauker_univariate are upper bounds: the pilot built their kernel matrices
+# with sklearn, and CauKer's on the GPU.
 SECONDS_PER_SERIES = {
     "forecast_pfn": 0.013,
     "gp": 0.64,
@@ -56,7 +57,6 @@ SECONDS_PER_SERIES = {
     "augmented_per_sample_2048": 0.0047,
     "augmented_temp_batch_2048": 0.086,
 }
-GPU_SOURCES = frozenset({"cauker_univariate"})
 POLL_SECONDS = 2.0
 GIB = 2**30
 RESERVED_RSS = 3 * GIB // 2  # the pilot's jobs peaked at 0.70-1.35 GiB
@@ -225,15 +225,8 @@ def run(
                 holding = not holding
                 state = "holding jobs for" if holding else "resuming jobs with"
                 print(f"{state} memory: {slots} slots of {free}", flush=True)
-            for _ in range(min(free, slots)):
-                gpu_busy = any(job.source in GPU_SOURCES for job in running)
-                job = next(
-                    (j for j in ready if not (gpu_busy and j.source in GPU_SOURCES)),
-                    None,
-                )
-                if job is None:
-                    break
-                ready.remove(job)
+            for _ in range(min(free, slots, len(ready))):
+                job = ready.pop(0)
                 running[job] = (launch(job, root, args.file_size), time.time())
                 print(f"started {job} (~{job.seconds:.0f} s)", flush=True)
             time.sleep(POLL_SECONDS)

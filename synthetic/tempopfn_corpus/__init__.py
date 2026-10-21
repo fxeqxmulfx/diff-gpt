@@ -22,6 +22,3 @@ for _variable in (
 ):
     os.environ[_variable] = "1"
 os.environ.setdefault("PYO_GUI_WX", "0")
-# CauKer samples on the GPU with cupy, next to training there: cap the memory
-# pool of a process, where its 2048 x 2048 covariances need tens of MiB.
-os.environ.setdefault("CUPY_GPU_MEMORY_LIMIT", str(2**30))

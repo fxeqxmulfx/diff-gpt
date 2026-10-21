@@ -60,7 +60,6 @@ SEEDS_PER_SPLIT = 2**28
 _HASH_SEED_BOUND = 2**32
 
 LIBRARIES = (
-    "cupy-cuda13x",
     "gpytorch",
     "networkx",
     "numpy",
