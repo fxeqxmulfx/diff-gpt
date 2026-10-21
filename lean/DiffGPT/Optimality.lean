@@ -31,6 +31,13 @@ In units of levels the encoder's error is `E = s·ε`. Three series bound it:
 At `E < 1/2` the first bound gives `E ≥ s·D ≥ s·D/(V - ‖c‖₁)`, at `E ≥ 1` the second gives
 `s·D ≤ V/2 - 1 < (V - ‖c‖₁)·E`, and in between the third as `η → 1 - E` gives
 `s·D ≤ V/2 - ‖c‖₁·(1 - E) ≤ (V - ‖c‖₁)·E`, where `V ≥ 2‖c‖₁` enters.
+
+Both hypotheses matter. At Δᵏ with `V` a power of two, `V > ‖c‖₁ = 2^k` already gives
+`V ≥ 2‖c‖₁`, but in the gap `‖c‖₁ < V < 2‖c‖₁` the third bound no longer closes the argument, and
+the claim fails: at Δ³ with `V = 10` a numerical search, not proved here, finds an encoder for this
+decoder with `D = 2.39·ε`, where the level grid has `D = 2·ε`. An anchor with `c(B) A = 1/(2s)`
+instead, the half step of the order `0`, takes the level grid to `D = (V - ‖c‖₁ + 1)·ε`. Whatever
+the decoder, `D ≤ V·ε`, by volume.
 -/
 
 @[expose] public section

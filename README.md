@@ -127,6 +127,20 @@ with the signs of the coefficients of $c$ at the edge of the domain. Checked
 in Lean 4: `le_mul_of_encodes` and `isLeast_encodes` in
 `lean/DiffGPT/Optimality.lean`.
 
+Both conditions matter. For $\Delta^k$ with $V$ a power of two,
+$V > \|c\|_1 = 2^k$ already gives $V \ge 2\|c\|_1$, but between the two the
+bound can fail: at $\Delta^3$ with $V = 10$ a numerical search finds an
+encoder for the same decoder with $\varepsilon = D/2.39$, where the level grid
+has $D/2$, and at $V \le \|c\|_1$, where the level grid has no room,
+$\Delta^2$ with $V = 4$ still has one with $\varepsilon = D/0.62$ (neither is
+in Lean). An anchor off the kernel does better as well: with
+$c(B)A = 1/(2s)$, the half step of the order 0, the tokens take all of
+$[0, V-1]$ and $\varepsilon = D/(V - \|c\|_1 + 1)$. No such anchor is
+constant modulo the step $1/s$, though, so a flat stretch would encode as a
+periodic pattern of two tokens, and values on the grid would no longer come
+back exactly; the tokenizers keep $c(B)A = 0$. Any decoder needs
+$\varepsilon \ge D/V$, by volume.
+
 **Proposition 3 (achievable CE).** In the fine-quantization limit,
 $\mathcal L^\star(V) = h(X_t \mid \text{ctx}) + \log V - \log(2D) + o(1)$.
 Ideal loss is linear in $\log V$, slope 1. Cross-vocab comparisons must subtract

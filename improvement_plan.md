@@ -438,6 +438,7 @@ data and predictable structure.
 | Smoothing σ on top of the mixture head, step 3b | Worse on both metrics on every seed |
 | More tokens per sample | Doubles sequence length when context is already a bottleneck |
 | Direct EFM instead of MASH cascade | Same headroom, bound, and even tokens in the comparison; no measured gain |
+| Half-step anchor c(B)A = 1/(2s), as at the order 0 | One more level, D/(V − ‖c‖₁ + 1): only 0.4% at V = 256. Flat stretches would encode as alternating tokens, and constants and integer grids would no longer decode exactly. Not run: likely worse |
 
 ## Accepted decisions
 
