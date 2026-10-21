@@ -1,0 +1,50 @@
+"""
+The windows of a configuration: the leaderboard's test split and ours for validation.
+
+Test is gift-eval's Dataset.test_data: the last `windows` horizons of each
+series, as consecutive windows. Validation is one window per series, the
+horizon right before the test split, with everything before it as context:
+gift-eval's training_dataset ends there and its validation_dataset ends where
+the test split starts.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import TYPE_CHECKING
+
+from gift_eval.data import Dataset
+from gluonts.dataset.split import split as split_dataset
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from gluonts.dataset.split import TestData
+
+
+def load(name: str, term: str, data: Path) -> Dataset:
+    """
+    Open gift-eval dataset `name` at `term` from `data`, as the notebooks do.
+
+    A multivariate dataset is split into univariate series (item ids get a
+    "_dim<i>" suffix). gift-eval reads the storage path from GIFT_EVAL.
+    """
+    os.environ["GIFT_EVAL"] = str(data)
+    multivariate = Dataset(name=name, term=term).target_dim > 1
+    return Dataset(name=name, term=term, to_univariate=multivariate)
+
+
+def windows(dataset: Dataset, split: str) -> TestData:
+    """Return the windows of `split` ("test" or "val"), in the scorer's order."""
+    if split == "test":
+        return dataset.test_data
+    if split == "val":
+        horizon = dataset.prediction_length
+        _, template = split_dataset(
+            dataset.gluonts_dataset, offset=-horizon * (dataset.windows + 1)
+        )
+        return template.generate_instances(
+            prediction_length=horizon, windows=1, distance=horizon
+        )
+    msg = f"unknown split {split!r}"
+    raise ValueError(msg)
