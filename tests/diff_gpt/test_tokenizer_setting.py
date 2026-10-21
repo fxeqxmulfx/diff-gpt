@@ -18,6 +18,7 @@ from diff_gpt.model.gpt import GPT
 
 V = 64
 ORDER = 2
+TOKENIZERS = ("lgt", "mash", "mash-half")
 
 
 def _frame() -> pd.DataFrame:
@@ -50,7 +51,7 @@ def _whole_series_loader(
     )
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_dataframe_loader_encodes_with_its_tokenizer(tokenizer: str) -> None:
     """Check that the DataFrame loader encodes with the tokenizer it was given."""
     df = _frame()
@@ -58,9 +59,10 @@ def test_dataframe_loader_encodes_with_its_tokenizer(tokenizer: str) -> None:
     dod = get_domain_of_definition(inp, ORDER)
     tokens = {
         tok: encode(inp, V, dod, ORDER, tokenizer=tok)[2].reshape(-1).tolist()
-        for tok in ("lgt", "mash")
+        for tok in TOKENIZERS
     }
     assert tokens["lgt"] != tokens["mash"]
+    assert tokens["mash-half"] != tokens["mash"]
     x, y = _whole_series_loader(df, dod, tokenizer).get_batch("train")
     assert x[0].tolist() == tokens[tokenizer][:-1]
     assert y[0].tolist() == tokens[tokenizer][1:]

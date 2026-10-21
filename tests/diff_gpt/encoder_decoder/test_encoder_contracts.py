@@ -15,6 +15,7 @@ from diff_gpt.encoder_decoder import (
 )
 
 V = 64
+TOKENIZERS = ["lgt", "mash", "mash-half"]
 
 
 @pytest.mark.parametrize("bad", [np.inf, -np.inf])
@@ -62,7 +63,7 @@ def test_values_other_than_float64_are_rejected() -> None:
 INT64_BOUND_ORDER = 12
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_levels_past_the_int64_grid_are_rejected(tokenizer: str) -> None:
     """
     Check that encode raises where |s·x| would leave the int64 level grid.
@@ -90,7 +91,7 @@ FINEST_DOMAIN = 4e-15  # s·x = 7.8e15
 TOO_FINE_DOMAIN = 3e-15  # s·x = 1.03e16
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_a_grid_finer_than_float64_resolves_is_rejected(tokenizer: str) -> None:
     """
     Check that encode raises where |s·x| reaches 2^53 and float64 misses levels.
@@ -107,7 +108,7 @@ def test_a_grid_finer_than_float64_resolves_is_rejected(tokenizer: str) -> None:
         encode(x, V, np.array([TOO_FINE_DOMAIN]), 1, tokenizer=tokenizer)
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_encode_warns_with_the_number_of_clipped_tokens(tokenizer: str) -> None:
     """
     Check that encode reports the tokens it clips.
@@ -124,12 +125,12 @@ def test_encode_warns_with_the_number_of_clipped_tokens(tokenizer: str) -> None:
 JUMP_EXCESS = 39.0
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_a_clipped_step_offsets_the_values_after_it(tokenizer: str) -> None:
     """
     Check that a clipped jump of 40·D shifts every later value by its excess.
 
-    Both tokenizers clip alike for every k. Before version 2, MASH at k = 1
+    The tokenizers clip alike for every k. Before version 2, MASH at k = 1
     alone made the excess up over the next steps instead.
     """
     steps = np.random.default_rng(0).uniform(-1, 1, size=(400, 1))
@@ -150,7 +151,7 @@ def test_a_clipped_step_offsets_the_values_after_it(tokenizer: str) -> None:
     assert np.abs(err[201:] - offset).max() <= 2 * half_step
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_encode_in_domain_does_not_warn(tokenizer: str) -> None:
     """Check that a series inside its domain encodes without a warning."""
     x = np.array([[0.0], [1.0], [2.0], [1.5], [0.5]])
@@ -224,7 +225,7 @@ def test_domain_needs_a_row_past_the_order(order: int | np.ndarray) -> None:
         get_domain_of_definition(x, order)
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 @pytest.mark.parametrize(("k", "vocab_size"), [(0, 2), (1, 2), (2, 4), (3, 8)])
 def test_the_vocabulary_must_exceed_the_norm_of_c(
     tokenizer: str,
@@ -243,7 +244,7 @@ def test_the_vocabulary_must_exceed_the_norm_of_c(
     encode(x, vocab_size + 2, dod, k, tokenizer=tokenizer)
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
 def test_decode_raises_where_the_tokens_leave_int64(tokenizer: str) -> None:
     """
     Check that decode raises on tokens whose levels would wrap around in int64.

@@ -1,7 +1,7 @@
 """
 Derivative tokenizers: encode a (T, F) series as integer tokens and decode it back.
 
-Both tokenizers put each column on a grid of step 1/s, measured in levels
+The tokenizers put each column on a grid of step 1/s, measured in levels
 from an anchor A, and emit the levels differenced by an integer operator
 c(B) = 1 + c_1 B + ... + c_p B^p, where B is the backshift, B x_t = x_{t-1}:
 
@@ -19,43 +19,56 @@ c(B) x, or a range [lo, hi] that need not hold 0 in its middle: the scale
 then fits hi - lo, not 2·max(|lo|, |hi|), into the V - ‖c‖₁ levels, and the
 zero point z puts the range in the middle of the vocabulary (`level_grid`).
 
-The anchor lies in the kernel of c (c(B) A = 0), and it is all that differs
-between the tokenizers:
+The anchor is all that differs between the tokenizers:
 
 - "lgt" (level grid): A = 0, the absolute grid. The token at t depends only
   on x_{t-p..t}, so encoding a window gives the matching slice of the full
   encoding.
 - "mash" (prefix-anchored, the default): A passes through the p prefix
-  values of s·x, so the grid moves with the prefix, as in a MASH Σ-Δ
-  cascade started there.
+  values of s·x and lies in the kernel of c, c(B) A = 0, after them, so the
+  grid moves with the prefix, as in a MASH Σ-Δ cascade started there.
+- "mash-half" (opt-in): A passes through the prefix as for "mash", but
+  c(B) A = 1/2 after it, the half step the order 0 takes (below).
 
-Every token lies in [1, V-1], and the decoder, which inverts c on the levels
-exactly and returns x̂ = (A + L)/s, stays within 1/(2s) = D/(V - ‖c‖₁) of
-the series, uniformly in T (README Theorem 1, proved in
-lean/DiffGPT/LevelGrid.lean). On a range 1/(2s) is (hi - lo)/(2(V - ‖c‖₁))
-where (V - ‖c‖₁)·lo/(hi - lo) is an integer, as on [-D, D], and at most
-(hi - lo)/(2(V - ‖c‖₁ - 1)), one level fewer, elsewhere. The Lean proofs
-cover [-D, D]; for ranges `level_grid` checks the fit in rationals, and the
-tests check the bound.
+With c(B) A = 0 every token lies in [1, V-1], and the decoder, which inverts
+c on the levels exactly and returns x̂ = (A + L)/s, stays within
+1/(2s) = D/(V - ‖c‖₁) of the series, uniformly in T (README Theorem 1,
+proved in lean/DiffGPT/LevelGrid.lean). On a range 1/(2s) is
+(hi - lo)/(2(V - ‖c‖₁)) where (V - ‖c‖₁)·lo/(hi - lo) is an integer, as on
+[-D, D], and at most (hi - lo)/(2(V - ‖c‖₁ - 1)), one level fewer,
+elsewhere. The Lean proofs cover [-D, D]; for ranges `level_grid` checks the
+fit in rationals, and the tests check the bound.
 
-The order 0, c = 1, needs no room for the noise, and both tokenizers take
-A = 1/2 there instead: with s·D < V/2 the levels L = floor(s·x) take all V
-tokens [0, V-1], and x̂ = (L + 1/2)/s, the middle of the cell
-[L, L + 1)/s, stays within 1/(2s), a hair above D/V, the least that V
-levels allow on [-D, D].
+"mash-half" moves the integers c(B) L half a level off the steps s·c(B) x,
+which makes room for one more level: at s = (V - ‖c‖₁ + 1)/(2D) its tokens
+take all of [0, V-1], and x̂ stays within 1/(2s) = D/(V - ‖c‖₁ + 1). On a
+range that is (hi - lo)/(2(V - ‖c‖₁ + 1)) where (V - ‖c‖₁ + 1)·lo/(hi - lo)
+lies halfway between integers, as on [-D, D], and at most
+(hi - lo)/(2(V - ‖c‖₁)) elsewhere. The price is paid on flat
+stretches: no anchor with c(B) A = 1/2 is constant modulo 1, so a constant
+encodes as a periodic pattern around V/2 (32, 31, 32, 31, ... at Δ with
+V = 64), and comes back up to 1/(2s) off, where "mash" returns it exactly.
+The Lean proofs cover c(B) A = 0 only; the tests check this bound.
+
+The order 0, c = 1, needs no room for the noise, and every tokenizer takes
+A = 1/2 there, c(B) A = 1/2 as for "mash-half": with s·D < V/2 the levels
+L = floor(s·x) take all V tokens [0, V-1], and x̂ = (L + 1/2)/s, the middle
+of the cell [L, L + 1)/s, stays within 1/(2s), a hair above D/V, the least
+that V levels allow on [-D, D].
 
 The arithmetic is float64 and int64. A enters only through its fractional
 part F_t, a multiple of 2^-G with G <= 53 that float64 holds exactly: with
 R_t = floor(s·x_t - F_t + 1/2) the levels are L_t = R_t - floor(A_t), so
-the tokens are c(B) R - c(B) floor(A) + z and x̂ = (R + F)/s. As
-c(B) A = 0, the integer c(B) floor(A) is -c(B) F, which F gives; at the
-order 0 floor(A) = 0. A itself, which grows like t^(k-1) at Δ^k, is never
-formed.
+the tokens are c(B) R - c(B) floor(A) + z and x̂ = (R + F)/s. The integer
+c(B) floor(A) is c(B) A - c(B) F, with c(B) A = 0, or 1/2 for "mash-half",
+so F gives it; at the order 0 floor(A) = 0. A itself, which grows like
+t^(k-1) at Δ^k (t^k for "mash-half"), is never formed.
 
 The levels are exact: R is read off the float64 rounding of s·x and its
 exact error (Dekker's product), without rounding s·x itself
 (lean/DiffGPT/ExactLevels.lean). The scale is rounded down, so that
-s·D <= (V - ‖c‖₁)/2 holds exactly, and the bounds of
+s·D <= (V - ‖c‖₁)/2, or (V - ‖c‖₁ + 1)/2 for "mash-half", holds exactly,
+and the bounds of
 `get_domain_of_definition` are rounded outward, so that |c(B) x| <= D, or
 lo <= c(B) x <= hi, does: every token then lies in its range as in exact
 arithmetic, the levels stay within
@@ -247,11 +260,11 @@ def _headroom(lags: tuple[int, ...]) -> int:
 
 
 # Which tokenizer `encode`/`decode` use when the caller does not say: "mash"
-# (the grid anchored at the prefix) or "lgt" (the absolute grid), see the
-# module docstring. Set DIFF_GPT_TOKENIZER=lgt, or pass tokenizer="lgt", for
-# the latter.
+# (the grid anchored at the prefix), "lgt" (the absolute grid) or "mash-half"
+# (the prefix-anchored grid with c(B) A = 1/2), see the module docstring. Set
+# DIFF_GPT_TOKENIZER, or pass `tokenizer`, for one of the others.
 DEFAULT_TOKENIZER = os.environ.get("DIFF_GPT_TOKENIZER", "mash")
-_TOKENIZERS = ("lgt", "mash")
+_TOKENIZERS = ("lgt", "mash", "mash-half")
 
 # Version of the token scheme. DiffGPT checkpoints record it, so that weights
 # trained on other tokens are refused. Version 4 takes the order-0 levels
@@ -268,7 +281,7 @@ def resolve_tokenizer(tokenizer: str | None) -> str:
     """Return `tokenizer`, or `DEFAULT_TOKENIZER` for None; reject unknown names."""
     tok = DEFAULT_TOKENIZER if tokenizer is None else tokenizer
     if tok not in _TOKENIZERS:
-        msg = f"unknown tokenizer {tok!r}; expected 'mash' or 'lgt'"
+        msg = f"unknown tokenizer {tok!r}; expected 'mash', 'lgt' or 'mash-half'"
         raise ValueError(msg)
     return tok
 
@@ -298,8 +311,8 @@ def _clip_tokens(tokens: np.ndarray, vocab_size: int) -> np.ndarray:
 
 
 # Scale of a column whose domain is D = 0, one in the kernel of c, such as a
-# polynomial of degree < k at Δ^k: a fine grid, so that "lgt" reproduces its
-# level to 2^-21 instead of rounding it on the unit grid.
+# polynomial of degree < k at Δ^k: a fine grid, so that "lgt" and "mash-half"
+# reproduce its level to 2^-21 instead of rounding it on the unit grid.
 CONSTANT_COLUMN_SCALE = float(2**20)
 # A domain no wider than this, 2·eps, is a point.
 _POINT_WIDTH = 2 * Fraction(float(np.finfo(np.float64).eps))
@@ -316,26 +329,37 @@ def level_grid(
     vocab_size: int,
     domain_of_definition: np.ndarray,
     order_of_derivative: Order,
+    *,
+    tokenizer: str | None = None,
 ) -> Grid:
     """
-    Return the grid `encode` puts the columns on, the same for both tokenizers.
+    Return the grid `encode` puts the columns on with `tokenizer`.
 
     `domain_of_definition` holds D >= 0 per column, shape (F,), for the
     steps c(B) x in [-D, D], or the ranges [lo, hi], shape (F, 2), and
     `order_of_derivative` one order or one per column, as for `encode`.
+    "lgt" and "mash" share the grid; None picks `DEFAULT_TOKENIZER`.
 
     s is the largest float64 on which every step of [lo, hi] gets a token
-    in range: levels round half up, so ζ = L - s·(x - A) lies in
+    in range: levels round half up, so ζ = L - (s·x - A) lies in
     (-1/2, 1/2], and c, with c(1) = 0, has coefficients of both signs, so
-    |c(B) ζ| < ‖c‖₁/2, and the integer c(B) L = s·c(B) x + c(B) ζ lies in
-    (s·lo - ‖c‖₁/2, s·hi + ‖c‖₁/2). These ceil(s·hi) - floor(s·lo) +
-    ‖c‖₁ - 1 integers fit the tokens [1, V-1] when ceil(s·hi) - floor(s·lo)
-    <= V - ‖c‖₁ (`_fits`). On [-D, D] that is s·D <= (V - ‖c‖₁)/2, s =
-    (V - ‖c‖₁)/(2D) rounded down, and no larger scale fits: errors with the
-    signs of the coefficients push a token out (`abs_diffs_levels_le` and
-    `exists_levels_ge` in lean/DiffGPT/LevelGrid.lean). At the order 0 the
-    levels floor(s·x) take floor(s·hi) - floor(s·lo) + 1 values, which fit
-    the tokens [0, V-1]; on [-D, D], s·D < V/2 (`floor_mem_of_domain`).
+    |c(B) ζ| < ‖c‖₁/2, and with c(B) A = 0 the integer
+    c(B) L = s·c(B) x + c(B) ζ lies in (s·lo - ‖c‖₁/2, s·hi + ‖c‖₁/2).
+    These ceil(s·hi) - floor(s·lo) + ‖c‖₁ - 1 integers fit the tokens
+    [1, V-1] when ceil(s·hi) - floor(s·lo) <= V - ‖c‖₁ (`_fits`). On
+    [-D, D] that is s·D <= (V - ‖c‖₁)/2, s = (V - ‖c‖₁)/(2D) rounded down,
+    and no larger scale fits: errors with the signs of the coefficients push
+    a token out (`abs_diffs_levels_le` and `exists_levels_ge` in
+    lean/DiffGPT/LevelGrid.lean). At the order 0 the levels floor(s·x) take
+    floor(s·hi) - floor(s·lo) + 1 values, which fit the tokens [0, V-1]; on
+    [-D, D], s·D < V/2 (`floor_mem_of_domain`).
+
+    "mash-half" subtracts c(B) A = 1/2 above the order 0, so c(B) L lies in
+    (s·lo - 1/2 - ‖c‖₁/2, s·hi - 1/2 + ‖c‖₁/2), and these
+    ceil(s·hi - 1/2) - floor(s·lo - 1/2) + ‖c‖₁ - 1 integers fit all the
+    tokens [0, V-1] when ceil(s·hi - 1/2) - floor(s·lo - 1/2)
+    <= V - ‖c‖₁ + 1. On [-D, D] that is s·D <= (V - ‖c‖₁ + 1)/2: one level
+    more.
 
     z, the token of c(B) L = 0, puts these integers within the tokens, as
     close to the middle as it can: V/2 on [-D, D] (`_zero_point`).
@@ -346,6 +370,7 @@ def level_grid(
     leaves room for the noise, and when z leaves [-2^62, 2^62], where the
     range lies too far from 0 for its width.
     """
+    tok = resolve_tokenizer(tokenizer)
     _check_vocab_size(vocab_size)
     n_features = domain_of_definition.shape[0]
     lo, hi = _domain_bounds(domain_of_definition, n_features)
@@ -360,18 +385,23 @@ def level_grid(
                 f"‖c‖₁ = {headroom}, the sum of its |coefficients|, got {vocab_size}"
             )
             raise ValueError(msg)
-        room = vocab_size - headroom
+        order0 = not lags[c]
+        # "mash-half" shifts the steps by half a level, which takes token 0
+        # as well: one level more.
+        if tok == "mash-half" and not order0:
+            shift, room = Fraction(1, 2), vocab_size - headroom + 1
+        else:
+            shift, room = Fraction(0), vocab_size - headroom
         low, high = Fraction(float(lo[c])), Fraction(float(hi[c]))
         # A point takes the grid of [-D, D] for D = max(|lo|, |hi|).
         bound = max(-low, high)
-        order0 = not lags[c]
         if high - low > _POINT_WIDTH:
-            s = _max_scale(low, high, room, order0=order0)
+            s = _max_scale(low, high, room, order0=order0, shift=shift)
         elif bound > _POINT_WIDTH / 2:
-            s = _max_scale(-bound, bound, room, order0=order0)
+            s = _max_scale(-bound, bound, room, order0=order0, shift=shift)
         else:
             s = CONSTANT_COLUMN_SCALE
-        z = _zero_point(s, low, high, vocab_size, headroom, order0=order0)
+        z = _zero_point(s, low, high, vocab_size, headroom, order0=order0, shift=shift)
         if abs(z) >= 2**_LEVEL_BITS:
             msg = (
                 f"the grid of column {c} puts its range [{lo[c]}, {hi[c]}] "
@@ -383,37 +413,54 @@ def level_grid(
     return Grid(scale=scale, zero=zero)
 
 
-def _fits(s: float, lo: Fraction, hi: Fraction, room: int, *, order0: bool) -> bool:
+def _fits(
+    s: float,
+    lo: Fraction,
+    hi: Fraction,
+    room: int,
+    *,
+    order0: bool,
+    shift: Fraction,
+) -> bool:
     """
     Check that every step in [lo, hi] gets a token in range on the scale `s`.
 
-    `room` is V - ‖c‖₁ (V at the order 0), and the check is exact. Above
-    the order 0 the steps take ceil(s·hi) - floor(s·lo) + ‖c‖₁ - 1 tokens of
-    the V - 1 in [1, V-1], at the order 0 floor(s·hi) - floor(s·lo) + 1 of
-    the V in [0, V-1] (see `level_grid`).
+    `room` is V - ‖c‖₁ (V at the order 0, V - ‖c‖₁ + 1 for "mash-half"),
+    and the check is exact. Above the order 0 the steps take
+    ceil(s·hi - shift) - floor(s·lo - shift) + ‖c‖₁ - 1 tokens, where
+    `shift` is c(B) A: of the V - 1 in [1, V-1] for 0, of all V for 1/2. At
+    the order 0 they take floor(s·hi) - floor(s·lo) + 1 of the V in [0, V-1]
+    (see `level_grid`).
     """
     scale = Fraction(s)
-    low = math.floor(scale * lo)
     if order0:
-        return math.floor(scale * hi) - low < room
-    return math.ceil(scale * hi) - low <= room
+        return math.floor(scale * hi) - math.floor(scale * lo) < room
+    return math.ceil(scale * hi - shift) - math.floor(scale * lo - shift) <= room
 
 
-def _max_scale(lo: Fraction, hi: Fraction, room: int, *, order0: bool) -> float:
+def _max_scale(
+    lo: Fraction,
+    hi: Fraction,
+    room: int,
+    *,
+    order0: bool,
+    shift: Fraction,
+) -> float:
     """
     Return the largest float64 s on which [lo, hi] fits, or one at most a level short.
 
-    With p = floor(s·lo), [lo, hi] fits (`_fits`) when s·hi <= p + room
-    (< at the order 0): for each integer p the scales with p <= s·lo and
-    s·hi <= p + room form an interval, and the best p is next to
-    p* = room·lo/(hi - lo), where both ends meet at s = room/(hi - lo): the
-    floor or the ceiling of p*. Its interval can hold no float64, and a
-    scale with s·(hi - lo) <= room - 1 fits whatever p, so that one stands in.
+    With p = floor(s·lo - shift) + shift, [lo, hi] fits (`_fits`) when
+    s·hi <= p + room (< at the order 0): for each p in Z + shift the scales
+    with p <= s·lo and s·hi <= p + room form an interval, and the best p is
+    next to p* = room·lo/(hi - lo), where both ends meet at
+    s = room/(hi - lo): the one of Z + shift below or above p*. Its interval
+    can hold no float64, and a scale with s·(hi - lo) <= room - 1 fits
+    whatever p, so that one stands in.
     """
     width = hi - lo
     pivot = room * lo / width
     scales = [_float_at_or_below((room - 1) / width)]
-    for p in {math.floor(pivot), math.ceil(pivot)}:
+    for p in {math.floor(pivot - shift) + shift, math.ceil(pivot - shift) + shift}:
         ends = []
         if lo < 0:
             ends.append(p / lo)
@@ -422,7 +469,7 @@ def _max_scale(lo: Fraction, hi: Fraction, room: int, *, order0: bool) -> float:
         end = _float_at_or_below(min(ends))
         # At the order 0 a step of hi on the end itself floors past the room.
         for s in (end, math.nextafter(end, 0.0)):
-            if s > 0 and _fits(s, lo, hi, room, order0=order0):
+            if s > 0 and _fits(s, lo, hi, room, order0=order0, shift=shift):
                 scales.append(s)
                 break
     return max(scales)
@@ -436,24 +483,31 @@ def _zero_point(
     headroom: int,
     *,
     order0: bool,
+    shift: Fraction,
 ) -> int:
     """
     Return the zero point z: the token of c(B) L = 0.
 
     Above the order 0 the tokens c(B) L + z of the steps in [lo, hi] lie in
-    [floor(s·lo) + 1 - ‖c‖₁/2, ceil(s·hi) - 1 + ‖c‖₁/2] + z, within
-    [1, V-1] for z from ‖c‖₁/2 - floor(s·lo) to V - ‖c‖₁/2 - ceil(s·hi).
-    At the order 0 the tokens floor(s·x) + z lie in [0, V-1] for z from
-    -floor(s·lo) to V - 1 - floor(s·hi). z is the one of these closest to
-    V/2 - round(s·(lo + hi)/2), which puts the middle of the range on V/2.
+    [floor(s·lo - shift) + 1 - ‖c‖₁/2, ceil(s·hi - shift) - 1 + ‖c‖₁/2] + z:
+    within [1, V-1] for the shift 0 when z runs from ‖c‖₁/2 - floor(s·lo)
+    to V - ‖c‖₁/2 - ceil(s·hi), and within [0, V-1] for the shift 1/2 when
+    it runs from ‖c‖₁/2 - 1 - floor(s·lo - 1/2) to
+    V - ‖c‖₁/2 - ceil(s·hi - 1/2). At the order 0 the tokens floor(s·x) + z
+    lie in [0, V-1] for z from -floor(s·lo) to V - 1 - floor(s·hi). z is the
+    one of these closest to V/2 - round(s·(lo + hi)/2), which puts the
+    middle of the range in the middle of the tokens.
     """
     scale = Fraction(s)
     if order0:
         least = -math.floor(scale * lo)
         most = vocab_size - 1 - math.floor(scale * hi)
     else:
-        least = headroom // 2 - math.floor(scale * lo)
-        most = vocab_size - headroom // 2 - math.ceil(scale * hi)
+        least = headroom // 2 - math.floor(scale * lo - shift)
+        most = vocab_size - headroom // 2 - math.ceil(scale * hi - shift)
+        if shift:
+            # "mash-half" takes token 0 as well.
+            least -= 1
     middle = vocab_size // 2 - math.floor(scale * (lo + hi) / 2 + Fraction(1, 2))
     return min(max(middle, least), most)
 
@@ -576,7 +630,7 @@ def _fraction_bits(factors: int) -> int:
 
     Its fractional parts n / 2^G are exact in float64, and the differences
     of their numerators by the m factors in turn, below 2^(m+G-1) in
-    magnitude, fit int64.
+    magnitude, fit int64. The "mash-half" anchor takes the same G.
     """
     return min(_FLOAT64_EXACT_BITS, _WORD_BITS - factors)
 
@@ -652,12 +706,14 @@ def _anchor_fraction(
     Returns F on the p rows of `scaled_prefix` and the `n_rows` rows after
     them, and the int64 -c(B) floor(A) on the latter. The order 0 (no lags)
     takes A = 1/2: F = 1/2 and floor(A) = 0. Otherwise "lgt" takes A = 0,
-    and "mash" the A with c(B) A = 0 through the prefix values rounded to G
-    fraction bits (`_fraction_bits`). Then F_t = (P_t mod 2^G) / 2^G for the
-    integers P = 2^G·A, and P mod 2^G depends only on the prefix numerators
-    mod 2^G: P is continued with c(B) P = 0 in uint64, whose sums wrap
-    modulo 2^64, a multiple of 2^G. As c(B) A = 0, -c(B) floor(A) is the
-    integer c(B) F, which the numerators give exactly.
+    "mash" the A through the prefix values rounded to G fraction bits
+    (`_fraction_bits`) with c(B) A = 0 after them, and "mash-half" the one
+    with c(B) A = 1/2. Then F_t = (P_t mod 2^G) / 2^G for the integers
+    P = 2^G·A, and P mod 2^G depends only on the prefix numerators mod 2^G:
+    P is continued with c(B) P = 0, or 2^(G-1), in uint64, whose sums wrap
+    modulo 2^64, a multiple of 2^G. -c(B) floor(A) = c(B) F - c(B) A is an
+    integer and c(B) A is 0 or 1/2, so it is c(B) F rounded down, which the
+    numerators give exactly.
     """
     p = scaled_prefix.shape[0]
     if not lags:
@@ -667,7 +723,9 @@ def _anchor_fraction(
     bits = _fraction_bits(len(lags))
     fraction = scaled_prefix - np.floor(scaled_prefix)
     seeds = np.rint(np.ldexp(fraction, bits)).astype(np.uint64)
-    anchor = _invert_difference(seeds, np.zeros(n_rows, dtype=np.uint64), lags)
+    step = 2 ** (bits - 1) if tokenizer == "mash-half" else 0
+    steps = np.full(n_rows, step, dtype=np.uint64)
+    anchor = _invert_difference(seeds, steps, lags)
     numerators = (anchor & np.uint64(2**bits - 1)).astype(np.int64)
     fraction_steps = _difference(numerators, lags) >> bits
     return np.ldexp(numerators.astype(np.float64), -bits), fraction_steps
@@ -689,8 +747,8 @@ def encode(
     `order_of_derivative` is one order for every column or one per column,
     in a sequence or array of shape (F,); an order is an int k, for Δ^k, or
     a `Difference`. Each column gets the grid of its own range and operator
-    (`level_grid`). `tokenizer` is "lgt" or "mash", the anchor of the grid
-    (see the module docstring); None picks `DEFAULT_TOKENIZER`.
+    (`level_grid`). `tokenizer` is "lgt", "mash" or "mash-half", the anchor
+    of the grid (see the module docstring); None picks `DEFAULT_TOKENIZER`.
 
     Returns `start`, the raw prefix inp[:max_p] for the largest degree
     max_p (`prefix_rows`), the `Grid` and the (T - max_p, F) int64 tokens,
@@ -717,7 +775,12 @@ def encode(
     if max_p > T:
         msg = f"order_of_derivative {max_p} exceeds the series length {T}"
         raise ValueError(msg)
-    grid = level_grid(vocab_size, domain_of_definition, order_of_derivative)
+    grid = level_grid(
+        vocab_size,
+        domain_of_definition,
+        order_of_derivative,
+        tokenizer=tok,
+    )
     N = T - max_p
     tokens = np.zeros((N, F), dtype=np.int64)
     for c in range(F):

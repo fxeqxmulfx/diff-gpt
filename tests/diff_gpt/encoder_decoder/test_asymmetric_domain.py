@@ -53,19 +53,27 @@ def _symmetric_scale(vocab_size: int, bound: float, headroom: int) -> float:
     return s
 
 
-def _level_steps(s: float, lo: Fraction, hi: Fraction, headroom: int) -> list[int]:
+def _level_steps(
+    s: float,
+    lo: Fraction,
+    hi: Fraction,
+    headroom: int,
+    *,
+    shift: Fraction = Fraction(0),
+) -> list[int]:
     """
     Return the least and the greatest c(B) L of the steps in [lo, hi] on the scale s.
 
-    Above the order 0, c(B) L lies within ‖c‖₁/2 of s·c(B) x, strictly; at
-    the order 0 the levels are floor(s·x).
+    Above the order 0, c(B) L lies within ‖c‖₁/2 of s·c(B) x - `shift`,
+    strictly, where the shift c(B) A is 0, or 1/2 for "mash-half"; at the
+    order 0 the levels are floor(s·x).
     """
     scale = Fraction(s)
     if headroom == 0:
         return [math.floor(scale * lo), math.floor(scale * hi)]
     return [
-        math.floor(scale * lo) + 1 - headroom // 2,
-        math.ceil(scale * hi) - 1 + headroom // 2,
+        math.floor(scale * lo - shift) + 1 - headroom // 2,
+        math.ceil(scale * hi - shift) - 1 + headroom // 2,
     ]
 
 
@@ -141,6 +149,36 @@ def test_a_range_fits_its_steps_at_most_a_level_short_of_the_best(
                 assert most - least + 1 > vocab_size - first
 
 
+@pytest.mark.parametrize(("order", "headroom"), ORDERS[1:])
+def test_mash_half_fits_a_range_on_all_the_tokens(
+    order: int | Difference,
+    headroom: int,
+) -> None:
+    """
+    Check the "mash-half" grid of the ranges above, whose steps c(B) L sit 1/2 lower.
+
+    Every step in [lo, hi] gets a token in [0, V-1], the scale is at least
+    that of "mash" and falls short of (V - ‖c‖₁)/(hi - lo) by less than an
+    ulp, and across 0 no larger float64 fits.
+    """
+    ranges = _ranges(np.random.default_rng(1), 100)
+    half = Fraction(1, 2)
+    for vocab_size in VOCAB_SIZES:
+        grid = level_grid(vocab_size, ranges, order, tokenizer="mash-half")
+        mash = level_grid(vocab_size, ranges, order, tokenizer="mash")
+        assert (grid.scale >= mash.scale).all()
+        for (lo, hi), s, z in zip(ranges, grid.scale, grid.zero, strict=True):
+            low, high = Fraction(lo), Fraction(hi)
+            least, most = _level_steps(s, low, high, headroom, shift=half)
+            assert least + int(z) >= 0
+            assert most + int(z) <= vocab_size - 1
+            up = math.nextafter(s, math.inf)
+            assert Fraction(up) * (high - low) > vocab_size - headroom
+            if lo < 0 < hi:
+                least, most = _level_steps(up, low, high, headroom, shift=half)
+                assert most - least + 1 > vocab_size
+
+
 @pytest.mark.parametrize(
     ("domain", "order", "scale", "zero"),
     [
@@ -182,7 +220,7 @@ def test_counts_take_every_token_at_half_the_step_of_their_symmetric_hull() -> N
     assert grid.scale[0] == 2 * hull.scale[0]
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash", "mash-half"])
 @pytest.mark.parametrize(("order", "headroom"), ORDERS)
 def test_series_on_their_exact_ranges_decode_within_half_a_level(
     order: int | Difference,

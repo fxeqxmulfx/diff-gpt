@@ -116,7 +116,8 @@ class DiffSQLiteDataLoader:
         `domain_of_definition` serves every table, or maps each sampled table
         to its own (tables of different widths need their own). `encode_data`
         turns raw rows into tokens (`encode` by default) with `tokenizer`
-        ("lgt" or "mash"; None picks `encoder_decoder.DEFAULT_TOKENIZER`).
+        ("lgt", "mash" or "mash-half"; None picks
+        `encoder_decoder.DEFAULT_TOKENIZER`).
         `rng` defaults to a fresh generator seeded with 42.
         """
         self.block_size = block_size
@@ -559,7 +560,7 @@ class DiffDataFrameDataLoader:
         """
         Encode every DataFrame once and split each series at `train_part`.
 
-        `tokenizer`: "lgt" or "mash", as for `encode`; None picks
+        `tokenizer`: "lgt", "mash" or "mash-half", as for `encode`; None picks
         `encoder_decoder.DEFAULT_TOKENIZER`. Use the `DiffGPT`'s tokenizer.
         """
         if len(dfs) == 0:

@@ -114,10 +114,10 @@ class DiffGPT:
         [-D, D], or the ranges [lo, hi], shape (F, 2)
         (`encoder_decoder.get_domain_of_definition`).
 
-        `tokenizer`: "lgt" or "mash", the one the model was trained with. None
-        resolves to `encoder_decoder.DEFAULT_TOKENIZER` now and keeps it, so
-        the model decodes with its own tokenizer whatever the process default
-        (DIFF_GPT_TOKENIZER) is later.
+        `tokenizer`: "lgt", "mash" or "mash-half", the one the model was
+        trained with. None resolves to `encoder_decoder.DEFAULT_TOKENIZER` now
+        and keeps it, so the model decodes with its own tokenizer whatever the
+        process default (DIFF_GPT_TOKENIZER) is later.
         """
         self.model = model
         self.order_of_derivative = order_of_derivative

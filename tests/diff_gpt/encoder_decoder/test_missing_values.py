@@ -99,12 +99,12 @@ def test_observed_tokens_line_up_with_the_tokens_of_per_column_orders() -> None:
     np.testing.assert_array_equal(mask, expected)
 
 
-@pytest.mark.parametrize("tokenizer", ["lgt", "mash"])
+@pytest.mark.parametrize("tokenizer", ["lgt", "mash", "mash-half"])
 def test_the_observed_tokens_do_not_depend_on_the_fill(tokenizer: str) -> None:
     """
     Check that any fill of the NaN after the prefix leaves the observed tokens be.
 
-    Both grids are anchored before the gaps, "lgt" at 0 and "mash" at the
+    Every grid is anchored before the gaps, "lgt" at 0 and the others at the
     prefix, so a token that reads no NaN reads no filled value either.
     """
     rng = np.random.default_rng(0)

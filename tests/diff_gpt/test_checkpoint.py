@@ -94,6 +94,7 @@ def test_load_compares_a_domain_of_ranges_by_its_pairs(tmp_path: Path) -> None:
     ("settings", "name"),
     [
         ({"tokenizer": "lgt"}, "tokenizer"),
+        ({"tokenizer": "mash-half"}, "tokenizer"),
         ({"order_of_derivative": 2}, "order_of_derivative"),
         ({"domain_of_definition": np.array([1.0, 3.0])}, "domain_of_definition"),
     ],

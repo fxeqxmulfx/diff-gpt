@@ -21,9 +21,13 @@ degree $p$ of $c$ ($k$ for $\Delta^k$): encoding a window equals the slice
 of the full encoding, and identical values give identical tokens anywhere in a
 series. MASH tokens depend on the prefix as well; in exchange MASH puts the
 prefix values on its grid, so a constant column comes back exactly, where LGT
-rounds it to $2^{-21}$. Pass `tokenizer="lgt"` to
-`encode`/`decode`, `DiffGPT` and the data loaders, or set
-`DIFF_GPT_TOKENIZER=lgt` to make it the default. `DiffGPT` and the loaders
+rounds it to $2^{-21}$. The opt-in `tokenizer="mash-half"` anchors at the
+prefix like MASH, but steps the anchor by half a level, $c(B)A = 1/(2s)$, as
+the order 0 does: its tokens take all of $[0, V-1]$ and the bound gains a
+level, $D/(V - \|c\|_1 + 1)$, while a flat stretch encodes as a periodic
+pattern of tokens (see the note after Theorem 2). Pass `tokenizer="lgt"` or
+`tokenizer="mash-half"` to `encode`/`decode`, `DiffGPT` and the data loaders,
+or set `DIFF_GPT_TOKENIZER` to make it the default. `DiffGPT` and the loaders
 keep the tokenizer they were built with, `DiffGPT.train` refuses a loader that
 encodes with another, and `DiffGPT.load` refuses weights trained on another
 token scheme (`ENCODER_VERSION`).
@@ -44,7 +48,7 @@ model on top.
 | ideal CE $\mathcal L^\star(V)$ | $+\log 2 \approx 0.69$ nats | Prop. 3 |
 | reconstruction $\|\hat x - x\|_\infty$ | $\times \tfrac{1}{2}$ | Thm. 1 |
 
-**Theorem 1 (reconstruction, any operator, both tokenizers).** Let
+**Theorem 1 (reconstruction, any operator, LGT and MASH).** Let
 $c(B) = \prod_{i=1}^m (1 - B^{S_i})$, $m \ge 1$, with lags $S_i \ge 1$ ($k$
 lags of 1 for $\Delta^k$) have $\|c\|_1 = \sum_j |c_j|$, which is $2^k$ for
 $\Delta^k$. For
@@ -136,10 +140,12 @@ $\Delta^2$ with $V = 4$ still has one with $\varepsilon = D/0.62$ (neither is
 in Lean). An anchor off the kernel does better as well: with
 $c(B)A = 1/(2s)$, the half step of the order 0, the tokens take all of
 $[0, V-1]$ and $\varepsilon = D/(V - \|c\|_1 + 1)$. No such anchor is
-constant modulo the step $1/s$, though, so a flat stretch would encode as a
-periodic pattern of two tokens, and values on the grid would no longer come
-back exactly; the tokenizers keep $c(B)A = 0$. Any decoder needs
-$\varepsilon \ge D/V$, by volume.
+constant modulo the step $1/s$, though, so a flat stretch encodes as a
+periodic pattern of tokens (32, 31, 32, 31, … at $\Delta$ with $V = 64$, four
+tokens with period 8 at $\Delta^4$), and values on the grid no longer come
+back exactly. LGT and MASH keep $c(B)A = 0$; the opt-in
+`tokenizer="mash-half"` takes the half step, and the tests, not Lean, check
+its bound. Any decoder needs $\varepsilon \ge D/V$, by volume.
 
 **Proposition 3 (achievable CE).** In the fine-quantization limit,
 $\mathcal L^\star(V) = h(X_t \mid \text{ctx}) + \log V - \log(2D) + o(1)$.
