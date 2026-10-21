@@ -19,8 +19,10 @@ chance with context 4 (README), and so does div97 behind a zero prefix
 of test_div97.
 
 The grid has vocabulary 512 and domain 96, scale 2.66: every row decodes
-exactly, and a third of the tokens differ between the tokenizers, which
-coincide on the integer grid (vocabulary 256, domain 127). The benchmark is
+exactly, and a third of the tokens differ between MASH and LGT, which
+coincide on the integer grid (vocabulary 256, domain 127). "mash-half" fits
+one level more, scale 511/192 instead of 510/192, and changes half of the
+MASH tokens. The benchmark is
 the training compute until the decoded test accuracy of the schedule-free
 average weights first reaches 90%, for each tokenizer. Tokens would be unfair
 to LGT: its targets carry the absolute rounding phase, and a token one level
@@ -41,13 +43,19 @@ updates: the updates up to the first evaluation with decoded test accuracy
     #   at 89.97%)
     #   lr 1e-2: MASH 2600 / 3150 / 2950, LGT not reached (75% / 11% / 9%
     #   at the end)
+    # ADD tokenizer "mash-half":  updates 1050 / 1150 / 1450  flops_to_90=1.96e12
+    #   final accuracy 93.5% to 95.6%; TF32 matmuls: 900 / 1150 / 1750
+    #   seeds 0-5: 1100 / 1050 / 1300 / 1100 / 1350 / 1050, against MASH
+    #   1250 / 1100 / 1450 / 1500 / 1350 / 1150: 13% fewer over nine seeds
+    #   at the scale of MASH (domain 96 * 511/510): 1000 / 1150 / 1300, 18%
+    #   fewer than MASH over nine seeds: the half step gains, not the level
 
 The test runs all three seeds for each tokenizer, about 22 s per seed on an
 RTX 3050 Laptop GPU: single seeds differ far more than a tolerance on one
 seed could absorb. A rerun in FP32 repeats the ledger exactly. The tolerance
-covers the numerics, which TF32 shows to move the means by 15% (MASH) and 17%
-(LGT), yet catches a change of the training stack or of a tokenizer that
-matters: LGT needs 2.3 times the compute of MASH.
+covers the numerics, which TF32 shows to move the means by 15% (MASH), 17%
+(LGT) and 4% ("mash-half"), yet catches a change of the training stack or of
+a tokenizer that matters: LGT needs 2.3 times the compute of MASH.
 """
 
 from typing import TYPE_CHECKING
@@ -71,20 +79,15 @@ DOMAIN = 96.0  # the steps of residues lie in [-96, 96]
 BLOCK_SIZE = 2  # the input: the two observed steps
 BATCH_SIZE = 512
 IGNORE_INDEX = -100  # F.cross_entropy's default
-TOKENIZERS = ("mash", "lgt")
+TOKENIZERS = ("mash", "lgt", "mash-half")
 SEEDS = (11, 17, 23)
 MAX_ITERS = 5_000
 EVAL_INTERVAL = 50
 TARGET_ACCURACY = 0.9
 
-# Every window gets this grid: the forecast of the step token q is the
-# decoded last observed row plus (q - zero) / scale.
-GRID = level_grid(VOCAB_SIZE, np.array([DOMAIN]), ORDER)
-SCALE, ZERO = float(GRID.scale[0]), int(GRID.zero[0])
-
 # Current benchmark (see the ledger): the mean over SEEDS on CUDA of the
 # training FLOPs to TARGET_ACCURACY, and the compute of the whole run.
-FLOPS_TO_TARGET_BASELINE = {"mash": 2.37e12, "lgt": 5.38e12}
+FLOPS_TO_TARGET_BASELINE = {"mash": 2.37e12, "lgt": 5.38e12, "mash-half": 1.96e12}
 FLOPS_TO_TARGET_TOLERANCE = 0.20  # relative
 TRAIN_FLOPS_BASELINE = 8.06e12
 
@@ -120,13 +123,24 @@ def _split(rng: torch.Generator) -> tuple[np.ndarray, np.ndarray]:
     return _windows(train_states), _windows(test_states)
 
 
+def _grid(tokenizer: str) -> tuple[float, int]:
+    """
+    Return the scale and the zero point of the grid of every window.
+
+    The forecast of the step token q is the decoded last observed row plus
+    (q - zero) / scale.
+    """
+    grid = level_grid(VOCAB_SIZE, np.array([DOMAIN]), ORDER, tokenizer=tokenizer)
+    return float(grid.scale[0]), int(grid.zero[0])
+
+
 def _encode(windows: np.ndarray, tokenizer: str) -> tuple[np.ndarray, np.ndarray]:
     """
     Encode each window as a series of its own; return its tokens and its base.
 
     The tokens are (n, 3): two observed steps and the forecast step. The
-    base is the decoded last row for the step token ZERO, so the forecast of
-    a step token q is base + (q - ZERO) / SCALE.
+    base is the decoded last row for the step token zero, so the forecast of
+    a step token q is base + (q - zero) / scale (`_grid`).
     """
     start, grid, tokens = encode(
         windows.T.astype(np.float64),
@@ -136,7 +150,7 @@ def _encode(windows: np.ndarray, tokenizer: str) -> tuple[np.ndarray, np.ndarray
         tokenizer=tokenizer,
     )
     zero_step = tokens.copy()
-    zero_step[-1] = ZERO
+    zero_step[-1] = grid.zero
     base = decode(start, grid, zero_step, VOCAB_SIZE, ORDER, tokenizer=tokenizer)
     return tokens.T.copy(), base[-1]
 
@@ -154,6 +168,7 @@ class _RowsLoader:
 
     def __init__(self, seed: int, tokenizer: str, device: str) -> None:
         self.rng = torch.Generator().manual_seed(seed)
+        self.scale, self.zero = _grid(tokenizer)
         self.tokens, self.base, self.values = {}, {}, {}
         for split, windows in zip(("train", "val"), _split(self.rng), strict=True):
             tokens, base = _encode(windows, tokenizer)
@@ -188,8 +203,8 @@ def _gpt() -> GPT:
 def _forecast_accuracy(model: GPT, loader: _RowsLoader, split: str = "val") -> float:
     """Return the share of `split` whose forecast from the argmax token is right."""
     logits, _ = model(loader.tokens[split][:, :BLOCK_SIZE])
-    steps = logits[:, -1].argmax(dim=-1) - ZERO
-    forecasts = torch.round(loader.base[split] + steps / SCALE)
+    steps = logits[:, -1].argmax(dim=-1) - loader.zero
+    forecasts = torch.round(loader.base[split] + steps / loader.scale)
     return float((forecasts == loader.values[split]).double().mean())
 
 
@@ -250,8 +265,9 @@ def test_forecast_is_the_decoded_step(tokenizer: str) -> None:
     Check the forecast against `decode` and the inputs against the future.
 
     The true step token decodes to the true last row, any step token q to
-    base + (q - ZERO) / SCALE, and a changed last row changes its target only.
+    base + (q - zero) / scale, and a changed last row changes its target only.
     """
+    scale, zero = _grid(tokenizer)
     windows = _windows(_cycles()[0])
     tokens, base = _encode(windows, tokenizer)
     start, grid, _ = encode(
@@ -266,7 +282,7 @@ def test_forecast_is_the_decoded_step(tokenizer: str) -> None:
         stepped[-1] += offset
         decoded = decode(start, grid, stepped, VOCAB_SIZE, ORDER, tokenizer=tokenizer)
         np.testing.assert_allclose(
-            decoded[-1], base + (stepped[-1] - ZERO) / SCALE, rtol=0, atol=1e-12
+            decoded[-1], base + (stepped[-1] - zero) / scale, rtol=0, atol=1e-12
         )
         if offset == 0:
             np.testing.assert_array_equal(np.rint(decoded), windows.T)
@@ -278,12 +294,19 @@ def test_forecast_is_the_decoded_step(tokenizer: str) -> None:
 
 
 def test_tokenizers_differ_on_this_grid() -> None:
-    """Check that MASH and LGT give different tokens for about a third of the steps."""
+    """Check that LGT changes a third of the MASH tokens and "mash-half" half."""
     windows = _windows(_cycles()[0]).T.astype(np.float64)
     domains = np.full(windows.shape[1], DOMAIN)
-    mash = encode(windows, VOCAB_SIZE, domains, ORDER, tokenizer="mash")[2]
-    lgt = encode(windows, VOCAB_SIZE, domains, ORDER, tokenizer="lgt")[2]
-    assert float(np.mean(mash != lgt)) == pytest.approx(1 / 3, abs=0.1)
+    tokens = {
+        tokenizer: encode(windows, VOCAB_SIZE, domains, ORDER, tokenizer=tokenizer)[2]
+        for tokenizer in TOKENIZERS
+    }
+    differ = {
+        tokenizer: float(np.mean(tokens[tokenizer] != tokens["mash"]))
+        for tokenizer in ("lgt", "mash-half")
+    }
+    assert differ["lgt"] == pytest.approx(1 / 3, abs=0.1)
+    assert differ["mash-half"] == pytest.approx(1 / 2, abs=0.1)
 
 
 @pytest.mark.slow
