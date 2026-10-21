@@ -1,6 +1,7 @@
 """Check the synthetic pretraining script: its holdout scores and a tiny run."""
 
 import csv
+import hashlib
 import json
 from typing import TYPE_CHECKING
 
@@ -107,8 +108,9 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
 
     The history holds the evaluations after 0, 2 and 4 updates with their
     FLOPs, each one scored, and best.bin loads into the model config.json
-    describes. Trained in mixed precision and scored in float16 too, the
-    checkpoints hold the float32 master weights.
+    describes, with the digest of the manifest one level above the corpus,
+    where synthetic/'s export writes it. Trained in mixed precision and
+    scored in float16 too, the checkpoints hold the float32 master weights.
     """
     rng = np.random.default_rng(0)
     corpus = tmp_path / "corpus"
@@ -117,6 +119,8 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
         for name in ("sinewave", "ou_process"):
             walks = np.cumsum(rng.normal(size=(n, 80)), axis=1)
             np.save(corpus / split / f"{name}.npy", walks.astype(np.float32))
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"splits": {}}\n')
     output = tmp_path / "run"
     main(
         [
@@ -139,6 +143,8 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
     assert all(row["crps"] for row in rows)
     assert len((output / "scores.jsonl").read_text().splitlines()) == len(rows)
     assert config["sources"]["ou_process"]["weight"] == TEMPOPFN_WEIGHTS["ou_process"]
+    digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    assert config["manifest_sha256"] == digest
     model = DiffGPT(
         model=GPT(vocab_size=64, n_embd=16, block_size=32, n_head=2, n_layer=1),
         order_of_derivative=1,

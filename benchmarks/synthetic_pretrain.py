@@ -2,7 +2,8 @@ r"""
 Pretrain one DiffGPT on the synthetic corpus: Track B of leaderboard_plan.md.
 
 The corpus is what synthetic/ writes from TempoPFN's generators: one file
-<corpus>/<split>/<source>.npy per generator, float32 of shape (N, L). The
+<corpus>/<split>/<source>.npy per generator, float32 of shape (N, L), and
+its manifest <corpus>/../manifest.json, whose SHA-256 config.json records. The
 model trains on windows of the "train" split (`DiffCorpusDataLoader`, each
 window in the units of a prefix of itself) and is scored on the "holdout"
 split, other series of the same generators:
@@ -389,7 +390,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     flops_per_token = gpt.estimate_flops()
     tokens_per_update = args.batch_size * args.block_size * args.grad_accum
-    manifest = args.corpus / "manifest.json"
+    manifest = args.corpus.parent / "manifest.json"  # export writes it next to npy/
     config = {
         "args": {
             key: str(value) if isinstance(value, Path) else value
