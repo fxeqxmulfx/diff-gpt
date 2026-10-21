@@ -83,7 +83,7 @@ class StoppableGenerator(ContinuousGenerator):
 
         TempoPFN's handlers save the partial batch, which the next run of these
         files discards with its staging folder, and exit only once the C call
-        in progress returns, seconds later in kernel's SVD.
+        in progress returns.
         """
 
 

@@ -35,29 +35,31 @@ from typing import NamedTuple
 
 from tempopfn_corpus import sources
 
-# One process with one thread on this machine (12 cores), from the pilot.
+# CPU seconds per series of one single-threaded process, from the pilot's 5120
+# series per source: three jobs on three cores, CauKer on a GPU that other eigh
+# runs shared.
 SECONDS_PER_SERIES = {
-    "forecast_pfn": 0.014,
-    "gp": 0.77,
-    "kernel": 4.0,
-    "sawtooth": 0.0012,
-    "sinewave": 0.0013,
+    "forecast_pfn": 0.013,
+    "gp": 0.64,
+    "kernel": 0.41,
+    "sawtooth": 0.0013,
+    "sinewave": 0.0016,
     "step": 0.0043,
-    "anomaly": 0.0018,
-    "spike": 0.0013,
-    "cauker_univariate": 0.40,
-    "ou_process": 0.026,
-    "audio_financial_volatility": 0.012,
-    "audio_multi_scale_fractal": 0.012,
-    "audio_network_topology": 0.017,
+    "anomaly": 0.0013,
+    "spike": 0.0015,
+    "cauker_univariate": 0.41,
+    "ou_process": 0.029,
+    "audio_financial_volatility": 0.014,
+    "audio_multi_scale_fractal": 0.015,
+    "audio_network_topology": 0.020,
     "audio_stochastic_rhythm": 0.013,
-    "augmented_per_sample_2048": 0.05,
-    "augmented_temp_batch_2048": 0.3,
+    "augmented_per_sample_2048": 0.0047,
+    "augmented_temp_batch_2048": 0.086,
 }
 GPU_SOURCES = frozenset({"cauker_univariate"})
 POLL_SECONDS = 2.0
 GIB = 2**30
-RESERVED_RSS = 3 * GIB // 2  # a generator holds about 0.8 GiB
+RESERVED_RSS = 3 * GIB // 2  # the pilot's jobs peaked at 0.70-1.35 GiB
 PR_SET_PDEATHSIG = 1  # <linux/prctl.h>
 
 

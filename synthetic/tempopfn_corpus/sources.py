@@ -15,6 +15,7 @@ A run writes the series [start, stop) of a (split, source) as Arrow files of
 start / file_size on, and records itself in record_<k>.json next to them.
 """
 
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -30,6 +31,7 @@ from src import TEMPOPFN_ROOT
 TEMPOPFN_COMMIT = "5969ec6ddbded5a8d2976d42504c1ae436a2f1b3"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ROOT = REPO_ROOT / "datasets" / "tempopfn-synthetic"
+STAND_INS = Path(__file__).resolve().parents[1] / "src"
 
 LENGTH = 2048
 SPLITS = ("train", "holdout")
@@ -124,10 +126,21 @@ def training_proportions() -> dict[str, float]:
     return {source: float(weight) for source, weight in proportions.items()}
 
 
+def stand_ins() -> dict[str, str]:
+    """Return the SHA-256 of each module of `src` here: the stand-ins and loaders."""
+    return {
+        path.relative_to(STAND_INS).as_posix(): hashlib.sha256(
+            path.read_bytes()
+        ).hexdigest()
+        for path in sorted(STAND_INS.rglob("*.py"))
+    }
+
+
 def environment() -> dict[str, object]:
     """Return what the output of a run depends on besides its arguments."""
     return {
         "tempopfn_commit": tempopfn_commit(),
+        "stand_ins": stand_ins(),
         "python_hash_seed": python_hash_seed(),
         "python": sys.version.split()[0],
         "libraries": {name: importlib.metadata.version(name) for name in LIBRARIES},
