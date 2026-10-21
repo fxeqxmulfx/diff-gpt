@@ -320,3 +320,60 @@ def test_on_eval_reports_no_val_loss_without_a_val_split() -> None:
     )
     assert [e.val_loss for e in seen] == [None, None, None]
     assert loss == seen[-1].train_loss
+
+
+def test_bfloat16_autocast_trains_float32_master_weights() -> None:
+    """
+    Check that autocast=torch.bfloat16 trains in mixed precision on float32 weights.
+
+    The parameters, their gradients and the optimizer's z and v stay float32,
+    the bfloat16 forward passes change the updates, and the evaluations run
+    without autocast: the returned val loss is the float32 loss of the
+    returned weights.
+    """
+    model = _gpt()
+    optimizer = ScheduleFreeAdamW(model.parameters(), lr=1e-2)
+    settings = {"max_iters": 20, "eval_interval": 10, "eval_iters": 1}
+    loss, _ = train(
+        model,
+        _loader(),
+        use_tqdm=False,
+        optimizer=optimizer,
+        autocast=torch.bfloat16,
+        **settings,
+    )
+    assert {p.dtype for p in model.parameters()} == {torch.float32}
+    grads = {p.grad.dtype for p in model.parameters() if p.grad is not None}
+    assert grads == {torch.float32}
+    states = {t.dtype for state in optimizer.state.values() for t in state.values()}
+    assert states == {torch.float32}
+    assert loss == pytest.approx(_val_loss(model, _loader()), rel=1e-6)
+    full = _gpt()
+    train(
+        full,
+        _loader(),
+        use_tqdm=False,
+        optimizer=ScheduleFreeAdamW(full.parameters(), lr=1e-2),
+        **settings,
+    )
+    assert not torch.equal(model.lm_head.weight, full.lm_head.weight)
+
+
+def test_autocast_takes_bfloat16_only() -> None:
+    """float16 autocast would need loss scaling, so train() refuses it."""
+    with pytest.raises(ValueError, match="autocast must be None"):
+        train(_gpt(), _loader(), max_iters=1, use_tqdm=False, autocast=torch.float16)
+
+
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_train_refuses_half_precision_master_weights(dtype: torch.dtype) -> None:
+    """A model cast to float16 or bfloat16 would round every update to it."""
+    with pytest.raises(ValueError, match="parameters must be float32 or float64"):
+        train(_gpt().to(dtype), _loader(), max_iters=1, use_tqdm=False)
+
+
+def test_train_takes_float64_master_weights() -> None:
+    """A float64 model trains, and its weights stay float64."""
+    model = _gpt().double()
+    train(model, _loader(), max_iters=2, eval_interval=1, eval_iters=1, use_tqdm=False)
+    assert {p.dtype for p in model.parameters()} == {torch.float64}

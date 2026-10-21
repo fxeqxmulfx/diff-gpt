@@ -50,8 +50,9 @@ class KVCache:
         """
         Prefill given another KV cache, optionally expanding along the batch dim.
 
-        This is used when we do batch 1 prefill and then want to generate
-        multiple samples in parallel from there.
+        Each row of `other` fills self_batch / other_batch consecutive rows,
+        so a batch-1 prefill fills them all. This is used to prefill the
+        prompts once and then generate several samples of each in parallel.
         """
         # 1) validate the shapes
         if self.kv_cache.size(0) != 0:
@@ -84,11 +85,11 @@ class KVCache:
             msg = f"Head dim mismatch: {self_head_dim} != {other_head_dim}"
             raise ValueError(msg)
 
-        # Batch size can be expanded (other can be 1, self can be larger)
-        if other_batch not in (self_batch, 1):
+        # Batch size can be expanded: every row of other is copied as often
+        if self_batch % other_batch != 0:
             msg = (
                 f"Batch size mismatch: {self_batch} vs {other_batch} "
-                "(other must be 1 or equal)"
+                "(self must hold every row of other the same number of times)"
             )
             raise ValueError(msg)
 
@@ -104,8 +105,11 @@ class KVCache:
         # 2) initialize the cache
         dtype, device = other.kv_cache.dtype, other.kv_cache.device
         self.kv_cache = torch.empty(self.kv_shape, dtype=dtype, device=device)
-        # 3) copy the data over
-        self.kv_cache[:, :, :, :, : other.pos, :] = other.kv_cache[..., : other.pos, :]
+        # 3) copy the data over: row i of other fills rows i·r to i·r + r - 1,
+        # r = self_batch / other_batch, broadcast from a view of other, so no
+        # copy of the whole cache is made on the way
+        cached = other.kv_cache[..., : other.pos, :].unsqueeze(3)
+        self.kv_cache[..., : other.pos, :].unflatten(2, (other_batch, -1)).copy_(cached)
         # 4) update the pos
         self.pos = other.pos
 

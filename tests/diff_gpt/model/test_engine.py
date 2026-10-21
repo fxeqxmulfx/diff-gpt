@@ -1,7 +1,11 @@
 """Tests for the inference Engine: batch, streaming and forced generation."""
 
+import copy
+from contextlib import nullcontext
+
 import pytest
 import torch
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from diff_gpt.model.engine import Engine
 from diff_gpt.model.gpt import GPT
@@ -496,3 +500,122 @@ def test_generate_many_rejects_bad_prompts(gpt_model: GPT) -> None:
     too_long = list(range(gpt_model.block_size + 1))
     with pytest.raises(ValueError, match="block_size"):
         engine.generate_many(prompts=[too_long], max_tokens=0)
+
+
+def test_generate_many_draws_samples_of_each_prompt(gpt_model: GPT) -> None:
+    """
+    Check that `num_samples` rows continue each prompt, sample s of i at i·S + s.
+
+    Under the argmax sampler every sample is the one continuation of its
+    prompt; multinomial samples of a prompt differ and repeat under one seed.
+    """
+    engine = Engine(model=gpt_model)
+    prompts = [[1, 8, 4, 9], [2, 2, 7, 30], [63, 0, 5, 11]]
+    max_tokens = 6
+    num_samples = 3
+    single = engine.generate_many(
+        prompts=prompts,
+        max_tokens=max_tokens,
+        sampler=greedy_sampler,
+    )
+    samples = engine.generate_many(
+        prompts=prompts,
+        max_tokens=max_tokens,
+        sampler=greedy_sampler,
+        num_samples=num_samples,
+    )
+    assert samples == [row for row in single for _ in range(num_samples)]
+    drawn = engine.generate_many(
+        prompts=prompts,
+        max_tokens=max_tokens,
+        seed=7,
+        num_samples=num_samples,
+    )
+    again = engine.generate_many(
+        prompts=prompts,
+        max_tokens=max_tokens,
+        seed=7,
+        num_samples=num_samples,
+    )
+    assert drawn == again
+    assert len(drawn) == len(prompts) * num_samples
+    assert len({tuple(row) for row in drawn[:num_samples]}) > 1
+    empty = engine.generate_many(prompts=prompts, max_tokens=0, num_samples=2)
+    assert empty == [[]] * (len(prompts) * 2)
+    with pytest.raises(ValueError, match="num_samples must be >= 1"):
+        engine.generate_many(prompts=prompts, max_tokens=2, num_samples=0)
+
+
+def test_samplers_get_float32_logits_from_a_half_precision_model(
+    gpt_model: GPT,
+) -> None:
+    """
+    Check that the logits of a bfloat16 model reach the sampler as float32.
+
+    A bfloat16 softmax and multinomial would round the probabilities and the
+    sampling noise, and so change the distribution the tokens come from.
+    """
+    dtypes: list[torch.dtype] = []
+
+    def recording_sampler(
+        logits: torch.Tensor,
+        rng: torch.Generator | None,
+    ) -> torch.Tensor:
+        dtypes.append(logits.dtype)
+        return greedy_sampler(logits, rng)
+
+    engine = Engine(model=copy.deepcopy(gpt_model).to(torch.bfloat16))
+    engine.generate_many(
+        prompts=[[1, 8, 4, 9]],
+        max_tokens=3,
+        sampler=recording_sampler,
+        num_samples=2,
+    )
+    engine.generate_batch(
+        [1, 8, 4, 9],
+        num_samples=2,
+        max_tokens=3,
+        sampler=recording_sampler,
+    )
+    assert dtypes == [torch.float32] * 6
+
+
+def _attention_backends() -> tuple[bool, bool, bool, bool]:
+    """Return whether flash, memory-efficient, math and cuDNN attention are enabled."""
+    return (
+        torch.backends.cuda.flash_sdp_enabled(),
+        torch.backends.cuda.mem_efficient_sdp_enabled(),
+        torch.backends.cuda.math_sdp_enabled(),
+        torch.backends.cuda.cudnn_sdp_enabled(),
+    )
+
+
+@pytest.mark.parametrize("backends", [None, [SDPBackend.MATH]])
+def test_decoding_keeps_the_enabled_attention_backends(
+    gpt_model: GPT,
+    backends: list[SDPBackend] | None,
+) -> None:
+    """
+    Check that the decode steps run attention with the caller's backends.
+
+    They put memory-efficient attention first, but every attention call, the
+    prefill's and each decode step's, sees the backends the caller enabled:
+    all of them by default, or the math backend alone, as after the calls.
+    """
+    seen: list[tuple[bool, bool, bool, bool]] = []
+
+    def record(_module: torch.nn.Module, _args: tuple[torch.Tensor, ...]) -> None:
+        seen.append(_attention_backends())
+
+    engine = Engine(model=gpt_model)
+    handle = gpt_model.blocks[0].sa.register_forward_pre_hook(record)
+    try:
+        with sdpa_kernel(backends) if backends else nullcontext():
+            caller = _attention_backends()
+            engine.generate_many(prompts=[[1, 8, 4, 9]], max_tokens=3, num_samples=2)
+            engine.generate_batch([1, 8, 4, 9], num_samples=2, max_tokens=3)
+            assert _attention_backends() == caller
+    finally:
+        handle.remove()
+    # generate_many: a prefill and 2 decode steps; generate: a prefill and 3.
+    assert seen == [caller] * 7

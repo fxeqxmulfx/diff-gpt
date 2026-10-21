@@ -979,3 +979,116 @@ def test_predict_many_rejects_bad_contexts() -> None:
         model.predict_many([df.iloc[:10], df.iloc[:1]], max_new_points=4)
     with pytest.raises(ValueError, match="batch_size"):
         model.predict_many([df.iloc[:10]], max_new_points=4, batch_size=0)
+
+
+@pytest.mark.parametrize("order", [1, [0, 1, Difference(1, 2)]])
+def test_predict_samples_many_matches_predict_samples(
+    order: int | list[int | Difference],
+) -> None:
+    """
+    Check that batched samples equal those of `predict_samples`, in input order.
+
+    At temperature 0 every sample of a context is its argmax path. The
+    contexts have two shapes, and the three of one shape take two batches of
+    up to six rows, two contexts of three samples, so grouping, batching
+    and reordering all run; the per-column order decodes as many columns.
+    """
+    torch.manual_seed(0)
+    df = _make_toy(n_rows=40)
+    model = DiffGPT(
+        model=GPT(vocab_size=64, n_embd=16, block_size=64, n_head=2, n_layer=1),
+        order_of_derivative=order,
+        domain_of_definition=get_domain_of_definition(
+            df.to_numpy(dtype=np.float64),
+            order_of_derivative=order,
+        ),
+    )
+    contexts = [df.iloc[:10], df.iloc[3:15], df.iloc[5:15], df.iloc[20:30]]
+    sampler = TemperatureSampler(temperature=0.0)
+    samples = model.predict_samples_many(
+        contexts,
+        max_new_points=4,
+        num_samples=3,
+        sampler=sampler,
+        batch_size=6,
+    )
+    assert len(samples) == len(contexts)
+    for ctx, drawn in zip(contexts, samples, strict=True):
+        alone = model.predict_samples(
+            df=ctx,
+            max_new_points=4,
+            num_samples=3,
+            sampler=sampler,
+        )
+        assert drawn.shape == (3, 4, 3)
+        assert np.array_equal(drawn, alone)
+
+
+def test_predict_samples_many_is_seeded() -> None:
+    """One seed repeats the samples, and the samples of a context differ."""
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=40)
+    contexts = [df.iloc[:10], df.iloc[10:20]]
+    sampler = TemperatureSampler(temperature=1.0)
+    drawn = model.predict_samples_many(
+        contexts,
+        max_new_points=4,
+        num_samples=4,
+        sampler=sampler,
+        seed=3,
+    )
+    again = model.predict_samples_many(
+        contexts,
+        max_new_points=4,
+        num_samples=4,
+        sampler=sampler,
+        seed=3,
+    )
+    for first, second in zip(drawn, again, strict=True):
+        assert np.array_equal(first, second)
+    assert not np.array_equal(drawn[0][0], drawn[0][1])
+
+
+def test_predict_samples_many_rejects_bad_arguments() -> None:
+    """num_samples 0, batch_size 0 and a context without a row past the prefix raise."""
+    model, _ = _make_model(block_size=64)
+    df = _make_toy(n_rows=20)
+    with pytest.raises(ValueError, match="num_samples"):
+        model.predict_samples_many([df.iloc[:10]], max_new_points=4, num_samples=0)
+    with pytest.raises(ValueError, match="batch_size"):
+        model.predict_samples_many(
+            [df.iloc[:10]],
+            max_new_points=4,
+            num_samples=2,
+            batch_size=0,
+        )
+    with pytest.raises(ValueError, match="context needs a row"):
+        model.predict_samples_many([df.iloc[:1]], max_new_points=4, num_samples=2)
+
+
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_predict_samples_many_in_half_precision_keeps_the_model(
+    dtype: torch.dtype,
+) -> None:
+    """
+    Check that a half-precision forecast draws from a cast copy of the model.
+
+    The samples are finite and of the usual shape, and the model keeps its
+    float32 weights, value for value.
+    """
+    model, _ = _make_model(block_size=64)
+    before = {k: v.clone() for k, v in model.model.state_dict().items()}
+    df = _make_toy(n_rows=40)
+    samples = model.predict_samples_many(
+        [df.iloc[:10], df.iloc[10:20]],
+        max_new_points=4,
+        num_samples=3,
+        sampler=TemperatureSampler(temperature=1.0),
+        dtype=dtype,
+    )
+    assert [drawn.shape for drawn in samples] == [(3, 4, 3)] * 2
+    assert all(np.isfinite(drawn).all() for drawn in samples)
+    after = model.model.state_dict()
+    for k, v in before.items():
+        assert after[k].dtype == torch.float32, k
+        assert torch.equal(after[k], v), k

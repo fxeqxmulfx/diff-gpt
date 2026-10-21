@@ -4,11 +4,13 @@ from collections import deque
 from typing import TYPE_CHECKING, TypedDict, Unpack
 
 import torch
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from diff_gpt.model.kv_cache import KVCache
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from contextlib import AbstractContextManager
 
     from diff_gpt.model.gpt import BaseGPT
     from diff_gpt.sampler.sampler import Sampler
@@ -21,6 +23,29 @@ class _GenerateKwargs(TypedDict, total=False):
     sampler: Sampler | None
     seed: int
     force_schedule: list[int | None] | None
+
+
+def _decode_attention() -> AbstractContextManager[None]:
+    """
+    Prefer memory-efficient attention for decode steps, among the enabled backends.
+
+    A decode step attends from one query per row to the whole cache. Flash
+    attention pads that query to a tile of rows, and memory-efficient
+    attention decodes 1.1 times as fast at head_dim 32 and 1.5 times at 64
+    (float16, RTX 3050). cuDNN attention reads the cache faster still, but
+    builds a plan for each new cache length, 0.4 s each. The other enabled
+    backends follow in their default order; a disabled one stays disabled.
+    """
+    enabled = (
+        (SDPBackend.EFFICIENT_ATTENTION, torch.backends.cuda.mem_efficient_sdp_enabled),
+        (SDPBackend.FLASH_ATTENTION, torch.backends.cuda.flash_sdp_enabled),
+        (SDPBackend.MATH, torch.backends.cuda.math_sdp_enabled),
+        (SDPBackend.CUDNN_ATTENTION, torch.backends.cuda.cudnn_sdp_enabled),
+    )
+    return sdpa_kernel(
+        [backend for backend, is_enabled in enabled if is_enabled()],
+        set_priority=True,
+    )
 
 
 class RowState:
@@ -130,7 +155,9 @@ class Engine:
         )
         ids = torch.tensor([tokens], dtype=torch.long, device=device)
         logits, _ = self.model.forward(ids, kv_cache=kv_cache_prefill)
-        logits = logits[:, -1, :].expand(num_samples, -1)  # (num_samples, vocab_size)
+        # The sampler gets float32 logits whatever the model's dtype: a float16
+        # or bfloat16 softmax and multinomial would round the probabilities.
+        logits = logits[:, -1, :].float().expand(num_samples, -1)  # (num_samples, V)
 
         # 2) Replicate the KV cache for each sample/row
         kv_length_hint = prompt_len + effective_max_tokens
@@ -196,8 +223,9 @@ class Engine:
             ids = torch.tensor(token_column, dtype=torch.long, device=device).unsqueeze(
                 1,
             )
-            logits, _ = self.model.forward(ids, kv_cache=kv_cache_decode)
-            logits = logits[:, -1, :]  # (B, vocab_size)
+            with _decode_attention():
+                logits, _ = self.model.forward(ids, kv_cache=kv_cache_decode)
+            logits = logits[:, -1, :].float()  # (B, vocab_size)
 
     def generate_batch(
         self,
@@ -228,6 +256,7 @@ class Engine:
         max_tokens: int,
         sampler: Sampler | None = None,
         seed: int = 42,
+        num_samples: int = 1,
     ) -> list[list[int]]:
         """
         Continue each prompt by `max_tokens` tokens; return the new tokens of each.
@@ -238,7 +267,14 @@ class Engine:
         its continuation must fit in `block_size`; ValueError otherwise. The
         rows draw from one generator seeded with `seed` (multinomial when
         `sampler` is None), so their samples differ from those of `generate`.
+
+        `num_samples`: continuations drawn per prompt. The prompts are
+        prefilled once, and each prefill is copied into the rows of its
+        samples; the result holds sample s of prompt i at i·num_samples + s.
         """
+        if num_samples < 1:
+            msg = f"num_samples must be >= 1, got {num_samples}"
+            raise ValueError(msg)
         if not prompts or not all(prompts):
             msg = "prompts must be non-empty lists of ints"
             raise ValueError(msg)
@@ -265,28 +301,41 @@ class Engine:
             )
             raise ValueError(msg)
         if max_tokens == 0:
-            return [[] for _ in prompts]
+            return [[] for _ in range(len(prompts) * num_samples)]
         device = self.model.device
         rng = torch.Generator(device=device)
         rng.manual_seed(seed)
         m = self.model
+        shape = {
+            "num_heads": m.n_head,
+            "head_dim": m.n_embd // m.n_head,
+            "num_layers": m.n_layer,
+        }
         kv_cache = KVCache(
-            batch_size=len(prompts),
-            num_heads=m.n_head,
+            batch_size=len(prompts) * num_samples,
             seq_len=prompt_len + max_tokens,
-            head_dim=m.n_embd // m.n_head,
-            num_layers=m.n_layer,
+            **shape,
         )
-        # The prompts first, then each step's tokens: a (B, 1) column.
         ids = torch.tensor(prompts, dtype=torch.long, device=device)
-        columns = []
-        for _ in range(max_tokens):
+        if num_samples == 1:
             logits, _ = m.forward(ids, kv_cache=kv_cache)
-            logits = logits[:, -1, :]  # (B, vocab_size)
+        else:
+            prefill = KVCache(batch_size=len(prompts), seq_len=prompt_len, **shape)
+            logits, _ = m.forward(ids, kv_cache=prefill)
+            kv_cache.prefill(prefill)
+            del prefill
+            logits = logits[:, -1:, :].repeat_interleave(num_samples, dim=0)
+        # Then each step's tokens: a (B, 1) column.
+        columns = []
+        for step in range(max_tokens):
+            last = logits[:, -1, :].float()  # (B, vocab_size), float32 as in generate
             if sampler is not None:
-                ids = sampler(logits, rng=rng)
+                ids = sampler(last, rng=rng)
             else:
-                probs = torch.softmax(logits, dim=-1)
+                probs = torch.softmax(last, dim=-1)
                 ids = torch.multinomial(probs, num_samples=1, generator=rng)
             columns.append(ids)
+            if step + 1 < max_tokens:
+                with _decode_attention():
+                    logits, _ = m.forward(ids, kv_cache=kv_cache)
         return torch.cat(columns, dim=1).tolist()

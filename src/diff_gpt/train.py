@@ -176,6 +176,7 @@ def train(
     save_best: bool = False,
     optimizer: ScheduleFreeAdamW | None = None,
     on_eval: Callable[[Evaluation], None] | None = None,
+    autocast: torch.dtype | None = None,
 ) -> tuple[float, int]:
     """
     Train `mut_model` against batches produced by `loader`.
@@ -219,10 +220,30 @@ def train(
     so its train() would then start y from the snapshot and that z: train
     on from the returned weights with a new optimizer.
 
+    `autocast`: torch.bfloat16 runs the training forward passes under
+    `torch.autocast` (mixed precision). The parameters, their gradients and
+    the optimizer state stay float32: the master weights the updates go to.
+    The evaluations run without it, so their losses compare across
+    precisions. float16 would need loss scaling: ValueError, as for any
+    other dtype. The parameters themselves must be float32 or float64: those
+    of a model cast to float16 or bfloat16 raise ValueError, since every
+    update would round to that precision.
+
     In DDP every rank must agree on `loader.has_val()`; ValueError otherwise.
     """
     if grad_accum_steps < 1:
         msg = "grad_accum_steps must be >= 1"
+        raise ValueError(msg)
+    if autocast is not None and autocast != torch.bfloat16:
+        msg = f"autocast must be None or torch.bfloat16, got {autocast}"
+        raise ValueError(msg)
+    narrow = {p.dtype for p in mut_model.parameters()} - {torch.float32, torch.float64}
+    if narrow:
+        msg = (
+            "parameters must be float32 or float64, the master weights the updates "
+            f"go to; got {sorted(map(str, narrow))}: for mixed precision train a "
+            "float32 model with autocast=torch.bfloat16"
+        )
         raise ValueError(msg)
     if optimizer is None:
         optimizer = ScheduleFreeAdamW(
@@ -278,7 +299,12 @@ def train(
         optimizer.zero_grad(set_to_none=True)
         for _ in range(grad_accum_steps):
             xb, yb = loader.get_batch("train")
-            _, loss = mut_model(xb, yb)
+            with torch.autocast(
+                mut_model.device_type,
+                dtype=autocast,
+                enabled=autocast is not None,
+            ):
+                _, loss = mut_model(xb, yb)
             if grad_accum_steps > 1:
                 loss = loss / grad_accum_steps
             loss.backward()

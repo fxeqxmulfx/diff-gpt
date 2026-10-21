@@ -6,6 +6,7 @@ GPT continues the token stream, and the generated tokens are decoded back into
 values; `anomaly_scores` reads the token likelihoods instead.
 """
 
+import copy
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -15,6 +16,8 @@ import torch.nn.functional as F
 
 from diff_gpt.encoder_decoder import (
     ENCODER_VERSION,
+    Difference,
+    Grid,
     column_lags,
     decode,
     encode,
@@ -35,7 +38,7 @@ from diff_gpt.train_ddp import train_numa as _train_numa
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from diff_gpt.encoder_decoder import Grid, Order
+    from diff_gpt.encoder_decoder import Order
     from diff_gpt.model.gpt import BaseGPT
     from diff_gpt.sampler.sampler import Sampler
     from diff_gpt.train import DataLoader, Evaluation
@@ -192,6 +195,7 @@ class DiffGPT:
         save_best: bool = False,
         pin_node: int | None = None,
         on_eval: Callable[[Evaluation], None] | None = None,
+        autocast: torch.dtype | None = None,
     ) -> tuple[float, int]:
         """
         Train the underlying GPT against batches produced by `loader`.
@@ -205,6 +209,8 @@ class DiffGPT:
         `max_iters` steps and keeps the final weights. `on_eval` gets every
         evaluation while the model holds the scored weights, so it can save
         checkpoints or score forecasts with `predict` to choose one by.
+        `autocast=torch.bfloat16` trains in mixed precision: bfloat16 forward
+        passes on float32 master weights.
 
         `pin_node`: if set, pin this process to the given NUMA node's CPUs
         (via `numa.pin_to_node`) before training. Cheap way to cut
@@ -239,6 +245,7 @@ class DiffGPT:
             grad_clip_norm=grad_clip_norm,
             save_best=save_best,
             on_eval=on_eval,
+            autocast=autocast,
         )
 
     @staticmethod
@@ -404,6 +411,99 @@ class DiffGPT:
                         columns=dfs[i].columns,
                     )
         return [forecasts[i] for i in range(len(dfs))]
+
+    @torch.inference_mode()
+    def predict_samples_many(
+        self,
+        dfs: list[pd.DataFrame],
+        max_new_points: int,
+        num_samples: int,
+        sampler: Sampler | None = None,
+        batch_size: int = 256,
+        seed: int = 42,
+        *,
+        dtype: torch.dtype | None = None,
+    ) -> list[np.ndarray]:
+        """
+        Draw `num_samples` future trajectories from each context of `dfs`.
+
+        `predict_samples` for many contexts, batched as `predict_many` batches
+        them: contexts of one shape share a batch, whose prompts are
+        prefilled once and copied into the rows of their samples. A batch
+        decodes up to `batch_size` rows, `num_samples` per context, and at
+        least one context. Returns, in the order of `dfs`, arrays of shape
+        (num_samples, max_new_points, n_features) holding the future rows.
+        The rows of the b-th batch share one generator seeded with
+        `seed + b`, so the samples differ from those of `predict_samples`.
+
+        `dtype`, such as torch.float16, runs the forward passes on a copy of
+        the model cast to it, so the model keeps its own weights: those of a
+        model in training stay its float32 master weights. The sampler still
+        gets float32 logits. None runs the model as it is.
+        """
+        if num_samples < 1:
+            msg = f"num_samples must be >= 1, got {num_samples}"
+            raise ValueError(msg)
+        if batch_size < 1:
+            msg = f"batch_size must be >= 1, got {batch_size}"
+            raise ValueError(msg)
+        groups: dict[tuple[int, int], list[int]] = {}
+        for i, df in enumerate(dfs):
+            groups.setdefault(df.shape, []).append(i)
+        model = self.model if dtype is None else copy.deepcopy(self.model).to(dtype)
+        engine = Engine(model=model)
+        contexts_per_batch = max(1, batch_size // num_samples)
+        futures: dict[int, np.ndarray] = {}
+        batch_seed = seed
+        for members in groups.values():
+            columns = dfs[members[0]].shape[1]
+            max_order = self._forecast_order(dfs[members[0]], max_new_points)
+            # The samples of a context decode together, as columns of one
+            # series: column s·F + c is column c of sample s.
+            order = [
+                Difference(*lags)
+                for lags in column_lags(self.order_of_derivative, columns)
+            ] * num_samples
+            for start in range(0, len(members), contexts_per_batch):
+                batch = members[start : start + contexts_per_batch]
+                inputs = [self._to_input(dfs[i]) for i in batch]
+                encoded = [self._encode(inp) for inp in inputs]
+                generated = engine.generate_many(
+                    prompts=[tokens.reshape(-1).tolist() for _, _, tokens in encoded],
+                    max_tokens=max_new_points * columns,
+                    sampler=sampler,
+                    seed=batch_seed,
+                    num_samples=num_samples,
+                )
+                batch_seed += 1
+                for j, (i, inp, (_, grid, _)) in enumerate(
+                    zip(batch, inputs, encoded, strict=True),
+                ):
+                    rows = generated[j * num_samples : (j + 1) * num_samples]
+                    tokens = (
+                        np.asarray(rows, dtype=np.int64)
+                        .reshape(num_samples, max_new_points, columns)
+                        .transpose(1, 0, 2)
+                        .reshape(max_new_points, num_samples * columns)
+                    )
+                    # The generated tokens continue from the last max_order rows.
+                    decoded = decode(
+                        start=np.tile(inp[len(inp) - max_order :], (1, num_samples)),
+                        grid=Grid(
+                            scale=np.tile(grid.scale, num_samples),
+                            zero=np.tile(grid.zero, num_samples),
+                        ),
+                        inp=tokens,
+                        vocab_size=self.model.vocab_size,
+                        order_of_derivative=order,
+                        tokenizer=self.tokenizer,
+                    )[max_order:]
+                    futures[i] = decoded.reshape(
+                        max_new_points,
+                        num_samples,
+                        columns,
+                    ).transpose(1, 0, 2)
+        return [futures[i] for i in range(len(dfs))]
 
     def _forecast_order(self, df: pd.DataFrame, max_new_points: int) -> int:
         """

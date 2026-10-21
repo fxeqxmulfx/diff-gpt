@@ -266,3 +266,25 @@ def test_prefill_from_a_grown_cache_checks_cached_positions_not_capacity() -> No
     too_small = KVCache(2, 2, 4, 4, 1)
     with pytest.raises(ValueError, match="capacity 4 < 5 cached positions"):
         too_small.prefill(src)
+
+
+def test_prefill_repeats_each_row_consecutively() -> None:
+    """
+    Check that a batch-2 prefill fills a batch-6 cache with each row three times.
+
+    Rows 0-2 hold source row 0 and rows 3-5 source row 1, the order in which
+    `Engine.generate_many` lays out the samples of each prompt. A batch that
+    holds the rows unevenly raises.
+    """
+    src = KVCache(2, 2, 8, 4, 1)
+    k = torch.randn(2, 2, 5, 4)
+    src.insert_kv(0, k, -k)
+    dst = KVCache(6, 2, 16, 4, 1)
+    dst.prefill(src)
+    assert dst.get_pos() == k.shape[-2]
+    for row in range(6):
+        assert_close(dst.kv_cache[0, 0, row, :, :5, :], k[row // 3])
+        assert_close(dst.kv_cache[0, 1, row, :, :5, :], -k[row // 3])
+    uneven = KVCache(5, 2, 16, 4, 1)
+    with pytest.raises(ValueError, match="Batch size mismatch: 5 vs 2"):
+        uneven.prefill(src)
