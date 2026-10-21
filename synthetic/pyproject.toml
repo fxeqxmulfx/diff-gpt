@@ -1,0 +1,57 @@
+[project]
+name = "tempopfn-corpus"
+version = "0.1.0"
+description = "Synthetic pretraining corpus for diff-gpt, generated with TempoPFN's generators"
+requires-python = ">=3.12,<3.13"
+# TempoPFN (Python < 3.13) imports these on its generation path; its model
+# stack (flash-linear-attention, triton, gluonts) stays out: see src/__init__.py.
+dependencies = [
+    "cupy-cuda13x>=14.2.0",
+    "gpytorch>=1.15.2",
+    "joblib>=1.6.0",
+    "networkx>=3.7",
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "pyarrow>=26.0.0",
+    "pyo>=1.1.0",
+    "pyyaml>=6.0.3",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+    "statsmodels>=0.15.0",
+    "torch>=2.14.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# Flat layout: tempopfn_corpus/ and src/, the package name TempoPFN imports
+# its own code by.
+module-root = ""
+module-name = ["tempopfn_corpus", "src"]
+
+[tool.ruff]
+extend = "../pyproject.toml"
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+# pytest checks with bare assert, as the root's tests/ do; the root's
+# "tests/**" pattern is relative to the root.
+"tests/**" = ["S101"]
