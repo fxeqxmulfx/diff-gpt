@@ -17,6 +17,8 @@ import pytest
 
 from diff_gpt.encoder_decoder import (
     TokenClippingWarning,
+    _float_at_or_above,
+    _float_at_or_below,
     _levels,
     decode,
     encode,
@@ -216,3 +218,19 @@ def test_the_domain_max_is_the_least_float_at_or_above_the_exact_max(k: int) -> 
         assert Fraction(np.nextafter(dod, 0.0)) < exact
         short += Fraction(np.abs(np.diff(x[:, 0], n=k)).max()) < exact
     assert (short > 0) == (k > 0)
+
+
+def test_the_float_next_to_a_rational_past_the_float64_range() -> None:
+    """
+    Check the float64 at or above, and at or below, rationals past the range.
+
+    Below -max the least float64 at or above is -max, and above max the
+    greatest at or below is max; the OverflowError of float() returned inf
+    for both.
+    """
+    big = Fraction(2**1100)
+    largest = float(np.finfo(np.float64).max)
+    assert _float_at_or_above(big) == math.inf
+    assert _float_at_or_above(-big) == -largest
+    assert _float_at_or_below(big) == largest
+    assert _float_at_or_below(-big) == -math.inf

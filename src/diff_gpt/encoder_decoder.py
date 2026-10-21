@@ -36,8 +36,11 @@ c on the levels exactly and returns x̂ = (A + L)/s, stays within
 proved in lean/DiffGPT/LevelGrid.lean). On a range 1/(2s) is
 (hi - lo)/(2(V - ‖c‖₁)) where (V - ‖c‖₁)·lo/(hi - lo) is an integer, as on
 [-D, D], and at most (hi - lo)/(2(V - ‖c‖₁ - 1)), one level fewer,
-elsewhere. The Lean proofs cover [-D, D]; for ranges `level_grid` checks the
-fit in rationals, and the tests check the bound.
+elsewhere. The Lean proofs cover ranges and the zero point z too: `_fits`
+is exact, z keeps every token in range, and the float64 search of
+`_max_scale` returns the largest scale that fits where lo < 0 < hi, as on
+[-D, D], and one at most a level short elsewhere
+(lean/DiffGPT/MaxScale.lean).
 
 "mash-half" moves the integers c(B) L half a level off the steps s·c(B) x,
 which makes room for one more level: at s = (V - ‖c‖₁ + 1)/(2D) its tokens
@@ -47,8 +50,9 @@ lies halfway between integers, as on [-D, D], and at most
 (hi - lo)/(2(V - ‖c‖₁)) elsewhere. The price is paid on flat
 stretches: no anchor with c(B) A = 1/2 is constant modulo 1, so a constant
 encodes as a periodic pattern around V/2 (32, 31, 32, 31, ... at Δ with
-V = 64), and comes back up to 1/(2s) off, where "mash" returns it exactly.
-The Lean proofs cover c(B) A = 0 only; the tests check this bound.
+V = 64), and comes back up to 1/(2s) off, where "mash" returns it exactly
+(lean/DiffGPT/FlatStretch.lean). The Lean proofs cover these bounds as they
+do those of c(B) A = 0.
 
 The order 0, c = 1, needs no room for the noise, and every tokenizer takes
 A = 1/2 there, c(B) A = 1/2 as for "mash-half": with s·D < V/2 the levels
@@ -66,16 +70,16 @@ t^(k-1) at Δ^k (t^k for "mash-half"), is never formed.
 
 The levels are exact: R is read off the float64 rounding of s·x and its
 exact error (Dekker's product), without rounding s·x itself
-(lean/DiffGPT/ExactLevels.lean). The scale is rounded down, so that
-s·D <= (V - ‖c‖₁)/2, or (V - ‖c‖₁ + 1)/2 for "mash-half", holds exactly,
-and the bounds of
-`get_domain_of_definition` are rounded outward, so that |c(B) x| <= D, or
-lo <= c(B) x <= hi, does: every token then lies in its range as in exact
-arithmetic, the levels stay within
-2^53, where float64 holds every one of them, and `decode` gets them back
-without an int64 overflow (`encode_decode` and `encode_decode_zero` in
-lean/DiffGPT/Machine.lean). Only the decode is rounded, by about 2^-53 of
-|x̂| per operation on top of 1/(2s).
+(lean/DiffGPT/ExactLevels.lean). The scale is rounded down, so that it
+fits exactly, s·D <= (V - ‖c‖₁)/2 on [-D, D], or (V - ‖c‖₁ + 1)/2 for
+"mash-half", and the bounds of `get_domain_of_definition` are the tightest
+float64 around the exact steps, so that |c(B) x| <= D, or lo <= c(B) x <= hi,
+holds (lean/DiffGPT/DifferenceRange.lean): every token then lies in its
+range as in exact arithmetic, the levels stay within 2^53, where float64
+holds every one of them, and `decode` gets them back without an int64
+overflow (`encode_decode` and `encode_decode_zero` in
+lean/DiffGPT/Machine.lean, for every tokenizer, range and zero point). Only
+the decode is rounded, by about 2^-53 of |x̂| per operation on top of 1/(2s).
 """
 
 import math
@@ -107,9 +111,15 @@ _MIN_VOCAB_SIZE = 4
 
 
 def _check_vocab_size(vocab_size: int) -> None:
-    """Check that V is even and at least 4: tokens are centred on V/2."""
-    if vocab_size % 2 != 0 or vocab_size < _MIN_VOCAB_SIZE:
-        msg = f"vocab_size must be even and >= 4, got {vocab_size}"
+    """
+    Check that V is even, at least 4 and below 2^62.
+
+    Tokens are centred on V/2, and `encode` clips the steps to V - z, which
+    stays in int64 when V and |z| are below 2^62, as `level_grid` checks for
+    z (`toInt_encodeTokens` in lean/DiffGPT/Machine.lean).
+    """
+    if vocab_size % 2 != 0 or not _MIN_VOCAB_SIZE <= vocab_size < 2**_LEVEL_BITS:
+        msg = f"vocab_size must be even, >= 4 and < 2^{_LEVEL_BITS}, got {vocab_size}"
         raise ValueError(msg)
 
 
@@ -346,23 +356,25 @@ def level_grid(
     |c(B) ζ| < ‖c‖₁/2, and with c(B) A = 0 the integer
     c(B) L = s·c(B) x + c(B) ζ lies in (s·lo - ‖c‖₁/2, s·hi + ‖c‖₁/2).
     These ceil(s·hi) - floor(s·lo) + ‖c‖₁ - 1 integers fit the tokens
-    [1, V-1] when ceil(s·hi) - floor(s·lo) <= V - ‖c‖₁ (`_fits`). On
-    [-D, D] that is s·D <= (V - ‖c‖₁)/2, s = (V - ‖c‖₁)/(2D) rounded down,
-    and no larger scale fits: errors with the signs of the coefficients push
-    a token out (`abs_diffs_levels_le` and `exists_levels_ge` in
-    lean/DiffGPT/LevelGrid.lean). At the order 0 the levels floor(s·x) take
-    floor(s·hi) - floor(s·lo) + 1 values, which fit the tokens [0, V-1]; on
-    [-D, D], s·D < V/2 (`floor_mem_of_domain`).
+    [1, V-1] when ceil(s·hi) - floor(s·lo) <= V - ‖c‖₁ (`_fits`), and
+    otherwise errors with the signs of the coefficients push a token out,
+    whatever z (`diffs_levels_mem` and `fits_of_forall_mem` in
+    lean/DiffGPT/LevelGrid.lean). On [-D, D] that is s·D <= (V - ‖c‖₁)/2,
+    s = (V - ‖c‖₁)/(2D) rounded down (`fits_domain_iff`). At the order 0 the
+    levels floor(s·x) take floor(s·hi) - floor(s·lo) + 1 values, which fit
+    the tokens [0, V-1]; on [-D, D], s·D < V/2 (`floor_add_mem`,
+    `zeroPoint0_domain`).
 
     "mash-half" subtracts c(B) A = 1/2 above the order 0, so c(B) L lies in
     (s·lo - 1/2 - ‖c‖₁/2, s·hi - 1/2 + ‖c‖₁/2), and these
     ceil(s·hi - 1/2) - floor(s·lo - 1/2) + ‖c‖₁ - 1 integers fit all the
     tokens [0, V-1] when ceil(s·hi - 1/2) - floor(s·lo - 1/2)
     <= V - ‖c‖₁ + 1. On [-D, D] that is s·D <= (V - ‖c‖₁ + 1)/2: one level
-    more.
+    more (`fits_domain_half_iff`).
 
     z, the token of c(B) L = 0, puts these integers within the tokens, as
-    close to the middle as it can: V/2 on [-D, D] (`_zero_point`).
+    close to the middle as it can: V/2 on [-D, D] (`_zero_point`,
+    `zeroPoint_mem` and `zeroPoint_domain`).
 
     A column whose range is a point, hi - lo <= 2·eps, takes the grid of
     [-D, D] with D = max(|lo|, |hi|), and `CONSTANT_COLUMN_SCALE` where D
@@ -453,9 +465,14 @@ def _max_scale(
     s·hi <= p + room (< at the order 0): for each p in Z + shift the scales
     with p <= s·lo and s·hi <= p + room form an interval, and the best p is
     next to p* = room·lo/(hi - lo), where both ends meet at
-    s = room/(hi - lo): the one of Z + shift below or above p*. Its interval
-    can hold no float64, and a scale with s·(hi - lo) <= room - 1 fits
-    whatever p, so that one stands in.
+    s = room/(hi - lo): the one of Z + shift below or above p*. For
+    lo < 0 < hi its interval reaches down to 0, and its end rounded down, or
+    the float64 below that, is the largest float64 that fits. Otherwise the
+    interval can hold no float64, and a scale with s·(hi - lo) <= room - 1
+    fits whatever p, so that one stands in, at most a level short. `maxScale`
+    in lean/DiffGPT/MaxScale.lean is this search (`isGreatest_maxScale`,
+    `lt_succF64_maxScale_mul`; above the order 0 also `fits_of_pivot`,
+    `fits_of_mul_le` and `mul_le_of_fits` in lean/DiffGPT/LevelGrid.lean).
     """
     width = hi - lo
     pivot = room * lo / width
@@ -797,7 +814,8 @@ def encode(
         levels = _levels(column, scale, fraction, factors=len(lags[c]))
         # Unclipped, but limited to [-1, V] so that one out of range stays out
         # of range for `_clip_tokens` to count; clipped before z is added,
-        # so that the sum stays in int64.
+        # so that the sum stays in int64 (`toInt_encodeTokens` in
+        # lean/DiffGPT/Machine.lean).
         tokens[:, c] = (
             np.clip(
                 _difference(levels, lags[c]) + fraction_steps,
@@ -941,18 +959,19 @@ def integrate(
 
 
 def _float_at_or_above(q: Fraction) -> float:
-    """Return the least float64 at or above the rational `q` (inf past the range)."""
+    """Return the least float64 at or above the rational `q` (inf above the range)."""
     try:
         f = float(q)
     except OverflowError:
-        return math.inf
+        # Below the range the least float64, -max, lies above q.
+        return math.inf if q > 0 else math.nextafter(-math.inf, 0.0)
     if Fraction(f) < q:
         f = math.nextafter(f, math.inf)
     return f
 
 
 def _float_at_or_below(q: Fraction) -> float:
-    """Return the greatest float64 at or below the rational `q` (-inf past it)."""
+    """Return the greatest float64 at or below `q` (-inf below the range)."""
     # 0.0 - f negates f exactly, and gives 0.0, not -0.0, for 0.
     return 0.0 - _float_at_or_above(-q)
 
@@ -1028,11 +1047,13 @@ def _difference_range(
 
     np.diff rounds every difference, so its extremes can fall short of the
     exact ones, and a step of the exact max would then reach a token past
-    V - 1. The rounding error of each difference is exact (Knuth's two-sum),
-    so their sums bound how far each difference by c is off: where the bound
-    is 0 the difference is exact, and only the rows whose bound reaches the
-    extreme known to be attained are summed in rationals. `column` must be
-    finite; `observed` marks its rows t = p..T-1.
+    V - 1. The rounding error of each difference is exact (Knuth's two-sum,
+    `twoSumErr_eq` in lean/DiffGPT/TwoSum.lean), so their sums bound how far
+    each difference by c is off: where the bound is 0 the difference is
+    exact, and only the rows whose bound reaches the extreme known to be
+    attained are summed in rationals (`differenceRange_eq` in
+    lean/DiffGPT/DifferenceRange.lean). `column` must be finite; `observed`
+    marks its rows t = p..T-1.
     """
     diff = column
     slack = np.zeros_like(column)
@@ -1089,7 +1110,8 @@ def get_domain_of_definition(
 
     The max is exact: the bounds are the tightest float64 around the
     extreme steps, with the differences of the floats in `inp` taken without
-    rounding, so that `encode` clips none of these steps.
+    rounding, so that `encode` clips none of these steps (`differenceRange_eq`
+    and `domain_le` in lean/DiffGPT/DifferenceRange.lean).
 
     `quantile` (e.g. 0.9999) sets the fraction of the steps that the domain
     holds instead: D is that quantile of |c(B) x|, and the range the central

@@ -7,9 +7,10 @@ public import DiffGPT.LevelGrid
 # No encoder beats the level grid
 
 The decoder of the level grid reads the first `p = l.sum` values raw, integrates the tokens
-`c(B) L n + V/2 ∈ [0, V - 1]` to the levels `L`, and decodes the later values to
-`A m + L m / s`, for a scale `s` and an anchor `A` in the kernel, `c(B) A = 0`. An encoder for it
-picks the levels of a series knowing all of it (`Encodes`).
+`c(B) L n + V/2 ∈ [0, V - 1]` to the levels `L`, `V/2` being the zero point `_zero_point` takes
+on `[-D, D]` (`zeroPoint_domain`), and decodes the later values to `A m + L m / s`, for a scale
+`s` and an anchor `A` in the kernel, `c(B) A = 0`. An encoder for it picks the levels of a series
+knowing all of it (`Encodes`).
 
 **Theorem 2** (`le_mul_of_encodes`). For `V ≥ 2‖c‖₁`, an encoder that decodes every series with
 `|c(B) x| ≤ D` to within `ε` has `D ≤ (V - ‖c‖₁)·ε`, whatever the scale, the prefix and the
@@ -36,8 +37,8 @@ Both hypotheses matter. At Δᵏ with `V` a power of two, `V > ‖c‖₁ = 2^k`
 `V ≥ 2‖c‖₁`, but in the gap `‖c‖₁ < V < 2‖c‖₁` the third bound no longer closes the argument, and
 the claim fails: at Δ³ with `V = 10` a numerical search, not proved here, finds an encoder for this
 decoder with `D = 2.39·ε`, where the level grid has `D = 2·ε`. An anchor with `c(B) A = 1/(2s)`
-instead, the half step of the order `0`, takes the level grid to `D = (V - ‖c‖₁ + 1)·ε`. Whatever
-the decoder, `D ≤ V·ε`, by volume.
+instead, the half step of the order `0` and of "mash-half", takes the level grid to
+`D = (V - ‖c‖₁ + 1)·ε` (`encodes_levels_half`). Whatever the decoder, `D ≤ V·ε`, by volume.
 -/
 
 @[expose] public section
@@ -434,12 +435,36 @@ theorem encodes_levels {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l,
   have hs : (0 : ℝ) < (V - norm1 l) / (2 * D) := by positivity
   refine ⟨fun m => roundHalfUp ((V - norm1 l) / (2 * D) * (x m - A m)), fun n => ?_,
     fun m _ => ?_⟩
-  · have := abs_diffs_levels_le hV hl hl0 hs.le hA (hx n)
+  · have := abs_diffs_levels_le hV hl hl0 hs.le (congrFun hA n) (hx n)
       (le_of_eq (scale_mul_domain _ _ hD.ne'))
     obtain ⟨h1, h2⟩ := abs_le.mp this
     constructor <;> linarith
   · have := abs_decode_sub_le hs x A m
     rwa [half_step_eq hD.ne' hVc'.ne'] at this
+
+/-- The half-step anchor, `c(B) A = 1/(2s)`, takes the level grid one level further: with the
+scale `s = (V - ‖c‖₁ + 1)/(2D)` the levels `roundHalfUp (s·(x - A))` decode every series with
+`|c(B) x| ≤ D` to within `D / (V - ‖c‖₁ + 1)`. -/
+theorem encodes_levels_half {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
+    (hl0 : l ≠ []) (hVc : norm1 l ≤ V) {D : ℝ} (hD : 0 < D) (P : ℕ → ℝ) {A : ℕ → ℝ}
+    (hA : diffs l A = fun _ => D / (V - norm1 l + 1)) :
+    Encodes V l ((V - norm1 l + 1) / (2 * D)) D (D / (V - norm1 l + 1)) P A := by
+  intro x _ hx
+  have hVc' : (0 : ℝ) < V - norm1 l + 1 := by
+    have : (norm1 l : ℝ) ≤ V := by exact_mod_cast hVc
+    linarith
+  have hD0 := hD.ne'
+  have hV0 := hVc'.ne'
+  have hs : (0 : ℝ) < (V - norm1 l + 1) / (2 * D) := by positivity
+  refine ⟨fun m => roundHalfUp ((V - norm1 l + 1) / (2 * D) * (x m - A m)), fun n => ?_,
+    fun m _ => ?_⟩
+  · have hA' : (V - norm1 l + 1) / (2 * D) * diffs l A n = 1 / 2 := by
+      rw [hA]
+      field_simp
+    exact diffs_levels_mem_half hV hl hl0 hs.le hA' (hx n) (le_of_eq (by field_simp))
+  · have := abs_decode_sub_le hs x A m
+    rwa [show 1 / (2 * ((V - norm1 l + 1) / (2 * D))) = D / (V - norm1 l + 1) by field_simp]
+      at this
 
 /-- Over every scale and encoder, the least error within which the series with `|c(B) x| ≤ D`
 decode is `D / (V - ‖c‖₁)`, the level grid's. -/

@@ -239,9 +239,26 @@ def test_the_vocabulary_must_exceed_the_norm_of_c(
     """
     x = np.random.default_rng(0).normal(size=(20, 1))
     dod = get_domain_of_definition(x, k)
-    with pytest.raises(ValueError, match=r"vocab_size > ‖c‖₁|even and >= 4"):
+    with pytest.raises(ValueError, match=r"vocab_size > ‖c‖₁|even, >= 4"):
         encode(x, vocab_size, dod, k, tokenizer=tokenizer)
     encode(x, vocab_size + 2, dod, k, tokenizer=tokenizer)
+
+
+@pytest.mark.parametrize("tokenizer", TOKENIZERS)
+def test_the_vocabulary_stays_below_2_to_the_62(tokenizer: str) -> None:
+    """
+    Check that V >= 2^62 raises, in encode and in decode.
+
+    The clip bound V - z of `encode` must stay in int64, and the Lean proof
+    of the round trip (`encode_decode`) takes V < 2^62.
+    """
+    x = np.random.default_rng(0).normal(size=(20, 1))
+    dod = get_domain_of_definition(x, 1)
+    st, grid, tokens = encode(x, V, dod, 1, tokenizer=tokenizer)
+    with pytest.raises(ValueError, match=r"< 2\^62"):
+        encode(x, 2**62, dod, 1, tokenizer=tokenizer)
+    with pytest.raises(ValueError, match=r"< 2\^62"):
+        decode(st, grid, tokens, 2**62, 1, tokenizer=tokenizer)
 
 
 @pytest.mark.parametrize("tokenizer", TOKENIZERS)

@@ -63,22 +63,26 @@ $c = 1$, needs no such room: on the grid shifted by half a step the tokens take
 all of $[0, V-1]$, and the error $\Delta/2$ is a hair above $D/V$, the least
 that $V$ values allow on $[-D, D]$. Vocabulary doubling halves reconstruction
 error for any operator. The proof is checked in Lean 4:
-`lean/DiffGPT/LevelGrid.lean` for exact arithmetic, the sharpness and the
-order 0 included, and `Float64.lean`, `ExactLevels.lean`, `Int64.lean` and
-`Machine.lean` next to it for the float64/int64 implementation, end to end in
-`encode_decode` (`encode_decode_zero` for the order 0). There the levels are
-exact, so every token lies in
-$[1, V-1]$ ($[0, V-1]$ at the order 0) as in exact arithmetic, `decode` gets
-the levels back without an
-int64 overflow, and the decode adds only the float64 rounding of $(R + F)/s$,
-about $2^{-53}|\hat x|$ per operation:
+`lean/DiffGPT/LevelGrid.lean` for exact arithmetic, the sharpness, the ranges
+below and the order 0 included, and `Float64.lean`, `ExactLevels.lean`,
+`Int64.lean` and `Machine.lean` next to it for the float64/int64
+implementation of every tokenizer, end to end in `encode_decode`
+(`encode_decode_zero` for the order 0). There the levels are exact, so every
+token lies in $[1, V-1]$ ($[0, V-1]$ for `"mash-half"` and at the order 0) as
+in exact arithmetic, `decode` gets the levels back without an int64 overflow,
+and the decode adds only the float64 rounding of $(R + F)/s$, about
+$2^{-53}|\hat x|$ per operation:
 
 $$|\hat x_t - x_t| \le \frac{\Delta}{2} + 2^{-52}\left(1 + 2^{-54}\right)\left(|x_t| + \frac{\Delta}{2}\right) + 2^{-1075}\left(1 + \left(1 + 2^{-53}\right)\Delta\right).$$
 
 `encode` raises where the float64 product $s\,x$ reaches
-$2^{\min(53,\,62-m)}$ for the $m$ factors of $c$.
+$2^{\min(53,\,62-m)}$ for the $m$ factors of $c$, and on NaN and infinities,
+so the proofs take finite values.
 
-The bound needs a `domain_of_definition` of at least $D$. A smaller one (a
+The bound needs a `domain_of_definition` of at least $D$, and
+`get_domain_of_definition` returns the least float64 at or above every
+$|c(B)\,x_t|$, as Lean checks too (`DifferenceRange.lean`; the rounding error
+of each difference is exact by two-sum, `TwoSum.lean`). A smaller domain (a
 quantile, say) clips the larger steps, and `encode` reports how many with a
 `TokenClippingWarning`. Above the order 0 a clipped step offsets the decoded
 values after it, with either tokenizer. `predict` decodes
@@ -99,11 +103,13 @@ side gain the most: counts on $[0, N]$ at the order 0, or a series that only
 rises, get twice the levels of $[-N, N]$.
 `get_domain_of_definition(..., symmetric=False)` returns the exact ranges,
 or with `quantile=q` the central interval between the quantiles $(1 - q)/2$
-and $(1 + q)/2$ of the steps. The Lean proofs cover $[-D, D]$; for ranges
-`level_grid` checks the fit in rationals, and the tests check the bound. A
-range narrow for its distance from 0 makes the levels $s\,x$ large: `encode`
-raises past $2^{53}$, as above, so subtract the series level or widen the
-range.
+and $(1 + q)/2$ of the steps. The Lean proofs cover ranges as well: the fit
+`level_grid` checks in rationals is exact, its zero point keeps every token in
+range, and its float64 search returns the largest scale that fits where
+$lo < 0 < hi$, as on $[-D, D]$, and one at most a level short elsewhere
+(`lean/DiffGPT/MaxScale.lean`). A range narrow for its distance from 0 makes
+the levels $s\,x$ large: `encode` raises past $2^{53}$, as above, so subtract
+the series level or widen the range.
 
 **Missing values.** NaN marks a missing value, and `encode` takes none:
 `fill_missing` fills each gap with the line across it, and the nearest value
@@ -143,9 +149,13 @@ $[0, V-1]$ and $\varepsilon = D/(V - \|c\|_1 + 1)$. No such anchor is
 constant modulo the step $1/s$, though, so a flat stretch encodes as a
 periodic pattern of tokens (32, 31, 32, 31, … at $\Delta$ with $V = 64$, four
 tokens with period 8 at $\Delta^4$), and values on the grid no longer come
-back exactly. LGT and MASH keep $c(B)A = 0$; the opt-in
-`tokenizer="mash-half"` takes the half step, and the tests, not Lean, check
-its bound. Any decoder needs $\varepsilon \ge D/V$, by volume.
+back exactly (`lean/DiffGPT/FlatStretch.lean`: at $\Delta^k$ the tokens repeat
+with any period $2^j > k$, for any $c$ they are not constant, and in every
+$p + 1$ rows the exact decode misses the constant by at least
+$1/(2\|c\|_1 s)$). LGT and MASH keep $c(B)A = 0$; the opt-in
+`tokenizer="mash-half"` takes the half step, and Lean checks its bound as well
+(`encodes_levels_half`, and `encode_decode` in float64). Any decoder needs
+$\varepsilon \ge D/V$, by volume.
 
 **Proposition 3 (achievable CE).** In the fine-quantization limit,
 $\mathcal L^\star(V) = h(X_t \mid \text{ctx}) + \log V - \log(2D) + o(1)$.

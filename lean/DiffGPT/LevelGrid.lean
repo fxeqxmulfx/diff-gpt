@@ -5,7 +5,7 @@ public import Mathlib
 /-!
 # Level-grid tokens fit the vocabulary
 
-Both tokenizers of `diff_gpt.encoder_decoder` difference the levels by an integer operator
+The tokenizers of `diff_gpt.encoder_decoder` difference the levels by an integer operator
 `c(B) = (1 - B^S₁)⋯(1 - B^Sₘ)` over the lags `l = [S₁, …, Sₘ]`, `Sᵢ ≥ 1`: `Δᵏ` is `k` lags of
 `1` (`diffs_replicate`), `1 - B²⁴` the seasonal difference. With the forward differences
 `Δ_[S] f n = f (n + S) - f n`, `diffs l f n` reads `f n, …, f (n + p)` for the degree
@@ -17,16 +17,30 @@ The coefficients sum to `0` and the last one is `1` (`sum_coeff_eq_zero`, `coeff
 `c(1) = 0` and `c₀ = 1`. `norm1 l = ∑ |coeff l j|` is `‖c‖₁`, at most `2^m` (`norm1_le`) and
 `2^k` for `Δᵏ` (`norm1_replicate`).
 
-The tokens are `c(B) L n + V/2`, where `L n = ⌊s·(x n - A n) + 1/2⌋` rounds the scaled series
-half up onto the integer grid, measured from an anchor `A` in the kernel, `c(B) A = 0`: `A = 0`
-for "lgt", for "mash" the `A` through the first `p` values (`invert l pre 0`).
+The tokens are `c(B) L n + z`, where `L n = ⌊s·(x n - A n) + 1/2⌋` rounds the scaled series
+half up onto the integer grid, measured from an anchor `A` that steps by `h` levels,
+`s·c(B) A = h`, and the zero point `z` is the token of `c(B) L n = 0`. "lgt" takes `A = 0` and
+"mash" the `A` through the first `p` values in the kernel (`invert l pre 0`), `h = 0`;
+"mash-half" takes the one with `c(B) A = 1/(2s)`, `h = 1/2` (`mul_diffs_half_anchor`).
 
-* `abs_diffs_levels_le`: if `|c(B) x n| ≤ D` and `s·D ≤ (V - ‖c‖₁)/2`, then
-  `|c(B) L n| ≤ V/2 - 1`: every token lies in `[1, V - 1]`. `scale_mul_domain`: the scale
-  `s = (V - ‖c‖₁) / (2D)` meets this with equality, and no larger one does
-  (`exists_levels_ge`): errors of the signs of the coefficients push the token out.
-  `DiffGPT.Optimality` goes further: for `V ≥ 2‖c‖₁` no encoder for this decoder does better.
-* `lgt_token_bound`, `mash_token_bound`: the two anchors.
+* `diffs_levels_mem`: where `lo ≤ c(B) x n ≤ hi`, `c(B) L n` lies in
+  `[⌊s·lo - h⌋ + 1 - ‖c‖₁/2, ⌈s·hi - h⌉ - 1 + ‖c‖₁/2]`, `‖c‖₁` being even (`even_norm1`), so
+  the token lies in `[t, V - 1]` for the zero points from `‖c‖₁/2 + t - 1 - ⌊s·lo - h⌋` to
+  `V - ‖c‖₁/2 - ⌈s·hi - h⌉` (`diffs_levels_add_mem`). There are such zero points when
+  `⌈s·hi - h⌉ - ⌊s·lo - h⌋ ≤ V - ‖c‖₁ + 1 - t` (`Fits`, `_fits`), and `zeroPoint`,
+  `_zero_point`, returns one (`zeroPoint_mem`). The fit is exact: some series take either end
+  (`exists_levels_eq`), so otherwise no zero point keeps every token in range
+  (`fits_of_forall_mem`), and no scale with `s·(hi - lo)` above the room `V - ‖c‖₁ + 1 - t`
+  fits (`mul_le_of_fits`). `_max_scale`'s fallback fits (`fits_of_mul_le`), and so does the
+  room itself where `s·lo - h` is an integer (`fits_of_pivot`). `DiffGPT.MaxScale` follows its
+  float64 search: for `lo < 0 < hi` it returns the largest float that fits.
+* On `[-D, D]` "lgt" and "mash" fit the tokens `[1, V - 1]` exactly for
+  `s·D ≤ (V - ‖c‖₁)/2` (`fits_domain_iff`), and "mash-half" all of `[0, V - 1]` for
+  `s·D ≤ (V - ‖c‖₁ + 1)/2` (`fits_domain_half_iff`), one level more. The zero point is then
+  `V/2` (`zeroPoint_domain`, `zeroPoint_domain_half`), and the tokens `c(B) L n + V/2`
+  (`abs_diffs_levels_le`, `diffs_levels_mem_half`). `scale_mul_domain`: the scale
+  `s = (V - ‖c‖₁) / (2D)` meets this with equality. `DiffGPT.Optimality` goes further: for
+  `V ≥ 2‖c‖₁` no encoder for this decoder with the anchor in the kernel does better.
 * `invert`, `_invert_difference`, undoes the factors by sums along every `S`-th value
   (`lagSum`): it gives the sequence with the differences `d` and the first `p` values of `pre`
   (`diffs_invert`, `invert_of_lt`), and no other sequence has them (`eq_of_diffs_eq_of_lt`),
@@ -35,10 +49,11 @@ for "lgt", for "mash" the `A` through the first `p` values (`invert l pre 0`).
 * `abs_decode_sub_le`: the decoded `A n + L n / s` is within `1/(2s)` of `x n`;
   `half_step_eq`: with that scale `1/(2s) = D / (V - ‖c‖₁)`.
 * The order `0`, `c = 1`, needs no room for the noise: the levels `⌊s·x⌋` on the grid shifted
-  by half a step lie in `[-V/2, V/2 - 1]` for `s·D < V/2`, so the tokens take all of
-  `[0, V - 1]` (`floor_mem_of_domain`), and `(⌊s·x⌋ + 1/2)/s` is within `1/(2s)` of `x`
-  (`abs_floor_decode_sub_le`), `D/V` for `s = V/(2D)`: no `V` values come closer to every
-  point of `[-D, D]` (`le_mul_of_forall_exists_abs_sub_le`).
+  by half a step lie in `[⌊s·lo⌋, ⌊s·hi⌋]`, so the tokens `⌊s·x⌋ + z` take all of `[0, V - 1]`
+  for the zero points from `-⌊s·lo⌋` to `V - 1 - ⌊s·hi⌋` (`floor_add_mem`, `zeroPoint0_mem`),
+  `V/2` on `[-D, D]` for `s·D < V/2` (`zeroPoint0_domain`), and `(⌊s·x⌋ + 1/2)/s` is within
+  `1/(2s)` of `x` (`abs_floor_decode_sub_le`), `D/V` for `s = V/(2D)`: no `V` values come
+  closer to every point of `[-D, D]` (`le_mul_of_forall_exists_abs_sub_le`).
 
 The key fact is `abs_diffs_lt_of_mem`: rounding half up leaves an error in `(-1/2, 1/2]`,
 half-open, and `c` has coefficients of both signs, so `c(B)` of the errors stays strictly inside
@@ -295,11 +310,25 @@ end
 
 /-! ### The tokens -/
 
-/-- **Theorem 1.** Every token `c(B) L n + V/2` lies in `[1, V - 1]`. -/
-theorem abs_diffs_levels_le {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
-    (hl0 : l ≠ []) {s D : ℝ} (hs : 0 ≤ s) {x A : ℕ → ℝ} (hA : diffs l A = 0) {n : ℕ}
-    (hD : |diffs l x n| ≤ D) (hsD : s * D ≤ ((V : ℝ) - norm1 l) / 2) :
-    |diffs l (fun m => roundHalfUp (s * (x m - A m))) n| ≤ V / 2 - 1 := by
+/-- `‖c‖₁` is even: `c` sums to `0`, and `|a| - a` is even. -/
+lemma even_norm1 {l : List ℕ} (hl0 : l ≠ []) : Even (norm1 l) := by
+  have h : norm1 l = ∑ j ∈ Finset.range (l.sum + 1), (|coeff l j| - coeff l j) := by
+    rw [Finset.sum_sub_distrib, sum_coeff_eq_zero hl0, sub_zero, norm1]
+  rw [h]
+  refine Finset.even_sum _ fun j _ => ?_
+  rcases abs_choice (coeff l j) with h | h <;> rw [h]
+  · simp
+  · exact ⟨-coeff l j, by ring⟩
+
+/-- **Theorem 1.** Where `lo ≤ c(B) x n ≤ hi` and the anchor steps by `h` levels,
+`s·c(B) A n = h`, the integer `c(B) L n = s·c(B) x n - h + c(B) ζ n` lies strictly within
+`‖c‖₁/2` of `[s·lo - h, s·hi - h]`, so in `[⌊s·lo - h⌋ + 1 - ‖c‖₁/2, ⌈s·hi - h⌉ - 1 + ‖c‖₁/2]`,
+`‖c‖₁` being even. -/
+theorem diffs_levels_mem {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) (hl0 : l ≠ []) {s h lo hi : ℝ}
+    (hs : 0 ≤ s) {x A : ℕ → ℝ} {n : ℕ} (hA : s * diffs l A n = h)
+    (hx : lo ≤ diffs l x n ∧ diffs l x n ≤ hi) :
+    ⌊s * lo - h⌋ + 1 - norm1 l / 2 ≤ diffs l (fun m => roundHalfUp (s * (x m - A m))) n ∧
+      diffs l (fun m => roundHalfUp (s * (x m - A m))) n ≤ ⌈s * hi - h⌉ - 1 + norm1 l / 2 := by
   set L : ℕ → ℤ := fun m => roundHalfUp (s * (x m - A m)) with hL
   set ζ : ℕ → ℝ := fun m => (L m : ℝ) - s * (x m - A m) with hζdef
   have hζ : ∀ m, -(1 / 2 : ℝ) < ζ m ∧ ζ m ≤ 1 / 2 := fun m => roundHalfUp_sub_mem _
@@ -307,33 +336,99 @@ theorem abs_diffs_levels_le {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S �
     funext m
     simp only [hζdef, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  have hdiff : ((diffs l L n : ℤ) : ℝ) = s * diffs l x n + diffs l ζ n := by
-    rw [cast_diffs, hLR, diffs_add, diffs_add, diffs_const_smul, diffs_const_smul, hA]
-    simp
-  have hx : |s * diffs l x n| ≤ s * D := by
-    rw [abs_mul, abs_of_nonneg hs]
-    exact mul_le_mul_of_nonneg_left hD hs
-  have hlt : |((diffs l L n : ℤ) : ℝ)| < (V : ℝ) / 2 := by
-    rw [hdiff]
-    calc |s * diffs l x n + diffs l ζ n| ≤ |s * diffs l x n| + |diffs l ζ n| := abs_add_le _ _
-      _ < s * D + (norm1 l : ℝ) / 2 := add_lt_add_of_le_of_lt hx (abs_diffs_lt_of_mem hl hl0 hζ n)
-      _ ≤ (V : ℝ) / 2 := by linarith
-  obtain ⟨m, hm⟩ := hV
-  have hV2 : V / 2 = m := by omega
-  have hVm : (V : ℝ) / 2 = m := by
-    rw [hm]
+  have hdiff : ((diffs l L n : ℤ) : ℝ) = s * diffs l x n - h + diffs l ζ n := by
+    rw [cast_diffs, hLR, diffs_add, diffs_add, diffs_const_smul, diffs_const_smul, ← hA]
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    ring
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  have hkR : (norm1 l : ℝ) / 2 = k := by
+    rw [hk]
     push_cast
     ring
-  have hcast : ((|diffs l L n| : ℤ) : ℝ) < (m : ℝ) := by
-    rw [Int.cast_abs]
-    linarith
-  have := Int.cast_lt.mp hcast
-  rw [hV2]
+  obtain ⟨z1, z2⟩ := abs_lt.mp (abs_diffs_lt_of_mem hl hl0 hζ n)
+  rw [hkR] at z1 z2
+  have hx1 := mul_le_mul_of_nonneg_left hx.1 hs
+  have hx2 := mul_le_mul_of_nonneg_left hx.2 hs
+  have h1 : ⌊s * lo - h⌋ - k < diffs l L n := by
+    have := Int.floor_le (s * lo - h)
+    exact_mod_cast
+      (show ((⌊s * lo - h⌋ - k : ℤ) : ℝ) < ((diffs l L n : ℤ) : ℝ) by push_cast; linarith)
+  have h2 : diffs l L n < ⌈s * hi - h⌉ + k := by
+    have := Int.le_ceil (s * hi - h)
+    exact_mod_cast
+      (show ((diffs l L n : ℤ) : ℝ) < ((⌈s * hi - h⌉ + k : ℤ) : ℝ) by push_cast; linarith)
   omega
 
-/-- The scale `s = (V - h) / (2D)` gives `s·D = (V - h)/2`. -/
-lemma scale_mul_domain (V h : ℝ) {D : ℝ} (hD : D ≠ 0) : (V - h) / (2 * D) * D = (V - h) / 2 := by
-  field_simp
+/-- The token `c(B) L n + z` lies in `[t, V - 1]` for the zero points `z` from
+`‖c‖₁/2 + t - 1 - ⌊s·lo - h⌋` to `V - ‖c‖₁/2 - ⌈s·hi - h⌉`. -/
+theorem diffs_levels_add_mem {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) (hl0 : l ≠ []) {s h lo hi : ℝ}
+    (hs : 0 ≤ s) {x A : ℕ → ℝ} {n : ℕ} (hA : s * diffs l A n = h)
+    (hx : lo ≤ diffs l x n ∧ diffs l x n ≤ hi) {V z t : ℤ}
+    (hz : norm1 l / 2 + t - 1 - ⌊s * lo - h⌋ ≤ z ∧ z ≤ V - norm1 l / 2 - ⌈s * hi - h⌉) :
+    t ≤ diffs l (fun m => roundHalfUp (s * (x m - A m))) n + z ∧
+      diffs l (fun m => roundHalfUp (s * (x m - A m))) n + z ≤ V - 1 := by
+  have := diffs_levels_mem hl hl0 hs hA hx
+  omega
+
+/-- `_fits` above the order `0`: the steps in `[lo, hi]` take the
+`⌈s·hi - h⌉ - ⌊s·lo - h⌋ + ‖c‖₁ - 1` integers of `diffs_levels_mem`, at most the `V - t` tokens
+of `[t, V - 1]`: `[1, V - 1]` for `h = 0`, all of `[0, V - 1]` for `h = 1/2`. -/
+def Fits (V : ℤ) (l : List ℕ) (s h lo hi : ℝ) (t : ℤ) : Prop :=
+  ⌈s * hi - h⌉ - ⌊s * lo - h⌋ ≤ V - norm1 l + 1 - t
+
+/-- `_zero_point` above the order `0`: `V/2 - round(s·(lo + hi)/2)`, which puts the middle of
+the range in the middle of the tokens, clamped to the zero points of `diffs_levels_add_mem`. -/
+noncomputable def zeroPoint (V : ℤ) (l : List ℕ) (s h lo hi : ℝ) (t : ℤ) : ℤ :=
+  min (max (V / 2 - roundHalfUp (s * (lo + hi) / 2)) (norm1 l / 2 + t - 1 - ⌊s * lo - h⌋))
+    (V - norm1 l / 2 - ⌈s * hi - h⌉)
+
+/-- Where `[lo, hi]` fits, `_zero_point` returns a zero point that puts all its tokens in
+`[t, V - 1]`. -/
+lemma zeroPoint_mem {V : ℤ} {l : List ℕ} (hl0 : l ≠ []) {s h lo hi : ℝ} {t : ℤ}
+    (hf : Fits V l s h lo hi t) :
+    norm1 l / 2 + t - 1 - ⌊s * lo - h⌋ ≤ zeroPoint V l s h lo hi t ∧
+      zeroPoint V l s h lo hi t ≤ V - norm1 l / 2 - ⌈s * hi - h⌉ := by
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  unfold Fits at hf
+  unfold zeroPoint
+  omega
+
+/-- No scale with `s·(hi - lo)` above the room `V - ‖c‖₁ + 1 - t` fits: `⌈s·hi - h⌉` and
+`⌊s·lo - h⌋` lie at least `s·(hi - lo)` apart. -/
+lemma mul_le_of_fits {V : ℤ} {l : List ℕ} {s h lo hi : ℝ} {t : ℤ} (hf : Fits V l s h lo hi t) :
+    s * (hi - lo) ≤ V - norm1 l + 1 - t := by
+  unfold Fits at hf
+  have h1 := Int.le_ceil (s * hi - h)
+  have h2 := Int.floor_le (s * lo - h)
+  have h3 : ((⌈s * hi - h⌉ - ⌊s * lo - h⌋ : ℤ) : ℝ) ≤ ((V - norm1 l + 1 - t : ℤ) : ℝ) := by
+    exact_mod_cast hf
+  push_cast at h3
+  linarith
+
+/-- `_max_scale`'s fallback: a scale a level short of the room, `s·(hi - lo) ≤ V - ‖c‖₁ - t`,
+fits whatever `lo`, since `⌈s·hi - h⌉` and `⌊s·lo - h⌋` lie less than a level outside
+`[s·lo - h, s·hi - h]`. -/
+lemma fits_of_mul_le {V : ℤ} {l : List ℕ} {s h lo hi : ℝ} {t : ℤ}
+    (hs : s * (hi - lo) ≤ V - norm1 l - t) : Fits V l s h lo hi t := by
+  have h1 := Int.ceil_lt_add_one (s * hi - h)
+  have h2 := Int.sub_one_lt_floor (s * lo - h)
+  have h3 : ((⌈s * hi - h⌉ - ⌊s * lo - h⌋ : ℤ) : ℝ) < ((V - norm1 l - t + 2 : ℤ) : ℝ) := by
+    push_cast
+    linarith
+  have := Int.cast_lt.mp h3
+  unfold Fits
+  omega
+
+/-- `_max_scale`'s best scale: where `s·lo - h` is an integer, `s·(hi - lo)` can be all the room
+`V - ‖c‖₁ + 1 - t`. -/
+lemma fits_of_pivot {V : ℤ} {l : List ℕ} {s h lo hi : ℝ} {t p : ℤ} (hp : s * lo - h = p)
+    (hs : s * (hi - lo) = V - norm1 l + 1 - t) : Fits V l s h lo hi t := by
+  have e : s * hi - h = ((p + (V - norm1 l + 1 - t) : ℤ) : ℝ) := by
+    push_cast
+    linarith
+  unfold Fits
+  rw [hp, e, Int.ceil_intCast, Int.floor_intCast]
+  omega
 
 /-- `‖c‖₁ ≥ 2`: `c` has a coefficient `1` and sums to `0`. -/
 lemma two_le_norm1 {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) (hl0 : l ≠ []) : 2 ≤ norm1 l := by
@@ -361,78 +456,185 @@ lemma cast_sign (a : ℤ) : |((a.sign : ℤ) : ℝ)| ≤ 1 ∧ (a : ℝ) * (a.si
     rw [Int.sign_eq_one_of_pos h, abs_of_pos h']
     norm_num
 
-/-- No scale above `(V - ‖c‖₁) / (2D)` keeps every token in range: errors of the signs of the
-coefficients, of magnitude `t / ‖c‖₁ < 1/2`, add `t` to `c(B)` of the levels, so a step of `D`
-gets the token `V`, or one above it. -/
-theorem exists_levels_ge {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
-    (hl0 : l ≠ []) {s D : ℝ} (hs : 0 < s) (hsD : ((V : ℝ) - norm1 l) / 2 < s * D) :
-    ∃ x : ℕ → ℝ, diffs l x 0 = D ∧ V / 2 ≤ diffs l (fun m => roundHalfUp (s * x m)) 0 := by
-  obtain ⟨v, rfl⟩ := hV
-  rw [show (v + v) / 2 = v by omega]
-  push_cast at hsD
+/-- Any integer `K` within `‖c‖₁/2` of `s·d - h` is `c(B) L 0` of a series with `c(B) x 0 = d`:
+errors of the signs of the coefficients, of magnitude `|K - (s·d - h)| / ‖c‖₁ < 1/2`, make up
+the difference. -/
+theorem exists_levels_eq {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) (hl0 : l ≠ []) {s h : ℝ}
+    (hs : 0 < s) {A : ℕ → ℝ} (hA : s * diffs l A 0 = h) (d : ℝ) {K : ℤ}
+    (hK : |K - (s * d - h)| < (norm1 l : ℝ) / 2) :
+    ∃ x : ℕ → ℝ, diffs l x 0 = d ∧ diffs l (fun m => roundHalfUp (s * (x m - A m))) 0 = K := by
   have hc2 : (2 : ℝ) ≤ norm1 l := by exact_mod_cast two_le_norm1 hl hl0
   set c : ℝ := (norm1 l : ℝ) with hc
-  -- the level `K ≥ V/2` that `c(B) L` takes, and the excess `t` of `c(B)` of the errors
-  set K : ℤ := max v ⌈s * D⌉ with hK
-  set t : ℝ := K - s * D with ht
-  have ht0 : 0 ≤ t := by
-    have : s * D ≤ K := (Int.le_ceil _).trans (by exact_mod_cast le_max_right _ _)
-    linarith
-  have htc : t < c / 2 := by
-    rcases le_total ⌈s * D⌉ v with h | h
-    · have : (K : ℝ) = v := by rw [hK, max_eq_left h]
-      linarith
-    · have : (K : ℝ) = ⌈s * D⌉ := by rw [hK, max_eq_right h]
-      linarith [Int.ceil_lt_add_one (s * D)]
-  set ζ : ℕ → ℝ := fun j => t / c * ((coeff l j).sign : ℤ) with hζ
+  set τ : ℝ := K - (s * d - h) with hτ
+  set ζ : ℕ → ℝ := fun j => τ / c * ((coeff l j).sign : ℤ) with hζ
   have hζ2 : ∀ j, |ζ j| < 1 / 2 := fun j => by
-    have h2 : |t / c| < 1 / 2 := by
-      rw [abs_of_nonneg (by positivity), div_lt_iff₀ (by linarith)]
+    have h2 : |τ / c| < 1 / 2 := by
+      rw [abs_div, abs_of_pos (by linarith : (0 : ℝ) < c), div_lt_iff₀ (by linarith)]
       linarith
     rw [hζ, abs_mul]
-    calc |t / c| * |(((coeff l j).sign : ℤ) : ℝ)| ≤ |t / c| * 1 :=
+    calc |τ / c| * |(((coeff l j).sign : ℤ) : ℝ)| ≤ |τ / c| * 1 :=
           mul_le_mul_of_nonneg_left (cast_sign _).1 (abs_nonneg _)
       _ < 1 / 2 := by linarith
   -- the levels: `K` at the last value, `0` before it
-  set n : ℕ → ℤ := fun j => if j = l.sum then K else 0 with hn
-  have hdn : diffs l n 0 = K := by
-    rw [diffs_eq_sum, Finset.sum_eq_single l.sum (fun j _ hj => by simp [hn, hj])
+  set k : ℕ → ℤ := fun j => if j = l.sum then K else 0 with hk
+  have hdk : diffs l k 0 = K := by
+    rw [diffs_eq_sum, Finset.sum_eq_single l.sum (fun j _ hj => by simp [hk, hj])
       (fun h => absurd (Finset.self_mem_range_succ _) h)]
-    simp [hn, coeff_sum_self hl]
-  have hdζ : diffs l ζ 0 = t := by
+    simp [hk, coeff_sum_self hl]
+  have hdζ : diffs l ζ 0 = τ := by
     rw [diffs_eq_sum]
     simp only [hζ, zsmul_eq_mul, zero_add]
-    have h : ∀ j ∈ Finset.range (l.sum + 1),
-        (coeff l j : ℝ) * (t / c * ((coeff l j).sign : ℤ)) = t / c * |((coeff l j : ℤ) : ℝ)| :=
+    have hterm : ∀ j ∈ Finset.range (l.sum + 1),
+        (coeff l j : ℝ) * (τ / c * ((coeff l j).sign : ℤ)) = τ / c * |((coeff l j : ℤ) : ℝ)| :=
       fun j _ => by rw [← (cast_sign (coeff l j)).2]; ring
     have hc' : ∑ j ∈ Finset.range (l.sum + 1), |((coeff l j : ℤ) : ℝ)| = c := by
       simp [hc, norm1]
-    rw [Finset.sum_congr rfl h, ← Finset.mul_sum, hc', div_mul_cancel₀ _ (by linarith : 0 < c).ne']
-  refine ⟨fun j => (n j - ζ j) / s, ?_, ?_⟩
-  · have hx : (fun j => ((n j : ℤ) - ζ j) / s) =
-        s⁻¹ • ((fun j => ((n j : ℤ) : ℝ)) + (-1 : ℝ) • ζ) := by
+    rw [Finset.sum_congr rfl hterm, ← Finset.mul_sum, hc',
+      div_mul_cancel₀ _ (by linarith : 0 < c).ne']
+  have hA' : diffs l A 0 = h / s := by
+    rw [← hA, mul_div_cancel_left₀ _ hs.ne']
+  refine ⟨fun j => (k j - ζ j) / s + A j, ?_, ?_⟩
+  · have hx : (fun j => ((k j : ℤ) - ζ j) / s + A j) =
+        s⁻¹ • ((fun j => ((k j : ℤ) : ℝ)) + (-1 : ℝ) • ζ) + A := by
       funext j
       simp only [Pi.smul_apply, Pi.add_apply, smul_eq_mul]
       ring
-    rw [hx, diffs_const_smul, diffs_add, diffs_const_smul, Pi.smul_apply, Pi.add_apply,
-      Pi.smul_apply, hdζ, ← cast_diffs, hdn, ht, smul_eq_mul, smul_eq_mul]
+    rw [hx]
+    simp only [diffs_add, diffs_const_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    rw [hdζ, ← cast_diffs, hdk, hA', hτ]
     field_simp
     ring
-  · have hL : (fun m => roundHalfUp (s * (((n m : ℤ) : ℝ) - ζ m) / s)) = n := by
-      funext m
-      rw [mul_div_cancel_left₀ _ hs.ne', roundHalfUp, Int.floor_eq_iff]
-      obtain ⟨h1, h2⟩ := abs_lt.mp (hζ2 m)
-      constructor <;> linarith
-    simp only [mul_div_assoc'] at hL ⊢
-    rw [hL, hdn]
-    exact le_max_left _ _
+  · rw [← hdk]
+    congr 1
+    funext m
+    show roundHalfUp (s * ((((k m : ℤ) : ℝ) - ζ m) / s + A m - A m)) = k m
+    rw [add_sub_cancel_right, ← mul_div_assoc, mul_div_cancel_left₀ _ hs.ne', roundHalfUp,
+      Int.floor_eq_iff]
+    obtain ⟨h1, h2⟩ := abs_lt.mp (hζ2 m)
+    constructor <;> linarith
 
-/-- "lgt": levels on the absolute grid, `A = 0`. -/
-theorem lgt_token_bound {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
-    (hl0 : l ≠ []) {s D : ℝ} (hs : 0 ≤ s) {x : ℕ → ℝ} (hD : ∀ n, |diffs l x n| ≤ D)
-    (hsD : s * D ≤ ((V : ℝ) - norm1 l) / 2) (n : ℕ) :
-    |diffs l (fun m => roundHalfUp (s * x m)) n| ≤ V / 2 - 1 := by
-  simpa using abs_diffs_levels_le hV hl hl0 hs (diffs_zero l) (hD n) hsD
+/-- `_fits` is exact: where some zero point puts the token of every step in `[lo, hi]` within
+`[t, V - 1]`, `[lo, hi]` fits, since a step of `lo` takes the least integer of
+`diffs_levels_mem` and one of `hi` the greatest (`exists_levels_eq`). -/
+theorem fits_of_forall_mem {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) (hl0 : l ≠ []) {s h lo hi : ℝ}
+    (hs : 0 < s) (hlo : lo ≤ hi) {A : ℕ → ℝ} (hA : s * diffs l A 0 = h) {V z t : ℤ}
+    (H : ∀ x : ℕ → ℝ, lo ≤ diffs l x 0 → diffs l x 0 ≤ hi →
+      t ≤ diffs l (fun m => roundHalfUp (s * (x m - A m))) 0 + z ∧
+        diffs l (fun m => roundHalfUp (s * (x m - A m))) 0 + z ≤ V - 1) :
+    Fits V l s h lo hi t := by
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  have hk1 : (1 : ℝ) ≤ k := by
+    have := two_le_norm1 hl hl0
+    exact_mod_cast (show 1 ≤ k by omega)
+  have hkR : (norm1 l : ℝ) / 2 = k := by
+    rw [hk]
+    push_cast
+    ring
+  -- the greatest integer, `⌈s·hi - h⌉ - 1 + ‖c‖₁/2`, at a step of `hi`
+  obtain ⟨x₁, hx₁, hL₁⟩ := exists_levels_eq hl hl0 hs hA hi (K := ⌈s * hi - h⌉ - 1 + k) (by
+    rw [hkR, abs_lt]
+    have h1 := Int.le_ceil (s * hi - h)
+    have h2 := Int.ceil_lt_add_one (s * hi - h)
+    push_cast
+    constructor <;> linarith)
+  -- the least, `⌊s·lo - h⌋ + 1 - ‖c‖₁/2`, at a step of `lo`
+  obtain ⟨x₀, hx₀, hL₀⟩ := exists_levels_eq hl hl0 hs hA lo (K := ⌊s * lo - h⌋ + 1 - k) (by
+    rw [hkR, abs_lt]
+    have h1 := Int.floor_le (s * lo - h)
+    have h2 := Int.lt_floor_add_one (s * lo - h)
+    push_cast
+    constructor <;> linarith)
+  have h₁ := (H x₁ (by rw [hx₁]; exact hlo) (le_of_eq hx₁)).2
+  have h₀ := (H x₀ (ge_of_eq hx₀) (by rw [hx₀]; exact hlo)).1
+  rw [hL₁] at h₁
+  rw [hL₀] at h₀
+  unfold Fits
+  omega
+
+/-- The middle of `[-D, D]` is `0`, which `_zero_point` rounds to `0`. -/
+lemma roundHalfUp_mid_domain (s D : ℝ) : roundHalfUp (s * (-D + D) / 2) = 0 := by
+  rw [neg_add_cancel, mul_zero, zero_div, roundHalfUp, zero_add, Int.floor_eq_zero_iff]
+  norm_num
+
+/-- On `[-D, D]`, with the anchor in the kernel, the tokens `[1, V - 1]` fit exactly when
+`s·D ≤ (V - ‖c‖₁)/2`. -/
+lemma fits_domain_iff {V : ℤ} (hV : Even V) {l : List ℕ} (hl0 : l ≠ []) {s D : ℝ} :
+    Fits V l s 0 (-D) D 1 ↔ s * D ≤ ((V : ℝ) - norm1 l) / 2 := by
+  obtain ⟨v, rfl⟩ := hV
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  have e : (((v + v : ℤ) : ℝ) - ((norm1 l : ℤ) : ℝ)) / 2 = ((v - k : ℤ) : ℝ) := by
+    rw [hk]
+    push_cast
+    ring
+  rw [Fits, e, ← Int.ceil_le, sub_zero, sub_zero, mul_neg, Int.floor_neg]
+  omega
+
+/-- On `[-D, D]` `_zero_point` returns `V/2` for the anchor in the kernel. -/
+lemma zeroPoint_domain {V : ℤ} (hV : Even V) {l : List ℕ} (hl0 : l ≠ []) {s D : ℝ}
+    (hf : Fits V l s 0 (-D) D 1) : zeroPoint V l s 0 (-D) D 1 = V / 2 := by
+  obtain ⟨v, rfl⟩ := hV
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  unfold Fits at hf
+  rw [zeroPoint, roundHalfUp_mid_domain]
+  simp only [sub_zero, mul_neg, Int.floor_neg] at hf ⊢
+  omega
+
+/-- Theorem 1 on `[-D, D]`: with the anchor in the kernel and `s·D ≤ (V - ‖c‖₁)/2` every token
+`c(B) L n + V/2` lies in `[1, V - 1]`. -/
+theorem abs_diffs_levels_le {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
+    (hl0 : l ≠ []) {s D : ℝ} (hs : 0 ≤ s) {x A : ℕ → ℝ} {n : ℕ} (hA : diffs l A n = 0)
+    (hD : |diffs l x n| ≤ D) (hsD : s * D ≤ ((V : ℝ) - norm1 l) / 2) :
+    |diffs l (fun m => roundHalfUp (s * (x m - A m))) n| ≤ V / 2 - 1 := by
+  have hf := (fits_domain_iff hV hl0).mpr hsD
+  have h := diffs_levels_add_mem hl hl0 hs (by rw [hA, mul_zero]) (abs_le.mp hD)
+    (zeroPoint_mem hl0 hf)
+  rw [zeroPoint_domain hV hl0 hf] at h
+  obtain ⟨v, rfl⟩ := hV
+  rw [abs_le]
+  omega
+
+/-- On `[-D, D]`, with the half-step anchor, all the tokens `[0, V - 1]` fit exactly when
+`s·D ≤ (V - ‖c‖₁ + 1)/2`. -/
+lemma fits_domain_half_iff {V : ℤ} (hV : Even V) {l : List ℕ} (hl0 : l ≠ []) {s D : ℝ} :
+    Fits V l s (1 / 2) (-D) D 0 ↔ s * D ≤ ((V : ℝ) - norm1 l + 1) / 2 := by
+  obtain ⟨v, rfl⟩ := hV
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  have e : s * D ≤ (((v + v : ℤ) : ℝ) - ((norm1 l : ℤ) : ℝ) + 1) / 2 ↔
+      s * D - 1 / 2 ≤ ((v - k : ℤ) : ℝ) := by
+    rw [hk]
+    push_cast
+    constructor <;> intro h <;> linarith
+  have e1 : s * -D - 1 / 2 = -(s * D - 1 / 2 + 1) := by ring
+  rw [Fits, e, ← Int.ceil_le, e1, Int.floor_neg, Int.ceil_add_one]
+  omega
+
+/-- On `[-D, D]` `_zero_point` returns `V/2` for the half-step anchor. -/
+lemma zeroPoint_domain_half {V : ℤ} (hV : Even V) {l : List ℕ} (hl0 : l ≠ []) {s D : ℝ}
+    (hf : Fits V l s (1 / 2) (-D) D 0) : zeroPoint V l s (1 / 2) (-D) D 0 = V / 2 := by
+  obtain ⟨v, rfl⟩ := hV
+  obtain ⟨k, hk⟩ := even_norm1 hl0
+  have e1 : s * -D - 1 / 2 = -(s * D - 1 / 2 + 1) := by ring
+  unfold Fits at hf
+  rw [e1, Int.floor_neg, Int.ceil_add_one] at hf
+  rw [zeroPoint, roundHalfUp_mid_domain, e1, Int.floor_neg, Int.ceil_add_one]
+  omega
+
+/-- With the half-step anchor, `s·c(B) A n = 1/2`, and `s·D ≤ (V - ‖c‖₁ + 1)/2` every token
+`c(B) L n + V/2` lies in `[0, V - 1]`: one level more than `abs_diffs_levels_le`. -/
+theorem diffs_levels_mem_half {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
+    (hl0 : l ≠ []) {s D : ℝ} (hs : 0 ≤ s) {x A : ℕ → ℝ} {n : ℕ} (hA : s * diffs l A n = 1 / 2)
+    (hD : |diffs l x n| ≤ D) (hsD : s * D ≤ ((V : ℝ) - norm1 l + 1) / 2) :
+    -(V / 2) ≤ diffs l (fun m => roundHalfUp (s * (x m - A m))) n ∧
+      diffs l (fun m => roundHalfUp (s * (x m - A m))) n ≤ V / 2 - 1 := by
+  have hf := (fits_domain_half_iff hV hl0).mpr hsD
+  have h := diffs_levels_add_mem hl hl0 hs hA (abs_le.mp hD) (zeroPoint_mem hl0 hf)
+  rw [zeroPoint_domain_half hV hl0 hf] at h
+  obtain ⟨v, rfl⟩ := hV
+  omega
+
+/-- The scale `s = (V - h) / (2D)` gives `s·D = (V - h)/2`. -/
+lemma scale_mul_domain (V h : ℝ) {D : ℝ} (hD : D ≠ 0) : (V - h) / (2 * D) * D = (V - h) / 2 := by
+  field_simp
 
 /-! ### Inverting `c(B)` -/
 
@@ -580,13 +782,12 @@ theorem eq_of_diffs_eq_of_lt {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) {M : ℕ} 
 
 end
 
-/-- "mash": levels measured from the anchor `A = invert l pre 0` in the kernel, through the
-first `p` values `pre`. -/
-theorem mash_token_bound {V : ℤ} (hV : Even V) {l : List ℕ} (hl : ∀ S ∈ l, 0 < S)
-    (hl0 : l ≠ []) {s D : ℝ} (hs : 0 ≤ s) {x : ℕ → ℝ} (pre : ℕ → ℝ)
-    (hD : ∀ n, |diffs l x n| ≤ D) (hsD : s * D ≤ ((V : ℝ) - norm1 l) / 2) (n : ℕ) :
-    |diffs l (fun m => roundHalfUp (s * (x m - invert l pre 0 m))) n| ≤ V / 2 - 1 :=
-  abs_diffs_levels_le hV hl hl0 hs (diffs_invert hl pre 0) (hD n) hsD
+/-- "mash-half": the anchor through the first `p` values `pre` with `c(B) A = 1/(2s)` steps by
+half a level; "mash" takes `invert l pre 0`, in the kernel (`diffs_invert`). -/
+lemma mul_diffs_half_anchor {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) {s : ℝ} (hs : s ≠ 0)
+    (pre : ℕ → ℝ) (n : ℕ) : s * diffs l (invert l pre fun _ => 1 / (2 * s)) n = 1 / 2 := by
+  rw [diffs_invert hl]
+  field_simp
 
 /-! ### Decoding -/
 
@@ -621,25 +822,38 @@ lemma half_step_eq {V h D : ℝ} (hD : D ≠ 0) (hV : V - h ≠ 0) :
 lemma floor_eq_roundHalfUp (u : ℝ) : ⌊u⌋ = roundHalfUp (u - 1 / 2) := by
   rw [roundHalfUp, sub_add_cancel]
 
-/-- The order-0 token `⌊s·x⌋ + V/2` lies in `[0, V - 1]` when `|x| ≤ D` and `s·D < V/2`. -/
-theorem floor_mem_of_domain {V : ℤ} (hV : Even V) {s D x : ℝ} (hs : 0 ≤ s) (hD : |x| ≤ D)
-    (hsD : s * D < (V : ℝ) / 2) : 0 ≤ ⌊s * x⌋ + V / 2 ∧ ⌊s * x⌋ + V / 2 ≤ V - 1 := by
-  obtain ⟨m, rfl⟩ := hV
-  have hm : (m + m) / 2 = m := by omega
-  have hVm : ((m + m : ℤ) : ℝ) / 2 = m := by
+/-- The order-0 token `⌊s·x⌋ + z` lies in `[0, V - 1]` where `lo ≤ x ≤ hi`, for the zero points
+from `-⌊s·lo⌋` to `V - 1 - ⌊s·hi⌋`. -/
+theorem floor_add_mem {V z : ℤ} {s lo hi x : ℝ} (hs : 0 ≤ s) (hx : lo ≤ x ∧ x ≤ hi)
+    (hz : -⌊s * lo⌋ ≤ z ∧ z ≤ V - 1 - ⌊s * hi⌋) : 0 ≤ ⌊s * x⌋ + z ∧ ⌊s * x⌋ + z ≤ V - 1 := by
+  have h1 := Int.floor_le_floor (mul_le_mul_of_nonneg_left hx.1 hs)
+  have h2 := Int.floor_le_floor (mul_le_mul_of_nonneg_left hx.2 hs)
+  omega
+
+/-- `_zero_point` at the order `0`: `V/2 - round(s·(lo + hi)/2)`, clamped to the zero points of
+`floor_add_mem`. -/
+noncomputable def zeroPoint0 (V : ℤ) (s lo hi : ℝ) : ℤ :=
+  min (max (V / 2 - roundHalfUp (s * (lo + hi) / 2)) (-⌊s * lo⌋)) (V - 1 - ⌊s * hi⌋)
+
+/-- Where `[lo, hi]` fits at the order `0`, `⌊s·hi⌋ - ⌊s·lo⌋ < V` (`_fits`), `_zero_point`
+returns a zero point of `floor_add_mem`. -/
+lemma zeroPoint0_mem {V : ℤ} {s lo hi : ℝ} (hf : ⌊s * hi⌋ - ⌊s * lo⌋ < V) :
+    -⌊s * lo⌋ ≤ zeroPoint0 V s lo hi ∧ zeroPoint0 V s lo hi ≤ V - 1 - ⌊s * hi⌋ := by
+  unfold zeroPoint0
+  omega
+
+/-- On `[-D, D]` the order `0` fits for `s·D < V/2`, with the zero point `V/2`. -/
+lemma zeroPoint0_domain {V : ℤ} (hV : Even V) {s D : ℝ} (hsD : s * D < (V : ℝ) / 2) :
+    ⌊s * D⌋ - ⌊s * -D⌋ < V ∧ zeroPoint0 V s (-D) D = V / 2 := by
+  obtain ⟨v, rfl⟩ := hV
+  have hv : ((v + v : ℤ) : ℝ) / 2 = v := by
     push_cast
     ring
-  rw [hm]
-  rw [hVm] at hsD
-  have hx : |s * x| ≤ s * D := by
-    rw [abs_mul, abs_of_nonneg hs]
-    exact mul_le_mul_of_nonneg_left hD hs
-  obtain ⟨h1, h2⟩ := abs_le.mp hx
-  constructor
-  · have : -m ≤ ⌊s * x⌋ := Int.le_floor.mpr (by push_cast; linarith)
-    omega
-  · have : ⌊s * x⌋ < m := Int.floor_lt.mpr (by linarith)
-    omega
+  rw [hv] at hsD
+  have h1 : ⌊s * D⌋ < v := Int.floor_lt.mpr hsD
+  have h2 : ⌈s * D⌉ ≤ v := Int.ceil_le.mpr hsD.le
+  rw [zeroPoint0, roundHalfUp_mid_domain, mul_neg, Int.floor_neg]
+  omega
 
 /-- The order-0 decode `(⌊s·x⌋ + 1/2)/s`, the middle of the cell `[⌊s·x⌋, ⌊s·x⌋ + 1)/s`, lies
 within `1/(2s)` of `x`. -/

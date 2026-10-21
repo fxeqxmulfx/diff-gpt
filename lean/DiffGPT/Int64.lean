@@ -23,9 +23,9 @@ numpy's int64 and uint64 arrays add and subtract modulo `2^64` without a check, 
   returns by the first factors stay in range (`toInt_invertI64`).
 * uint64 is a ring modulo `2^64`, so `_invert_difference` in uint64 is the integer `invert`
   modulo `2^64` (`map_invert`), and masking with `2^G - 1` leaves it modulo `2^G`
-  (`anchor_numerators`). The residues modulo `2^G` of an integer sequence in the kernel of
-  `c(B)` have `c(B)` divisible by `2^G` (`diffs_emod_eq`), below `2^(m-1+G)` in magnitude
-  (`abs_diffs_emod_lt`).
+  (`anchor_numerators`). `c(B)` of the residues modulo `2^G` of an integer sequence is `c(B)` of
+  the sequence less `2^G` times that of the quotients (`diffs_emod_eq`), and below
+  `2^(m-1+G)` in magnitude (`abs_diffs_emod_lt`).
 * `>> G` is the floor division by `2^G` (`toInt_shiftRight_ofNat`), and `.astype(np.int64)`
   keeps uint64 values below `2^63` (`toInt_toInt64_of_lt`).
 -/@[expose] public section
@@ -51,6 +51,11 @@ theorem toInt_add_of_inInt64 (a b : Int64) (h : InInt64 (a.toInt + b.toInt)) :
 theorem toInt_sub_of_inInt64 (a b : Int64) (h : InInt64 (a.toInt - b.toInt)) :
     (a - b).toInt = a.toInt - b.toInt := by
   rw [Int64.toInt_sub, bmod_eq_of_inInt64 h]
+
+/-- numpy casts a Python int in the int64 range to itself. -/
+lemma toInt_ofInt_of_inInt64 {n : ℤ} (h : InInt64 n) : (Int64.ofInt n).toInt = n := by
+  rw [Int64.toInt_ofInt]
+  exact bmod_eq_of_inInt64 h
 
 /-! ### Modulo `2^64` -/
 
@@ -322,19 +327,20 @@ theorem toInt_invertI64 {l : List ℕ} (hl : ∀ S ∈ l, 0 < S) {M : ℕ} (hM :
       abel
     · exact hnr hr
 
-/-! ### The "mash" anchor -/
+/-! ### The anchor -/
 
-/-- The residues modulo `2^G` of a sequence in the kernel of `c(B)` have `c(B)` `2^G` times
-that of the quotients, negated. -/
-theorem diffs_emod_eq {l : List ℕ} {P : ℕ → ℤ} (hP : diffs l P = 0) (G n : ℕ) :
-    diffs l (fun m => P m % 2 ^ G) n = -(2 ^ G * diffs l (fun m => P m / 2 ^ G) n) := by
+/-- `c(B)` of the residues modulo `2^G` is that of the sequence less `2^G` times that of the
+quotients. -/
+theorem diffs_emod_eq (l : List ℕ) (P : ℕ → ℤ) (G n : ℕ) :
+    diffs l (fun m => P m % 2 ^ G) n =
+      diffs l P n - 2 ^ G * diffs l (fun m => P m / 2 ^ G) n := by
   have e : (fun m => P m % 2 ^ G) = P + (-(2 : ℤ) ^ G) • fun m => P m / 2 ^ G := by
     funext m
     simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     have := Int.mul_ediv_add_emod (P m) (2 ^ G)
     linarith
-  rw [e, diffs_add, diffs_const_smul, hP]
-  simp
+  rw [e, diffs_add, diffs_const_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  ring
 
 /-- At least one factor: `c(B)` of residues modulo `2^G` stays below `2^(m-1+G)` in
 magnitude. -/
@@ -345,26 +351,22 @@ theorem abs_diffs_emod_lt (P : ℕ → ℤ) {l : List ℕ} (hl : l ≠ []) (G n 
     (fun m => ⟨Int.emod_nonneg _ (by positivity), Int.emod_lt_of_pos _ (by positivity)⟩) hl n
 
 open scoped UInt64.CommRing in
-/-- The anchor numerators: `_invert_difference` of the seeds in uint64, masked with `2^G - 1`,
-are the integer anchor `P = invert l seeds 0` modulo `2^G`. -/
-theorem anchor_numerators {G : ℕ} (hG : G ≤ 64) (l : List ℕ) (seeds : ℕ → UInt64) (n : ℕ) :
-    (((invert l seeds 0 n) &&& UInt64.ofNat (2 ^ G - 1)).toNat : ℤ) =
-      invert l (fun m => ((seeds m).toNat : ℤ)) 0 n % 2 ^ G := by
-  set Z := invert l (fun m => ((seeds m).toNat : ℤ)) 0 n
+/-- The anchor numerators: `_invert_difference` of the seeds with the constant `step` in
+uint64, masked with `2^G - 1`, are the integer anchor `P = invert l seeds step` modulo `2^G`. -/
+theorem anchor_numerators {G : ℕ} (hG : G ≤ 64) (l : List ℕ) (seeds : ℕ → UInt64)
+    (step : UInt64) (n : ℕ) :
+    (((invert l seeds (fun _ => step) n) &&& UInt64.ofNat (2 ^ G - 1)).toNat : ℤ) =
+      invert l (fun m => ((seeds m).toNat : ℤ)) (fun _ => (step.toNat : ℤ)) n % 2 ^ G := by
+  set Z := invert l (fun m => ((seeds m).toNat : ℤ)) (fun _ => (step.toNat : ℤ)) n
   -- the uint64 inversion is the integer one cast to uint64
-  have hZ : invert l seeds 0 n = ((Z : ℤ) : UInt64) := by
+  have hZ : invert l seeds (fun _ => step) n = ((Z : ℤ) : UInt64) := by
     have h := map_invert (Int.castRingHom UInt64).toAddMonoidHom l
-      (fun m => ((seeds m).toNat : ℤ)) 0 n
-    have hs : (fun m => (Int.castRingHom UInt64).toAddMonoidHom ((seeds m).toNat : ℤ)) =
-        seeds := by
-      funext m
+      (fun m => ((seeds m).toNat : ℤ)) (fun _ => (step.toNat : ℤ)) n
+    have hc (u : UInt64) : (Int.castRingHom UInt64).toAddMonoidHom (u.toNat : ℤ) = u := by
       simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, eq_intCast,
         Int.cast_natCast]
       exact UInt64.ofNat_toNat
-    have h0 : (fun m => (Int.castRingHom UInt64).toAddMonoidHom ((0 : ℕ → ℤ) m)) = 0 := by
-      funext m
-      simp
-    rw [hs, h0] at h
+    simp only [hc] at h
     exact h.symm
   have hmask : (UInt64.ofNat (2 ^ G - 1)).toNat = 2 ^ G - 1 := by
     rw [UInt64.toNat_ofNat']
