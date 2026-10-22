@@ -36,19 +36,19 @@ from typing import NamedTuple
 from tempopfn_corpus import sources
 
 # CPU seconds per series of one single-threaded process, from the pilot's 5120
-# series per source, three jobs on three cores. Those of kernel and
-# cauker_univariate are upper bounds: the pilot built their kernel matrices
-# with sklearn, and CauKer's on the GPU.
+# series per source, three jobs on three cores, but for kernel and
+# cauker_univariate: from their train series 0-2048 made by the present
+# stand-ins, two jobs on two cores, where the pilot took 0.41 and 0.39.
 SECONDS_PER_SERIES = {
     "forecast_pfn": 0.013,
     "gp": 0.64,
-    "kernel": 0.41,
+    "kernel": 0.13,
     "sawtooth": 0.0013,
     "sinewave": 0.0016,
     "step": 0.0043,
     "anomaly": 0.0013,
     "spike": 0.0015,
-    "cauker_univariate": 0.41,
+    "cauker_univariate": 0.070,
     "ou_process": 0.029,
     "audio_financial_volatility": 0.014,
     "audio_multi_scale_fractal": 0.015,
