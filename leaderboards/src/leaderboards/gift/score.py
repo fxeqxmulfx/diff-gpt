@@ -11,13 +11,16 @@ configuration:
 
 replays each window as a gluonts QuantileForecast that starts where the
 window's forecast starts, and runs evaluate_model with the leaderboard's
-metrics into RUNS/results/<model>/<split>/all_results.csv.
+metrics into RUNS/results/<model>/<split>/all_results.csv. --jobs scores
+that many configurations at once, each in a process of its own that exits
+after it; this process writes their rows as they finish.
 """
 
 from __future__ import annotations
 
 import argparse
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -44,6 +47,8 @@ if TYPE_CHECKING:
 
     from gluonts.dataset import DataEntry
     from gluonts.dataset.split import TestData
+
+    from leaderboards.gift.configs import Config
 
 QUANTILE_LEVELS = (0.025, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.975)
 FORECAST_KEYS = ["mean", *(str(level) for level in QUANTILE_LEVELS)]
@@ -128,6 +133,18 @@ def score(
     return evaluate(ReplayPredictor(forecasts), test_data, season_length)
 
 
+def run(
+    config: Config, split: str, data: Path, path: Path
+) -> tuple[Config, dict[str, float], float]:
+    """Score the forecasts at `path` of `split` of `config`; return the seconds too."""
+    started = time.perf_counter()
+    dataset = load(config.name, config.term, data)
+    metrics = score(
+        windows(dataset, split), read_forecasts(path), get_seasonality(dataset.freq)
+    )
+    return config, metrics, time.perf_counter() - started
+
+
 def main() -> None:
     """Score a model's forecasts of the chosen configurations."""
     parser = argparse.ArgumentParser(
@@ -136,6 +153,7 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--split", choices=SPLITS, default="test")
     parser.add_argument("--only", nargs="*", help="keys (default: all 97)")
+    parser.add_argument("--jobs", type=int, default=1, help="processes")
     parser.add_argument("--data", type=Path, default=DATA)
     parser.add_argument("--gift-repo", type=Path, default=GIFT_REPO)
     parser.add_argument("--forecasts", type=Path, default=RUNS / "forecasts")
@@ -147,21 +165,22 @@ def main() -> None:
     if missing:
         parser.error(f"no forecasts in {folder} for {missing}")
     path = results_path(args.model, args.split, args.results)
-    for config in configs:
-        started = time.perf_counter()
-        dataset = load(config.name, config.term, args.data)
-        metrics = score(
-            windows(dataset, args.split),
-            read_forecasts(folder / f"{config.file_key}.npz"),
-            get_seasonality(dataset.freq),
-        )
-        save_row(path, config, args.model, metrics)
-        seconds = time.perf_counter() - started
-        print(
-            f"{config.key}: MASE {metrics['MASE[0.5]']:.4f}"
-            f" CRPS {metrics['mean_weighted_sum_quantile_loss']:.4f}, {seconds:.1f} s",
-            flush=True,
-        )
+    with ProcessPoolExecutor(args.jobs, max_tasks_per_child=1) as pool:
+        runs = [
+            pool.submit(
+                run, config, args.split, args.data, folder / f"{config.file_key}.npz"
+            )
+            for config in configs
+        ]
+        for done in as_completed(runs):
+            config, metrics, seconds = done.result()
+            save_row(path, config, args.model, metrics)
+            print(
+                f"{config.key}: MASE {metrics['MASE[0.5]']:.4f}"
+                f" CRPS {metrics['mean_weighted_sum_quantile_loss']:.4f},"
+                f" {seconds:.1f} s",
+                flush=True,
+            )
     print(f"wrote {path}")
 
 

@@ -6,7 +6,8 @@ A port of StatsForecastPredictor from gift-eval's notebooks/naive.ipynb
 SeasonalNaive as its model, the reference of gate G1. Run in leaderboards/:
 ``uv run python -m leaderboards.gift.official --split test``. --max-length
 cuts each context to its last steps before imputation, as the predictor's
-max_length does; the notebook leaves it unset.
+max_length does; the notebook leaves it unset. --jobs scores that many
+configurations at once, each in a process of its own that exits after it.
 
 Two departures from the notebook, neither of which changes a forecast:
 
@@ -184,7 +185,7 @@ def main() -> None:
     )
     path = results_path(model, args.split, args.results)
     configs = select(configurations(args.gift_repo), args.only)
-    with ProcessPoolExecutor(args.jobs) as pool:
+    with ProcessPoolExecutor(args.jobs, max_tasks_per_child=1) as pool:
         runs = [
             pool.submit(
                 run, config, args.split, args.data, args.max_length, args.batch_size
