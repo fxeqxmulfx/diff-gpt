@@ -7,7 +7,7 @@ import pytest
 import torch
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
-from diff_gpt.model.engine import Engine
+from diff_gpt.model.engine import Engine, decode_backends
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
 
@@ -598,7 +598,7 @@ def test_decoding_keeps_the_enabled_attention_backends(
     """
     Check that the decode steps run attention with the caller's backends.
 
-    They put memory-efficient attention first, but every attention call, the
+    They reorder the backends (decode_backends), but every attention call, the
     prefill's and each decode step's, sees the backends the caller enabled:
     all of them by default, or the math backend alone, as after the calls.
     """
@@ -619,3 +619,40 @@ def test_decoding_keeps_the_enabled_attention_backends(
         handle.remove()
     # generate_many: a prefill and 2 decode steps; generate: a prefill and 3.
     assert seen == [caller] * 7
+
+
+@pytest.mark.parametrize(
+    ("capability", "first"),
+    [
+        (None, SDPBackend.EFFICIENT_ATTENTION),
+        ((5, 2), SDPBackend.MATH),
+        ((6, 1), SDPBackend.MATH),
+        ((7, 0), SDPBackend.EFFICIENT_ATTENTION),
+        ((8, 6), SDPBackend.EFFICIENT_ATTENTION),
+    ],
+)
+def test_decode_backends_put_math_first_before_capability_7(
+    capability: tuple[int, int] | None,
+    first: SDPBackend,
+) -> None:
+    """
+    Check the order of the attention backends for decode steps.
+
+    Math attention comes first on GPUs before compute capability 7.0, and
+    memory-efficient attention on newer GPUs and off CUDA. Every order holds
+    the four backends once, flash attention before math attention unless math
+    comes first, and cuDNN attention last.
+    """
+    order = decode_backends(capability)
+    assert order[0] == first
+    backends = {
+        SDPBackend.EFFICIENT_ATTENTION,
+        SDPBackend.FLASH_ATTENTION,
+        SDPBackend.MATH,
+        SDPBackend.CUDNN_ATTENTION,
+    }
+    assert len(order) == len(backends)
+    assert set(order) == backends
+    if first != SDPBackend.MATH:
+        assert order.index(SDPBackend.FLASH_ATTENTION) < order.index(SDPBackend.MATH)
+    assert order[-1] == SDPBackend.CUDNN_ATTENTION

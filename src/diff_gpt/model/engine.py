@@ -25,25 +25,56 @@ class _GenerateKwargs(TypedDict, total=False):
     force_schedule: list[int | None] | None
 
 
-def _decode_attention() -> AbstractContextManager[None]:
+def decode_backends(capability: tuple[int, int] | None) -> list[SDPBackend]:
     """
-    Prefer memory-efficient attention for decode steps, among the enabled backends.
+    Order the attention backends for decode steps on a device.
 
-    A decode step attends from one query per row to the whole cache. Flash
+    `capability` is the device's CUDA compute capability, None off CUDA. A
+    decode step attends from one query per row to the whole cache. Flash
     attention pads that query to a tile of rows, and memory-efficient
     attention decodes 1.1 times as fast at head_dim 32 and 1.5 times at 64
-    (float16, RTX 3050). cuDNN attention reads the cache faster still, but
-    builds a plan for each new cache length, 0.4 s each. The other enabled
-    backends follow in their default order; a disabled one stays disabled.
+    (float16, RTX 3050), so it comes first. cuDNN attention reads the cache
+    faster still, but builds a plan for each new cache length, 0.4 s each, so
+    it comes last. On a CPU, flash attention, the first one there, decodes
+    1.2 to 4 times as fast as math attention (Xeon E5-2680 v4).
+
+    Before capability 7.0, memory-efficient attention computes a tile of 64
+    query rows in float32 for the one query, and math attention (matrix
+    products and a softmax) comes first: from 60 rows up, it decodes 1.6
+    times as fast at head_dim 32 and 1.3 times at 64 in float32, and 12 to
+    16 times in float16 (GTX 1050, capability 6.1). At 20 rows of 512
+    positions, where launching the kernels takes most of a step, it runs
+    0.84 to 1.03 times as fast. It holds a scaled copy of one layer's keys
+    while it runs.
     """
-    enabled = (
-        (SDPBackend.EFFICIENT_ATTENTION, torch.backends.cuda.mem_efficient_sdp_enabled),
-        (SDPBackend.FLASH_ATTENTION, torch.backends.cuda.flash_sdp_enabled),
-        (SDPBackend.MATH, torch.backends.cuda.math_sdp_enabled),
-        (SDPBackend.CUDNN_ATTENTION, torch.backends.cuda.cudnn_sdp_enabled),
+    if capability is not None and capability < (7, 0):
+        return [
+            SDPBackend.MATH,
+            SDPBackend.EFFICIENT_ATTENTION,
+            SDPBackend.FLASH_ATTENTION,
+            SDPBackend.CUDNN_ATTENTION,
+        ]
+    return [
+        SDPBackend.EFFICIENT_ATTENTION,
+        SDPBackend.FLASH_ATTENTION,
+        SDPBackend.MATH,
+        SDPBackend.CUDNN_ATTENTION,
+    ]
+
+
+def _decode_attention(device: torch.device) -> AbstractContextManager[None]:
+    """Order the enabled backends for decode steps on `device` (decode_backends)."""
+    capability = (
+        torch.cuda.get_device_capability(device) if device.type == "cuda" else None
     )
+    enabled = {
+        SDPBackend.EFFICIENT_ATTENTION: torch.backends.cuda.mem_efficient_sdp_enabled(),
+        SDPBackend.FLASH_ATTENTION: torch.backends.cuda.flash_sdp_enabled(),
+        SDPBackend.MATH: torch.backends.cuda.math_sdp_enabled(),
+        SDPBackend.CUDNN_ATTENTION: torch.backends.cuda.cudnn_sdp_enabled(),
+    }
     return sdpa_kernel(
-        [backend for backend, is_enabled in enabled if is_enabled()],
+        [backend for backend in decode_backends(capability) if enabled[backend]],
         set_priority=True,
     )
 
@@ -223,7 +254,7 @@ class Engine:
             ids = torch.tensor(token_column, dtype=torch.long, device=device).unsqueeze(
                 1,
             )
-            with _decode_attention():
+            with _decode_attention(device):
                 logits, _ = self.model.forward(ids, kv_cache=kv_cache_decode)
             logits = logits[:, -1, :].float()  # (B, vocab_size)
 
@@ -336,6 +367,6 @@ class Engine:
                 ids = torch.multinomial(probs, num_samples=1, generator=rng)
             columns.append(ids)
             if step + 1 < max_tokens:
-                with _decode_attention():
+                with _decode_attention(device):
                     logits, _ = m.forward(ids, kv_cache=kv_cache)
         return torch.cat(columns, dim=1).tolist()
