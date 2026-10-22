@@ -9,12 +9,18 @@ class KVCache:
 
     Note that the .pos advances automatically after the last layer of the
     Transformer inserts.
+
+    A cache can continue the positions of another without copying them
+    (`share_prefix`): groups of its rows then share one copy of their
+    prompt's keys and values, and the cache itself holds only the positions
+    inserted after it.
     """
 
     __slots__ = (
         "kv_cache",
         "kv_shape",
         "pos",
+        "prefix",
     )
 
     def __init__(
@@ -36,37 +42,26 @@ class KVCache:
         # Transformer.
         self.kv_shape = (num_layers, 2, batch_size, num_heads, seq_len, head_dim)
         self.kv_cache = torch.zeros(0)
-        self.pos = 0  # current position in time in the cache
+        self.pos = 0  # positions in this cache's own storage
+        # Keys/values (L, 2, prompts, H, T, D) that groups of rows share
+        # before their own positions (share_prefix), or None
+        self.prefix: torch.Tensor | None = None
 
     def reset(self) -> None:
-        """Rewind the position to 0, keeping the allocated storage."""
+        """Rewind to the end of the shared prefix (0 without one), keeping storage."""
         self.pos = 0
 
     def get_pos(self) -> int:
         """Return the current position in time, i.e. how many steps are cached."""
-        return self.pos
+        if self.prefix is None:
+            return self.pos
+        return self.prefix.size(4) + self.pos
 
-    def prefill(self, other: KVCache) -> None:
-        """
-        Prefill given another KV cache, optionally expanding along the batch dim.
-
-        Each row of `other` fills self_batch / other_batch consecutive rows,
-        so a batch-1 prefill fills them all. This is used to prefill the
-        prompts once and then generate several samples of each in parallel.
-        """
-        # 1) validate the shapes
-        if self.kv_cache.size(0) != 0:
-            msg = "Cannot prefill a non-empty KV cache"
-            raise RuntimeError(msg)
-        if other.kv_cache.size(0) == 0:
-            msg = "Cannot prefill with a None KV cache"
-            raise ValueError(msg)
-
+    def _check_rows_of(self, other: KVCache) -> None:
+        """Raise ValueError unless every row of `other` can lead rows of self."""
         # Extract dimensions explicitly
-        self_layers, self_kv, self_batch, self_heads, self_seq, self_head_dim = (
-            self.kv_shape
-        )
-        # other's capacity is irrelevant: only its cached positions get copied
+        self_layers, self_kv, self_batch, self_heads, _, self_head_dim = self.kv_shape
+        # other's capacity is irrelevant: only its cached positions count
         other_layers, other_kv, other_batch, other_heads, _, other_head_dim = (
             other.kv_shape
         )
@@ -85,7 +80,7 @@ class KVCache:
             msg = f"Head dim mismatch: {self_head_dim} != {other_head_dim}"
             raise ValueError(msg)
 
-        # Batch size can be expanded: every row of other is copied as often
+        # Batch size can be expanded: every row of other leads as many rows
         if self_batch % other_batch != 0:
             msg = (
                 f"Batch size mismatch: {self_batch} vs {other_batch} "
@@ -93,8 +88,29 @@ class KVCache:
             )
             raise ValueError(msg)
 
+    def prefill(self, other: KVCache) -> None:
+        """
+        Prefill given another KV cache, optionally expanding along the batch dim.
+
+        Each row of `other` fills self_batch / other_batch consecutive rows,
+        so a batch-1 prefill fills them all: a copy of each prompt's
+        positions for every row of its samples. `share_prefix` continues
+        them without the copies.
+        """
+        # 1) validate the shapes
+        if self.kv_cache.size(0) != 0 or self.prefix is not None:
+            msg = "Cannot prefill a non-empty KV cache"
+            raise RuntimeError(msg)
+        if other.kv_cache.size(0) == 0:
+            msg = "Cannot prefill with a None KV cache"
+            raise ValueError(msg)
+        if other.prefix is not None:
+            msg = "Cannot prefill from a KV cache that shares a prefix"
+            raise ValueError(msg)
+        self._check_rows_of(other)
         # Sequence length: self must hold every position cached in other (its
         # capacity may be larger, after it grew)
+        self_seq = self.kv_shape[4]
         if self_seq < other.pos:
             msg = (
                 f"Sequence length mismatch: capacity {self_seq} < "
@@ -108,10 +124,44 @@ class KVCache:
         # 3) copy the data over: row i of other fills rows i·r to i·r + r - 1,
         # r = self_batch / other_batch, broadcast from a view of other, so no
         # copy of the whole cache is made on the way
+        other_batch = other.kv_shape[2]
         cached = other.kv_cache[..., : other.pos, :].unsqueeze(3)
         self.kv_cache[..., : other.pos, :].unflatten(2, (other_batch, -1)).copy_(cached)
         # 4) update the pos
         self.pos = other.pos
+
+    def share_prefix(self, other: KVCache) -> None:
+        """
+        Continue the positions cached in `other` without copying them.
+
+        Row i of `other` leads rows i·r to i·r + r - 1 of self, r = self_batch
+        / other_batch, as after `prefill`, but stays one copy: attention reads
+        it once for all of them (`prefix_kv`). Self holds only the positions
+        inserted after it, so its capacity counts those alone. Self keeps a
+        view of `other`'s keys and values, so `other` must not change after.
+        """
+        if self.kv_cache.size(0) != 0 or self.prefix is not None:
+            msg = "Cannot share a prefix with a non-empty KV cache"
+            raise RuntimeError(msg)
+        if other.kv_cache.size(0) == 0:
+            msg = "Cannot share the prefix of an empty KV cache"
+            raise ValueError(msg)
+        if other.prefix is not None:
+            msg = "Cannot share the prefix of a KV cache that shares one"
+            raise ValueError(msg)
+        self._check_rows_of(other)
+        self.prefix = other.kv_cache[..., : other.pos, :]
+
+    def prefix_kv(self, layer_idx: int) -> tuple[torch.Tensor, torch.Tensor] | None:
+        """
+        Return the shared keys and values of layer `layer_idx`, or None.
+
+        Each is (prompts, H, T, D): the T positions of each prompt, which
+        batch / prompts consecutive rows of this cache continue.
+        """
+        if self.prefix is None:
+            return None
+        return self.prefix[layer_idx, 0], self.prefix[layer_idx, 1]
 
     def insert_kv(
         self,
@@ -124,6 +174,7 @@ class KVCache:
 
         `k` and `v` are (B, H, T_add, D). The returned tensors are views of the
         cache up to the new position; the cache grows when it runs out of room.
+        With a shared prefix they hold the positions after it.
         """
         # Lazy initialize the cache here because we need to know the dtype/device
         if self.kv_cache.size(0) == 0:

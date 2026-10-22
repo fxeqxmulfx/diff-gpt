@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from torch.testing import assert_close
 
 from diff_gpt.model.kv_cache import KVCache
-from diff_gpt.model.mha import MultiHeadAttention
+from diff_gpt.model.mha import MultiHeadAttention, one_query_attention
 from diff_gpt.model.rope import apply_rope, rope_tables
 
 # Chunk boundaries for test_chunked_prefill_inference: prefill [0, 2), then a
@@ -17,6 +17,13 @@ PREFILL_END = 2
 CHUNK_END = 5
 # Norm a head's XSA output stays above once a token has context to attend to.
 MIN_CONTEXT_NORM = 1e-3
+DEVICES = [
+    "cpu",
+    pytest.param(
+        "cuda",
+        marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA"),
+    ),
+]
 
 
 def test_shape_and_gradients() -> None:
@@ -301,3 +308,93 @@ def test_chunked_prefill_inference() -> None:
     y_reconstructed = torch.cat([y_chunk1, y_chunk2, y_chunk3], dim=1)
 
     assert_close(y_reconstructed, y_full, atol=1e-5, rtol=1e-5)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_one_query_attention_matches_scaled_dot_product_attention(
+    device: str,
+    dtype: torch.dtype,
+) -> None:
+    """
+    Check one-query attention against scaled_dot_product_attention.
+
+    Alone, each row's query attends to its own keys; with a prefix, to its
+    prompt's keys and then its own, as attention over copies of the prompt's
+    keys and values ahead of every row's (rows i·S to i·S + S - 1 continue
+    prompt i).
+    """
+    torch.manual_seed(0)
+    prompts, samples, heads, prefix_len, own, dim = 3, 4, 2, 7, 5, 8
+    rows = prompts * samples
+    q, k, v = (
+        torch.randn(rows, heads, n, dim, dtype=dtype, device=device)
+        for n in (1, own, own)
+    )
+    prefix_k, prefix_v = (
+        torch.randn(prompts, heads, prefix_len, dim, dtype=dtype, device=device)
+        for _ in range(2)
+    )
+    assert_close(one_query_attention(q, k, v), F.scaled_dot_product_attention(q, k, v))
+    keys = torch.cat((prefix_k.repeat_interleave(samples, dim=0), k), dim=2)
+    values = torch.cat((prefix_v.repeat_interleave(samples, dim=0), v), dim=2)
+    assert_close(
+        one_query_attention(q, k, v, (prefix_k, prefix_v)),
+        F.scaled_dot_product_attention(q, keys, values),
+    )
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_shared_prefix_decoding_matches_a_copied_prefix(device: str) -> None:
+    """
+    Check that rows sharing a cached prefix decode as rows holding copies of it.
+
+    Two prompts of five positions lead three rows each, which decode four
+    steps through a shared prefix (KVCache.share_prefix) and through copies
+    of it (KVCache.prefill). Every step's outputs agree up to float32
+    rounding, with each other and with a pass without a cache over each
+    row's whole sequence.
+    """
+    torch.manual_seed(0)
+    prompts, samples, context, steps, C, H = 2, 3, 5, 4, 16, 2
+    head_dim = C // H
+    rows = prompts * samples
+    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0).to(device).eval()
+    cos, sin = (table.to(device) for table in rope_tables(head_dim, context + steps))
+    x_prompts = torch.randn(prompts, context, C, device=device)
+    x_rows = torch.randn(rows, steps, C, device=device)
+    with torch.no_grad():
+        full = model(
+            torch.cat((x_prompts.repeat_interleave(samples, dim=0), x_rows), dim=1),
+            cos,
+            sin,
+            kv_cache=None,
+        )
+        prefill = KVCache(prompts, H, context, head_dim, 1)
+        model(x_prompts, cos[:context], sin[:context], kv_cache=prefill)
+        shared = KVCache(rows, H, steps, head_dim, 1)
+        shared.share_prefix(prefill)
+        copied = KVCache(rows, H, context + steps, head_dim, 1)
+        copied.prefill(prefill)
+        for t in range(steps):
+            p = slice(context + t, context + t + 1)
+            y_shared = model(x_rows[:, t : t + 1], cos[p], sin[p], kv_cache=shared)
+            y_copied = model(x_rows[:, t : t + 1], cos[p], sin[p], kv_cache=copied)
+            assert shared.get_pos() == copied.get_pos() == context + t + 1
+            assert_close(y_shared, y_copied)
+            assert_close(y_shared, full[:, p])
+
+
+def test_shared_prefix_takes_one_position_per_call() -> None:
+    """Rows that share a cached prefix decode one position at a time."""
+    C, H = 16, 2
+    model = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
+    cos, sin = rope_tables(C // H, 6)
+    prefill = KVCache(1, H, 3, C // H, 1)
+    with torch.no_grad():
+        model(torch.randn(1, 3, C), cos[:3], sin[:3], kv_cache=prefill)
+        shared = KVCache(2, H, 4, C // H, 1)
+        shared.share_prefix(prefill)
+        with pytest.raises(ValueError, match="take one position, got 2"):
+            model(torch.randn(2, 2, C), cos[3:5], sin[3:5], kv_cache=shared)
+    assert shared.get_pos() == prefill.get_pos()

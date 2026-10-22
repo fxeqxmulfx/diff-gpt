@@ -1,4 +1,4 @@
-"""Tests for the KV cache: allocation, insertion, growth, prefill and reset."""
+"""Tests for the KV cache: allocation, insertion, growth, prefill, sharing, reset."""
 
 import pytest
 import torch
@@ -288,3 +288,75 @@ def test_prefill_repeats_each_row_consecutively() -> None:
     uneven = KVCache(5, 2, 16, 4, 1)
     with pytest.raises(ValueError, match="Batch size mismatch: 5 vs 2"):
         uneven.prefill(src)
+
+
+def test_share_prefix_continues_positions_without_copying() -> None:
+    """
+    Check that share_prefix continues the source's positions without a copy.
+
+    Rows 0-2 continue source row 0 and rows 3-5 source row 1, as after
+    prefill, but the shared keys and values stay a view of the source's.
+    The cache stores only the positions inserted after them, and reset
+    rewinds to their end.
+    """
+    src = KVCache(2, 2, 8, 4, 1)
+    k = torch.randn(2, 2, 5, 4)
+    src.insert_kv(0, k, -k)
+    dst = KVCache(6, 2, 3, 4, 1)
+    assert dst.prefix_kv(0) is None
+    dst.share_prefix(src)
+    assert dst.get_pos() == k.shape[-2]
+    assert dst.kv_cache.size(0) == 0  # nothing of its own yet
+    shared = dst.prefix_kv(0)
+    assert shared is not None
+    prefix_k, prefix_v = shared
+    assert_close(prefix_k, k)
+    assert_close(prefix_v, -k)
+    assert prefix_k.data_ptr() == src.kv_cache.data_ptr()  # a view, not a copy
+    new = torch.randn(6, 2, 1, 4)
+    own_k, own_v = dst.insert_kv(0, new, -new)
+    assert dst.get_pos() == k.shape[-2] + 1
+    assert dst.kv_cache.shape == (1, 2, 6, 2, 3, 4)
+    assert_close(own_k, new)
+    assert_close(own_v, -new)
+    dst.reset()
+    assert dst.get_pos() == k.shape[-2]
+
+
+def test_share_prefix_rejects_caches_it_cannot_continue() -> None:
+    """
+    Check the errors of share_prefix, and of prefill around a shared prefix.
+
+    The source must hold positions and share none itself, and match the
+    cache's layers, heads and head size, its rows dividing the cache's;
+    the cache must be empty. A cache that shares a prefix neither prefills
+    nor is prefilled from.
+    """
+    src = KVCache(2, 2, 8, 4, 1)
+    k = torch.randn(2, 2, 5, 4)
+    src.insert_kv(0, k, k)
+    with pytest.raises(ValueError, match="share the prefix of an empty KV cache"):
+        KVCache(4, 2, 8, 4, 1).share_prefix(KVCache(2, 2, 8, 4, 1))
+    with pytest.raises(ValueError, match="Batch size mismatch: 5 vs 2"):
+        KVCache(5, 2, 8, 4, 1).share_prefix(src)
+    with pytest.raises(ValueError, match="Head count mismatch: 3 != 2"):
+        KVCache(4, 3, 8, 4, 1).share_prefix(src)
+    with pytest.raises(ValueError, match="Head dim mismatch: 6 != 4"):
+        KVCache(4, 2, 8, 6, 1).share_prefix(src)
+    with pytest.raises(ValueError, match="Layer count mismatch: 2 != 1"):
+        KVCache(4, 2, 8, 4, 2).share_prefix(src)
+    used = KVCache(4, 2, 8, 4, 1)
+    used.insert_kv(0, torch.randn(4, 2, 1, 4), torch.randn(4, 2, 1, 4))
+    with pytest.raises(RuntimeError, match="share a prefix with a non-empty"):
+        used.share_prefix(src)
+    dst = KVCache(4, 2, 8, 4, 1)
+    dst.share_prefix(src)
+    with pytest.raises(RuntimeError, match="share a prefix with a non-empty"):
+        dst.share_prefix(src)
+    with pytest.raises(RuntimeError, match="Cannot prefill a non-empty KV cache"):
+        dst.prefill(src)
+    dst.insert_kv(0, torch.randn(4, 2, 1, 4), torch.randn(4, 2, 1, 4))
+    with pytest.raises(ValueError, match="a KV cache that shares one"):
+        KVCache(8, 2, 8, 4, 1).share_prefix(dst)
+    with pytest.raises(ValueError, match="prefill from a KV cache that shares"):
+        KVCache(8, 2, 8, 4, 1).prefill(dst)

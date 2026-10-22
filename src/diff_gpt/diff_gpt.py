@@ -429,7 +429,8 @@ class DiffGPT:
 
         `predict_samples` for many contexts, batched as `predict_many` batches
         them: contexts of one shape share a batch, whose prompts are
-        prefilled once and copied into the rows of their samples. A batch
+        prefilled once; the rows of a context's samples share its cached
+        positions instead of copies of them (Engine.generate_many). A batch
         decodes up to `batch_size` rows, `num_samples` per context, and at
         least one context. Returns, in the order of `dfs`, arrays of shape
         (num_samples, max_new_points, n_features) holding the future rows.

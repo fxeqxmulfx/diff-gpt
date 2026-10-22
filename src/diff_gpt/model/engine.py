@@ -4,13 +4,11 @@ from collections import deque
 from typing import TYPE_CHECKING, TypedDict, Unpack
 
 import torch
-from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from diff_gpt.model.kv_cache import KVCache
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-    from contextlib import AbstractContextManager
 
     from diff_gpt.model.gpt import BaseGPT
     from diff_gpt.sampler.sampler import Sampler
@@ -23,60 +21,6 @@ class _GenerateKwargs(TypedDict, total=False):
     sampler: Sampler | None
     seed: int
     force_schedule: list[int | None] | None
-
-
-def decode_backends(capability: tuple[int, int] | None) -> list[SDPBackend]:
-    """
-    Order the attention backends for decode steps on a device.
-
-    `capability` is the device's CUDA compute capability, None off CUDA. A
-    decode step attends from one query per row to the whole cache. Flash
-    attention pads that query to a tile of rows, and memory-efficient
-    attention decodes 1.1 times as fast at head_dim 32 and 1.5 times at 64
-    (float16, RTX 3050), so it comes first. cuDNN attention reads the cache
-    faster still, but builds a plan for each new cache length, 0.4 s each, so
-    it comes last. On a CPU, flash attention, the first one there, decodes
-    1.2 to 4 times as fast as math attention (Xeon E5-2680 v4).
-
-    Before capability 7.0, memory-efficient attention computes a tile of 64
-    query rows in float32 for the one query, and math attention (matrix
-    products and a softmax) comes first: from 60 rows up, it decodes 1.6
-    times as fast at head_dim 32 and 1.3 times at 64 in float32, and 12 to
-    16 times in float16 (GTX 1050, capability 6.1). At 20 rows of 512
-    positions, where launching the kernels takes most of a step, it runs
-    0.84 to 1.03 times as fast. It holds a scaled copy of one layer's keys
-    while it runs.
-    """
-    if capability is not None and capability < (7, 0):
-        return [
-            SDPBackend.MATH,
-            SDPBackend.EFFICIENT_ATTENTION,
-            SDPBackend.FLASH_ATTENTION,
-            SDPBackend.CUDNN_ATTENTION,
-        ]
-    return [
-        SDPBackend.EFFICIENT_ATTENTION,
-        SDPBackend.FLASH_ATTENTION,
-        SDPBackend.MATH,
-        SDPBackend.CUDNN_ATTENTION,
-    ]
-
-
-def _decode_attention(device: torch.device) -> AbstractContextManager[None]:
-    """Order the enabled backends for decode steps on `device` (decode_backends)."""
-    capability = (
-        torch.cuda.get_device_capability(device) if device.type == "cuda" else None
-    )
-    enabled = {
-        SDPBackend.EFFICIENT_ATTENTION: torch.backends.cuda.mem_efficient_sdp_enabled(),
-        SDPBackend.FLASH_ATTENTION: torch.backends.cuda.flash_sdp_enabled(),
-        SDPBackend.MATH: torch.backends.cuda.math_sdp_enabled(),
-        SDPBackend.CUDNN_ATTENTION: torch.backends.cuda.cudnn_sdp_enabled(),
-    }
-    return sdpa_kernel(
-        [backend for backend in decode_backends(capability) if enabled[backend]],
-        set_priority=True,
-    )
 
 
 class RowState:
@@ -113,7 +57,7 @@ class Engine:
         force_schedule: list[int | None] | None = None,
     ) -> Generator[tuple[list[int], list[int]]]:
         """
-        Streaming generation: single prefill, then clone the KV cache for each sample.
+        Streaming generation: a single prefill, which the rows of the samples share.
 
         `force_schedule`, when provided, is a per-step list aligned with the
         generation loop:
@@ -190,15 +134,15 @@ class Engine:
         # or bfloat16 softmax and multinomial would round the probabilities.
         logits = logits[:, -1, :].float().expand(num_samples, -1)  # (num_samples, V)
 
-        # 2) Replicate the KV cache for each sample/row
-        kv_length_hint = prompt_len + effective_max_tokens
+        # 2) The rows of the samples share the prompt's cached positions and
+        # cache their own after them
         kv_cache_decode = KVCache(
             batch_size=num_samples,
-            seq_len=kv_length_hint,
+            seq_len=effective_max_tokens,
             **kv_model_kwargs,
         )
-        kv_cache_decode.prefill(kv_cache_prefill)
-        del kv_cache_prefill  # no need to keep this memory around
+        kv_cache_decode.share_prefix(kv_cache_prefill)
+        del kv_cache_prefill  # kv_cache_decode keeps a view of its keys/values
 
         # 3) Initialize states for each sample
         row_states = [RowState(tokens.copy()) for _ in range(num_samples)]
@@ -254,8 +198,7 @@ class Engine:
             ids = torch.tensor(token_column, dtype=torch.long, device=device).unsqueeze(
                 1,
             )
-            with _decode_attention(device):
-                logits, _ = self.model.forward(ids, kv_cache=kv_cache_decode)
+            logits, _ = self.model.forward(ids, kv_cache=kv_cache_decode)
             logits = logits[:, -1, :].float()  # (B, vocab_size)
 
     def generate_batch(
@@ -300,8 +243,10 @@ class Engine:
         `sampler` is None), so their samples differ from those of `generate`.
 
         `num_samples`: continuations drawn per prompt. The prompts are
-        prefilled once, and each prefill is copied into the rows of its
-        samples; the result holds sample s of prompt i at i·num_samples + s.
+        prefilled once, and the rows of a prompt's samples share its cached
+        positions instead of copies of them (KVCache.share_prefix), so a
+        decode step reads each prompt's keys and values once; the result
+        holds sample s of prompt i at i·num_samples + s.
         """
         if num_samples < 1:
             msg = f"num_samples must be >= 1, got {num_samples}"
@@ -342,20 +287,19 @@ class Engine:
             "head_dim": m.n_embd // m.n_head,
             "num_layers": m.n_layer,
         }
+        ids = torch.tensor(prompts, dtype=torch.long, device=device)
+        prefill = KVCache(batch_size=len(prompts), seq_len=prompt_len, **shape)
+        logits, _ = m.forward(ids, kv_cache=prefill)
+        logits = logits[:, -1:, :].repeat_interleave(num_samples, dim=0)
+        # The decode cache holds the max_tokens - 1 positions fed back after
+        # the prompts, whose positions the rows of their samples share.
         kv_cache = KVCache(
             batch_size=len(prompts) * num_samples,
-            seq_len=prompt_len + max_tokens,
+            seq_len=max_tokens - 1,
             **shape,
         )
-        ids = torch.tensor(prompts, dtype=torch.long, device=device)
-        if num_samples == 1:
-            logits, _ = m.forward(ids, kv_cache=kv_cache)
-        else:
-            prefill = KVCache(batch_size=len(prompts), seq_len=prompt_len, **shape)
-            logits, _ = m.forward(ids, kv_cache=prefill)
-            kv_cache.prefill(prefill)
-            del prefill
-            logits = logits[:, -1:, :].repeat_interleave(num_samples, dim=0)
+        kv_cache.share_prefix(prefill)
+        del prefill  # kv_cache keeps a view of its keys/values
         # Then each step's tokens: a (B, 1) column.
         columns = []
         for step in range(max_tokens):
@@ -367,6 +311,5 @@ class Engine:
                 ids = torch.multinomial(probs, num_samples=1, generator=rng)
             columns.append(ids)
             if step + 1 < max_tokens:
-                with _decode_attention(device):
-                    logits, _ = m.forward(ids, kv_cache=kv_cache)
+                logits, _ = m.forward(ids, kv_cache=kv_cache)
         return torch.cat(columns, dim=1).tolist()

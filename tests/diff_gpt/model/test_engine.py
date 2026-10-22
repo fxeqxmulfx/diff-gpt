@@ -6,10 +6,33 @@ from contextlib import nullcontext
 import pytest
 import torch
 from torch.nn.attention import SDPBackend, sdpa_kernel
+from torch.testing import assert_close
 
-from diff_gpt.model.engine import Engine, decode_backends
+from diff_gpt.model.engine import Engine
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
+from tests.diff_gpt.model.per_row import (
+    RecordingSampler,
+    draw_again,
+    full_forward_logits,
+    per_row_logits,
+)
+
+DEVICES = [
+    "cpu",
+    pytest.param(
+        "cuda",
+        marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA"),
+    ),
+]
+# Models of the exactness tests: n_embd, n_head, n_layer and block_size, so
+# heads of 8, 16 and 32 channels.
+SIZES = {
+    "tiny": (32, 4, 2, 16),
+    "small": (48, 3, 3, 40),
+    "wide": (64, 2, 1, 64),
+}
+VOCAB = 64
 
 
 @pytest.fixture(scope="module")
@@ -342,7 +365,7 @@ def test_force_schedule_too_short_raises(gpt_model: GPT) -> None:
 
 def test_prefill_clone_equivalence(gpt_model: GPT) -> None:
     """
-    Verify that "prefill once, then clone KV cache" equals N independent runs.
+    Verify that "prefill once, then share the KV cache" equals N independent runs.
 
     Crucial test of this optimization. We use a deterministic sampler (argmax)
     to isolate the test to the KV cache logic.
@@ -360,7 +383,7 @@ def test_prefill_clone_equivalence(gpt_model: GPT) -> None:
     # Deterministic sampler: always picks the token with the highest logit.
     # S_greedy(l) = argmax(l)
 
-    # --- 1. Engine's optimized batch generation (Prefill & Clone) ---
+    # --- 1. Engine's optimized batch generation (Prefill & Share) ---
     results_engine, _ = engine.generate_batch(
         tokens=prompt,
         num_samples=num_samples,
@@ -421,8 +444,8 @@ def test_cached_generation_matches_full_forward(
     """
     Check cached decoding against full forward passes over the growing sequence.
 
-    Compare `generate_batch` (a batch-1 prefill copied into each row's cache)
-    and `generate_many` to the same argmax continuations.
+    Compare `generate_batch` (a batch-1 prefill that every row's cache
+    continues) and `generate_many` to the same argmax continuations.
     """
     torch.manual_seed(0)
     model = GPT(**model_config)
@@ -596,11 +619,11 @@ def test_decoding_keeps_the_enabled_attention_backends(
     backends: list[SDPBackend] | None,
 ) -> None:
     """
-    Check that the decode steps run attention with the caller's backends.
+    Check that generation leaves the caller's attention backends as they are.
 
-    They reorder the backends (decode_backends), but every attention call, the
-    prefill's and each decode step's, sees the backends the caller enabled:
-    all of them by default, or the math backend alone, as after the calls.
+    Every attention call, the prefill's and each decode step's, sees the
+    backends the caller enabled: all of them by default, or the math backend
+    alone, as after the calls.
     """
     seen: list[tuple[bool, bool, bool, bool]] = []
 
@@ -621,38 +644,123 @@ def test_decoding_keeps_the_enabled_attention_backends(
     assert seen == [caller] * 7
 
 
-@pytest.mark.parametrize(
-    ("capability", "first"),
-    [
-        (None, SDPBackend.EFFICIENT_ATTENTION),
-        ((5, 2), SDPBackend.MATH),
-        ((6, 1), SDPBackend.MATH),
-        ((7, 0), SDPBackend.EFFICIENT_ATTENTION),
-        ((8, 6), SDPBackend.EFFICIENT_ATTENTION),
-    ],
-)
-def test_decode_backends_put_math_first_before_capability_7(
-    capability: tuple[int, int] | None,
-    first: SDPBackend,
+def _model(size: str, device: str) -> GPT:
+    """Return a seeded GPT of one of SIZES on `device`, in eval mode."""
+    n_embd, n_head, n_layer, block_size = SIZES[size]
+    torch.manual_seed(0)
+    model = GPT(
+        vocab_size=VOCAB,
+        n_embd=n_embd,
+        block_size=block_size,
+        n_head=n_head,
+        n_layer=n_layer,
+    )
+    return model.to(device).eval()
+
+
+def _check_against_per_row_path(
+    model: GPT,
+    prompts: torch.Tensor,
+    sampler: RecordingSampler,
+    tokens: torch.Tensor,
+    seed: int,
 ) -> None:
     """
-    Check the order of the attention backends for decode steps.
+    Check a shared-prefix run against the per-row path on the tokens it drew.
 
-    Math attention comes first on GPUs before compute capability 7.0, and
-    memory-efficient attention on newer GPUs and off CUDA. Every order holds
-    the four backends once, flash attention before math attention unless math
-    comes first, and cuDNN attention last.
+    The per-row path (each prompt's positions copied into the rows of its
+    samples) and forward passes without a cache give, fed those tokens, the
+    logits the sampler got up to float32 rounding; drawing from theirs with
+    the run's seed gives the same tokens.
     """
-    order = decode_backends(capability)
-    assert order[0] == first
-    backends = {
-        SDPBackend.EFFICIENT_ATTENTION,
-        SDPBackend.FLASH_ATTENTION,
-        SDPBackend.MATH,
-        SDPBackend.CUDNN_ATTENTION,
-    }
-    assert len(order) == len(backends)
-    assert set(order) == backends
-    if first != SDPBackend.MATH:
-        assert order.index(SDPBackend.FLASH_ATTENTION) < order.index(SDPBackend.MATH)
-    assert order[-1] == SDPBackend.CUDNN_ATTENTION
+    logits = torch.stack(sampler.logits)
+    assert torch.equal(torch.cat(sampler.tokens, dim=1), tokens)
+    for reference in (
+        per_row_logits(model, prompts, tokens),
+        full_forward_logits(model, prompts, tokens),
+    ):
+        assert_close(logits, reference)
+        assert torch.equal(draw_again(reference, seed), tokens)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize(
+    ("size", "context", "max_tokens", "num_samples", "num_prompts"),
+    [
+        ("tiny", 4, 6, 3, 3),
+        ("tiny", 1, 5, 4, 2),
+        ("tiny", 12, 1, 5, 2),
+        ("small", 20, 12, 8, 3),
+        ("small", 8, 7, 1, 4),
+        ("wide", 30, 34, 2, 1),
+    ],
+)
+def test_generate_many_matches_the_per_row_path(
+    device: str,
+    size: str,
+    context: int,
+    max_tokens: int,
+    num_samples: int,
+    num_prompts: int,
+) -> None:
+    """
+    Check that rows sharing their prompt's cached positions decode as copies do.
+
+    generate_many decodes the samples of each prompt from one copy of its
+    keys and values; the per-row path copies them into every row. Fed the
+    tokens generate_many drew, it gives the same logits up to float32
+    rounding and draws the same tokens, over prompts of 1 to 30 tokens, 1 to
+    34 new tokens, 1 to 8 samples and three model sizes.
+    """
+    model = _model(size, device)
+    torch.manual_seed(1)
+    prompts = torch.randint(0, VOCAB, (num_prompts, context), device=device)
+    sampler = RecordingSampler()
+    drawn = Engine(model=model).generate_many(
+        prompts=prompts.tolist(),
+        max_tokens=max_tokens,
+        sampler=sampler,
+        seed=5,
+        num_samples=num_samples,
+    )
+    tokens = torch.tensor(drawn, device=device)
+    assert tokens.shape == (num_prompts * num_samples, max_tokens)
+    _check_against_per_row_path(model, prompts, sampler, tokens, seed=5)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize(
+    ("size", "context", "max_tokens", "num_samples"),
+    [
+        ("tiny", 4, 6, 3),
+        ("small", 20, 12, 8),
+        ("wide", 1, 40, 2),
+    ],
+)
+def test_generate_matches_the_per_row_path(
+    device: str,
+    size: str,
+    context: int,
+    max_tokens: int,
+    num_samples: int,
+) -> None:
+    """
+    Check that the samples of `generate` decode as copies of the prompt do.
+
+    Its rows share the prompt's cached positions; fed their tokens, the
+    per-row path gives the same logits up to float32 rounding and draws
+    the same tokens.
+    """
+    model = _model(size, device)
+    torch.manual_seed(1)
+    prompt = torch.randint(0, VOCAB, (1, context), device=device)
+    sampler = RecordingSampler()
+    results, _ = Engine(model=model).generate_batch(
+        prompt[0].tolist(),
+        num_samples=num_samples,
+        max_tokens=max_tokens,
+        sampler=sampler,
+        seed=5,
+    )
+    tokens = torch.tensor([row[context:] for row in results], device=device)
+    _check_against_per_row_path(model, prompt, sampler, tokens, seed=5)

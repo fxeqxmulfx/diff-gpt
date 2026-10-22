@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from torch.testing import assert_close
 
 from diff_gpt.data_loader import DiffDataFrameDataLoader
 from diff_gpt.diff_gpt import DiffGPT
@@ -17,6 +18,7 @@ from diff_gpt.encoder_decoder import (
 from diff_gpt.metrics import empirical_coverage
 from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.temperature import TemperatureSampler
+from tests.diff_gpt.model.per_row import RecordingSampler, draw_again, per_row_logits
 
 if TYPE_CHECKING:
     from diff_gpt.train import Evaluation
@@ -27,6 +29,13 @@ COVARIATE_TOLERANCE = 0.1
 # The argmax forecast must fall inside the 80% sample band on more than this
 # share of steps.
 MIN_ARGMAX_COVERAGE = 0.5
+DEVICES = [
+    "cpu",
+    pytest.param(
+        "cuda",
+        marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA"),
+    ),
+]
 
 
 def _make_toy(n_rows: int = 80) -> pd.DataFrame:
@@ -1064,6 +1073,60 @@ def test_predict_samples_many_rejects_bad_arguments() -> None:
         )
     with pytest.raises(ValueError, match="context needs a row"):
         model.predict_samples_many([df.iloc[:1]], max_new_points=4, num_samples=2)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("num_samples", [1, 4])
+def test_predict_samples_many_matches_the_per_row_path(
+    device: str,
+    num_samples: int,
+) -> None:
+    """
+    Check the draws of predict_samples_many against the per-row decode path.
+
+    Three contexts take two batches, two contexts and then one; a hook on
+    the token embedding records the prompts each batch prefills. Fed a
+    batch's draws, the per-row path (the prompts' positions copied into the
+    rows of their samples) gives the logits the sampler got, up to float32
+    rounding, and draws the same tokens with the batch's seed.
+    """
+    model, _ = _make_model(block_size=64)
+    model.model.to(device)
+    df = _make_toy(n_rows=40)
+    contexts = [df.iloc[:10], df.iloc[10:20], df.iloc[20:30]]
+    max_new_points, columns = 4, df.shape[1]
+    steps = max_new_points * columns
+    prompts: list[torch.Tensor] = []
+
+    def record(_module: torch.nn.Module, args: tuple[torch.Tensor, ...]) -> None:
+        if args[0].size(1) > 1:  # a prefill; decode steps feed one token
+            prompts.append(args[0].clone())
+
+    sampler = RecordingSampler()
+    handle = model.model.token_embedding_table.register_forward_pre_hook(record)
+    try:
+        samples = model.predict_samples_many(
+            contexts,
+            max_new_points=max_new_points,
+            num_samples=num_samples,
+            sampler=sampler,
+            batch_size=2 * num_samples,
+            seed=3,
+        )
+    finally:
+        handle.remove()
+    assert [drawn.shape for drawn in samples] == [
+        (num_samples, max_new_points, columns),
+    ] * len(contexts)
+    assert [len(batch) for batch in prompts] == [2, 1]
+    assert len(sampler.logits) == len(prompts) * steps
+    for b, batch in enumerate(prompts):
+        taken = slice(b * steps, (b + 1) * steps)
+        logits = torch.stack(sampler.logits[taken])
+        tokens = torch.cat(sampler.tokens[taken], dim=1)
+        reference = per_row_logits(model.model, batch, tokens)
+        assert_close(logits, reference)
+        assert torch.equal(draw_again(reference, seed=3 + b), tokens)
 
 
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
