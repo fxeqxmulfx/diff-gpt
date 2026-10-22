@@ -2,6 +2,9 @@ version = 1
 revision = 5
 requires-python = "==3.11.*"
 
+[manifest]
+build-constraints = [{ name = "hatchling", specifier = "<1.26" }]
+
 [[package]]
 name = "adagio"
 version = "0.2.6"
@@ -628,6 +631,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "salesforce-gift-eval" },
     { name = "statsforecast" },
+    { name = "timebench" },
 ]
 
 [package.dev-dependencies]
@@ -643,6 +647,7 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=12,<26" },
     { name = "salesforce-gift-eval", git = "https://github.com/SalesforceAIResearch/gift-eval?rev=3c7be6deffb0046e1c08f9103db8bc84b3cf7ebd" },
     { name = "statsforecast", specifier = ">=1.7.0" },
+    { name = "timebench", git = "https://github.com/zqiao11/TIME?rev=c633e232fbba20c54242ffcac55e77c50440f470" },
 ]
 
 [package.metadata.requires-dev]
@@ -1303,6 +1308,25 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/00/dc/6c58154c1c65f758ea979e7139cb76993a9cfc662d14e9be3c4a667cfb77/threadpoolctl-3.7.0.tar.gz", hash = "sha256:61348cfb77d53b9242e0017029244b559b810c142ced65b4e21eeca1843959a7", size = 31961, upload-time = "2026-09-15T15:46:20.263Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl", hash = "sha256:cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be", size = 26362, upload-time = "2026-09-15T15:46:19.168Z" },
+]
+
+[[package]]
+name = "timebench"
+version = "0.1.0"
+source = { git = "https://github.com/zqiao11/TIME?rev=c633e232fbba20c54242ffcac55e77c50440f470#c633e232fbba20c54242ffcac55e77c50440f470" }
+dependencies = [
+    { name = "datasets" },
+    { name = "einops" },
+    { name = "gluonts" },
+    { name = "hydra-core" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "orjson" },
+    { name = "pandas" },
+    { name = "python-dotenv" },
+    { name = "ray" },
+    { name = "scipy" },
+    { name = "tsfeatures" },
 ]
 
 [[package]]

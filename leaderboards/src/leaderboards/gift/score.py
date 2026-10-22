@@ -103,15 +103,12 @@ class ReplayPredictor(Predictor):
             )
 
 
-def score(
-    test_data: TestData, forecasts: Forecasts, season_length: int
-) -> dict[str, float]:
+def check(test_data: TestData, forecasts: Forecasts) -> None:
     """
-    Score `forecasts` of the windows of `test_data`.
+    Check that `forecasts` are the windows' own, and finite.
 
-    The forecasts must be the windows' own: as many, for the same series in the
-    same order, over the same horizon. evaluate_model zips the windows with the
-    forecasts and stops at the shorter, so this is checked first.
+    They must be as many as the windows of `test_data`, for the same series in
+    the same order, over the same horizon.
     """
     item_ids = np.array([str(entry["item_id"]) for entry in test_data.input])
     if len(item_ids) != len(forecasts.item_id):
@@ -130,6 +127,24 @@ def score(
             f" its forecast of {str(forecasts.item_id[wrong[0]])!r}"
         )
         raise ValueError(msg)
+    finite = np.isfinite(forecasts.quantiles).all(axis=(1, 2)) & np.isfinite(
+        forecasts.mean
+    ).all(axis=1)
+    if not finite.all():
+        msg = f"{np.count_nonzero(~finite)} forecasts are not finite"
+        raise ValueError(msg)
+
+
+def score(
+    test_data: TestData, forecasts: Forecasts, season_length: int
+) -> dict[str, float]:
+    """
+    Score `forecasts` of the windows of `test_data`.
+
+    evaluate_model zips the windows with the forecasts and stops at the
+    shorter, so they are checked first.
+    """
+    check(test_data, forecasts)
     return evaluate(ReplayPredictor(forecasts), test_data, season_length)
 
 

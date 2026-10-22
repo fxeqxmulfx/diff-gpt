@@ -5,6 +5,10 @@ Tiny GIFT-Eval datasets, written in the format of the Hugging Face download.
 variates; both have NaN in the places the seasonal naive treats specially.
 Hourly data has a horizon of 48 and a season of 24, and the shortest series
 (520 steps) gives two test windows.
+
+The same series serve as the TIME datasets "tiny/H" and "tiny_multi/H",
+whose tasks (TIME_CONFIG, in the format of timebench's datasets.yaml) have
+two test windows and the two validation windows before them.
 """
 
 from __future__ import annotations
@@ -25,6 +29,16 @@ CONFIGS = (
     Config("tiny", "short", "tiny/H/short", "Test", 1),
     Config("tiny_multi", "short", "tiny_multi/H/short", "Test", 2),
 )
+TIME_CONFIG = {
+    "datasets": {
+        name: {
+            "test_length": HORIZON * WINDOWS,
+            "val_length": HORIZON * WINDOWS,
+            "short": {"prediction_length": HORIZON},
+        }
+        for name in ("tiny/H", "tiny_multi/H")
+    }
+}
 
 
 def series(length: int, seed: int) -> np.ndarray:

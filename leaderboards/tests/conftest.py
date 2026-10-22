@@ -1,4 +1,4 @@
-"""Shared fixtures: the tiny GIFT-Eval datasets of tests.tiny on disk."""
+"""Shared fixtures: the tiny GIFT-Eval and TIME datasets of tests.tiny on disk."""
 
 from __future__ import annotations
 
@@ -18,4 +18,13 @@ def data(tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = tmp_path_factory.mktemp("gift-eval")
     write(root, "tiny", tiny())
     write(root, "tiny_multi", tiny_multi())
+    return root
+
+
+@pytest.fixture(scope="session")
+def time_data(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Return a TIME storage directory that holds "tiny/H" and "tiny_multi/H"."""
+    root = tmp_path_factory.mktemp("time")
+    write(root, "tiny/H", tiny())
+    write(root, "tiny_multi/H", tiny_multi())
     return root
