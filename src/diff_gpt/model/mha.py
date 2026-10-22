@@ -27,10 +27,12 @@ def one_query_attention(
     of a prompt score its prefix together in one matrix product, so a decode
     step reads each prefix once rather than once per row, and one softmax
     spans the prefix and the row's own positions. Matrix products and a
-    softmax, in place of scaled_dot_product_attention: for one query they
-    read the cache 1.4 to 1.7 times as fast on a GTX 1050 and as fast as
-    flash attention on a Xeon E5-2680 v4, and they copy no keys. The softmax
-    runs in float32; the scale is 1/sqrt(D), as in scaled_dot_product_attention.
+    softmax, in place of scaled_dot_product_attention: for one query per row
+    they read the cache 1.4 to 1.7 times as fast as its best backend on a
+    GTX 1050 (from 20 rows of 576 positions up) and at 0.92 to 1.26 times
+    the speed of flash attention on a Xeon E5-2680 v4, and they copy no
+    keys. The softmax runs in float32; the scale is 1/sqrt(D), as in
+    scaled_dot_product_attention.
     """
     rows, heads, _, dim = q.shape
     q = q * dim**-0.5
