@@ -707,10 +707,11 @@ def test_generate_many_matches_the_per_row_path(
     Check that rows sharing their prompt's cached positions decode as copies do.
 
     generate_many decodes the samples of each prompt from one copy of its
-    keys and values; the per-row path copies them into every row. Fed the
-    tokens generate_many drew, it gives the same logits up to float32
-    rounding and draws the same tokens, over prompts of 1 to 30 tokens, 1 to
-    34 new tokens, 1 to 8 samples and three model sizes.
+    keys and values (one sample per prompt from the prompt's own cache); the
+    per-row path copies them into every row. Fed the tokens generate_many
+    drew, it gives the same logits up to float32 rounding and draws the same
+    tokens, over prompts of 1 to 30 tokens, 1 to 34 new tokens, 1 to 8
+    samples and three model sizes.
     """
     model = _model(size, device)
     torch.manual_seed(1)
@@ -733,6 +734,7 @@ def test_generate_many_matches_the_per_row_path(
     ("size", "context", "max_tokens", "num_samples"),
     [
         ("tiny", 4, 6, 3),
+        ("tiny", 5, 6, 1),
         ("small", 20, 12, 8),
         ("wide", 1, 40, 2),
     ],
@@ -747,9 +749,9 @@ def test_generate_matches_the_per_row_path(
     """
     Check that the samples of `generate` decode as copies of the prompt do.
 
-    Its rows share the prompt's cached positions; fed their tokens, the
-    per-row path gives the same logits up to float32 rounding and draws
-    the same tokens.
+    Its rows share the prompt's cached positions (one sample decodes in the
+    prompt's own cache); fed their tokens, the per-row path gives the same
+    logits up to float32 rounding and draws the same tokens.
     """
     model = _model(size, device)
     torch.manual_seed(1)

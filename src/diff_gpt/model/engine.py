@@ -46,6 +46,48 @@ class Engine:
         """Store the model to sample from."""
         self.model = model
 
+    def _prefill(
+        self,
+        ids: torch.Tensor,
+        num_samples: int,
+        new_positions: int,
+    ) -> tuple[torch.Tensor, KVCache]:
+        """
+        Prefill the prompts `ids` (N, C) for the rows that continue them.
+
+        Return the logits (N, 1, V) of each prompt's last position and the
+        cache of the N·num_samples rows, sample s of prompt i at row
+        i·num_samples + s, with room for `new_positions` more positions per
+        row. One sample per prompt continues in the prompt's own cache, the
+        per-row path. More share the prompt's cached positions instead
+        (KVCache.share_prefix): the cache holds only the rows' own
+        positions, after a view of the prompts' keys and values.
+        """
+        m = self.model
+        shape = {
+            "num_heads": m.n_head,
+            "head_dim": m.n_embd // m.n_head,
+            "num_layers": m.n_layer,
+        }
+        prompts, prompt_len = ids.shape
+        if num_samples == 1:
+            kv_cache = KVCache(
+                batch_size=prompts,
+                seq_len=prompt_len + new_positions,
+                **shape,
+            )
+            logits, _ = m.forward(ids, kv_cache=kv_cache)
+            return logits[:, -1:, :], kv_cache
+        prefill = KVCache(batch_size=prompts, seq_len=prompt_len, **shape)
+        logits, _ = m.forward(ids, kv_cache=prefill)
+        kv_cache = KVCache(
+            batch_size=prompts * num_samples,
+            seq_len=new_positions,
+            **shape,
+        )
+        kv_cache.share_prefix(prefill)
+        return logits[:, -1:, :], kv_cache
+
     @torch.inference_mode()
     def generate(
         self,
@@ -116,33 +158,13 @@ class Engine:
         rng = torch.Generator(device=device)
         rng.manual_seed(seed)
 
-        # 1) Run a batch 1 prefill of the prompt tokens
-        m = self.model
-        kv_model_kwargs = {
-            "num_heads": m.n_head,
-            "head_dim": m.n_embd // m.n_head,
-            "num_layers": m.n_layer,
-        }
-        kv_cache_prefill = KVCache(
-            batch_size=1,
-            seq_len=len(tokens),
-            **kv_model_kwargs,
-        )
+        # 1) Run a batch 1 prefill of the prompt tokens; 2) the cache of the
+        # rows of the samples, with room for every step's token
         ids = torch.tensor([tokens], dtype=torch.long, device=device)
-        logits, _ = self.model.forward(ids, kv_cache=kv_cache_prefill)
+        logits, kv_cache_decode = self._prefill(ids, num_samples, effective_max_tokens)
         # The sampler gets float32 logits whatever the model's dtype: a float16
         # or bfloat16 softmax and multinomial would round the probabilities.
         logits = logits[:, -1, :].float().expand(num_samples, -1)  # (num_samples, V)
-
-        # 2) The rows of the samples share the prompt's cached positions and
-        # cache their own after them
-        kv_cache_decode = KVCache(
-            batch_size=num_samples,
-            seq_len=effective_max_tokens,
-            **kv_model_kwargs,
-        )
-        kv_cache_decode.share_prefix(kv_cache_prefill)
-        del kv_cache_prefill  # kv_cache_decode keeps a view of its keys/values
 
         # 3) Initialize states for each sample
         row_states = [RowState(tokens.copy()) for _ in range(num_samples)]
@@ -245,8 +267,9 @@ class Engine:
         `num_samples`: continuations drawn per prompt. The prompts are
         prefilled once, and the rows of a prompt's samples share its cached
         positions instead of copies of them (KVCache.share_prefix), so a
-        decode step reads each prompt's keys and values once; the result
-        holds sample s of prompt i at i·num_samples + s.
+        decode step reads each prompt's keys and values once; one sample per
+        prompt decodes in the prompt's own cache. The result holds sample s
+        of prompt i at i·num_samples + s.
         """
         if num_samples < 1:
             msg = f"num_samples must be >= 1, got {num_samples}"
@@ -282,24 +305,10 @@ class Engine:
         rng = torch.Generator(device=device)
         rng.manual_seed(seed)
         m = self.model
-        shape = {
-            "num_heads": m.n_head,
-            "head_dim": m.n_embd // m.n_head,
-            "num_layers": m.n_layer,
-        }
         ids = torch.tensor(prompts, dtype=torch.long, device=device)
-        prefill = KVCache(batch_size=len(prompts), seq_len=prompt_len, **shape)
-        logits, _ = m.forward(ids, kv_cache=prefill)
-        logits = logits[:, -1:, :].repeat_interleave(num_samples, dim=0)
-        # The decode cache holds the max_tokens - 1 positions fed back after
-        # the prompts, whose positions the rows of their samples share.
-        kv_cache = KVCache(
-            batch_size=len(prompts) * num_samples,
-            seq_len=max_tokens - 1,
-            **shape,
-        )
-        kv_cache.share_prefix(prefill)
-        del prefill  # kv_cache keeps a view of its keys/values
+        # The decode cache has room for the max_tokens - 1 tokens fed back.
+        logits, kv_cache = self._prefill(ids, num_samples, max_tokens - 1)
+        logits = logits.repeat_interleave(num_samples, dim=0)  # (B, 1, V)
         # Then each step's tokens: a (B, 1) column.
         columns = []
         for step in range(max_tokens):
