@@ -35,31 +35,39 @@ from typing import NamedTuple
 
 from tempopfn_corpus import sources
 
-# CPU seconds per series of one single-threaded process, from the pilot's 5120
-# series per source, three jobs on three cores, but for kernel and
-# cauker_univariate: from their train series 0-2048 made by the present
-# stand-ins, two jobs on two cores, where the pilot took 0.41 and 0.39.
+# Seconds per series of one single-threaded `generate` process at 1024 series
+# per file (gp mostly at 256, as fast), 56 at a time on the 56 logical CPUs
+# (28 cores) of two Xeon E5-2680 v4, as `taskset -c 0-55` runs them, 39 of the
+# 56 gp: from 2048 to 40448 series per source. gp takes 1.53 s when all 56 are
+# gp. Alone on the machine, as the augmented sources of train run at the end
+# of a corpus, gp takes 0.58 s, augmented_temp_batch_2048 0.14 s and
+# augmented_per_sample_2048 0.0075 s.
 SECONDS_PER_SERIES = {
-    "forecast_pfn": 0.013,
-    "gp": 0.64,
-    "kernel": 0.13,
-    "sawtooth": 0.0013,
-    "sinewave": 0.0016,
-    "step": 0.0043,
-    "anomaly": 0.0013,
-    "spike": 0.0015,
-    "cauker_univariate": 0.070,
-    "ou_process": 0.029,
-    "audio_financial_volatility": 0.014,
-    "audio_multi_scale_fractal": 0.015,
-    "audio_network_topology": 0.020,
-    "audio_stochastic_rhythm": 0.013,
-    "augmented_per_sample_2048": 0.0047,
-    "augmented_temp_batch_2048": 0.086,
+    "forecast_pfn": 0.053,
+    "gp": 1.5,
+    "kernel": 0.27,
+    "sawtooth": 0.0048,
+    "sinewave": 0.0062,
+    "step": 0.018,
+    "anomaly": 0.0056,
+    "spike": 0.0063,
+    "cauker_univariate": 0.15,
+    "ou_process": 0.12,
+    "audio_financial_volatility": 0.049,
+    "audio_multi_scale_fractal": 0.048,
+    "audio_network_topology": 0.070,
+    "audio_stochastic_rhythm": 0.046,
+    "augmented_per_sample_2048": 0.021,
+    "augmented_temp_batch_2048": 0.41,
 }
 POLL_SECONDS = 2.0
 GIB = 2**30
-RESERVED_RSS = 3 * GIB // 2  # the pilot's jobs peaked at 0.70-1.35 GiB
+# In those runs the base sources peaked at 0.60-0.81 GiB of RSS and the
+# augmented ones, two per split, at 2.0-2.2 GiB; the 56 processes held at most
+# 35 GiB of summed VmRSS, and MemAvailable fell from 113 to 85 GiB of 121. A
+# job counts at RESERVED_RSS until it holds more, so 56 start at once within
+# the default --max-rss-gib of 80, more than twice those 35 GiB.
+RESERVED_RSS = GIB
 PR_SET_PDEATHSIG = 1  # <linux/prctl.h>
 
 
@@ -259,8 +267,8 @@ def main() -> None:
     parser.add_argument("--file-size", type=int, default=1024)
     parser.add_argument("--jobs", type=int, default=len(os.sched_getaffinity(0)))
     parser.add_argument("--part-seconds", type=float, default=1200.0)
-    parser.add_argument("--max-rss-gib", type=float, default=6.0)
-    parser.add_argument("--min-available-gib", type=float, default=2.0)
+    parser.add_argument("--max-rss-gib", type=float, default=80.0)
+    parser.add_argument("--min-available-gib", type=float, default=8.0)
     parser.add_argument("--root", type=Path, default=sources.DEFAULT_ROOT)
     args = parser.parse_args()
     targets = {split: int(n) for split, n in (item.split("=") for item in args.series)}
