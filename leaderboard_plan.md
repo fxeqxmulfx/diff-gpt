@@ -1,9 +1,9 @@
 # Plan: the GIFT-Eval and TIME leaderboards
 
-Started: 2026-10-21. Status on 2026-10-22: M1 is half done on GIFT-Eval and
-not started on TIME; Track B's corpus comes from TempoPFN's generators
-(`synthetic/`) and is not generated in full yet. See **Status on 2026-10-22**
-and **Moving to another machine** near the end.
+Started: 2026-10-21. Status on 2026-10-22: M1 is done on GIFT-Eval, where
+gate G1 passes, and under way on TIME; Track B's corpus comes from TempoPFN's
+generators (`synthetic/`) and is not generated in full yet. The work moved to
+another machine on 2026-10-22. See **Status on 2026-10-22** near the end.
 
 ## Goal
 
@@ -76,10 +76,19 @@ Everything before that point stays local.
   adapter. Model and optimizer parameters may change.
 - Hardware: until 2026-10-22, a laptop with one RTX 3050 Laptop GPU (4 GB),
   29 GiB of RAM, 6 cores (12 threads) and 123 GB of free disk, where jobs
-  used at most 4 CPU threads in all (`taskset`, one thread per library). The
-  work then moves to another machine. Numbers measured on the RTX 3050 are
-  the laptop's: measure them again there, and set its limits anew. Every
-  estimate is checked against the machine it runs on.
+  used at most 4 CPU threads in all (`taskset`, one thread per library).
+  Since 2026-10-22, a machine whose resources the user gave over in full:
+  two Xeon E5-2680 v4 (Broadwell: AVX2, no AVX-512, no native bfloat16), two
+  NUMA nodes of 14 cores and 28 threads (node 0: CPUs 0-13 and 28-41, node 1:
+  14-27 and 42-55), 121 GiB of RAM, about 220 GB free on `/`, and a GTX 1050
+  with 2 GB (sm_61, which torch 2.14's sm_60 build runs). Matrix products
+  measured there on 2026-10-22: the GPU does 1.54 TFLOPS in float32, 1.85 in
+  float16 and 1.06 in bfloat16, which it emulates, so training there stays
+  float32. One process pinned to one socket does about 1.0 TFLOPS in float32
+  on the CPU, two such processes about 2.0 in all, and one process across
+  both sockets 0.16-0.22: CPU jobs run one process per NUMA node
+  (`diff_gpt.numa.pin_to_node`). Numbers measured on the RTX 3050 are the
+  laptop's; every estimate is checked against the machine it runs on.
 - Python versions: diff-gpt requires Python ≥ 3.14. gift-eval and timebench
   pin gluonts ~0.15.1 and numpy ~1.26, which do not run on 3.14. The
   evaluation therefore runs in a separate uv environment on Python 3.11, and
@@ -104,8 +113,9 @@ Everything before that point stays local.
   validation MASE and CRPS of those forecasts.
 - New code passes the repository's strict ruff checks and the fast tests,
   without mocks or monkeypatching.
-- Commit only when the user asks, and stage explicit paths, because other
-  sessions share the working tree.
+- Commit after each step that makes progress (the user's rule since
+  2026-10-22), and stage explicit paths, because other sessions share the
+  working tree. Push only when the user asks.
 
 ## The two benchmarks
 
@@ -667,20 +677,28 @@ Decided with the user on 2026-10-21 and 22:
 
 ## Status on 2026-10-22
 
-- Everything committed is on GitHub: master at cfdecfb.
-- M1 on GIFT-Eval (`leaderboards/README.md`):
-  - done: the environment, the data (`datasets/gift-eval`, 1.5 GB), the
-    windows of val and test, and the numpy Seasonal_Naive's forecasts of
-    both;
-  - scored so far: our Seasonal_Naive on val, 97 of 97 configurations, and
-    on test, 61; the official statsforecast Seasonal_Naive with full
-    contexts on test, 60, and val, 22, and with contexts of 4,096 steps on
-    test, 49, and val, 8;
-  - not done: the rest of these scores, their comparison, and the
-    aggregation check against two published entries. The user stopped the
-    runs on 2026-10-21, when five scoring jobs at once filled the laptop's
-    memory, and again on 2026-10-22. Run the scoring jobs one at a time.
-- M1 on TIME: not started; neither its data nor timebench is installed.
+- GitHub has master at 32e1bf1; the later commits are local.
+- M1 on GIFT-Eval is done (`leaderboards/README.md`), rerun from the export
+  on the new machine on 2026-10-22: the export took 74 s, the numpy
+  Seasonal_Naive's forecasts 46 s (test) and 16 s (val), and six scoring
+  runs of `--jobs 8` ran at once with at least 90 GiB of RAM left. Gate G1
+  passes on GIFT-Eval:
+  - statsforecast's Seasonal_Naive with full contexts
+    (`leaderboards.gift.official`) equals the published Seasonal_Naive on
+    all 97 configurations, in all 11 metrics: the largest relative
+    difference is 0;
+  - the numpy Seasonal_Naive, through export, forecast and score, equals
+    statsforecast's with contexts of 4,096 steps on all 97 configurations
+    of test and of val, again with a largest difference of 0;
+  - the aggregation reproduces the published PatchTST (0.849, 0.587) and
+    TiRex (0.716, 0.488), a test in `leaderboards/tests/test_gift.py`.
+
+  Cutting the contexts to 4,096 steps changes only the intervals: on test
+  the cut Seasonal_Naive scores MASE 1.0000 and CRPS 0.9648 of the
+  published one, and on val the full contexts score CRPS 1.0512 of the cut.
+- M1 on TIME: under way. The data (Real-TSF/TIME at 83e3d0b, 212 MB) is in
+  `datasets/time`, and the hosted results of seasonal_naive, Chronos-2 and
+  TiRex (Real-TSF/TIME-Output at 4c93dea) in `datasets/time-output`.
 - M2: `predict_samples_many` is done; throughput is measured on the laptop
   only; S is not chosen.
 - Track B: `synthetic/` is written and tested (14 tests pass) and the
@@ -692,8 +710,7 @@ Decided with the user on 2026-10-21 and 22:
 
 In the order agreed with the user:
 
-1. Finish G1: the remaining GIFT-Eval scores, their comparison and the
-   aggregation check, then TIME's part of M1.
+1. Finish G1 with TIME's part of M1 (GIFT-Eval's passed on 2026-10-22).
 2. Generate the full corpus, from `synthetic/`:
 
    ```sh
