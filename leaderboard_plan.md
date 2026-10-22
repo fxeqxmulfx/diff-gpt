@@ -1,6 +1,9 @@
 # Plan: the GIFT-Eval and TIME leaderboards
 
-Started: 2026-10-21. Status: plan only; nothing has been run yet.
+Started: 2026-10-21. Status on 2026-10-22: M1 is half done on GIFT-Eval and
+not started on TIME; Track B's corpus comes from TempoPFN's generators
+(`synthetic/`) and is not generated in full yet. See **Status on 2026-10-22**
+and **Moving to another machine** near the end.
 
 ## Goal
 
@@ -71,12 +74,18 @@ Everything before that point stays local.
   their code does not change. Benchmark-specific logic goes in the
   encoder/decoder, the data loaders, the sampling code and the evaluation
   adapter. Model and optimizer parameters may change.
-- Hardware: one RTX 3050 Laptop GPU with 4 GB of memory, and 123 GB of free
-  disk on 2026-10-21. Every estimate below is checked against both.
+- Hardware: until 2026-10-22, a laptop with one RTX 3050 Laptop GPU (4 GB),
+  29 GiB of RAM, 6 cores (12 threads) and 123 GB of free disk, where jobs
+  used at most 4 CPU threads in all (`taskset`, one thread per library). The
+  work then moves to another machine. Numbers measured on the RTX 3050 are
+  the laptop's: measure them again there, and set its limits anew. Every
+  estimate is checked against the machine it runs on.
 - Python versions: diff-gpt requires Python ≥ 3.14. gift-eval and timebench
   pin gluonts ~0.15.1 and numpy ~1.26, which do not run on 3.14. The
   evaluation therefore runs in a separate uv environment on Python 3.11, and
-  the two sides exchange files. gluonts never enters diff-gpt.
+  the two sides exchange files. gluonts never enters diff-gpt. The synthetic
+  corpus is made in a third environment, `synthetic/` on Python 3.12, since
+  TempoPFN requires Python < 3.13; it hands diff-gpt .npy files.
 - Compare changes by training FLOPs and validation scores, averaged over seeds
   11, 17 and 23 on the GPU.
 - Select settings on validation only. Test windows are scored once per
@@ -295,33 +304,60 @@ token-level GPT without leakage would be the first on the board.
 
 ### Track B: one global model, zero-shot (GIFT `zero-shot`)
 
-- Pretrain one DiffGPT on a subset of GiftEvalPretrain (Apache-2.0),
-  optionally adding synthetic series, and never using a GIFT-Eval train split.
-  The GIFT label is zero-shot, leakage No. The same weights then run on TIME,
-  also zero-shot.
-- Corpus size: 975 GB in total, of which cmip6_* and era5_* take 856 GB. The
-  remaining 119 GB include 63 GB of buildings_900k. With 123 GB of free disk,
-  download a measured subset without cmip6, era5 and most of buildings_900k
-  (about 56 GB or less).
-- For the TIME entry, also leave out azure_vm_traces_2017,
-  bitcoin_with_missing, fred_md and cdc_fluview_*, the sources related to
-  TIME's. They probably overlap only older history, but dropping them costs
-  little.
-- Selection: checkpoints, settings and the temperature are chosen on a
-  hold-out from the pretraining corpus (held-out series, last windows). GIFT
-  validation windows are scored once per candidate as a go/no-go check, never
-  for tuning, so the zero-shot label stays honest.
+- Pretrain one DiffGPT on synthetic series from TempoPFN's generators, and
+  never on a GIFT-Eval or TIME split. The GIFT label is zero-shot, leakage No.
+  The same weights then run on TIME, also zero-shot. The user chose this on
+  2026-10-21: TempoPFN's model is dropped; its generators and its GIFT-Eval
+  path are kept. TempoPFN itself, 38M parameters pretrained on its synthetic
+  series, scores 0.797 / 0.537 on GIFT-Eval, zero-shot.
+- The corpus is made in `synthetic/` (see the docstrings of `src/__init__.py`
+  and `tempopfn_corpus/`):
+  - TempoPFN's code runs from a clone next to this repository,
+    `../TempoPFN` at commit 5969ec6; a run refuses another commit or a
+    changed clone. Four of its modules are replaced by stand-ins in
+    `synthetic/src`. Among them, KernelSynth samples its GP prior by a
+    pivoted Cholesky factorization of a kernel matrix built from lags, and
+    CauKer draws its roots independently on the CPU, as the original CauKer
+    does, where TempoPFN's port gave all roots of a series one noise.
+  - 16 sources, 14 generators and 2 offline augmentations, of series of
+    2,048 steps. The full corpus has 65,536 train and 4,096 holdout series
+    per source: about 20 CPU hours, 61% of them in gp, or at least 7 hours
+    on three cores of the laptop.
+  - Series j of a source gets the seed run_id + j in whichever process makes
+    it, with PYTHONHASHSEED=0, so the corpus can be built in parts.
+  - `tempopfn_corpus.export` writes `npy/<split>/<source>.npy`, float32 of
+    shape (N, 2048), and `manifest.json`.
+  - A pilot of 5,120 series per source, made by earlier stand-ins, is set
+    aside in `datasets/tempopfn-synthetic/set-aside/pilot`.
+- Never read TempoPFN's `data/nan_stats.json`: it is computed from the
+  GIFT-Eval train splits, and `generate` refuses to open it. TempoPFN draws
+  each series' frequency from GIFT_EVAL_FREQUENCY_WEIGHTS, the benchmark's mix
+  of frequencies; on 2026-10-22 the user kept it as TempoPFN has it, as
+  metadata rather than data.
+- Training: `benchmarks/synthetic_pretrain.py`, in diff-gpt's environment.
+  `DiffCorpusDataLoader` takes windows of the train split, each in the units
+  of a prefix of itself, so that one vocabulary serves series of every
+  scale. `--train-dtype bfloat16` runs bfloat16 forward passes on float32
+  master weights, gradients and optimizer state.
+- Selection: checkpoints, settings and the temperature are chosen on the
+  holdout split alone, by the MASE and CRPS of forecasts relative to the
+  naive forecast, geometric mean over the sources; `best.bin` holds the
+  lowest holdout CRPS. GIFT validation windows are scored once per candidate
+  as a go/no-go check, never for tuning, so the zero-shot label stays honest.
+- `benchmarks/gift_eval/diff_gpt_forecast.py` forecasts the exported GIFT
+  windows with a `synthetic_pretrain` run.
 - Model size: start at 1–10M parameters. The nearest precedents:
   - goia-forecast-nano-v0: 4.73M parameters, trained from scratch on a single
     consumer GPU, 0.815;
   - tinycast: 146,505 parameters, about 7.8 h on eight RTX 3090s, 0.774;
   - Timestral-5M: 0.705;
   - TTM-R3: 1.41M parameters, pretrained, 0.724.
-- Two new pieces are needed:
-  - per-window normalization in the loader, so that one vocabulary serves
-    series of every scale;
-  - a streaming loader over the Arrow files, since the corpus will not fit the
-    in-memory DataFrame loader.
+- GiftEvalPretrain (Apache-2.0) stays an option to add later. It holds
+  975 GB, of which cmip6_* and era5_* take 856 GB and buildings_900k 63 GB;
+  a subset without them and most of buildings_900k is about 56 GB. For the
+  TIME entry, such a subset would also leave out azure_vm_traces_2017,
+  bitcoin_with_missing, fred_md and cdc_fluview_*, the sources related to
+  TIME's.
 - Variant: the same run plus the GIFT train splits would be labeled
   pretrained, still without leakage. Decide on it after the zero-shot result.
 
@@ -381,13 +417,17 @@ Adapter details:
 - **Seeds.** Fix the sampling seeds and record them, along with S and the
   temperature, in `config.json`.
 - **Locations.** Outputs go under `runs/leaderboards/`. Data goes under
-  `datasets/gift-eval`, `datasets/time` and `datasets/gift-eval-pretrain`. All
-  of these are ignored by git.
+  `datasets/gift-eval`, `datasets/time`, `datasets/tempopfn-synthetic` and,
+  if it is ever downloaded, `datasets/gift-eval-pretrain`. All of these are
+  ignored by git.
 - **Code.** The adapter lives in `leaderboards/` in this repository, with its
-  own `pyproject.toml`: Python 3.11, and gift-eval and timebench pinned to
-  commits. Its ruff config extends the repository's with target py311, so the
-  whole repository stays ruff clean. Keeping it here lets `code_link` point at
-  the diff-gpt repository.
+  own `pyproject.toml`: Python 3.11, gift-eval pinned to commit 3c7be6d, and
+  timebench to be pinned the same way for TIME. Its ruff config extends the
+  repository's with target py311, so the whole repository stays ruff clean.
+  Keeping it here lets `code_link` point at the diff-gpt repository. The
+  GIFT-Eval side is built: export, score, aggregate and the official
+  Seasonal_Naive (`leaderboards/README.md`). The export cuts contexts to
+  their last 4,096 steps.
 - **Fast tests** cover:
   - window order and keys;
   - the normalization round trip;
@@ -410,6 +450,12 @@ The real rate depends on the model size, the batch size and how much KV cache
 fits in 4 GB. M2 replaces these estimates with measurements. Training costs
 for Track A (up to 97 models) and Track B (pretraining) are measured in FLOPs
 and hours in M3 and M5, before the full runs are scheduled.
+
+Measured on the laptop's RTX 3050 on 2026-10-21: training runs 1.6–1.7 times
+as fast in bfloat16 as in float32, and decoding 2.8–3.4 times as fast in
+float16. An untrained DiffGPT of 0.92M parameters forecast GIFT windows at
+55–60k points per second in float16, against 16k in float32: about 1 hour
+for validation and 4 hours for test, by that smoke run's estimate.
 
 ## Steps
 
@@ -441,10 +487,13 @@ until then.
 
 ### M2. Batched sampling and throughput
 
-- Extend `predict_many` to S samples per context. Test it at temperature 0
-  against `predict` and check output shapes and NaN contexts.
-- Measure generated tokens per second on the RTX 3050 against model size,
-  batch size and `block_size` 2,048, and measure the KV-cache memory.
+- Extend `predict_many` to S samples per context. Done:
+  `DiffGPT.predict_samples_many` prefills each context once and copies it
+  into the rows of its samples.
+- Measure generated tokens per second against model size, batch size and
+  `block_size` 2,048, and measure the KV-cache memory. The first numbers,
+  from the laptop's RTX 3050, are under **Compute**; measure again on the
+  new machine.
 - Choose S from validation CRPS at S = 20, 50 and 100 on the pilot
   configurations, within the compute budget.
 
@@ -478,9 +527,11 @@ until then.
 
 ### M5. Track B pretraining
 
-- Download the corpus subset after checking free disk, build the streaming
-  loader with per-window normalization, and carve out the hold-out.
-- Screen model size and codec on the hold-out, by FLOPs. Confirm the selected
+- Generate the full synthetic corpus on one machine and export it (see
+  Track B). The loader with per-window units and the holdout split exist.
+- Pilot on the GPU: float32 against bfloat16 training, by FLOPs and holdout
+  scores, and the number of samples S.
+- Screen model size and codec on the holdout, by FLOPs. Confirm the selected
   setting on three seeds where the budget allows.
 - Gate G4: on GIFT validation windows, scored once per candidate, normalized
   MASE and CRPS are below 1.
@@ -603,20 +654,90 @@ Follow the checklists below.
   `code_link`, and a maintainer reruns the model.
 - Whether to submit Track A, Track B or both.
 - Signing the Salesforce CLA.
-- Downloading the GiftEvalPretrain subset: tens of GB out of 123 GB free.
+- Whether to add a GiftEvalPretrain subset to the synthetic corpus: tens of
+  GB.
 
-## First steps
+Decided with the user on 2026-10-21 and 22:
 
-1. M1: create the evaluation environment, download both test sets (about
-   1.8 GB), reproduce seasonal naive on both benchmarks and run the replay
-   check. This needs only the CPU, so it does not compete with the GPU queue.
-2. M2: build batched sampling and measure throughput on a representative
-   model.
-3. M3: start the Track A pilot on m4_hourly and ett1/H.
+- Track B pretrains on TempoPFN's generators; TempoPFN's model is dropped.
+- Master weights stay float32; bfloat16 serves the forward passes only.
+- CauKer's roots are independent, as in the original CauKer, and the full
+  corpus is generated from scratch after G1.
+- GIFT_EVAL_FREQUENCY_WEIGHTS stay as TempoPFN has them.
+
+## Status on 2026-10-22
+
+- Everything committed is on GitHub: master at cfdecfb.
+- M1 on GIFT-Eval (`leaderboards/README.md`):
+  - done: the environment, the data (`datasets/gift-eval`, 1.5 GB), the
+    windows of val and test, and the numpy Seasonal_Naive's forecasts of
+    both;
+  - scored so far: our Seasonal_Naive on val, 97 of 97 configurations, and
+    on test, 61; the official statsforecast Seasonal_Naive with full
+    contexts on test, 60, and val, 22, and with contexts of 4,096 steps on
+    test, 49, and val, 8;
+  - not done: the rest of these scores, their comparison, and the
+    aggregation check against two published entries. The user stopped the
+    runs on 2026-10-21, when five scoring jobs at once filled the laptop's
+    memory, and again on 2026-10-22. Run the scoring jobs one at a time.
+- M1 on TIME: not started; neither its data nor timebench is installed.
+- M2: `predict_samples_many` is done; throughput is measured on the laptop
+  only; S is not chosen.
+- Track B: `synthetic/` is written and tested (14 tests pass) and the
+  speeds of its sources are measured; the full corpus is not generated, and
+  `synthetic_pretrain.py` has not trained on a corpus yet.
+- M3, M4 and M6: not started.
+
+## Next steps
+
+In the order agreed with the user:
+
+1. Finish G1: the remaining GIFT-Eval scores, their comparison and the
+   aggregation check, then TIME's part of M1.
+2. Generate the full corpus, from `synthetic/`:
+
+   ```sh
+   PYTHONHASHSEED=0 taskset -c <cores> uv run python -m tempopfn_corpus.schedule \
+       --series train=65536 --series holdout=4096
+   uv run python -m tempopfn_corpus.export
+   ```
+
+3. Pilot `synthetic_pretrain.py` on the GPU: float32 against bfloat16
+   training, and S.
+4. Train Track B and check G4.
+
+## Moving to another machine
+
+Git carries the code only. On the new machine:
+
+- Clone next to the repository:
+  - TempoPFN at the commit the corpus checks:
+    `git clone https://github.com/automl/TempoPFN ../TempoPFN`, then
+    `git -C ../TempoPFN checkout 5969ec6ddbded5a8d2976d42504c1ae436a2f1b3`;
+  - gift-eval at 3c7be6d, as `leaderboards/README.md` says.
+- Run `uv sync` in the root (Python 3.14), in `leaderboards/` (3.11) and in
+  `synthetic/` (3.12). pyo's wheel bundles PortAudio and its other
+  libraries, so the audio generators need no system packages.
+- Data, ignored by git: download GIFT-Eval again (`leaderboards/README.md`)
+  or copy `datasets/gift-eval`. `datasets/long_term_forecast` and
+  `datasets/short_term_forecast` serve only the older benchmarks, never
+  Track B (see **Pitfalls**). The set-aside pilot,
+  `datasets/tempopfn-synthetic/set-aside`, is not needed.
+- Outputs, ignored by git: the laptop's `runs/leaderboards/gift-eval` holds
+  5.5 GB of partial G1 outputs. Rerun G1 on the new machine from the export
+  on (the export takes about 50 s) rather than compare scores made on two
+  machines.
+- Generate the whole corpus on one machine. Its run records hold the
+  TempoPFN commit, the digests of the stand-ins, PYTHONHASHSEED and the
+  versions of Python and the libraries, but not the CPU, whose BLAS kernels
+  may change the last bits of a series.
+- Measure again before scheduling: `SECONDS_PER_SERIES` in
+  `synthetic/tempopfn_corpus/schedule.py`, the GPU's throughput (M2), and
+  the CPU threads and memory that jobs may use.
 
 ## Sources
 
-All sources were read on 2026-10-21.
+All sources were read on 2026-10-21, TempoPFN's also on 2026-10-22.
 
 - **GIFT-Eval**
   - github.com/SalesforceAIResearch/gift-eval: README,
@@ -641,3 +762,10 @@ All sources were read on 2026-10-21.
   - Results: huggingface.co/datasets/Real-TSF/TIME-Output, discussions 36,
     42, 46, 48, 54 and 55.
   - fev-bench: `benchmarks/fev_bench/tasks.yaml` in github.com/autogluon/fev.
+- **TempoPFN**
+  - github.com/automl/TempoPFN at commit 5969ec6 (Apache-2.0): the synthetic
+    generators, `continuous_generation.py`, the offline augmentations and
+    `src/data/frequency.py`.
+  - Paper: arXiv 2510.25502.
+  - The original CauKer: github.com/ShifengXIE/CauKer, `CauKer.py` at
+    ed00670.
