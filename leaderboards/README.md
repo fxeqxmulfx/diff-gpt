@@ -84,16 +84,23 @@ datasets, their lengths (`config/datasets.yaml`) and the scorer, which writes
 folder a submission uploads.
 
 ```sh
-uvx --from 'huggingface_hub[hf_xet]' hf download Real-TSF/TIME \
-    --repo-type=dataset --local-dir ../datasets/time    # 212 MB
+uvx --from 'huggingface_hub[hf_xet]' hf download Real-TSF/TIME --repo-type=dataset \
+    --revision 83e3d0b3be28d11c7182bffcc1892d19b36c4da1 \
+    --local-dir ../datasets/time    # 212 MB
+uvx --from 'huggingface_hub[hf_xet]' hf download Real-TSF/TIME-Output --repo-type=dataset \
+    --revision 4c93deaac0aa02e3be3ae385be7a8be6dde7aa91 \
+    --include 'results/seasonal_naive/**' --include 'results/Chronos-2/**' \
+    --include 'results/TiRex/**' --exclude '**/predictions.npz' \
+    --local-dir ../datasets/time-output    # 588 files, 20 MB
 ```
 
-The hosted results come from the dataset Real-TSF/TIME-Output at revision
-4c93dea (`huggingface_hub.snapshot_download` with
-`allow_patterns=["results/<model>/**/metrics.npz", "results/<model>/**/config.json"]`
-for seasonal_naive, Chronos-2 and TiRex, into `../datasets/time-output`).
-TIME's data is CC BY-NC 4.0: it stays in the ignored `datasets/` and is never
-committed.
+The first is TIME's data; the second, the hosted `metrics.npz` and
+`config.json` of seasonal_naive (the baseline `aggregate` divides test by),
+Chronos-2 and TiRex (whose leaderboard scores `tests/test_time.py`
+reproduces). Gate G1 ran on these revisions, both repositories' `main` on
+2026-10-22. With `--dry-run` either command counts the files it would fetch:
+none for a copy at its revision. TIME's data is CC BY-NC 4.0: it stays in the
+ignored `datasets/` and is never committed.
 
 From `leaderboards/`, unless noted; everything is written under
 `runs/leaderboards/time/`.
