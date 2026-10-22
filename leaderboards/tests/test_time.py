@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
+import zlib
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -12,13 +15,13 @@ import pytest
 
 from leaderboards.gift.export import export
 from leaderboards.gift.score import QUANTILE_LEVELS, Forecasts, read_forecasts
-from leaderboards.time.aggregate import aggregate, read_scores
+from leaderboards.time.aggregate import aggregate, baseline_path, read_scores
 from leaderboards.time.compare import METRICS, differences
 from leaderboards.time.configs import HOSTED, ROOT, SPLITS, select, tasks
-from leaderboards.time.official import run
-from leaderboards.time.score import score
+from leaderboards.time.official import run, task_seed
+from leaderboards.time.score import RESULTS, score
 from leaderboards.time.windows import load, split_of
-from tests.tiny import HORIZON, SEASON, TIME_CONFIG, WINDOWS, tiny, tiny_multi
+from tests.tiny import HORIZON, SEASON, TIME_CONFIG, WINDOWS, tiny, tiny_multi, write
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -27,6 +30,7 @@ if TYPE_CHECKING:
 
 MAX_CONTEXT = 200  # Shorter than every tiny context, so that the cut shows.
 TASKS = tuple(tasks(TIME_CONFIG))
+MODEL = "numpy_seasonal_naive"  # Never "seasonal_naive", which TIME's tools prefer.
 
 
 def ends(targets: list[np.ndarray], split: str) -> list[tuple[int, int]]:
@@ -139,6 +143,8 @@ def runs(time_data: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
             "benchmarks.gift_eval.seasonal_naive",
             "--split",
             split,
+            "--model",
+            MODEL,
             "--windows",
             runs / "windows",
             "--forecasts",
@@ -150,7 +156,7 @@ def runs(time_data: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 def forecasts_of(runs: Path, task: Task, split: str) -> Forecasts:
     """Read the seasonal naive's forecasts of `task` on `split`."""
-    folder = runs / "forecasts" / "seasonal_naive" / split
+    folder = runs / "forecasts" / MODEL / split
     return read_forecasts(folder / f"{task.file_key}.npz")
 
 
@@ -239,6 +245,44 @@ def test_official_draws_repeat_with_a_seed(time_data: Path, tmp_path: Path) -> N
     assert scores[0] != scores[2]
 
 
+def test_official_seeds_each_task_by_its_key(tmp_path: Path) -> None:
+    """Under one seed two tasks of one series draw differently; a rerun repeats."""
+    names = ("tiny/H", "twin/H")
+    for name in names:
+        write(tmp_path / "data", name, tiny())
+    config = {"datasets": dict.fromkeys(names, TIME_CONFIG["datasets"]["tiny/H"])}
+    first, twin = tasks(config)
+    crps = []
+    for index, task in enumerate((first, twin, twin)):
+        folder = tmp_path / str(index)
+        run(task, "test", tmp_path / "data", folder, seed=0)
+        with np.load(folder / task.key / "metrics.npz") as metrics:
+            crps.append(metrics["CRPS"])
+        record = json.loads((folder / task.key / "config.json").read_text())
+        assert (record["seed"], record["task_seed"]) == (0, task_seed(0, task.key))
+    assert not np.array_equal(crps[0], crps[1], equal_nan=True)
+    np.testing.assert_array_equal(crps[1], crps[2])
+
+
+def test_task_seed_depends_only_on_the_seed_and_the_key() -> None:
+    """A task's seed is the CRC-32 of "<seed>:<key>", whatever PYTHONHASHSEED."""
+    seed = task_seed(0, "tiny/H/short")
+    assert seed == zlib.crc32(b"0:tiny/H/short")
+    assert seed != task_seed(0, "twin/H/short")
+    assert seed != task_seed(1, "tiny/H/short")
+    code = "from leaderboards.time.official import task_seed\n"
+    code += "print(task_seed(0, 'tiny/H/short'))"
+    for hash_seed in ("0", "1"):
+        done = subprocess.run(  # noqa: S603 - this environment's Python, no shell.
+            [sys.executable, "-c", code],
+            env={**os.environ, "PYTHONHASHSEED": hash_seed},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert int(done.stdout) == seed
+
+
 def test_read_scores_are_nanmeans(tmp_path: Path) -> None:
     """A task's MASE and CRPS are its metrics' nanmeans; a missing task is an error."""
     for task, value in zip(TASKS, (1.0, 3.0), strict=True):
@@ -254,6 +298,12 @@ def test_read_scores_are_nanmeans(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="no results"):
         read_scores(tmp_path / "other", list(TASKS))
+
+
+def test_baselines_are_hosted_for_test_and_numpy_for_val() -> None:
+    """Test divides by the hosted seasonal_naive, val by our numpy_seasonal_naive."""
+    assert baseline_path("test") == HOSTED / "seasonal_naive"
+    assert baseline_path("val") == RESULTS / MODEL / "val"
 
 
 @pytest.mark.parametrize(

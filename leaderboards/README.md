@@ -109,24 +109,44 @@ From `leaderboards/`, unless noted; everything is written under
 uv run python -m leaderboards.time.export                  # windows/{test,val}/
 # From the repository root, in diff-gpt's environment:
 uv run python -m benchmarks.gift_eval.seasonal_naive --split test \
+    --model numpy_seasonal_naive \
     --windows runs/leaderboards/time/windows --forecasts runs/leaderboards/time/forecasts
-uv run python -m leaderboards.time.score --model seasonal_naive --split test --jobs 8
+uv run python -m leaderboards.time.score --model numpy_seasonal_naive --split test --jobs 8
 uv run python -m leaderboards.time.aggregate \
-    ../runs/leaderboards/time/results/seasonal_naive/test
+    ../runs/leaderboards/time/results/numpy_seasonal_naive/test
 uv run python -m leaderboards.time.official --split test --jobs 8   # TIME's seasonal_naive
 uv run python -m leaderboards.time.compare A B             # two results folders
 ```
 
 `official` runs timebench's SeasonalNaivePredictor as TIME's
 `experiments/seasonal_naive.py` does: 100 paths drawn between statsforecast's
-quantiles, unseeded (TIME's issue #12), so two runs differ by about 0.7% per
-task; `--seed` makes a run repeatable, and `--samples 0` scores
-statsforecast's quantiles themselves, which the numpy seasonal naive
-reproduces. `aggregate` takes the nanmean of each task's metrics, divides by
-seasonal_naive's (the hosted one for test, ours for val) and takes the
-geometric mean, as the Space does. Keep a local seasonal naive out of folders
-named `seasonal_naive` in a results directory that TIME's
+quantiles, unseeded (TIME's issue #12), so two runs differ by about 0.6% per
+task. `--seed` makes a run repeatable: each task's draws are seeded with the
+CRC-32 of `<seed>:<task key>`, so the tasks of a run do not repeat each
+other's draws. `--samples 0` scores statsforecast's quantiles themselves,
+which the numpy seasonal naive reproduces. `aggregate` takes the nanmean of
+each task's metrics, divides by a seasonal naive's (the hosted seasonal_naive
+for test, `results/numpy_seasonal_naive/val` for val) and takes the geometric
+mean, as the Space does. Keep a local seasonal naive out of folders named
+`seasonal_naive` in a results directory that TIME's
 `compute_local_leaderboard.py` reads: that script prefers it to the hosted one.
+
+The hosted seasonal_naive drew differently: its `predictions.npz` show the
+paths of a window drawn once for all the variates of a multivariate series,
+whereas TIME's code today, like `official`, splits a series into its
+variates and draws for each. The expectation is the same, but a task's
+scores vary more from one such run to the next. Ten runs of `official` on
+test (100 draws, full contexts) measured:
+
+| | MASE | CRPS |
+|---|---|---|
+| one run against another, median relative difference per task | 0.45-0.79% | 0.44-0.75% |
+| a run against the hosted one, the same | 0.56-0.93% | 0.51-0.82% |
+| a run's `aggregate` over the hosted one | 0.991-1.002 | 0.996-1.004 |
+
+Statsforecast's own quantiles (`--samples 0 --max-length 4096`, which the
+numpy seasonal naive reproduces) aggregate to MASE 0.9660 and CRPS 0.9808
+over the hosted one.
 
 - **test**: timebench's `Dataset.test_data`, the last `test_length` steps of
   each series cut into windows of the task's horizon.

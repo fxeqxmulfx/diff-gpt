@@ -9,7 +9,9 @@ get_overall_leaderboard), a task's MASE and CRPS are the nanmeans of its
 metrics.npz over series, windows and variates, divided by seasonal_naive's,
 and each score is the geometric mean of these ratios over the 98 tasks.
 Test is divided by the hosted seasonal_naive (HOSTED/seasonal_naive), val by
-our numpy seasonal naive (RUNS/results/seasonal_naive/val). The Space leaves
+our numpy seasonal naive (RUNS/results/numpy_seasonal_naive/val: a local
+seasonal naive never goes in a folder named seasonal_naive, which TIME's
+compute_local_leaderboard.py prefers to the hosted one). The Space leaves
 a task whose ratio is NaN or infinite out of the mean; here that is an
 error, as is a missing task.
 """
@@ -34,7 +36,7 @@ def baseline_path(split: str) -> Path:
     """Return the seasonal naive results `split` is divided by."""
     if split == "test":
         return HOSTED / "seasonal_naive"
-    return RESULTS / "seasonal_naive" / split
+    return RESULTS / "numpy_seasonal_naive" / split
 
 
 def read_scores(folder: Path, chosen: list[Task]) -> pd.DataFrame:

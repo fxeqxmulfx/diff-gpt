@@ -8,8 +8,12 @@ its intervals at levels 20 to 80, and draws --samples paths (TIME: 100)
 between those quantiles by inverse-CDF sampling. The paths' quantiles 0.1 to
 0.9 (np.quantile) are scored by save_window_predictions into
 RUNS/results/<model>/<split>/. TIME draws them unseeded (its issue #12), so
-two runs differ by about 0.7% per task; --seed seeds numpy's global
-generator before each task, which makes a run repeatable.
+two runs differ by about 0.6% per task. --seed makes a run repeatable: before
+each task it seeds numpy's global generator with task_seed(seed, key), so
+that the tasks of a run draw independently of each other. A multivariate
+series is split into its variates first, each drawing its own paths, as
+TIME's code does now; the hosted seasonal_naive drew a window's paths once
+for all the variates of a series (README.md, TIME).
 
 --samples 0 scores statsforecast's quantiles themselves, without the draws:
 the forecasts the numpy seasonal naive of benchmarks/gift_eval replays.
@@ -22,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import time
+import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -42,6 +47,16 @@ if TYPE_CHECKING:
     from leaderboards.time.configs import Task
 
 SAMPLES = 100  # experiments/seasonal_naive.py's num_samples.
+
+
+def task_seed(seed: int, key: str) -> int:
+    """
+    Return the seed of task `key`'s draws in a run seeded with `seed`.
+
+    It is the CRC-32 of "<seed>:<key>": the same in every process, whatever
+    PYTHONHASHSEED, and different for the tasks of one run.
+    """
+    return zlib.crc32(f"{seed}:{key}".encode())
 
 
 def cut(inputs: Iterable[DataEntry], max_length: int) -> Iterator[DataEntry]:
@@ -93,13 +108,16 @@ def run(
     inputs = windows.test_data.input
     if max_length is not None:
         inputs = cut(inputs, max_length)
+    own_seed = None
     if seed is not None:
-        np.random.seed(seed)  # noqa: NPY002 - the predictor draws from numpy's global generator.
+        own_seed = task_seed(seed, task.key)
+        np.random.seed(own_seed)  # noqa: NPY002 - the predictor draws from numpy's global generator.
     quantiles = forecast(predictor, inputs, samples)
     hyperparams = {
         "season_length": season_length,
         "num_samples": samples,
         "seed": seed,
+        "task_seed": own_seed,
         "max_length": max_length,
     }
     scores = save(windows, quantiles, task, folder, season_length, hyperparams)
