@@ -14,7 +14,9 @@ split, other series of the same generators:
   median and the weighted quantile loss of the quantiles 0.1, ..., 0.9
   (GIFT-Eval's CRPS) are divided per source by those of the naive forecast,
   the last value, and combined over the sources by a geometric mean, as
-  GIFT-Eval combines its configurations.
+  GIFT-Eval combines its configurations. --score-samples also scores
+  forecasts of fewer samples, from disjoint groups of the ones drawn, so
+  that one draw compares the numbers of samples S.
 
 --train-dtype bfloat16 trains in mixed precision, bfloat16 forward passes on
 float32 master weights; --score-dtype draws the holdout forecasts from a
@@ -23,9 +25,10 @@ float16 or bfloat16 copy of the weights.
 Settings are chosen on the holdout alone: no GIFT-Eval or TIME data enters
 this script. --output, which must not exist yet, gets config.json,
 history.csv (one row per evaluation: updates, training FLOPs =
-GPT.estimate_flops() x trained tokens, losses, scores, seconds),
-scores.jsonl (the scores of every source) and the checkpoints last.bin and
-best.bin (the lowest holdout CRPS), written by DiffGPT.save.
+GPT.estimate_flops() x trained tokens, losses, scores, seconds in all and
+spent scoring, then the scores of each --score-samples), scores.jsonl (the
+scores of every source) and the checkpoints last.bin and best.bin (the
+lowest holdout CRPS), written by DiffGPT.save.
 
 Usage:
     uv run --no-sync python -m benchmarks.synthetic_pretrain \
@@ -112,6 +115,7 @@ HISTORY_FIELDS = (
     "mase",
     "crps",
     "seconds",
+    "score_seconds",
 )
 
 
@@ -174,6 +178,7 @@ def forecast_scores(
     samples: np.ndarray,
     windows: Windows,
     names: Sequence[str],
+    group: int | None = None,
 ) -> dict[str, Any]:
     """
     Score the (N, S, H) samples of the holdout windows against the naive forecast.
@@ -187,14 +192,27 @@ def forecast_scores(
     is that value and its WQL is sum |y - ŷ| / sum |y|. A missing future
     value counts for nothing.
 
+    `group` scores forecasts of fewer samples: the S samples of each window
+    split into S // `group` disjoint groups of `group` consecutive samples,
+    leaving out the rest; each group's quantiles make one forecast, and a
+    source's MASE and WQL are their means over the groups. The samples of a
+    window are independent draws, so the means estimate the scores of
+    `group` samples with less noise than one group would. None scores all
+    S samples as one forecast; a `group` outside [1, S] raises ValueError.
+
     Returns the geometric means over the sources of the ratios to the naive
     forecast, "mase" and "crps" (a source whose naive score is 0 is left
-    out), and per source the four scores.
+    out), the samples per forecast and the number of groups, and per source
+    the four scores.
     """
+    size = samples.shape[1] if group is None else group
+    if not 1 <= size <= samples.shape[1]:
+        msg = f"group must lie in [1, {samples.shape[1]}], got {group}"
+        raise ValueError(msg)
+    starts = range(0, samples.shape[1] - size + 1, size)
     count = len(names)
     truth = windows.futures
     observed = ~np.isnan(truth)
-    quantiles = np.quantile(samples, QUANTILES, axis=1)  # (Q, N, H)
     seen = ~np.isnan(windows.contexts)
     last = windows.contexts[np.arange(len(seen)), seen.cumsum(axis=1).argmax(axis=1)]
     naive = np.broadcast_to(last[:, None], truth.shape)
@@ -221,14 +239,26 @@ def forecast_scores(
         )
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        model_mase, naive_mase = mase(quantiles[MEDIAN]), mase(naive)
-        model_wql = wql(quantiles)
-        naive_wql = wql(np.broadcast_to(naive, quantiles.shape))
+        naive_mase = mase(naive)
+        naive_wql = wql(np.broadcast_to(naive, (len(QUANTILES), *truth.shape)))
+        model_mase = np.zeros(count)
+        model_wql = np.zeros(count)
+        for start in starts:
+            # (Q, N, H): the quantiles of the group's samples.
+            quantiles = np.quantile(
+                samples[:, start : start + size],
+                QUANTILES,
+                axis=1,
+            )
+            model_mase += mase(quantiles[MEDIAN]) / len(starts)
+            model_wql += wql(quantiles) / len(starts)
         relative_mase = model_mase / naive_mase
         relative_wql = model_wql / naive_wql
     return {
         "mase": _geometric_mean(relative_mase),
         "crps": _geometric_mean(relative_wql),
+        "samples": size,
+        "groups": len(starts),
         "sources": {
             name: {
                 "mase": float(model_mase[k]),
@@ -310,6 +340,14 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--score-windows", type=int, default=16)
     parser.add_argument("--horizon", type=int, default=64)
     parser.add_argument("--num-samples", type=int, default=20)
+    parser.add_argument(
+        "--score-samples",
+        type=int,
+        nargs="*",
+        default=[],
+        help="also score forecasts of each of these numbers of samples, at most "
+        "--num-samples, from disjoint groups of the ones drawn",
+    )
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--score-batch", type=int, default=256)
     parser.add_argument("--score-seed", type=int, default=0)
@@ -328,7 +366,10 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     """Pretrain one model as the arguments say and record its curve."""
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if any(not 1 <= size <= args.num_samples for size in args.score_samples):
+        parser.error(f"--score-samples must lie in [1, {args.num_samples}]")
     args.output.mkdir(parents=True)
     torch.manual_seed(args.seed)
     train_series = load_split(args.corpus, "train")
@@ -430,8 +471,16 @@ def main(argv: list[str] | None = None) -> None:
     }
     (args.output / "config.json").write_text(json.dumps(config, indent=2) + "\n")
     history = args.output / "history.csv"
+    fields = [
+        *HISTORY_FIELDS,
+        *(
+            f"{score}_s{size}"
+            for size in args.score_samples
+            for score in ("mase", "crps")
+        ),
+    ]
     with history.open("w", newline="") as handle:
-        csv.DictWriter(handle, fieldnames=HISTORY_FIELDS).writeheader()
+        csv.DictWriter(handle, fieldnames=fields).writeheader()
     sampler = TemperatureSampler(temperature=args.temperature)
     start = time.monotonic()
     state = {"evaluations": 0, "best": float("inf")}
@@ -445,6 +494,7 @@ def main(argv: list[str] | None = None) -> None:
         }
         last = evaluation.step == args.max_iters
         if state["evaluations"] % args.score_every == 0 or last:
+            scoring = time.monotonic()
             samples = predict_samples_normalized(
                 model,
                 [c[:, None] for c in windows.contexts],
@@ -456,10 +506,26 @@ def main(argv: list[str] | None = None) -> None:
                 seed=args.score_seed,
                 dtype=_dtype(args.score_dtype),
             )
-            scores = forecast_scores(np.stack(samples)[..., 0], windows, holdout_names)
+            drawn = np.stack(samples)[..., 0]
+            scores = forecast_scores(drawn, windows, holdout_names)
             row |= {"mase": scores["mase"], "crps": scores["crps"]}
+            fewer = {
+                size: forecast_scores(drawn, windows, holdout_names, group=size)
+                for size in args.score_samples
+            }
+            for size, scored in fewer.items():
+                row |= {
+                    f"mase_s{size}": scored["mase"],
+                    f"crps_s{size}": scored["crps"],
+                }
+            row["score_seconds"] = round(time.monotonic() - scoring, 1)
+            record = {
+                "step": evaluation.step,
+                **scores,
+                "fewer_samples": {str(size): scored for size, scored in fewer.items()},
+            }
             with (args.output / "scores.jsonl").open("a") as handle:
-                handle.write(json.dumps({"step": evaluation.step, **scores}) + "\n")
+                handle.write(json.dumps(record) + "\n")
             model.save(str(args.output / "last.bin"))
             if scores["crps"] < state["best"]:
                 state["best"] = scores["crps"]
@@ -467,7 +533,7 @@ def main(argv: list[str] | None = None) -> None:
         state["evaluations"] += 1
         row["seconds"] = round(time.monotonic() - start, 1)
         with history.open("a", newline="") as handle:
-            csv.DictWriter(handle, fieldnames=HISTORY_FIELDS).writerow(row)
+            csv.DictWriter(handle, fieldnames=fields).writerow(row)
         print(", ".join(f"{key}={value}" for key, value in row.items()))
 
     model.train(

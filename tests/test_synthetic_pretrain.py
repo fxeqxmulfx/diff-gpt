@@ -82,6 +82,37 @@ def test_scores_are_ratios_to_the_naive_forecast() -> None:
         assert set(scores["sources"]) == {"a", "b"}
 
 
+def test_fewer_samples_average_the_scores_of_their_groups() -> None:
+    """
+    Check scores of groups of samples: their mean, of the groups that fit.
+
+    Of six samples, four are the naive forecast (scores 1) and the last two
+    are halfway to the truth (scores 0.5). Groups of two are two naive ones
+    and a halfway one, which score (1 + 1 + 0.5) / 3; groups of four leave
+    the last two samples out, so their one group is naive. Groups of all
+    six score as the samples do without groups.
+    """
+    windows = _windows()
+    naive = np.repeat(windows.contexts[:, -1:], HORIZON, axis=1)
+    halfway = naive + HALFWAY * (windows.futures - naive)
+    samples = np.concatenate([_samples(naive)[:, :4], _samples(halfway)[:, :2]], axis=1)
+    names = ["a", "b"]
+    mean = (2.0 + HALFWAY) / 3
+    for group, expected, groups in ((2, mean, 3), (4, 1.0, 1)):
+        scores = forecast_scores(samples, windows, names, group=group)
+        assert scores["mase"] == pytest.approx(expected)
+        assert scores["crps"] == pytest.approx(expected)
+        assert (scores["samples"], scores["groups"]) == (group, groups)
+    assert forecast_scores(samples, windows, names, group=6) == forecast_scores(
+        samples,
+        windows,
+        names,
+    )
+    for group in (0, 7):
+        with pytest.raises(ValueError, match="group must lie in"):
+            forecast_scores(samples, windows, names, group=group)
+
+
 def test_scores_skip_missing_values() -> None:
     """A missing future value counts for nothing; naive is the last value seen."""
     windows = _windows()
@@ -107,10 +138,12 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
     Check a CPU run of four updates on a corpus of two sources.
 
     The history holds the evaluations after 0, 2 and 4 updates with their
-    FLOPs, each one scored, and best.bin loads into the model config.json
-    describes, with the digest of the manifest one level above the corpus,
-    where synthetic/'s export writes it. Trained in mixed precision and
-    scored in float16 too, the checkpoints hold the float32 master weights.
+    FLOPs, each one scored, with all four samples, with two and with three,
+    and best.bin loads into the model config.json describes, with the
+    digest of the manifest one level above the corpus, where synthetic/'s
+    export writes it. Trained in mixed precision and scored in float16 too,
+    the checkpoints hold the float32 master weights. Scores of more samples
+    than are drawn are refused.
     """
     rng = np.random.default_rng(0)
     corpus = tmp_path / "corpus"
@@ -130,6 +163,7 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
             *("--batch-size", "4", "--max-iters", "4", "--eval-interval", "2"),
             *("--eval-iters", "1", "--warmup", "1", "--score-windows", "2"),
             *("--horizon", "8", "--num-samples", "4", "--device", "cpu"),
+            *("--score-samples", "2", "3"),
             *precision,
         ],
     )
@@ -140,8 +174,24 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
     assert [int(row["step"]) for row in rows] == steps
     flops = config["flops_per_token"] * config["tokens_per_update"]
     assert [int(row["train_flops"]) for row in rows] == [flops * s for s in steps]
-    assert all(row["crps"] for row in rows)
-    assert len((output / "scores.jsonl").read_text().splitlines()) == len(rows)
+    scored = ("crps", "mase_s2", "crps_s2", "mase_s3", "crps_s3", "score_seconds")
+    assert all(row[field] for row in rows for field in scored)
+    records = [
+        json.loads(line) for line in (output / "scores.jsonl").read_text().splitlines()
+    ]
+    assert [record["step"] for record in records] == steps
+    for record in records:
+        assert (record["samples"], record["groups"]) == (4, 1)
+        fewer = [record["fewer_samples"][size] for size in ("2", "3")]
+        assert [(f["samples"], f["groups"]) for f in fewer] == [(2, 2), (3, 1)]
+    with pytest.raises(SystemExit):
+        main(
+            [
+                *("--corpus", str(corpus), "--output", str(tmp_path / "more")),
+                *("--num-samples", "4", "--score-samples", "5"),
+            ],
+        )
+    assert not (tmp_path / "more").exists()
     assert config["sources"]["ou_process"]["weight"] == TEMPOPFN_WEIGHTS["ou_process"]
     digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
     assert config["manifest_sha256"] == digest
