@@ -583,7 +583,7 @@ def _two_product(a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 def _levels(
     x: np.ndarray,
-    scale: float,
+    scale: float | np.ndarray,
     fraction: np.ndarray,
     *,
     factors: int,
@@ -612,6 +612,9 @@ def _levels(
     could leave int64 (see `_LEVEL_BITS`). Below it the levels lie in
     [-2^b - 1, 2^b] for b = min(53, 62 - m) (`levels_mem` in
     lean/DiffGPT/ExactLevels.lean).
+
+    `x` and `fraction` of shape (T, k) with a `scale` of shape (k,) give the
+    levels of k columns side by side, each as it would alone.
     """
     bits = min(_FLOAT64_EXACT_BITS, _LEVEL_BITS - factors)
     s_mantissa, s_exponent = np.frexp(scale)
@@ -667,11 +670,14 @@ def _cumsum(values: np.ndarray, lag: int) -> np.ndarray:
     2^64 for uint64, exact for int64 or ValueError. An int64 sum overflows
     exactly when its two terms share a sign that the wrapped sum lacks; the
     first overflow in a column is caught so, before any wrapped value enters
-    a later test, and the zeros that pad the last row never trip it.
+    a later test, and the zeros that pad the last row never trip it. A
+    `values` of more dimensions sums along its first axis, each of the others
+    on its own, as one of them would sum alone.
     """
-    n = values.shape[0]
+    n, rest = values.shape[0], values.shape[1:]
     rows = -(-n // lag)
-    grid = np.pad(values, (0, rows * lag - n)).reshape(rows, lag)
+    padding = [(0, rows * lag - n)] + [(0, 0)] * len(rest)
+    grid = np.pad(values, padding).reshape(rows, lag, *rest)
     total = np.cumsum(grid, axis=0)
     if values.dtype == np.int64 and rows > 1:
         before, terms, after = total[:-1], grid[1:], total[1:]
@@ -681,7 +687,7 @@ def _cumsum(values: np.ndarray, lag: int) -> np.ndarray:
                 "series leaves the grid's range"
             )
             raise ValueError(msg)
-    return total.reshape(-1)[:n]
+    return total.reshape(rows * lag, *rest)[:n]
 
 
 def _invert_difference(
@@ -730,18 +736,19 @@ def _anchor_fraction(
     P is continued with c(B) P = 0, or 2^(G-1), in uint64, whose sums wrap
     modulo 2^64, a multiple of 2^G. -c(B) floor(A) = c(B) F - c(B) A is an
     integer and c(B) A is 0 or 1/2, so it is c(B) F rounded down, which the
-    numerators give exactly.
+    numerators give exactly. A `scaled_prefix` of shape (p, k) holds the
+    prefixes of k columns of one operator, which come back side by side.
     """
-    p = scaled_prefix.shape[0]
+    p, rest = scaled_prefix.shape[0], scaled_prefix.shape[1:]
     if not lags:
-        return np.full(n_rows, _HALF), np.zeros(n_rows, dtype=np.int64)
+        return np.full((n_rows, *rest), _HALF), np.zeros((n_rows, *rest), np.int64)
     if tokenizer == "lgt":
-        return np.zeros(p + n_rows), np.zeros(n_rows, dtype=np.int64)
+        return np.zeros((p + n_rows, *rest)), np.zeros((n_rows, *rest), np.int64)
     bits = _fraction_bits(len(lags))
     fraction = scaled_prefix - np.floor(scaled_prefix)
     seeds = np.rint(np.ldexp(fraction, bits)).astype(np.uint64)
     step = 2 ** (bits - 1) if tokenizer == "mash-half" else 0
-    steps = np.full(n_rows, step, dtype=np.uint64)
+    steps = np.full((n_rows, *rest), step, dtype=np.uint64)
     anchor = _invert_difference(seeds, steps, lags)
     numerators = (anchor & np.uint64(2**bits - 1)).astype(np.int64)
     fraction_steps = _difference(numerators, lags) >> bits
@@ -873,22 +880,28 @@ def decode(
     steps = inp - grid.zero
     out = np.empty((max_p + N, F), dtype=np.float64)
     out[:max_p] = start
-    for c in range(F):
-        p = degrees[c]
-        scale = grid.scale[c]
-        prefix = start[max_p - p :, c]
+    # The columns of one operator decode together, side by side: each step
+    # below acts on every column alone, as on that column by itself, so
+    # many samples of a context decode in one pass.
+    operators: dict[tuple[int, ...], list[int]] = {}
+    for c, column in enumerate(lags):
+        operators.setdefault(column, []).append(c)
+    for column, columns in operators.items():
+        p = sum(column)
+        scale = grid.scale[columns]
+        prefix = start[max_p - p :, columns]
         fraction, fraction_steps = _anchor_fraction(
             prefix * scale,
             N,
-            lags=lags[c],
+            lags=column,
             tokenizer=tok,
         )
         levels = _invert_difference(
-            _levels(prefix, scale, fraction[:p], factors=len(lags[c])),
-            steps[:, c] - fraction_steps,
-            lags[c],
+            _levels(prefix, scale, fraction[:p], factors=len(column)),
+            steps[:, columns] - fraction_steps,
+            column,
         )
-        out[max_p:, c] = (levels[p:] + fraction[p:]) / scale
+        out[max_p:, columns] = (levels[p:] + fraction[p:]) / scale
     return out
 
 
