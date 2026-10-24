@@ -12,16 +12,44 @@
 # permissions and limitations under the License.
 
 """
-The base of a pandas frequency string, without its anchor or start marker.
+Pandas frequency strings: their base, and the old codes in pandas 3's.
 
 This is gluonts 0.15.1's `gluonts/time_feature/_base.py` (Apache-2.0, a copy
 of the license in leaderboards/LICENSE-gluonts), cut to `norm_freq_str`,
-changed in one place besides the style of leaderboards.vendored:
+changed in two places besides the style of leaderboards.vendored:
 - a start frequency ("MS", "QS", ...) becomes its end frequency with the "E"
   of pandas 2.2 and later ("ME", "QE", ...) without a check of pandas'
   version: leaderboards requires pandas 2.2 or later, so the copy needs no
-  `packaging` for gluonts' check.
+  `packaging` for gluonts' check;
+- `period_freq` is added, for pandas 3. The datasets of GIFT-Eval and TIME
+  store their frequencies in the codes of pandas 2.1 ("H", "5T", "10S",
+  "A-DEC"), which pandas 3 no longer reads; `period_freq` writes them in the
+  codes pandas 3 reads for a period ("h", "5min", "10s", "Y-DEC"), the ones
+  pandas 2.2 and 2.3 turned them into with a FutureWarning. pandas'
+  `to_offset(..., is_period=True)` reads those as the offsets pandas 2.3 made
+  of the old codes: "M" a month end, "Q-DEC" a quarter end, "Y-DEC" a year
+  end.
 """
+
+import re
+
+#: The codes of pandas 2.1 that pandas 3 renamed, as it names them for a
+#: period: those that the datasets of the two boards use.
+RENAMED_CODES = {"A": "Y", "H": "h", "S": "s", "T": "min"}
+
+
+def period_freq(freq: str) -> str:
+    """
+    Return `freq`, a pandas frequency string, in pandas 3's codes for a period.
+
+    >>> period_freq("5T"), period_freq("A-DEC"), period_freq("W-SUN")
+    ('5min', 'Y-DEC', 'W-SUN')
+    """
+    match = re.fullmatch(r"(\d*)([A-Za-z]+)(-[A-Za-z]+)?", freq)
+    if match is None:
+        return freq
+    multiple, code, anchor = match.groups()
+    return multiple + RENAMED_CODES.get(code, code) + (anchor or "")
 
 
 def norm_freq_str(freq_str: str) -> str:

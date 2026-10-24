@@ -12,7 +12,7 @@ copy of the license in leaderboards/LICENSE-timebench), cut to `Term`,
 `load_dataset_config` and the test and validation windows of `Dataset` (its
 `get_dataset_settings`, `past_feat_dynamic_real_dim`, `get_variate_names`,
 `_max_series_length`, `_avg_series_length`, `sum_series_length`,
-`training_dataset` and `validation_dataset` are left out), changed in three
+`training_dataset` and `validation_dataset` are left out), changed in four
 places besides the style of leaderboards.vendored:
 - `itemize_start` and `MultivariateToUnivariate` are imported from the copy
   of gift-eval's data.py: TIME's are the same code.
@@ -24,6 +24,11 @@ places besides the style of leaderboards.vendored:
   leaderboards. timebench lets it be left out and then reads it from the
   environment variable `storage_env_var` (TIME_DATASET), after python-dotenv
   loads a .env file into the environment.
+- The frequency is read as pandas 3 reads a period's, as in the copy of
+  gift-eval's data.py: ProcessDataEntry gets it in pandas 3's codes
+  (`period_freq`), the default `prediction_length` reads it with
+  `to_offset(..., is_period=True)` and the offset's `rule_code`, and `freq`
+  is a str, not the datasets library's numpy.str_.
 toolz's `compose(process, itemize_start)` is written as two Maps, the inner
 one itemizing the start: the same calls in the same order, entry by entry.
 """
@@ -49,7 +54,7 @@ from leaderboards.vendored.gift_eval.data import (
 from leaderboards.vendored.gluonts.dataset.common import ProcessDataEntry
 from leaderboards.vendored.gluonts.dataset.split import split
 from leaderboards.vendored.gluonts.itertools import Map
-from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str
+from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str, period_freq
 
 if TYPE_CHECKING:
     import numpy as np
@@ -171,7 +176,7 @@ class Dataset:
         self._val_length = val_length
 
         process = ProcessDataEntry(
-            self.freq,
+            period_freq(self.freq),
             one_dim_target=self.target_dim == 1,
         )
 
@@ -188,7 +193,9 @@ class Dataset:
             return self._custom_prediction_length
 
         # Default calculation based on frequency and term
-        freq = norm_freq_str(to_offset(self.freq).name)
+        freq = norm_freq_str(
+            to_offset(period_freq(self.freq), is_period=True).rule_code
+        )
         pred_len = (
             M4_PRED_LENGTH_MAP[freq] if "m4" in self.name else PRED_LENGTH_MAP[freq]
         )
@@ -197,7 +204,7 @@ class Dataset:
     @cached_property
     def freq(self) -> str:
         """The frequency of the series."""
-        return self.hf_dataset[0]["freq"]
+        return str(self.hf_dataset[0]["freq"])
 
     @cached_property
     def target_dim(self) -> int:

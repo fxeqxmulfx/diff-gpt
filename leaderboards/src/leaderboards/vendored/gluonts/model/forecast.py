@@ -18,7 +18,7 @@ This is gluonts 0.15.1's `gluonts/model/forecast.py` (Apache-2.0, a copy of
 the license in leaderboards/LICENSE-gluonts), cut to `_linear_interpolation`,
 ExponentialTailApproximation, Quantile, Forecast's `mean`, `quantile`,
 `median` and `[]` (its `index` and the `_index` that caches it left out), and
-QuantileForecast's `__init__`, `quantile` and `mean`, changed in one place
+QuantileForecast's `__init__`, `quantile` and `mean`, changed in two places
 besides the style of leaderboards.vendored:
 - Quantile is a plain dataclass, where gluonts makes it a pydantic one.
   `__post_init__` keeps pydantic's one check, that the value is in [0, 1],
@@ -26,6 +26,12 @@ besides the style of leaderboards.vendored:
   `from_str` still turns to the "p10" form when a name is no level. pydantic
   would also convert the value to a float: left out, since `from_float` and
   `from_str`, the only callers, pass a float already.
+- ExponentialTailApproximation takes its logarithms as Python floats, so that
+  the tails of float32 quantiles are float32, as gift-eval's and timebench's
+  environment computes them: both require numpy ~=1.26.0, which cast the
+  numpy float64 of `np.log` to the quantiles' float32. numpy 2's promotion
+  (NEP 50) makes those tails float64, which moved the quantiles extrapolated
+  beyond the forecast's levels, MSIS's 0.025 and 0.975.
 """
 
 from __future__ import annotations
@@ -117,15 +123,19 @@ class ExponentialTailApproximation:
             beta coefficient for left and right tails.
 
         """
-        q_log_diff = np.log(
-            (self.x_coord[1] + self.tol) / (self.x_coord[0] + self.tol) + self.tol
+        q_log_diff = float(
+            np.log(
+                (self.x_coord[1] + self.tol) / (self.x_coord[0] + self.tol) + self.tol
+            )
         )
         y_diff_left = self.y_coord[1] - self.y_coord[0]
         beta_inv_left = y_diff_left / q_log_diff
 
-        z_log_diff = np.log(
-            (1 - self.x_coord[-2] + self.tol) / (1 - self.x_coord[-1] + self.tol)
-            + self.tol
+        z_log_diff = float(
+            np.log(
+                (1 - self.x_coord[-2] + self.tol) / (1 - self.x_coord[-1] + self.tol)
+                + self.tol
+            )
         )  # where z = 1/(1-q)
         y_diff_right = self.y_coord[-1] - self.y_coord[-2]
         beta_inv_right = y_diff_right / z_log_diff
@@ -150,7 +160,7 @@ class ExponentialTailApproximation:
         """
         return (
             self.beta_inv_left
-            * np.log((x + self.tol) / (self.x_coord[1] + self.tol) + self.tol)
+            * float(np.log((x + self.tol) / (self.x_coord[1] + self.tol) + self.tol))
         ) + self.y_coord[1]
 
     def right(self, x: float) -> np.ndarray:
@@ -172,7 +182,11 @@ class ExponentialTailApproximation:
         """
         return (
             self.beta_inv_right
-            * np.log((1 - self.x_coord[-2] + self.tol) / (1 - x + self.tol) + self.tol)
+            * float(
+                np.log(
+                    (1 - self.x_coord[-2] + self.tol) / (1 - x + self.tol) + self.tol
+                )
+            )
         ) + self.y_coord[-2]
 
     def tail_range(

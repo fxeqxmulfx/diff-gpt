@@ -19,13 +19,22 @@ A GIFT-Eval dataset: its series as gluonts entries, its horizon and test windows
 This is gift-eval 3c7be6d's `src/gift_eval/data.py` (Apache-2.0, a copy of the
 license in leaderboards/LICENSE-gift-eval), cut to the test split of Dataset
 (its `past_feat_dynamic_real_dim`, `sum_series_length`, `training_dataset` and
-`validation_dataset` and the TFB horizons are left out), changed in one place
+`validation_dataset` and the TFB horizons are left out), changed in two places
 besides the style of leaderboards.vendored:
 - Dataset takes the folder of the datasets as `storage_path`. gift-eval reads
   it from the environment variable `storage_env_var` (GIFT_EVAL), after
   python-dotenv loads a .env file into the environment: leaderboards set
   GIFT_EVAL to that folder right before each Dataset, and python-dotenv,
   which keeps a variable already set, found no .env file on its path.
+- The frequency is read as pandas 3 reads a period's. The datasets store the
+  codes of pandas 2.1 ("H", "5T", "10S", "A-DEC"), which pandas 3 no longer
+  reads: ProcessDataEntry gets them in pandas 3's codes (`period_freq`), and
+  `prediction_length` reads them with `to_offset(..., is_period=True)`, for
+  which "M" and "Q-DEC" are still a month's and a quarter's end, and takes
+  the offset's `rule_code`, the string pandas 3.1 deprecates as its `name`.
+  `freq` is a str: the datasets library gives a numpy.str_, which pandas 3
+  refuses as a period's frequency. pandas 2.3 made the same periods and
+  offsets of the old codes, with a FutureWarning.
 toolz's `compose(process, itemize_start)` is written as two Maps, the inner
 one itemizing the start: the same calls in the same order, entry by entry.
 """
@@ -45,7 +54,7 @@ from pandas.tseries.frequencies import to_offset
 from leaderboards.vendored.gluonts.dataset.common import ProcessDataEntry
 from leaderboards.vendored.gluonts.dataset.split import split
 from leaderboards.vendored.gluonts.itertools import Map
-from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str
+from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str, period_freq
 from leaderboards.vendored.gluonts.transform._base import Transformation
 
 if TYPE_CHECKING:
@@ -159,7 +168,7 @@ class Dataset:
             "numpy"
         )
         process = ProcessDataEntry(
-            self.freq,
+            period_freq(self.freq),
             one_dim_target=self.target_dim == 1,
         )
 
@@ -175,7 +184,9 @@ class Dataset:
     @cached_property
     def prediction_length(self) -> int:
         """The horizon: the frequency's, times the term's multiplier."""
-        freq = norm_freq_str(to_offset(self.freq).name)
+        freq = norm_freq_str(
+            to_offset(period_freq(self.freq), is_period=True).rule_code
+        )
         freq = maybe_reconvert_freq(freq)
         pred_len = (
             M4_PRED_LENGTH_MAP[freq] if "m4" in self.name else PRED_LENGTH_MAP[freq]
@@ -185,7 +196,7 @@ class Dataset:
     @cached_property
     def freq(self) -> str:
         """The frequency of the series."""
-        return self.hf_dataset[0]["freq"]
+        return str(self.hf_dataset[0]["freq"])
 
     @cached_property
     def target_dim(self) -> int:

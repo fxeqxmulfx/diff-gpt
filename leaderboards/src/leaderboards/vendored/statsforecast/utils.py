@@ -4,13 +4,18 @@ The seasonal naive forecast, and the normal intervals around a forecast.
 This is statsforecast 2.1.1's `statsforecast/utils.py` (Apache-2.0, a copy of
 the license in leaderboards/LICENSE-statsforecast), cut to `_repeat_val_seas`,
 `_ensure_float`, `_seasonal_naive`, `_quantiles`, `_calculate_intervals` and
-`_calculate_sigma`, changed in one place besides the style of
+`_calculate_sigma`, changed in two places besides the style of
 leaderboards.vendored:
 - `_quantiles` and `_calculate_intervals` take no `distribution` and
   `dist_params`: they keep the default, the normal distribution, the one
   SeasonalNaive's forecast uses. Its `frozen_error_distribution(1.0,
   "normal")` of statsforecast/distributions.py is scipy's `norm(scale=1.0)`,
   written in its place.
+- `_calculate_sigma` makes the sum of the squared residuals a float64 before
+  it divides it by `n`, as gift-eval's and timebench's environment does: both
+  require numpy ~=1.26.0, which divided a float32 sum by the Python int `n`
+  in float64. numpy 2's promotion (NEP 50) keeps that division in float32,
+  which made sigma, and so every interval of the forecast, a float32.
 """
 
 from __future__ import annotations
@@ -90,7 +95,7 @@ def _calculate_intervals(
 
 def _calculate_sigma(residuals: np.ndarray, n: int) -> float:
     if n > 0:
-        sigma = np.nansum(residuals**2)
+        sigma = np.float64(np.nansum(residuals**2))
         sigma = sigma / n
         sigma = np.sqrt(sigma)
     else:
