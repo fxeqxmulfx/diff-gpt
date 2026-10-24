@@ -64,10 +64,15 @@ POLL_SECONDS = 2.0
 GIB = 2**30
 # In those runs the base sources peaked at 0.60-0.81 GiB of RSS and the
 # augmented ones, two per split, at 2.0-2.2 GiB; the 56 processes held at most
-# 35 GiB of summed VmRSS, and MemAvailable fell from 113 to 85 GiB of 121. A
-# job counts at RESERVED_RSS until it holds more, so 56 start at once within
-# the default --max-rss-gib of 80, more than twice those 35 GiB.
-RESERVED_RSS = GIB
+# 35 GiB of summed VmRSS, and MemAvailable fell from 113 to 85 GiB of 121.
+# They ran torch's CPU build. With the CUDA build of the root environment, a
+# few series of each source peaked at 816-1058 MiB of RSS, 326-357 MiB more
+# than with the CPU build: importing torch holds 791 MiB instead of 452, 208
+# MiB of the 339 more in the CUDA libraries' file pages, which VmRSS counts in
+# every process. A job counts at RESERVED_RSS, 1.25 GiB, above that 1058 MiB,
+# until it holds more, so 56 start at once within the default --max-rss-gib of
+# 80, which holds those 35 GiB with 56 times 0.35 GiB more, about 55 GiB.
+RESERVED_RSS = 5 * GIB // 4
 PR_SET_PDEATHSIG = 1  # <linux/prctl.h>
 
 
