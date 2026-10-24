@@ -226,7 +226,7 @@ def tokenizer_comparison(raw: np.ndarray, config: Config) -> dict[str, object]:
     """Compare actual encoders, batching trajectories as independent columns."""
     encoded = {}
     for tokenizer in ("lgt", "mash"):
-        _, scale, tokens = encode(
+        _, grid, tokens = encode(
             raw.T.astype(np.float64),
             grid_vocabulary(config),
             np.repeat(grid_domain(config), len(raw)),
@@ -237,8 +237,8 @@ def tokenizer_comparison(raw: np.ndarray, config: Config) -> dict[str, object]:
     return {
         "domain": grid_domain(config).tolist(),
         "vocab_size": grid_vocabulary(config),
-        "unit_grid": bool(np.all(scale == 1)),
-        "scale": float(scale[0]),
+        "unit_grid": bool(np.all(grid.scale == 1)),
+        "scale": float(grid.scale[0]),
         "tokens": int(encoded["lgt"].size),
         "different_tokens": int(np.count_nonzero(encoded["lgt"] != encoded["mash"])),
         "sha256": {key: digest(value) for key, value in encoded.items()},

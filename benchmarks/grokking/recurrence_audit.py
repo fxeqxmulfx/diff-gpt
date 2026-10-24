@@ -67,21 +67,21 @@ def audit(directory: Path, device: str) -> dict[str, Any]:
     require(digest(raw) == data["raw_sha256"], "raw data hash mismatch")
     vocabulary = experiment.grid_vocabulary(config)
     domains = np.repeat(experiment.grid_domain(config), len(raw))
-    _, scale, full_tokens = encode(
+    _, grid, full_tokens = encode(
         raw.T.astype(np.float64),
         vocabulary,
         domains,
         config.order,
         tokenizer=config.tokenizer,
     )
-    _, observed_scale, observed_tokens = encode(
+    _, observed_grid, observed_tokens = encode(
         raw[:, :-1].T.astype(np.float64),
         vocabulary,
         domains,
         config.order,
         tokenizer=config.tokenizer,
     )
-    np.testing.assert_array_equal(scale, observed_scale)
+    np.testing.assert_array_equal(grid, observed_grid)
     np.testing.assert_array_equal(full_tokens[:-1], observed_tokens)
     inputs, labels = experiment.tensors(raw, config, "cpu")
     np.testing.assert_array_equal(inputs.numpy().T, observed_tokens)

@@ -30,7 +30,7 @@ from __future__ import annotations
 import os
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -50,6 +50,9 @@ from diff_gpt.model.gpt import GPT
 from diff_gpt.sampler.median import MedianSampler
 from diff_gpt.sampler.temperature import TemperatureSampler
 from diff_gpt.train import train as train_loop
+
+if TYPE_CHECKING:
+    from diff_gpt.encoder_decoder import Grid
 
 M4_DIR = Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
 
@@ -104,6 +107,16 @@ def mase(
     if naive == 0:
         return float("nan")
     return float(np.mean(np.abs(true - pred)) / naive)
+
+
+def nll_x(val_loss: float, grid: Grid) -> float:
+    """
+    Return the NLL of the values from `val_loss`, the NLL of their tokens.
+
+    A token is a bin of width 1/s, s the scale of `grid`'s first column,
+    so val_loss - log s is the NLL of the values.
+    """
+    return val_loss - np.log(grid.scale[0])
 
 
 def prepare() -> dict[str, Any]:
@@ -298,8 +311,7 @@ def main() -> None:
         val_loss, train_time_s = train_loop(mut_model=train_module, **train_kwargs)
     else:
         val_loss, train_time_s = model.train(**train_kwargs)
-    # A token is a bin of width 1/s, so val_loss - log s is the NLL of the values.
-    _, scale, _ = encode(
+    _, grid, _ = encode(
         inp=dfs[0].to_numpy(dtype=np.float64),
         vocab_size=vocab_size,
         domain_of_definition=domain_of_definition,
@@ -307,7 +319,7 @@ def main() -> None:
     )
     train_flops = base.estimate_flops() * loader.batch_size * block_size * max_iters
     print(
-        f"train: val_loss={val_loss:.4f}  nll_x={val_loss - np.log(scale[0]):.4f}  "
+        f"train: val_loss={val_loss:.4f}  nll_x={nll_x(val_loss, grid):.4f}  "
         f"train_flops={train_flops:.3e}  train_time_s={train_time_s}",
     )
 

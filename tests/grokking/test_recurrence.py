@@ -34,6 +34,7 @@ from benchmarks.grokking.recurrence_readouts import (
     MeanSampler,
     QuantizedFieldSampler,
     RangeSampler,
+    tokenizer_comparison,
 )
 from diff_gpt.encoder_decoder import Grid, decode, encode
 from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
@@ -364,6 +365,26 @@ def test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder(
     x, _ = tensors(raw, config, "cpu")
     changed_x, _ = tensors(changed, config, "cpu")
     assert torch.equal(x, changed_x)
+
+
+@pytest.mark.parametrize(
+    ("setting", "expected"),
+    [
+        ({}, {"unit_grid": True, "scale": 1.0, "different_tokens": 0}),
+        (
+            {"context": 2, "grid_domain": 96, "vocab_size": 512},
+            {"unit_grid": False, "scale": 2.65625, "different_tokens": 80},
+        ),
+    ],
+)
+def test_tokenizer_comparison_reports_the_grid_the_encoders_share(
+    setting: dict[str, int], expected: dict[str, object]
+) -> None:
+    """The unit grid, or s = (V - 2) / 2D = 2.65625 for V = 512 on [-96, 96]."""
+    config = replace(Config(task="fibonacci", order=1), **setting)
+    raw, _, _ = dataset(config)
+    comparison = tokenizer_comparison(raw[:64], config)
+    assert {key: comparison[key] for key in expected} == expected
 
 
 def test_range_sampler_uses_only_observed_rows_and_known_support() -> None:
