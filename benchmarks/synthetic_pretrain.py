@@ -28,7 +28,25 @@ history.csv (one row per evaluation: updates, training FLOPs =
 GPT.estimate_flops() x trained tokens, losses, scores, seconds in all and
 spent scoring, then the scores of each --score-samples), scores.jsonl (the
 scores of every source) and the checkpoints last.bin and best.bin (the
-lowest holdout CRPS), written by DiffGPT.save.
+lowest holdout CRPS), written by DiffGPT.save. --keep-every FLOPS also keeps
+the weights of the first evaluation at or past each multiple of FLOPS
+training FLOPs, as step_<updates>_flops_<FLOPs>.bin, to compare models at
+equal compute.
+
+Every evaluation also writes state.pt, all that the run goes on from: the
+weights, the optimizer's state (z, v, the step count that places the warmup,
+and the weighting of the average), the loader's generator, the global RNGs
+of torch, CUDA, numpy and python, and the counts of evaluations and kept
+copies, the best CRPS and the seconds so far. --resume goes on from it to
+--max-iters (the saved one, or more updates), with the settings of
+config.json: the updates and evaluations that follow are those of an
+unbroken run, bit for bit on the same device and threads. It drops what
+later evaluations wrote to history.csv and scores.jsonl before a crash and
+adds the resume to config.json's "resumes". A finished run trains on as a
+longer unbroken one would when its updates are a multiple of
+--eval-interval; otherwise its last evaluation drew batches that the longer
+run does not. With --score-every above 1, that evaluation was also scored,
+as the last.
 
 Usage:
     uv run --no-sync python -m benchmarks.synthetic_pretrain \
@@ -42,9 +60,12 @@ import csv
 import hashlib
 import json
 import platform
+import random
 import shutil
 import subprocess
 import time
+from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -60,10 +81,12 @@ from diff_gpt.normalization import (
     predict_samples_normalized,
     window_scale,
 )
+from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
 from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.train import train
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
     from diff_gpt.train import Evaluation
 
@@ -116,6 +139,24 @@ HISTORY_FIELDS = (
     "crps",
     "seconds",
     "score_seconds",
+)
+# What --resume goes on from, written at every evaluation.
+RESUME_STATE = "state.pt"
+STATE_VERSION = 1
+# The options --resume takes; the rest are the run's, from its config.json.
+RESUME_OPTIONS = frozenset({"output", "resume", "max_iters"})
+# What config.json says of the corpus and the model, which a resumed run
+# must find the same.
+SAME_RUN = (
+    "manifest_sha256",
+    "encoder_version",
+    "tokenizer",
+    "domain_of_definition",
+    "parameters",
+    "flops_per_token",
+    "tokens_per_update",
+    "holdout",
+    "sources",
 )
 
 
@@ -288,6 +329,108 @@ def _dtype(name: str) -> torch.dtype | None:
     return None if name == "float32" else getattr(torch, name)
 
 
+def _rng_states(device: str) -> dict[str, Any]:
+    """
+    Return the global RNG states: torch's, CUDA's on a CUDA device, numpy's, python's.
+
+    The numpy keys are a list, which torch.load(weights_only=True) reads.
+    """
+    # The global numpy state, for code that draws from it.
+    name, keys, position, has_gauss, gauss = np.random.get_state()  # noqa: NPY002
+    return {
+        "torch": torch.get_rng_state(),
+        "cuda": torch.cuda.get_rng_state_all() if device.startswith("cuda") else None,
+        "numpy": (name, keys.tolist(), position, has_gauss, gauss),
+        "python": random.getstate(),
+    }
+
+
+def _set_rng_states(states: Mapping[str, Any]) -> None:
+    """Restore the global RNG states that `_rng_states` returned."""
+    torch.set_rng_state(states["torch"])
+    if states["cuda"] is not None:
+        torch.cuda.set_rng_state_all(states["cuda"])
+    name, keys, position, has_gauss, gauss = states["numpy"]
+    np.random.set_state(  # noqa: NPY002
+        (name, np.array(keys, dtype=np.uint32), position, has_gauss, gauss),
+    )
+    random.setstate(states["python"])
+
+
+def _save_atomically(save: Callable[[str], None], path: Path) -> None:
+    """
+    Write `path` with `save`, so that a crash leaves the old file or the new one.
+
+    `save` writes <stem>.partial beside it, which then replaces `path`.
+    torch.save names the archive inside a file after its stem, so the bytes
+    are those that `save` would write to `path`.
+    """
+    partial_path = path.with_suffix(".partial")
+    save(str(partial_path))
+    partial_path.replace(path)
+
+
+def _drop_after(path: Path, step: int, *, header: bool) -> None:
+    """
+    Keep the lines of `path` that evaluations up to `step` wrote, and its header.
+
+    A line of history.csv starts with its step, one of scores.jsonl holds it
+    under "step"; a line cut short by a crash has no newline and goes too.
+    """
+    lines = path.read_bytes().splitlines(keepends=True)
+    head, body = (lines[:1], lines[1:]) if header else ([], lines)
+
+    def step_of(line: bytes) -> int:
+        return int(line.split(b",", 1)[0]) if header else json.loads(line)["step"]
+
+    kept = [line for line in body if line.endswith(b"\n") and step_of(line) <= step]
+    path.write_bytes(b"".join([*head, *kept]))
+
+
+def _given(parser: argparse.ArgumentParser, argv: list[str] | None) -> set[str]:
+    """Return the destinations of the options that `argv` sets."""
+    unset = object()
+    probe = argparse.Namespace(**dict.fromkeys(vars(parser.parse_args(argv)), unset))
+    # argparse sets the default of an option only where the namespace has none.
+    parser.parse_args(argv, probe)
+    return {key for key, value in vars(probe).items() if value is not unset}
+
+
+def _resumed(
+    parser: argparse.ArgumentParser,
+    argv: list[str] | None,
+    args: argparse.Namespace,
+) -> tuple[argparse.Namespace, dict[str, Any], dict[str, Any]]:
+    """
+    Return the settings, config.json and saved state of the run in --output.
+
+    The settings are those of config.json, with --max-iters if given. Any
+    other option, a run without state.pt, or a --max-iters not above the
+    updates made exits through `parser.error`.
+    """
+    given = _given(parser, argv)
+    other = sorted(given - RESUME_OPTIONS)
+    if other:
+        named = ", ".join("--" + name.replace("_", "-") for name in other)
+        parser.error(f"--resume takes the settings of config.json, not {named}")
+    path = args.output / RESUME_STATE
+    if not path.is_file():
+        parser.error(f"--resume goes on from {path}, which does not exist")
+    config = json.loads((args.output / "config.json").read_text())
+    settings = {**vars(args), **config["args"], "output": args.output, "resume": True}
+    settings["corpus"] = Path(settings["corpus"])
+    if "max_iters" in given:
+        settings["max_iters"] = args.max_iters
+    saved = torch.load(path, map_location="cpu", weights_only=True)
+    if saved["version"] != STATE_VERSION:
+        parser.error(f"{path} is of version {saved['version']}, not {STATE_VERSION}")
+    if not saved["step"] < settings["max_iters"]:
+        parser.error(
+            f"the run has made {saved['step']} updates: give --max-iters above them",
+        )
+    return argparse.Namespace(**settings), config, saved
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -361,6 +504,19 @@ def _parser() -> argparse.ArgumentParser:
         "--device",
         default="cuda" if torch.cuda.is_available() else "cpu",
     )
+    parser.add_argument(
+        "--keep-every",
+        type=float,
+        metavar="FLOPS",
+        help="also keep the weights of the first evaluation at or past each "
+        "multiple of FLOPS training FLOPs, as step_<updates>_flops_<FLOPs>.bin",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="go on from the state.pt of --output, with the settings of its "
+        "config.json, to --max-iters (by default the saved one)",
+    )
     return parser
 
 
@@ -368,9 +524,16 @@ def main(argv: list[str] | None = None) -> None:
     """Pretrain one model as the arguments say and record its curve."""
     parser = _parser()
     args = parser.parse_args(argv)
+    config: dict[str, Any] = {}
+    saved: dict[str, Any] | None = None
+    if args.resume:
+        args, config, saved = _resumed(parser, argv, args)
     if any(not 1 <= size <= args.num_samples for size in args.score_samples):
         parser.error(f"--score-samples must lie in [1, {args.num_samples}]")
-    args.output.mkdir(parents=True)
+    if args.keep_every is not None and not args.keep_every > 0:
+        parser.error("--keep-every must be above 0")
+    if saved is None:
+        args.output.mkdir(parents=True)
     torch.manual_seed(args.seed)
     train_series = load_split(args.corpus, "train")
     holdout_series = load_split(args.corpus, "holdout")
@@ -432,7 +595,7 @@ def main(argv: list[str] | None = None) -> None:
     flops_per_token = gpt.estimate_flops()
     tokens_per_update = args.batch_size * args.block_size * args.grad_accum
     manifest = args.corpus.parent / "manifest.json"  # export writes it next to npy/
-    config = {
+    run = {
         "args": {
             key: str(value) if isinstance(value, Path) else value
             for key, value in vars(args).items()
@@ -469,8 +632,8 @@ def main(argv: list[str] | None = None) -> None:
             for name in names
         },
     }
-    (args.output / "config.json").write_text(json.dumps(config, indent=2) + "\n")
     history = args.output / "history.csv"
+    scores_path = args.output / "scores.jsonl"
     fields = [
         *HISTORY_FIELDS,
         *(
@@ -479,16 +642,56 @@ def main(argv: list[str] | None = None) -> None:
             for score in ("mase", "crps")
         ),
     ]
-    with history.open("w", newline="") as handle:
-        csv.DictWriter(handle, fieldnames=fields).writeheader()
+    if saved is None:
+        config = run
+        with history.open("w", newline="") as handle:
+            csv.DictWriter(handle, fieldnames=fields).writeheader()
+    else:
+        differing = [key for key in SAME_RUN if run[key] != config[key]]
+        if differing:
+            parser.error(
+                f"the corpus and the code now give other {', '.join(differing)} "
+                f"than {args.output / 'config.json'}",
+            )
+        config["args"]["max_iters"] = args.max_iters
+        config.setdefault("resumes", []).append(
+            {
+                "step": saved["step"],
+                "max_iters": args.max_iters,
+                "git_head": run["git_head"],
+                "source_sha256": run["source_sha256"],
+                "started": datetime.now(tz=UTC).isoformat(timespec="seconds"),
+            },
+        )
+        _drop_after(history, saved["step"], header=True)
+        if scores_path.exists():
+            _drop_after(scores_path, saved["step"], header=False)
+    (args.output / "config.json").write_text(json.dumps(config, indent=2) + "\n")
     sampler = TemperatureSampler(temperature=args.temperature)
+    # The optimizer train() would build, built here to save and restore it.
+    optimizer = ScheduleFreeAdamW(
+        gpt.parameters(),
+        lr=args.learning_rate,
+        betas=(0.9, 0.95),
+        weight_decay=args.weight_decay,
+        warmup=args.warmup,
+    )
+    state = {"evaluations": 0, "best": float("inf"), "kept": 0}
+    offset = 0.0  # the seconds of the run before this process
+    if saved is not None:
+        gpt.load_state_dict(saved["model"])
+        optimizer.load_state_dict(saved["optimizer"])
+        loader.rng.bit_generator.state = saved["loader_rng"]
+        _set_rng_states(saved["rng"])
+        state = {key: saved[key] for key in state}
+        offset = saved["seconds"]
     start = time.monotonic()
-    state = {"evaluations": 0, "best": float("inf")}
 
     def on_eval(evaluation: Evaluation) -> None:
+        flops = flops_per_token * tokens_per_update * evaluation.step
         row: dict[str, Any] = {
             "step": evaluation.step,
-            "train_flops": flops_per_token * tokens_per_update * evaluation.step,
+            "train_flops": flops,
             "train_loss": evaluation.train_loss,
             "val_loss": evaluation.val_loss,
         }
@@ -524,31 +727,46 @@ def main(argv: list[str] | None = None) -> None:
                 **scores,
                 "fewer_samples": {str(size): scored for size, scored in fewer.items()},
             }
-            with (args.output / "scores.jsonl").open("a") as handle:
+            with scores_path.open("a") as handle:
                 handle.write(json.dumps(record) + "\n")
-            model.save(str(args.output / "last.bin"))
+            _save_atomically(model.save, args.output / "last.bin")
             if scores["crps"] < state["best"]:
                 state["best"] = scores["crps"]
-                model.save(str(args.output / "best.bin"))
+                _save_atomically(model.save, args.output / "best.bin")
         state["evaluations"] += 1
-        row["seconds"] = round(time.monotonic() - start, 1)
+        row["seconds"] = round(offset + time.monotonic() - start, 1)
         with history.open("a", newline="") as handle:
             csv.DictWriter(handle, fieldnames=fields).writerow(row)
         print(", ".join(f"{key}={value}" for key, value in row.items()))
+        if args.keep_every is not None and flops // args.keep_every > state["kept"]:
+            state["kept"] = int(flops // args.keep_every)
+            name = f"step_{evaluation.step}_flops_{flops:.4e}.bin"
+            _save_atomically(model.save, args.output / name)
+        resume = {
+            "version": STATE_VERSION,
+            "step": evaluation.step,
+            "model": gpt.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "loader_rng": loader.rng.bit_generator.state,
+            "rng": _rng_states(args.device),
+            **state,
+            "seconds": row["seconds"],
+        }
+        _save_atomically(partial(torch.save, resume), args.output / RESUME_STATE)
 
-    model.train(
-        loader=loader,
-        learning_rate=args.learning_rate,
-        weight_decay=args.weight_decay,
+    train(
+        gpt,
+        loader,
         max_iters=args.max_iters,
         eval_interval=args.eval_interval,
         eval_iters=args.eval_iters,
-        warmup=args.warmup,
         use_tqdm=False,
         grad_accum_steps=args.grad_accum,
         grad_clip_norm=args.grad_clip,
+        optimizer=optimizer,
         on_eval=on_eval,
         autocast=_dtype(args.train_dtype),
+        start_step=0 if saved is None else saved["step"],
     )
 
 

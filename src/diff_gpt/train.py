@@ -158,6 +158,32 @@ class _Evaluations:
         return Evaluation(step, train_loss, self.loss), status
 
 
+def _check_start(
+    start_step: int,
+    max_iters: int,
+    optimizer: ScheduleFreeAdamW | None,
+    *,
+    resumable: bool,
+) -> None:
+    """Raise ValueError unless `train` can go on from `start_step` updates."""
+    if not resumable:
+        msg = (
+            "start_step > 0 cannot restore the state of use_early_stopping or "
+            "save_best: train on without them"
+        )
+        raise ValueError(msg)
+    if not 0 < start_step < max_iters:
+        msg = f"start_step must lie in (0, max_iters = {max_iters}), got {start_step}"
+        raise ValueError(msg)
+    if optimizer is None:
+        msg = "start_step > 0 needs the optimizer of the saved state"
+        raise ValueError(msg)
+    made = optimizer.param_groups[0].get("step")
+    if made != start_step:
+        msg = f"the optimizer has made {made} steps, not start_step = {start_step}"
+        raise ValueError(msg)
+
+
 def train(
     mut_model: BaseGPT,
     loader: DataLoader,
@@ -177,6 +203,7 @@ def train(
     optimizer: ScheduleFreeAdamW | None = None,
     on_eval: Callable[[Evaluation], None] | None = None,
     autocast: torch.dtype | None = None,
+    start_step: int = 0,
 ) -> tuple[float, int]:
     """
     Train `mut_model` against batches produced by `loader`.
@@ -229,11 +256,26 @@ def train(
     of a model cast to float16 or bfloat16 raise ValueError, since every
     update would round to that precision.
 
+    `start_step`: the updates a saved run has already made, to go on from
+    its state. The loop then makes the updates after them, up to
+    `max_iters`, and skips the evaluation after `start_step` updates, which
+    the saved run made before saving. The caller restores that state: the
+    weights at x, `optimizer` (eval mode, `start_step` steps), the loader
+    and the RNGs as they were after that evaluation; then the updates and
+    evaluations that follow are those of an unbroken run. Early stopping and
+    the best snapshot keep in-memory state that a saved run does not carry:
+    ValueError with either, without `optimizer`, with a step count other
+    than `start_step`, or unless 0 < `start_step` < `max_iters`. 0 (the
+    default) trains from the start.
+
     In DDP every rank must agree on `loader.has_val()`; ValueError otherwise.
     """
     if grad_accum_steps < 1:
         msg = "grad_accum_steps must be >= 1"
         raise ValueError(msg)
+    if start_step:
+        resumable = not (use_early_stopping or save_best)
+        _check_start(start_step, max_iters, optimizer, resumable=resumable)
     if autocast is not None and autocast != torch.bfloat16:
         msg = f"autocast must be None or torch.bfloat16, got {autocast}"
         raise ValueError(msg)
@@ -256,7 +298,8 @@ def train(
     has_val = _agree_on_val(has_val=loader.has_val())
     start = datetime.now(tz=UTC)
     is_main = _is_main_rank()
-    pbar = tqdm(range(max_iters)) if (use_tqdm and is_main) else range(max_iters)
+    steps = range(start_step, max_iters)
+    pbar = tqdm(steps) if (use_tqdm and is_main) else steps
 
     def report(msg: str) -> None:
         if isinstance(pbar, tqdm):
@@ -285,7 +328,8 @@ def train(
     mut_model.train()
     optimizer.train()
     for step in pbar:
-        if step % eval_interval == 0:
+        # A resumed run made the evaluation of its first step before saving.
+        if step % eval_interval == 0 and not (start_step and step == start_step):
             mut_model.eval()
             optimizer.eval()
             evaluate(step)

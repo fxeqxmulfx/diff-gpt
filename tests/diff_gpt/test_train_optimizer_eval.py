@@ -1,6 +1,7 @@
 """Tests for the weights and the loss that train() hands back."""
 
-from typing import TYPE_CHECKING
+import io
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import torch
@@ -377,3 +378,140 @@ def test_train_takes_float64_master_weights() -> None:
     model = _gpt().double()
     train(model, _loader(), max_iters=2, eval_interval=1, eval_iters=1, use_tqdm=False)
     assert {p.dtype for p in model.parameters()} == {torch.float64}
+
+
+# A warmup of 8 steps spans the break after 6 updates of 12.
+RESUME_WARMUP = 8
+BREAK = 6
+RESUME_MAX_ITERS = 12
+
+
+def _saved(
+    model: GPT,
+    opt: ScheduleFreeAdamW,
+    loader: TokenSequenceDataLoader,
+) -> dict[str, Any]:
+    """Return the weights, the optimizer and the loader's rng, through a file."""
+    buffer = io.BytesIO()
+    torch.save(
+        {
+            "model": model.state_dict(),
+            "optimizer": opt.state_dict(),
+            "loader": loader.rng.get_state(),
+        },
+        buffer,
+    )
+    buffer.seek(0)
+    return torch.load(buffer, weights_only=True)
+
+
+def test_train_goes_on_from_a_saved_state_as_an_unbroken_run() -> None:
+    """
+    Check that 6 updates, saved and restored, then 6 more give the run of 12.
+
+    The restored run skips the evaluation after 6 updates, which the first
+    run made before saving, and makes the same evaluations after 9 and 12
+    updates; it ends with the same weights and optimizer state, bit for bit.
+    """
+    seen: list[Evaluation] = []
+    straight = _gpt()
+    straight_opt = ScheduleFreeAdamW(straight.parameters(), warmup=RESUME_WARMUP)
+    train(
+        straight,
+        _loader(),
+        max_iters=RESUME_MAX_ITERS,
+        eval_interval=3,
+        eval_iters=1,
+        use_tqdm=False,
+        optimizer=straight_opt,
+        on_eval=seen.append,
+    )
+    first = _gpt()
+    first_opt = ScheduleFreeAdamW(first.parameters(), warmup=RESUME_WARMUP)
+    first_loader = _loader()
+    train(
+        first,
+        first_loader,
+        max_iters=BREAK,
+        eval_interval=3,
+        eval_iters=1,
+        use_tqdm=False,
+        optimizer=first_opt,
+    )
+    saved = _saved(first, first_opt, first_loader)
+    model = _gpt()
+    opt = ScheduleFreeAdamW(model.parameters())
+    loader = _loader()
+    model.load_state_dict(saved["model"])
+    opt.load_state_dict(saved["optimizer"])
+    loader.rng.set_state(saved["loader"])
+    resumed: list[Evaluation] = []
+    train(
+        model,
+        loader,
+        max_iters=RESUME_MAX_ITERS,
+        eval_interval=3,
+        eval_iters=1,
+        use_tqdm=False,
+        optimizer=opt,
+        on_eval=resumed.append,
+        start_step=BREAK,
+    )
+    assert [e.step for e in seen] == [0, 3, 6, 9, 12]
+    assert resumed == [e for e in seen if e.step > BREAK]
+    for name, value in straight.state_dict().items():
+        assert torch.equal(model.state_dict()[name], value), name
+    ends = [o.state_dict() for o in (straight_opt, opt)]
+    assert ends[0]["param_groups"] == ends[1]["param_groups"]
+    assert ends[0]["param_groups"][0]["step"] == RESUME_MAX_ITERS
+    for k, state in ends[0]["state"].items():
+        for key, value in state.items():
+            assert torch.equal(ends[1]["state"][k][key], value), (k, key)
+
+
+@pytest.mark.parametrize(
+    ("change", "match"),
+    [
+        ({"save_best": True}, "use_early_stopping or save_best"),
+        ({"use_early_stopping": True}, "use_early_stopping or save_best"),
+        ({"optimizer": None}, "needs the optimizer"),
+        ({"start_step": 6}, "must lie in"),
+        ({"start_step": 2}, "has made 3 steps, not start_step = 2"),
+    ],
+)
+def test_train_refuses_a_start_it_cannot_go_on_from(
+    change: dict[str, Any],
+    match: str,
+) -> None:
+    """
+    A start that train() cannot go on from raises before any update.
+
+    Early stopping and the best snapshot keep state that a saved run does
+    not carry; a start needs the saved optimizer, with as many steps, and
+    must leave updates to make.
+    """
+    model = _gpt()
+    opt = ScheduleFreeAdamW(model.parameters())
+    train(
+        model,
+        _loader(),
+        max_iters=3,
+        eval_interval=3,
+        eval_iters=1,
+        use_tqdm=False,
+        optimizer=opt,
+    )
+    before = {k: v.clone() for k, v in model.state_dict().items()}
+    settings: dict[str, Any] = {"optimizer": opt, "start_step": 3} | change
+    with pytest.raises(ValueError, match=match):
+        train(
+            model,
+            _loader(),
+            max_iters=6,
+            eval_interval=3,
+            eval_iters=1,
+            use_tqdm=False,
+            **settings,
+        )
+    for k, v in model.state_dict().items():
+        assert torch.equal(before[k], v), k

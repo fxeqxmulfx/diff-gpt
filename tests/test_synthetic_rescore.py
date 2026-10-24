@@ -22,7 +22,12 @@ NUM_SAMPLES = 4
 
 @pytest.fixture(scope="module")
 def tiny_run(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Train a run of four updates on a corpus of two sources, on the CPU."""
+    """
+    Train a run of four updates on a corpus of two sources, on the CPU.
+
+    An update is 3.9e6 FLOPs, so a copy every 7e6 FLOPs keeps the weights
+    after 2 updates (7.9e6) and after 4 (1.6e7, past 1.4e7).
+    """
     root = tmp_path_factory.mktemp("rescore")
     rng = np.random.default_rng(0)
     corpus = root / "corpus"
@@ -42,6 +47,7 @@ def tiny_run(tmp_path_factory: pytest.TempPathFactory) -> Path:
             *("--eval-iters", "1", "--warmup", "1"),
             *("--score-windows", str(SCORE_WINDOWS), "--horizon", str(HORIZON)),
             *("--num-samples", str(NUM_SAMPLES), "--device", "cpu"),
+            *("--keep-every", "7e6"),
         ],
     )
     return output
@@ -86,6 +92,36 @@ def test_the_run_s_own_windows_and_seed_give_its_last_scores(
     assert (fewer["samples"], fewer["groups"]) == (2, 2)
     assert record["temperature"] == 1.0
     assert record["tokens_per_second"] > 0
+
+
+def test_kept_copies_score_as_the_run_scored_them(
+    tiny_run: Path,
+    tmp_path: Path,
+) -> None:
+    """
+    Rescoring each copy --keep-every kept reproduces the run's scores there.
+
+    The copies are named after their updates and FLOPs, and hold the
+    weights that the run scored after those updates.
+    """
+    config = json.loads((tiny_run / "config.json").read_text())
+    flops = config["flops_per_token"] * config["tokens_per_update"]
+    kept = {step: f"step_{step}_flops_{flops * step:.4e}.bin" for step in (2, 4)}
+    names = sorted(path.name for path in tiny_run.glob("step_*.bin"))
+    assert names == sorted(kept.values())
+    lines = (tiny_run / "scores.jsonl").read_text().splitlines()
+    scored = {record["step"]: record for record in map(json.loads, lines)}
+    for step, name in kept.items():
+        record = _rescore(
+            tiny_run,
+            tmp_path / f"{step}.json",
+            *("--checkpoint", name, "--per-source", str(SCORE_WINDOWS)),
+            *("--window-seed", "0", "--sample-seed", "0"),
+        )
+        assert record["checkpoint"] == name
+        for score in ("mase", "crps", "sources"):
+            assert record["scores"][score] == scored[step][score]
+    assert scored[2]["crps"] != scored[4]["crps"]
 
 
 def test_another_context_and_horizon_score_their_own_windows(
