@@ -17,6 +17,7 @@ from benchmarks.synthetic_pretrain import (
     _rng_states,
     _set_rng_states,
     forecast_scores,
+    gradient_checkpointing,
     holdout_windows,
     main,
 )
@@ -362,6 +363,46 @@ def test_resume_takes_the_settings_of_the_run(tmp_path: Path) -> None:
     with pytest.raises(SystemExit):
         main([*data, "--output", str(tmp_path / "zero"), "--keep-every", "0"])
     assert not (tmp_path / "zero").exists()
+
+
+def test_gradient_checkpointing_is_a_gpus_by_default() -> None:
+    """Auto recomputes the activations on a GPU, whose memory needs it, alone."""
+    assert gradient_checkpointing("auto", "cuda")
+    assert gradient_checkpointing("auto", "cuda:0")
+    assert not gradient_checkpointing("auto", "cpu")
+    assert gradient_checkpointing("on", "cpu")
+    assert not gradient_checkpointing("off", "cuda")
+
+
+def test_kept_activations_train_the_run_of_recomputed_ones(tmp_path: Path) -> None:
+    """
+    A CPU run keeps its activations and trains the run that recomputes them.
+
+    The same history but for the timings, the same scores, and the same
+    weights in every checkpoint and in state.pt, bit for bit.
+    """
+    data = ("--corpus", str(_corpus(tmp_path)), *TINY, "--warmup", "1")
+    kept, recomputed = tmp_path / "kept", tmp_path / "recomputed"
+    main([*data, "--max-iters", "4", "--output", str(kept)])
+    main(
+        [
+            *(*data, "--max-iters", "4", "--output", str(recomputed)),
+            *("--gradient-checkpointing", "on"),
+        ],
+    )
+    runs = (kept, recomputed)
+    configs = [json.loads((run / "config.json").read_text()) for run in runs]
+    assert [config["gradient_checkpointing"] for config in configs] == [False, True]
+    assert _history(kept) == _history(recomputed)
+    scores = [(run / "scores.jsonl").read_text() for run in runs]
+    assert scores[0] == scores[1]
+    for name in ("best.bin", "last.bin"):
+        saved = [torch.load(run / name, weights_only=True) for run in runs]
+        assert _same(*saved), name
+    ends = [torch.load(run / RESUME_STATE, weights_only=True) for run in runs]
+    for end in ends:
+        assert end.pop("seconds") > 0
+    assert _same(*ends)
 
 
 @pytest.mark.parametrize(

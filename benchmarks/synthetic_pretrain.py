@@ -20,7 +20,10 @@ split, other series of the same generators:
 
 --train-dtype bfloat16 trains in mixed precision, bfloat16 forward passes on
 float32 master weights; --score-dtype draws the holdout forecasts from a
-float16 or bfloat16 copy of the weights.
+float16 or bfloat16 copy of the weights. --gradient-checkpointing auto (the
+default) recomputes each block's activations in the backward pass on a GPU,
+whose memory needs it, and keeps them on a CPU, which is faster there and
+trains the same weights, bit for bit.
 
 Settings are chosen on the holdout alone: no GIFT-Eval or TIME data enters
 this script. --output, which must not exist yet, gets config.json,
@@ -431,6 +434,18 @@ def _resumed(
     return argparse.Namespace(**settings), config, saved
 
 
+def gradient_checkpointing(setting: str, device: str) -> bool:
+    """
+    Return whether the model recomputes its activations in the backward pass.
+
+    `setting` is --gradient-checkpointing: "on", "off", or "auto", which
+    recomputes them on a GPU, whose memory needs it, and keeps them on a CPU.
+    """
+    if setting == "auto":
+        return torch.device(device).type != "cpu"
+    return setting == "on"
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -478,6 +493,13 @@ def _parser() -> argparse.ArgumentParser:
         "--train-dtype",
         choices=["float32", "bfloat16"],
         default="float32",
+    )
+    parser.add_argument(
+        "--gradient-checkpointing",
+        choices=["auto", "on", "off"],
+        default="auto",
+        help="recompute each block's activations in the backward pass instead "
+        "of keeping them; auto: on a GPU, not on a CPU",
     )
     parser.add_argument("--score-every", type=int, default=1)
     parser.add_argument("--score-windows", type=int, default=16)
@@ -559,6 +581,7 @@ def main(argv: list[str] | None = None) -> None:
         block_size=args.block_size,
         n_head=args.heads,
         n_layer=args.layers,
+        use_checkpoint=gradient_checkpointing(args.gradient_checkpointing, args.device),
     ).to(args.device)
     model = DiffGPT(
         model=gpt,
@@ -616,6 +639,7 @@ def main(argv: list[str] | None = None) -> None:
         "tokenizer": model.tokenizer,
         "domain_of_definition": domain.tolist(),
         "parameters": sum(p.numel() for p in gpt.parameters()),
+        "gradient_checkpointing": gpt.use_checkpoint,
         "flops_per_token": flops_per_token,
         "tokens_per_update": tokens_per_update,
         "holdout": {"context": context, "windows": len(windows.sources)},
