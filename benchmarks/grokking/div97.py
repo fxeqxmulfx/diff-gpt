@@ -209,8 +209,8 @@ def token_table(order: int = 0) -> tuple[np.ndarray, dict[str, Any]]:
         values = np.arange(P, dtype=np.float64).reshape(-1, 1)
         domains = domain(order)
     vocab = vocabulary(order)
-    start, scale, tokens = encode(values, vocab, domains, order, tokenizer="lgt")
-    decoded = decode(start, scale, tokens, vocab, order, tokenizer="lgt")
+    start, grid, tokens = encode(values, vocab, domains, order, tokenizer="lgt")
+    decoded = decode(start, grid, tokens, vocab, order, tokenizer="lgt")
     error = float(np.max(np.abs(decoded - values)))
     if np.unique(tokens).size != P or not np.array_equal(np.rint(decoded), values):
         msg = "tokenization must retain all 97 residue classes"
@@ -222,7 +222,7 @@ def token_table(order: int = 0) -> tuple[np.ndarray, dict[str, Any]]:
         "encoder_version": ENCODER_VERSION,
         "vocab_size": vocab,
         "domain": domain(order).tolist(),
-        "scale": scale[:1].tolist(),
+        "scale": grid.scale[:1].tolist(),
         "residue_tokens": table.tolist(),
         "fixed_initial_prefix": [0] * order,
         "max_decoding_error": error,
@@ -439,7 +439,7 @@ def verify_checkpoint(
         predicted = float(prediction.iloc[-1, 0])
         logits, _ = model(inputs[index : index + 1])
         token = int(logits[0, -1].argmax())
-        _, scale, _ = encode(
+        _, grid, _ = encode(
             context,
             vocabulary(config.order),
             domain(config.order),
@@ -448,7 +448,7 @@ def verify_checkpoint(
         )
         decoded = decode(
             context[-config.order :] if config.order else np.empty((0, 1)),
-            scale,
+            grid,
             np.array([[token]], dtype=np.int64),
             vocabulary(config.order),
             config.order,

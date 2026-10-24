@@ -32,6 +32,8 @@ from diff_gpt.encoder_decoder import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from diff_gpt.encoder_decoder import Grid
+
 ROOT = Path(__file__).resolve().parents[2]
 WEATHER = ROOT / "datasets/long_term_forecast/weather/weather.csv"
 ETTH1 = ROOT / "datasets/long_term_forecast/ETT-small/ETTh1.csv"
@@ -252,10 +254,10 @@ def _fit(
 
 def _encode(
     values: np.ndarray, config: DataConfig, domain: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, int]:
+) -> tuple[np.ndarray, Grid, int]:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", TokenClippingWarning)
-        _, scale, tokens = encode(
+        _, grid, tokens = encode(
             values, config.vocab_size, domain, config.order, tokenizer=config.tokenizer
         )
     clipped = sum(
@@ -263,7 +265,7 @@ def _encode(
         for w in caught
         if isinstance(w.message, TokenClippingWarning)
     )
-    return tokens, scale, clipped
+    return tokens, grid, clipped
 
 
 def _cap(indices: np.ndarray, maximum: int, rng: np.random.Generator) -> np.ndarray:
@@ -286,7 +288,7 @@ def weather_formula(config: DataConfig) -> Dataset:
     )
     calibration = np.sort(rng.choice(len(values), calibration_size, replace=False))
     mean, std, domain = _fit(values[calibration], config)
-    tokens, scale, clipped = _encode((values - mean) / std, config, domain)
+    tokens, grid, clipped = _encode((values - mean) / std, config, domain)
     pairs, groups = np.unique(tokens[:, :2], axis=0, return_inverse=True)
     train_group = rng.random(len(pairs)) < TRAIN_PAIR_FRACTION
     train_group[np.unique(groups[calibration])] = True
@@ -339,8 +341,8 @@ def weather_formula(config: DataConfig) -> Dataset:
         y[:, -1] = target_tokens[ids]
         column = np.full_like(x, -1)
         column[:, -1] = 0
-        base = np.full((len(ids), 1), mean[2] + 0.5 / scale[2] * std[2])
-        step = np.full_like(base, std[2] / scale[2])
+        base = np.full((len(ids), 1), mean[2] + 0.5 / grid.scale[2] * std[2])
+        step = np.full_like(base, std[2] / grid.scale[2])
         splits[name] = Split(x, y, y.copy(), column, ids, values[ids, 2:3], base, step)
     training_pairs = set(map(tuple, splits["train"].x))
     if training_pairs & set(map(tuple, splits["test"].x)):
@@ -364,7 +366,7 @@ def weather_formula(config: DataConfig) -> Dataset:
         "mean": mean.tolist(),
         "std": std.tolist(),
         "domain": domain.tolist(),
-        "scale": scale.tolist(),
+        "scale": grid.scale.tolist(),
         "clipped_tokens": clipped,
         "input_columns": list(names[:2]),
         "input_token_coverage": coverage,
@@ -657,7 +659,7 @@ def _make_series_split(
     # One encode call per column, with each window treated as its own column;
     # this preserves MASH's prefix anchoring without differencing across windows.
     transposed = normalized.transpose(1, 0, 2).reshape(length, -1)
-    tokens, scales, clipped = _encode(transposed, config, np.tile(domain, len(starts)))
+    tokens, grid, clipped = _encode(transposed, config, np.tile(domain, len(starts)))
     encoded = tokens.reshape(config.context + 1, len(starts), features).transpose(
         1, 0, 2
     )
@@ -678,7 +680,7 @@ def _make_series_split(
         context_tokens = encoded[:, :-1].transpose(1, 0, 2).reshape(config.context, -1)
         prefix = decode(
             prefix,
-            scales,
+            grid,
             context_tokens,
             config.vocab_size,
             config.order,
@@ -690,7 +692,7 @@ def _make_series_split(
     base = (
         decode(
             prefix,
-            scales,
+            grid,
             center,
             config.vocab_size,
             config.order,
@@ -702,7 +704,7 @@ def _make_series_split(
     shifted = (
         decode(
             prefix,
-            scales,
+            grid,
             center + 1,
             config.vocab_size,
             config.order,
@@ -747,7 +749,7 @@ def _make_series_split(
         split.bayes = bayes
     if config.dataset in GAUSSIAN_DATASETS:
         edges = gaussian.bin_edges(
-            float(mean[0]), float(std[0]), float(scales[0]), config.vocab_size
+            float(mean[0]), float(std[0]), float(grid.scale[0]), config.vocab_size
         )
         probabilities, _ = gaussian.transition(tuple(edges))
         split.bayes = probabilities[encoded[:, 0, 0], None, :].copy()
@@ -808,7 +810,7 @@ def series(config: DataConfig) -> Dataset:
             "fit_end": end,
         }
         if config.dataset in GAUSSIAN_DATASETS:
-            _, scale, _ = encode(
+            _, grid, _ = encode(
                 np.zeros((1, 1)),
                 config.vocab_size,
                 domain,
@@ -816,7 +818,7 @@ def series(config: DataConfig) -> Dataset:
                 tokenizer=config.tokenizer,
             )
             edges = gaussian.bin_edges(
-                float(mean[0]), float(std[0]), float(scale[0]), config.vocab_size
+                float(mean[0]), float(std[0]), float(grid.scale[0]), config.vocab_size
             )
             _, diagnostics = gaussian.transition(tuple(edges))
             fit_record.update(

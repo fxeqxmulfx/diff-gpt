@@ -257,8 +257,8 @@ def codec() -> Codec:
     needs its own tokens.
     """
     raw = LEVELS.astype(np.float64).reshape(-1, 1)
-    start, scale, tokens = encode(raw, VOCAB, DOMAIN, 0, tokenizer="lgt")
-    decoded = decode(start, scale, tokens, VOCAB, 0, tokenizer="lgt")
+    start, grid, tokens = encode(raw, VOCAB, DOMAIN, 0, tokenizer="lgt")
+    decoded = decode(start, grid, tokens, VOCAB, 0, tokenizer="lgt")
     table = tokens.reshape(-1).astype(np.int64)
     if np.unique(table).size != LEVELS.size or not np.array_equal(
         np.rint(decoded).reshape(-1), LEVELS
@@ -268,7 +268,7 @@ def codec() -> Codec:
     levels = np.full(VOCAB, UNUSED, dtype=np.int64)
     levels[table] = LEVELS
     every = np.arange(VOCAB).reshape(-1, 1)
-    public = decode(np.empty((0, 1)), scale, every, VOCAB, 0, tokenizer="lgt")
+    public = decode(np.empty((0, 1)), grid, every, VOCAB, 0, tokenizer="lgt")
     return Codec(
         tokens=table,
         levels=levels,
@@ -279,7 +279,7 @@ def codec() -> Codec:
             "order_of_derivative": 0,
             "vocab_size": VOCAB,
             "domain": DOMAIN.tolist(),
-            "scale": scale.tolist(),
+            "scale": grid.scale.tolist(),
             "value_tokens": table[-EMPTY:].tolist(),
             "key_tokens": table[1:-EMPTY][::-1].tolist(),
             "empty_token": int(table[0]),

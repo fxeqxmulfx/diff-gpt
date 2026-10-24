@@ -164,20 +164,20 @@ def encode_windows(raw: np.ndarray, config: Config) -> tuple[np.ndarray, np.ndar
         # On this exact unit grid MASH and LGT both have zero anchor fraction.
         tokens = np.diff(raw, n=config.order, axis=1) + grid_vocabulary(config) // 2
         return tokens, np.ones(len(raw))
-    _, scale, tokens = encode(
+    _, grid, tokens = encode(
         raw.T.astype(np.float64),
         grid_vocabulary(config),
         np.repeat(grid_domain(config), len(raw)),
         config.order,
         tokenizer=config.tokenizer,
     )
-    return tokens.T.copy(), scale
+    return tokens.T.copy(), grid.scale
 
 
 def future_grid(past: np.ndarray, config: Config) -> np.ndarray:
     """Derive one-step decoder bases from observed rows, never the future."""
     prefix = past[:, -config.order :].T.astype(np.float64)
-    _, scale, _ = encode(
+    _, grid, _ = encode(
         prefix,
         grid_vocabulary(config),
         np.repeat(grid_domain(config), len(past)),
@@ -187,13 +187,13 @@ def future_grid(past: np.ndarray, config: Config) -> np.ndarray:
     center = np.full((1, len(past)), grid_vocabulary(config) // 2, dtype=np.int64)
     bases = decode(
         prefix,
-        scale,
+        grid,
         center,
         grid_vocabulary(config),
         config.order,
         tokenizer=config.tokenizer,
     )[-1]
-    return np.column_stack((bases, 1 / scale))
+    return np.column_stack((bases, 1 / grid.scale))
 
 
 def transition(state: tuple[int, int], task: str) -> tuple[int, int]:
@@ -287,7 +287,7 @@ def dataset(config: Config) -> tuple[np.ndarray, int, dict[str, Any]]:
     SplitMix64(config.seed ^ 0x747261696E000002).shuffle(train)
     SplitMix64(config.seed ^ 0x7465737400000003).shuffle(test)
     raw = windows([*train, *test], config)
-    _, scale, encoded = encode(
+    _, grid, encoded = encode(
         raw[0, :, None].astype(np.float64),
         grid_vocabulary(config),
         grid_domain(config),
@@ -324,7 +324,7 @@ def dataset(config: Config) -> tuple[np.ndarray, int, dict[str, Any]]:
         "tokenizer": config.tokenizer,
         "vocab_size": grid_vocabulary(config),
         "domain": grid_domain(config).tolist(),
-        "scale": scale.tolist(),
+        "scale": grid.scale.tolist(),
         "raw_sha256": digest(raw),
     }
     return raw, len(train), metadata

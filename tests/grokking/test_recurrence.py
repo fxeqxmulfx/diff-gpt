@@ -35,7 +35,7 @@ from benchmarks.grokking.recurrence_readouts import (
     QuantizedFieldSampler,
     RangeSampler,
 )
-from diff_gpt.encoder_decoder import decode, encode
+from diff_gpt.encoder_decoder import Grid, decode, encode
 from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
 from diff_gpt.sampler.temperature import TemperatureSampler
 
@@ -420,7 +420,7 @@ def test_quantized_field_pools_aliases_and_emits_the_actual_canonical_token(
     )
     past = np.array([[4, 96, 3, 95], [96, 1, 0, 96]])[:, -(order + 2) :]
     vocab = grid_vocabulary(config)
-    _, scale, _ = encode(
+    _, grid, _ = encode(
         past.T.astype(float),
         vocab,
         np.repeat(grid_domain(config), len(past)),
@@ -429,7 +429,7 @@ def test_quantized_field_pools_aliases_and_emits_the_actual_canonical_token(
     )
     decoded = decode(
         np.repeat(past[:, -order:].T.astype(float), vocab, axis=1),
-        np.repeat(scale, vocab),
+        Grid(np.repeat(grid.scale, vocab), np.repeat(grid.zero, vocab)),
         np.tile(np.arange(vocab), len(past))[None, :],
         vocab,
         order,

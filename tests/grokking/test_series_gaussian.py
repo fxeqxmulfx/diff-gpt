@@ -15,9 +15,9 @@ def test_gaussian_bin_edges_match_actual_codec_boundaries(tokenizer: str) -> Non
     """The oracle changes output cells at the encoder's actual discontinuities."""
     vocab, mean, std = 64, 2.0, 1.5
     domain = np.array([3.0])
-    _, scale, _ = encode(np.zeros((1, 1)), vocab, domain, 0, tokenizer=tokenizer)
-    edges = gaussian.bin_edges(mean, std, float(scale[0]), vocab)
-    epsilon = std / scale[0] * 1e-6
+    _, grid, _ = encode(np.zeros((1, 1)), vocab, domain, 0, tokenizer=tokenizer)
+    edges = gaussian.bin_edges(mean, std, float(grid.scale[0]), vocab)
+    epsilon = std / grid.scale[0] * 1e-6
     probes = edges[1:-1, None] + np.array([-epsilon, epsilon])[None, :]
     _, _, tokens = encode(
         ((probes.ravel() - mean) / std)[:, None],
