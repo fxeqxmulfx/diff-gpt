@@ -107,8 +107,7 @@ class GroupedArray(BaseGroupedArray):
         )
         matches = ["mean", "lo", "hi"]
         for i, grp in enumerate(self):
-            # A 2-D series holds its target in column 0.
-            y_train = grp[:, 0] if grp.ndim == 2 else grp  # noqa: PLR2004
+            y_train = grp[:, 0] if grp.ndim == 2 else grp  # noqa: PLR2004 - a 2-D series has its target in column 0.
             cols = []
             for i_model, model in enumerate(models):
                 has_level = has_level_models[i_model]

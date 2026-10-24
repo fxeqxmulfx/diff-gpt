@@ -386,8 +386,7 @@ class QuantileForecast(Forecast):
 
         inference_quantile = Quantile.parse(inference_quantile).value
 
-        # Two quantiles at least, to interpolate or extrapolate from.
-        if len(quantiles) < 2 or inference_quantile in quantiles:  # noqa: PLR2004
+        if len(quantiles) < 2 or inference_quantile in quantiles:  # noqa: PLR2004 - two to interpolate or extrapolate from.
             q_str = Quantile.parse(inference_quantile).name
             return self._forecast_dict.get(q_str, self._nan_out)
 
