@@ -8,7 +8,7 @@ license-files = ["LICENSE.txt"]
 requires-python = ">=3.14"
 dependencies = [
     "numpy>=2.5.4",
-    "pandas>=3.0.6",
+    "pandas>=3.1.0",
     "torch>=2.14.1",
     "tqdm>=4.70.1",
     "typing-extensions>=4.16.0",
@@ -16,10 +16,18 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "leaderboards",
+    "matplotlib>=3.11.2",
     "pytest>=9.1.1",
-    "ruff>=0.17.1",
+    "ruff>=0.17.2",
     "scalene>=2.4.0",
+    "tempopfn-corpus",
 ]
+
+# One lock and one environment for the three projects; the dev group puts
+# the other two in it.
+[tool.uv.workspace]
+members = ["leaderboards", "synthetic"]
 
 [[tool.uv.index]]
 name = "pytorch-cu126"
@@ -30,14 +38,16 @@ explicit = true
 torch = [
     { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
+leaderboards = { workspace = true }
+tempopfn-corpus = { workspace = true }
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.pytest.ini_options]
-# leaderboards/ and synthetic/ have their own environments and run their own
-# tests there.
+# leaderboards/ and synthetic/ run their own tests, from their folders, in
+# this environment: each has its tests in a package named tests too.
 testpaths = ["tests"]
 
 [tool.ruff.lint]

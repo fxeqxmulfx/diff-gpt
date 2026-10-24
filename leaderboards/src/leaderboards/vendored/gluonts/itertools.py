@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -42,9 +42,6 @@ class SizedIterable(Protocol):
         ...
 
 
-T = TypeVar("T")
-
-
 def prod(xs: Iterable) -> object:
     """Compute the product of the elements of an iterable object."""
     p = 1
@@ -53,7 +50,7 @@ def prod(xs: Iterable) -> object:
     return p
 
 
-def batcher(iterable: Iterable[T], batch_size: int) -> Iterator[list[T]]:
+def batcher[T](iterable: Iterable[T], batch_size: int) -> Iterator[list[T]]:
     """
     Group elements from `iterable` into batches of size `batch_size`.
 

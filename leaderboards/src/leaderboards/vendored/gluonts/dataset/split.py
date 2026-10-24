@@ -156,9 +156,7 @@ class AbstractBaseSplitter(ABC):
             TestTemplate(dataset=dataset, splitter=self),
         )
 
-    def generate_training_entries(
-        self, dataset: Dataset
-    ) -> Generator[DataEntry, None, None]:
+    def generate_training_entries(self, dataset: Dataset) -> Generator[DataEntry]:
         """Yield the training part of each entry of `dataset`."""
         yield from map(self.training_entry, dataset)
 
@@ -169,7 +167,7 @@ class AbstractBaseSplitter(ABC):
         windows: int = 1,
         distance: int | None = None,
         max_history: int | None = None,
-    ) -> Generator[tuple[DataEntry, DataEntry], None, None]:
+    ) -> Generator[tuple[DataEntry, DataEntry]]:
         """Yield the input and label of `windows` windows of each entry."""
         if distance is None:
             distance = prediction_length

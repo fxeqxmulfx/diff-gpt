@@ -133,7 +133,7 @@ def rss(pid: int) -> int:
     """Return the resident set size of process `pid` in bytes, 0 once it exited."""
     try:
         status = Path(f"/proc/{pid}/status").read_text()
-    except (FileNotFoundError, ProcessLookupError):
+    except FileNotFoundError, ProcessLookupError:
         return 0
     lines = [line for line in status.splitlines() if line.startswith("VmRSS:")]
     return int(lines[0].split()[1]) * 1024 if lines else 0

@@ -2,16 +2,17 @@
 name = "tempopfn-corpus"
 version = "0.1.0"
 description = "Synthetic pretraining corpus for diff-gpt, generated with TempoPFN's generators"
-requires-python = ">=3.12,<3.13"
-# TempoPFN (Python < 3.13) imports these on its generation path; its model
-# stack (flash-linear-attention, triton, gluonts) and the cupy of its CauKer
-# stay out: see src/__init__.py.
+requires-python = ">=3.14"
+# TempoPFN imports these on its generation path, which runs on Python 3.14
+# although TempoPFN's project asks for Python < 3.13; its model stack
+# (flash-linear-attention, triton, gluonts) and the cupy of its CauKer stay
+# out: see src/__init__.py. torch is the workspace's, the root's CUDA build.
 dependencies = [
     "gpytorch>=1.15.2",
     "joblib>=1.6.0",
     "networkx>=3.7",
     "numpy>=2.5.4",
-    "pandas>=3.0.6",
+    "pandas>=3.1.0",
     "pyarrow>=26.0.0",
     "pyo>=1.1.0",
     "pyyaml>=6.0.3",
@@ -26,14 +27,6 @@ dev = [
     "pytest>=9.1.1",
 ]
 
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[tool.uv.sources]
-torch = { index = "pytorch-cpu" }
-
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
 build-backend = "uv_build"
@@ -46,7 +39,7 @@ module-name = ["tempopfn_corpus", "src"]
 
 [tool.ruff]
 extend = "../pyproject.toml"
-target-version = "py312"
+target-version = "py314"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

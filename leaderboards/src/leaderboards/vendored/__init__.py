@@ -19,7 +19,9 @@ changes no behavior leaderboards reaches:
 - formatted by ruff, imports sorted, `from __future__ import annotations`,
   imports needed only for annotations under TYPE_CHECKING;
 - docstrings added, or reworded to a one-line summary; annotations added, in
-  the builtin generics and `X | Y` unions of Python 3.10;
+  the builtin generics and `X | Y` unions of Python 3.10; a type parameter
+  (`def batcher[T]`) for a module's TypeVar, and Generator without its
+  default send and return types;
 - asserts written as `if not <condition>: raise AssertionError(<the same
   message>)`, so that python -O keeps them;
 - exception messages put in a variable first; `raise ... from err` inside an
