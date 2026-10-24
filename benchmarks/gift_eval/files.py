@@ -1,5 +1,5 @@
 """
-The file exchange with the GIFT-Eval adapter in leaderboards/ (its own environment).
+The file exchange with leaderboards/, the GIFT-Eval adapter diff-gpt never imports.
 
 leaderboards' export writes the windows of each configuration and split to
 RUNS/windows/<split>/<file key>.npz. A forecaster reads them with

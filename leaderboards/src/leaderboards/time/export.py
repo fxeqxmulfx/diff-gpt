@@ -1,5 +1,5 @@
 """
-Export TIME windows for a forecaster that runs outside this environment.
+Export TIME windows for a forecaster that reads them from files.
 
 Run in leaderboards/: ``uv run python -m leaderboards.time.export``. For each
 task and split it writes RUNS/windows/<split>/<file key>.npz in the format of

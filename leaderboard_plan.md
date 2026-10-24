@@ -90,11 +90,12 @@ Everything before that point stays local.
   (`diff_gpt.numa.pin_to_node`). Numbers measured on the RTX 3050 are the
   laptop's; every estimate is checked against the machine it runs on.
 - Python versions: diff-gpt requires Python ≥ 3.14. gift-eval and timebench
-  pin gluonts ~0.15.1 and numpy ~1.26, which do not run on 3.14. The
-  evaluation therefore runs in a separate uv environment on Python 3.11, and
-  the two sides exchange files. gluonts never enters diff-gpt. The synthetic
-  corpus is made in a third environment, `synthetic/` on Python 3.12, since
-  TempoPFN requires Python < 3.13; it hands diff-gpt .npy files.
+  pin gluonts ~0.15.1 and numpy ~1.26, which do not run on 3.14, so the
+  evaluation, `leaderboards/`, runs copies of the code it uses from them, from
+  gluonts and from statsforecast; diff-gpt imports none of it, and the two
+  sides exchange files. The synthetic corpus is made by `synthetic/` with
+  TempoPFN's code from its clone; it hands diff-gpt .npy files. The three
+  share one uv workspace, one lock and one environment, the root's `.venv`.
 - Compare changes by training FLOPs and validation scores, averaged over seeds
   11, 17 and 23 on the GPU.
 - Select settings on validation only. Test windows are scored once per
@@ -373,10 +374,9 @@ token-level GPT without leakage would be the first on the board.
 
 ## Evaluation pipeline
 
-The pipeline has three stages in two environments, with files passed between
-them:
+The pipeline has three stages, with files passed between them:
 
-1. **Export** (eval environment, Python 3.11, with gift-eval and timebench).
+1. **Export** (`leaderboards/`, with its copies of gift-eval and timebench).
    For every configuration or task, write each window's context, truncated to
    the context limit, together with:
    - the configuration key, item id and window index;
@@ -384,10 +384,10 @@ them:
    - the order in which the scorer will iterate the windows.
 
    For Track A, also export the train and validation series.
-2. **Forecast** (diff-gpt environment). Normalize each window, sample S
+2. **Forecast** (diff-gpt). Normalize each window, sample S
    trajectories, compute the quantiles and the mean, invert the
    normalization, and write one array per configuration.
-3. **Score** (eval environment).
+3. **Score** (`leaderboards/`).
    - GIFT: wrap the arrays as gluonts `QuantileForecast` objects with the keys
      "0.025", "0.1", …, "0.9", "0.975" and "mean". MSIS reads the 0.025 and
      0.975 quantiles. Replay them through `evaluate_model` with the notebook's
@@ -431,9 +431,10 @@ Adapter details:
   if it is ever downloaded, `datasets/gift-eval-pretrain`. All of these are
   ignored by git.
 - **Code.** The adapter lives in `leaderboards/` in this repository, with its
-  own `pyproject.toml`: Python 3.11, gift-eval pinned to commit 3c7be6d, and
-  timebench to be pinned the same way for TIME. Its ruff config extends the
-  repository's with target py311, so the whole repository stays ruff clean.
+  own `pyproject.toml` in the root's uv workspace and copies of the code it
+  uses from gift-eval at commit 3c7be6d and timebench at commit c633e23. Its
+  ruff config extends the repository's with target py314, so the whole
+  repository stays ruff clean.
   Keeping it here lets `code_link` point at the diff-gpt repository. The
   GIFT-Eval side is built: export, score, aggregate and the official
   Seasonal_Naive (`leaderboards/README.md`). The export cuts contexts to
@@ -732,9 +733,9 @@ Git carries the code only. On the new machine:
     `git clone https://github.com/automl/TempoPFN ../TempoPFN`, then
     `git -C ../TempoPFN checkout 5969ec6ddbded5a8d2976d42504c1ae436a2f1b3`;
   - gift-eval at 3c7be6d, as `leaderboards/README.md` says.
-- Run `uv sync` in the root (Python 3.14), in `leaderboards/` (3.11) and in
-  `synthetic/` (3.12). pyo's wheel bundles PortAudio and its other
-  libraries, so the audio generators need no system packages.
+- Run `uv sync` in the root (Python 3.14): one environment, `.venv`, for
+  diff-gpt, `leaderboards/` and `synthetic/`. pyo's wheel bundles PortAudio
+  and its other libraries, so the audio generators need no system packages.
 - Data, ignored by git: download GIFT-Eval again (`leaderboards/README.md`)
   or copy `datasets/gift-eval`. `datasets/long_term_forecast` and
   `datasets/short_term_forecast` serve only the older benchmarks, never

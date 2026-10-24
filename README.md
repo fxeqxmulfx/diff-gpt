@@ -560,7 +560,7 @@ uv run --locked -m benchmarks.grokking.div97 --device cuda \
   --plan benchmarks/grokking/plans/div97_confirm.json \
   --output runs/grokking-div97-confirm
 
-# Curves and compact results; --plot additionally needs matplotlib.
+# Curves and compact results; --plot also writes SVG and PNG figures.
 uv run --locked -m benchmarks.grokking.div97_report \
   runs/grokking-div97-confirm --output runs/grokking-div97-confirm/summary.json
 ```
@@ -951,7 +951,15 @@ pip install git+https://github.com/fxeqxmulfx/diff-gpt
 uv sync
 uv run --no-sync pytest            # skips the tests marked slow
 uv run --no-sync pytest --runslow  # runs everything
+(cd leaderboards && uv run --no-sync pytest)
+(cd synthetic && uv run --no-sync pytest)
 ```
+
+`uv sync` makes one environment, `.venv`, on Python 3.14, from one `uv.lock`:
+diff-gpt and the two other projects of its uv workspace, `leaderboards/`
+(the GIFT-Eval and TIME evaluation, `leaderboards/README.md`) and
+`synthetic/` (the synthetic pretraining corpus). Each of the three keeps its
+tests in a package named `tests`, so each runs them from its own folder.
 
 ## References
 

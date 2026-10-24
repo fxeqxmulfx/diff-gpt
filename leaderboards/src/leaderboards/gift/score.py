@@ -1,5 +1,5 @@
 """
-Score forecasts written by a forecaster that runs outside this environment.
+Score forecasts that a forecaster wrote to files.
 
 Run in leaderboards/: ``uv run python -m leaderboards.gift.score --model NAME``.
 It reads RUNS/forecasts/<model>/<split>/<file key>.npz for every

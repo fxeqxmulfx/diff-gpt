@@ -1,17 +1,18 @@
 # leaderboards
 
-The GIFT-Eval and TIME evaluation environment for diff-gpt. It runs on
-Python 3.11 with copies of the code it uses from gift-eval at commit 3c7be6d,
-TIME's timebench at commit c633e23, gluonts 0.15.1 and statsforecast 2.1.1
+The GIFT-Eval and TIME evaluation for diff-gpt, a project of the
+repository's uv workspace, in its one environment on Python 3.14. It runs
+copies of the code it uses from gift-eval at commit 3c7be6d, TIME's
+timebench at commit c633e23, gluonts 0.15.1 and statsforecast 2.1.1
 (`src/leaderboards/vendored/`; each file names its source, its license and
-its changes, and the licenses are the `LICENSE-*` files here). diff-gpt runs
-on Python 3.14 in its own environment, so the two exchange files and the
-copies never enter diff-gpt:
+its changes, and the licenses are the `LICENSE-*` files here). diff-gpt
+imports none of it, so the copies never enter diff-gpt; the two exchange
+files:
 
-1. **export** (this environment) writes the windows of each configuration;
-2. a **forecaster** (the root environment, `benchmarks/gift_eval/files.py`)
-   reads them and writes quantile forecasts;
-3. **score** (this environment) replays the forecasts through gluonts'
+1. **export** (leaderboards) writes the windows of each configuration;
+2. a **forecaster** (diff-gpt, `benchmarks/gift_eval/files.py`) reads them
+   and writes quantile forecasts;
+3. **score** (leaderboards) replays the forecasts through gluonts'
    `evaluate_model` with the leaderboard's metrics;
 4. **aggregate** divides each configuration's MASE and CRPS by
    Seasonal_Naive's and takes the geometric mean over the 97 configurations.
@@ -21,8 +22,11 @@ with timebench's `save_window_predictions` as the scorer.
 
 ## Setup
 
+`uv sync` in the repository root installs leaderboards with the rest of the
+workspace, into the root's `.venv`. Not in this folder: here it would sync
+leaderboards alone and remove the other projects' packages. Then, from here:
+
 ```sh
-cd leaderboards && uv sync    # Python 3.11
 git clone https://github.com/SalesforceAIResearch/gift-eval ../../gift-eval
 git -C ../../gift-eval checkout 3c7be6deffb0046e1c08f9103db8bc84b3cf7ebd
 uvx --from 'huggingface_hub[hf_xet]' hf download Salesforce/GiftEval \
@@ -30,8 +34,7 @@ uvx --from 'huggingface_hub[hf_xet]' hf download Salesforce/GiftEval \
 ```
 
 The clone provides the configuration list (`scripts/dataset_configurations.csv`,
-`notebooks/dataset_properties.json`) and the published results. If the root
-venv is active, run `unset VIRTUAL_ENV` first, or uv warns on every command.
+`notebooks/dataset_properties.json`) and the published results.
 
 ## Commands
 
@@ -40,7 +43,7 @@ From `leaderboards/`, unless noted. Everything is written under
 
 ```sh
 uv run python -m leaderboards.gift.export                  # windows/{test,val}/, 50 s
-# From the repository root, in diff-gpt's environment:
+# From the repository root:
 uv run python -m benchmarks.gift_eval.seasonal_naive --split test   # forecasts/seasonal_naive/test/
 uv run python -m leaderboards.gift.score --model seasonal_naive --split test
 uv run python -m leaderboards.gift.aggregate \
@@ -72,8 +75,8 @@ uv run pytest                                   # here: names, windows, replay
 cd .. && uv run pytest tests/gift_eval          # the root side
 ```
 
-The replay test runs the root environment's `benchmarks.gift_eval.seasonal_naive`
-in a subprocess (`../.venv/bin/python`) on tiny datasets written to disk in
+The replay test runs diff-gpt's `benchmarks.gift_eval.seasonal_naive` in a
+subprocess (`../.venv/bin/python`) on tiny datasets written to disk in
 the download's format, and requires the scored result to equal the
 statsforecast reference. Nothing is downloaded. The tests of the task list
 and of the aggregation read the gift-eval clone and `../datasets/time-output`.
@@ -110,7 +113,7 @@ From `leaderboards/`, unless noted; everything is written under
 
 ```sh
 uv run python -m leaderboards.time.export                  # windows/{test,val}/
-# From the repository root, in diff-gpt's environment:
+# From the repository root:
 uv run python -m benchmarks.gift_eval.seasonal_naive --split test \
     --model numpy_seasonal_naive \
     --windows runs/leaderboards/time/windows --forecasts runs/leaderboards/time/forecasts
