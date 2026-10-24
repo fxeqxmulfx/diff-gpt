@@ -8,9 +8,14 @@ Run from the repository root:
 
 It forecasts every exported window of the split into
 RUNS/forecasts/<model>/<split>/, for leaderboards' score, and records the
-settings and each configuration's counts in forecast_config.json there. A
-configuration whose forecasts exist is skipped, so a stopped run resumes;
---overwrite redraws them. Forecasts of other settings go to another --model.
+settings, and each configuration's counts, batch size and device, in
+forecast_config.json there. A configuration whose forecasts exist is
+skipped, so a stopped run resumes; --overwrite redraws them. Forecasts of
+other settings go to another --model. --batch-size may differ between
+runs into one folder, and runs may share one at once (say one process per
+device, each with its own configurations): a run writes a configuration's
+forecasts and its record entry under the folder's lock, onto the record as
+it then stands.
 
 - The model is the run's: its config.json gives the sizes and the encoder
   settings, --checkpoint (best.bin, the lowest holdout CRPS) the weights,
@@ -34,12 +39,14 @@ configuration whose forecasts exist is skipped, so a stopped run resumes;
 """
 
 import argparse
+import fcntl
 import fnmatch
 import hashlib
 import json
 import shutil
 import subprocess
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -61,7 +68,7 @@ from diff_gpt.normalization import predict_samples_normalized
 from diff_gpt.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from benchmarks.gift_eval.files import Windows
     from diff_gpt.diff_gpt import DiffGPT
@@ -72,6 +79,8 @@ TERMS = ("short", "medium", "long")
 # predict_samples_normalized seeds its b-th batch with seed + b. Each pass
 # of each call gets its own range of seeds, this many wide.
 SEED_STRIDE = 2**16
+RECORD = "forecast_config.json"
+LOCK = "forecast_config.lock"
 
 
 def chunk_plan(
@@ -266,6 +275,44 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+@contextmanager
+def _locked(folder: Path) -> Iterator[None]:
+    """Hold the folder's lock, so one run at a time writes into it."""
+    with (folder / LOCK).open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def read_record(folder: Path, settings: dict[str, Any]) -> dict[str, Any]:
+    """
+    Return the folder's record of `settings`, a new one if it has none.
+
+    ValueError if it holds forecasts of other settings. A record from
+    before the batch size and the device were each configuration's gets
+    them into its entries.
+    """
+    path = folder / RECORD
+    if not path.exists():
+        return {"settings": settings, "configs": {}}
+    record = json.loads(path.read_text())
+    moved = {"batch_size": record["settings"].pop("batch_size", None)}
+    moved["device_name"] = record.pop("device_name", None)
+    for key, value in moved.items():
+        if value is not None:
+            for entry in record["configs"].values():
+                entry.setdefault(key, value)
+    if record["settings"] != settings:
+        msg = (
+            f"{folder} holds forecasts of other settings, "
+            f"{record['settings']}; draw these into another --model"
+        )
+        raise ValueError(msg)
+    return record
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -334,32 +381,22 @@ def main(argv: list[str] | None = None) -> None:
         "temperature": args.temperature,
         "min_context": min_context,
         "dtype": args.dtype,
-        "batch_size": args.batch_size,
         "windows_per_call": args.windows_per_call,
         "seed": args.seed,
     }
     folder = args.forecasts / name / args.split
-    record_path = folder / "forecast_config.json"
-    record = {"settings": settings, "configs": {}}
-    if record_path.exists():
-        record = json.loads(record_path.read_text())
-        if record["settings"] != settings:
-            msg = (
-                f"{folder} holds forecasts of other settings, "
-                f"{record['settings']}; draw these into another --model"
-            )
-            raise ValueError(msg)
-    record |= {
+    read_record(folder, settings)  # other settings fail before any work
+    code = {
         "git_head": _git_head(),
         "source_sha256": {
             str(path.relative_to(ROOT)): _sha256(path)
             for path in (Path(__file__), *LIBRARY_SOURCES)
         },
         "torch": torch.__version__,
-        "device_name": torch.cuda.get_device_name()
-        if args.device.startswith("cuda")
-        else "cpu",
     }
+    device_name = (
+        torch.cuda.get_device_name() if args.device.startswith("cuda") else "cpu"
+    )
     folder.mkdir(parents=True, exist_ok=True)
     sampler = TemperatureSampler(temperature=args.temperature)
     for path in paths:
@@ -380,7 +417,6 @@ def main(argv: list[str] | None = None) -> None:
             windows_per_call=args.windows_per_call,
             seed=args.seed,
         )
-        write_forecasts(target, windows, quantiles, mean)
         seconds = time.perf_counter() - started
         plan = chunk_plan(
             windows.prediction_length,
@@ -388,14 +424,22 @@ def main(argv: list[str] | None = None) -> None:
             prefix_rows(model.order_of_derivative),
             min_context,
         )
-        record["configs"][windows.config] = {
-            "windows": len(windows),
-            "horizon": windows.prediction_length,
-            "plan": plan,
-            "constant": constant,
-            "seconds": round(seconds, 1),
-        }
-        record_path.write_text(json.dumps(record, indent=2) + "\n")
+        with _locked(folder):
+            write_forecasts(target, windows, quantiles, mean)
+            # The record as it stands now, with the entries of any other run.
+            record = read_record(folder, settings) | code
+            record["configs"][windows.config] = {
+                "windows": len(windows),
+                "horizon": windows.prediction_length,
+                "plan": plan,
+                "constant": constant,
+                "batch_size": args.batch_size,
+                "device_name": device_name,
+                "seconds": round(seconds, 1),
+            }
+            partial = folder / f"{RECORD}.partial"
+            partial.write_text(json.dumps(record, indent=2) + "\n")
+            partial.replace(folder / RECORD)
         tokens = len(windows) * windows.prediction_length * args.num_samples
         print(
             f"{windows.config}: {len(windows)} windows, {len(plan)} passes, "

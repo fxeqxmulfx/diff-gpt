@@ -117,10 +117,13 @@ def test_forecasts_of_a_tiny_run(tmp_path: Path) -> None:
     main(argv)
     folder = forecasts / "diff_gpt-pilot" / "val"
     record = json.loads((folder / "forecast_config.json").read_text())
+    assert "batch_size" not in record["settings"]
     drawn: dict[str, dict[str, np.ndarray]] = {}
     for config, horizon, passes in (("toy/H/short", SHORT, 1), ("toy/H/long", LONG, 3)):
         assert record["configs"][config]["constant"] == len(CONSTANT)
         assert len(record["configs"][config]["plan"]) == passes
+        assert record["configs"][config]["batch_size"] == 512  # noqa: PLR2004
+        assert record["configs"][config]["device_name"] == "cpu"
         with np.load(folder / f"{config.replace('/', '__')}.npz") as file:
             drawn[config] = {key: file[key] for key in file.files}
         quantiles, mean = drawn[config]["quantiles"], drawn[config]["mean"]
@@ -141,6 +144,76 @@ def test_forecasts_of_a_tiny_run(tmp_path: Path) -> None:
                 assert np.array_equal(file[key], array), (config, key)
     with pytest.raises(ValueError, match="other settings"):
         main([*argv, "--seed", "1"])
+
+
+def test_runs_of_other_batch_sizes_share_a_folder(tmp_path: Path) -> None:
+    """
+    A run with another --batch-size adds its configurations to the folder.
+
+    Each configuration's entry keeps the batch size and the device that drew
+    it. A record from before they were the entries' (the batch size among
+    the settings, the device beside them) gets them into its entries.
+    """
+    run = _tiny_run(tmp_path)
+    windows = tmp_path / "windows"
+    _write_windows(windows / "val", "toy/H/short", SHORT)
+    _write_windows(windows / "val", "toy/H/long", LONG)
+    forecasts = tmp_path / "forecasts"
+    argv = [
+        *("--run", str(run), "--windows", str(windows)),
+        *("--forecasts", str(forecasts), "--num-samples", "4", "--device", "cpu"),
+    ]
+    main([*argv, "--configs", "toy__H__short", "--batch-size", "8"])
+    path = forecasts / "diff_gpt-pilot" / "val" / "forecast_config.json"
+    old = json.loads(path.read_text())
+    entry = old["configs"]["toy/H/short"]
+    old["settings"]["batch_size"] = entry.pop("batch_size")
+    old["device_name"] = entry.pop("device_name")
+    path.write_text(json.dumps(old))
+    main([*argv, "--configs", "toy__H__long", "--batch-size", "2"])
+    record = json.loads(path.read_text())
+    assert "batch_size" not in record["settings"]
+    assert "device_name" not in record
+    batch_sizes = {"toy/H/short": 8, "toy/H/long": 2}
+    for config, batch_size in batch_sizes.items():
+        assert record["configs"][config]["batch_size"] == batch_size
+        assert record["configs"][config]["device_name"] == "cpu"
+
+
+def test_processes_at_once_keep_each_others_entries(tmp_path: Path) -> None:
+    """
+    Two processes forecasting into one folder at once both keep their entries.
+
+    Each reads the record afresh under the folder's lock before it adds its
+    own entry; a record each read at its start would lose the other's.
+    """
+    run = _tiny_run(tmp_path)
+    windows = tmp_path / "windows"
+    configs = {"toy/H/short": SHORT, "toy/H/long": LONG}
+    for config, horizon in configs.items():
+        _write_windows(windows / "val", config, horizon)
+    forecasts = tmp_path / "forecasts"
+    processes = [
+        subprocess.Popen(  # noqa: S603 - this interpreter and the module, no shell.
+            [
+                sys.executable,
+                *("-m", "benchmarks.gift_eval.diff_gpt_forecast"),
+                *("--run", str(run), "--windows", str(windows)),
+                *("--forecasts", str(forecasts), "--num-samples", "4"),
+                *("--device", "cpu", "--configs", config.replace("/", "__")),
+            ],
+            cwd=ROOT,
+            env=os.environ | {"CUDA_VISIBLE_DEVICES": ""},
+            stdout=subprocess.DEVNULL,
+        )
+        for config in configs
+    ]
+    assert [process.wait() for process in processes] == [0, 0]
+    folder = forecasts / "diff_gpt-pilot" / "val"
+    record = json.loads((folder / "forecast_config.json").read_text())
+    assert record["configs"].keys() == configs.keys()
+    for config in configs:
+        assert (folder / f"{config.replace('/', '__')}.npz").exists()
 
 
 def _forecast_files(folder: Path) -> Iterator[tuple[str, dict[str, np.ndarray]]]:
