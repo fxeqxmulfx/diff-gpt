@@ -10,7 +10,8 @@ from __future__ import annotations
 import csv
 from typing import TYPE_CHECKING
 
-from gluonts.ev.metrics import (
+from leaderboards.gift.configs import RUNS
+from leaderboards.vendored.gluonts.ev.metrics import (
     MAE,
     MAPE,
     MASE,
@@ -22,17 +23,14 @@ from gluonts.ev.metrics import (
     SMAPE,
     MeanWeightedSumQuantileLoss,
 )
-from gluonts.model import evaluate_model
-
-from leaderboards.gift.configs import RUNS
+from leaderboards.vendored.gluonts.model.evaluation import evaluate_model
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from gluonts.dataset.split import TestData
-    from gluonts.model import Predictor
-
     from leaderboards.gift.configs import Config
+    from leaderboards.vendored.gluonts.dataset.split import TestData
+    from leaderboards.vendored.gluonts.model.predictor import Predictor
 
 BATCH_SIZE = 512
 RESULTS = RUNS / "results"

@@ -4,31 +4,19 @@ version = "0.1.0"
 description = "GIFT-Eval and TIME adapters for diff-gpt: export windows, score forecasts, aggregate"
 requires-python = "==3.11.*"
 dependencies = [
-    "salesforce-gift-eval",
-    "gluonts~=0.15.1",
-    "numpy~=1.26.0",
-    "pandas>=2.0.0",
-    # pyarrow 26 needs NumPy 2; gift-eval pins NumPy 1.26.
-    "pyarrow>=12,<26",
-    "statsforecast>=1.7.0",
-    "timebench",
+    "datasets>=2.17.1",
+    "numpy>=1.26.0",
+    # The gluonts copy's norm_freq_str writes the "E" codes of pandas 2.2.
+    "pandas>=2.2.0",
+    "pyarrow>=12",
+    "pyyaml>=6.0",
+    "scipy>=1.11.3",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.0",
 ]
-
-[tool.uv.sources]
-# gift-eval at the commit read on 2026-10-21 (the leaderboard's code path).
-salesforce-gift-eval = { git = "https://github.com/SalesforceAIResearch/gift-eval", rev = "3c7be6deffb0046e1c08f9103db8bc84b3cf7ebd" }
-# TIME at the commit read on 2026-10-22 (the leaderboard's code path).
-timebench = { git = "https://github.com/zqiao11/TIME", rev = "c633e232fbba20c54242ffcac55e77c50440f470" }
-
-[tool.uv]
-# timebench's wheel force-includes src/timebench/config, which its packages
-# already hold, and hatchling 1.26 rejects the second copy of datasets.yaml.
-build-constraint-dependencies = ["hatchling<1.26"]
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]

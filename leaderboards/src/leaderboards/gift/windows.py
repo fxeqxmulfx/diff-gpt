@@ -10,16 +10,15 @@ the test split starts.
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
-from gift_eval.data import Dataset
-from gluonts.dataset.split import split as split_dataset
+from leaderboards.vendored.gift_eval.data import Dataset
+from leaderboards.vendored.gluonts.dataset.split import split as split_dataset
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from gluonts.dataset.split import TestData
+    from leaderboards.vendored.gluonts.dataset.split import TestData
 
 
 def load(name: str, term: str, data: Path) -> Dataset:
@@ -27,11 +26,10 @@ def load(name: str, term: str, data: Path) -> Dataset:
     Open gift-eval dataset `name` at `term` from `data`, as the notebooks do.
 
     A multivariate dataset is split into univariate series (item ids get a
-    "_dim<i>" suffix). gift-eval reads the storage path from GIFT_EVAL.
+    "_dim<i>" suffix).
     """
-    os.environ["GIFT_EVAL"] = str(data)
-    multivariate = Dataset(name=name, term=term).target_dim > 1
-    return Dataset(name=name, term=term, to_univariate=multivariate)
+    multivariate = Dataset(name=name, term=term, storage_path=data).target_dim > 1
+    return Dataset(name=name, term=term, to_univariate=multivariate, storage_path=data)
 
 
 def windows(dataset: Dataset, split: str) -> TestData:

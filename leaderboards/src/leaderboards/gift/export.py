@@ -24,8 +24,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-from gluonts.dataset.util import forecast_start
-from gluonts.time_feature import get_seasonality
 
 from leaderboards.gift.configs import (
     DATA,
@@ -36,9 +34,11 @@ from leaderboards.gift.configs import (
     select,
 )
 from leaderboards.gift.windows import load, windows
+from leaderboards.vendored.gluonts.dataset.util import forecast_start
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
 
 if TYPE_CHECKING:
-    from gluonts.dataset.split import TestData
+    from leaderboards.vendored.gluonts.dataset.split import TestData
 
 MAX_CONTEXT = 4096
 

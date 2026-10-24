@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import pytest
-from gluonts.time_feature import get_seasonality
 
 from leaderboards.gift.aggregate import aggregate, read_scores
 from leaderboards.gift.compare import differences
@@ -24,6 +23,7 @@ from leaderboards.gift.export import export
 from leaderboards.gift.official import SeasonalNaivePredictor
 from leaderboards.gift.score import QUANTILE_LEVELS, Forecasts, read_forecasts, score
 from leaderboards.gift.windows import load, windows
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
 from tests.tiny import CONFIGS, HORIZON, SEASON, WINDOWS, tiny
 
 if TYPE_CHECKING:
@@ -176,9 +176,7 @@ def test_replayed_seasonal_naive_is_the_leaderboards(
     )
     assert forecasts.quantiles.dtype == forecasts.mean.dtype == np.float32
     replayed = score(windows(dataset, split), forecasts, SEASON)
-    predictor = SeasonalNaivePredictor(
-        HORIZON, SEASON, dataset.freq, max_length=MAX_CONTEXT
-    )
+    predictor = SeasonalNaivePredictor(HORIZON, SEASON, max_length=MAX_CONTEXT)
     official = evaluate(predictor, windows(dataset, split), SEASON)
     assert list(replayed) == list(official) == list(METRIC_NAMES)
     for name in METRIC_NAMES:

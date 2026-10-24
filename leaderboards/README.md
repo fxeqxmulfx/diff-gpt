@@ -1,9 +1,12 @@
 # leaderboards
 
 The GIFT-Eval and TIME evaluation environment for diff-gpt. It runs on
-Python 3.11 with gift-eval pinned to commit 3c7be6d, TIME's timebench to
-commit c633e23 and gluonts 0.15.1. diff-gpt runs on Python 3.14 in its own
-environment, so the two exchange files and gluonts never enters diff-gpt:
+Python 3.11 with copies of the code it uses from gift-eval at commit 3c7be6d,
+TIME's timebench at commit c633e23, gluonts 0.15.1 and statsforecast 2.1.1
+(`src/leaderboards/vendored/`; each file names its source, its license and
+its changes, and the licenses are the `LICENSE-*` files here). diff-gpt runs
+on Python 3.14 in its own environment, so the two exchange files and the
+copies never enter diff-gpt:
 
 1. **export** (this environment) writes the windows of each configuration;
 2. a **forecaster** (the root environment, `benchmarks/gift_eval/files.py`)
@@ -19,7 +22,7 @@ with timebench's `save_window_predictions` as the scorer.
 ## Setup
 
 ```sh
-cd leaderboards && uv sync    # Python 3.11; gift-eval comes from git
+cd leaderboards && uv sync    # Python 3.11
 git clone https://github.com/SalesforceAIResearch/gift-eval ../../gift-eval
 git -C ../../gift-eval checkout 3c7be6deffb0046e1c08f9103db8bc84b3cf7ebd
 uvx --from 'huggingface_hub[hf_xet]' hf download Salesforce/GiftEval \
@@ -78,8 +81,8 @@ and of the aggregation read the gift-eval clone and `../datasets/time-output`.
 ## TIME
 
 TIME's leaderboard (the Hugging Face Space Real-TSF/TIME-leaderboard) scores
-98 tasks, a dataset at one term each. timebench at c633e23 provides the
-datasets, their lengths (`config/datasets.yaml`) and the scorer, which writes
+98 tasks, a dataset at one term each. timebench at c633e23, copied, provides
+the datasets, their lengths (`config/datasets.yaml`) and the scorer, which writes
 `predictions.npz`, `metrics.npz` and `config.json` per task: for test, the
 folder a submission uploads.
 

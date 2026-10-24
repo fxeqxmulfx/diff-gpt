@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(scope="session")
 def data(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Return a GIFT_EVAL directory that holds "tiny" and "tiny_multi"."""
+    """Return a GIFT-Eval storage directory that holds "tiny" and "tiny_multi"."""
     root = tmp_path_factory.mktemp("gift-eval")
     write(root, "tiny", tiny())
     write(root, "tiny_multi", tiny_multi())

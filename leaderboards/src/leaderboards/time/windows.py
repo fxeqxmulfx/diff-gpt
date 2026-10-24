@@ -12,14 +12,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from timebench.evaluation.data import Dataset
+from leaderboards.vendored.timebench.evaluation.data import Dataset
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from gluonts.dataset.split import TestData
-
     from leaderboards.time.configs import Task
+    from leaderboards.vendored.gluonts.dataset.split import TestData
 
 
 def load(task: Task, data: Path) -> Dataset:

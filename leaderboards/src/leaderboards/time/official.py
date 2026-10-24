@@ -32,19 +32,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-from gluonts.time_feature import get_seasonality
-from timebench.models import SeasonalNaivePredictor
 
 from leaderboards.time.configs import DATA, SPLITS, select, tasks
 from leaderboards.time.score import LEVELS, RESULTS, save
 from leaderboards.time.windows import load, split_of
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
+from leaderboards.vendored.timebench.models.statsforecast_predictor import (
+    SeasonalNaivePredictor,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from gluonts.dataset import DataEntry
-
     from leaderboards.time.configs import Task
+    from leaderboards.vendored.gluonts.dataset import DataEntry
 
 SAMPLES = 100  # experiments/seasonal_naive.py's num_samples.
 

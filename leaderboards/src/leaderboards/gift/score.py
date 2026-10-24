@@ -26,10 +26,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-from gluonts.dataset.util import forecast_start
-from gluonts.model import Predictor
-from gluonts.model.forecast import QuantileForecast
-from gluonts.time_feature import get_seasonality
 
 from leaderboards.gift.configs import (
     DATA,
@@ -41,14 +37,17 @@ from leaderboards.gift.configs import (
 )
 from leaderboards.gift.evaluation import RESULTS, evaluate, results_path, save_row
 from leaderboards.gift.windows import load, windows
+from leaderboards.vendored.gluonts.dataset.util import forecast_start
+from leaderboards.vendored.gluonts.model.forecast import QuantileForecast
+from leaderboards.vendored.gluonts.model.predictor import Predictor
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from gluonts.dataset import DataEntry
-    from gluonts.dataset.split import TestData
-
     from leaderboards.gift.configs import Config
+    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from leaderboards.vendored.gluonts.dataset.split import TestData
 
 QUANTILE_LEVELS = (0.025, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.975)
 FORECAST_KEYS = ["mean", *(str(level) for level in QUANTILE_LEVELS)]

@@ -3,9 +3,9 @@ The 98 TIME tasks, named as the leaderboard names them.
 
 A task is a TIME dataset at one term, "<dataset>/<freq>/<term>" (e.g.
 "SG_Weather/D/short"). The datasets, their terms and their prediction, test
-and validation lengths are those of timebench's config/datasets.yaml at the
-commit pinned in pyproject.toml, and the terms of a dataset are the ones the
-file defines, as TIME's experiments take them.
+and validation lengths are those of timebench's config/datasets.yaml at
+commit c633e23, copied in leaderboards.vendored.timebench, and the terms of a
+dataset are the ones the file defines, as TIME's experiments take them.
 """
 
 from __future__ import annotations
@@ -13,8 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from timebench.evaluation.data import load_dataset_config
-from timebench.evaluation.utils import get_available_terms
+from leaderboards.vendored.timebench.evaluation.data import load_dataset_config
+from leaderboards.vendored.timebench.evaluation.utils import get_available_terms
 
 ROOT = Path(__file__).resolve().parents[4]
 DATA = ROOT / "datasets" / "time"  # huggingface.co/datasets/Real-TSF/TIME

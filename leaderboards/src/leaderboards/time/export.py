@@ -19,11 +19,10 @@ import argparse
 import time
 from pathlib import Path
 
-from gluonts.time_feature import get_seasonality
-
 from leaderboards.gift.export import MAX_CONTEXT, export
 from leaderboards.time.configs import DATA, RUNS, SPLITS, select, tasks
 from leaderboards.time.windows import load, split_of
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
 
 
 def main() -> None:

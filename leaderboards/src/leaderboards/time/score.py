@@ -25,12 +25,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-from gluonts.time_feature import get_seasonality
-from timebench.evaluation import save_window_predictions
 
 from leaderboards.gift.score import QUANTILE_LEVELS, check, read_forecasts
 from leaderboards.time.configs import DATA, RUNS, SPLITS, select, tasks
 from leaderboards.time.windows import load, split_of
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
+from leaderboards.vendored.timebench.evaluation.saver import save_window_predictions
 
 if TYPE_CHECKING:
     from leaderboards.gift.score import Forecasts

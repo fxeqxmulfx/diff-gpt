@@ -9,7 +9,7 @@ cuts each context to its last steps before imputation, as the predictor's
 max_length does; the notebook leaves it unset. --jobs scores that many
 configurations at once, each in a process of its own that exits after it.
 
-Two departures from the notebook, neither of which changes a forecast:
+Three departures from the notebook, none of which changes a forecast:
 
 - statsforecast 2 rejects level 0, which the notebook requests for the 0.5
   quantile. That quantile is the point forecast (lo-0 = mean - Φ⁻¹(0.5)·sigma
@@ -17,6 +17,15 @@ Two departures from the notebook, neither of which changes a forecast:
 - The notebook forecasts again with SeasonalNaive the series whose forecast
   has NaN. With SeasonalNaive as the model that is the same forecast, so it
   is left out: a NaN forecast fails evaluate_model either way.
+- The notebook hands statsforecast's StatsForecast a DataFrame of each
+  batch's series with their dates, and reads the forecasts from the
+  DataFrame it returns. Here the series go straight to statsforecast's
+  GroupedArray, which StatsForecast makes of that DataFrame and forecasts
+  in the same way, and the forecasts are read by row and column
+  (leaderboards.vendored.statsforecast.core): the same values. Each
+  forecast starts at forecast_start(entry), where the notebook takes the
+  first date of statsforecast's forecast as a period; the metrics never
+  read it.
 """
 
 from __future__ import annotations
@@ -28,14 +37,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
-from gluonts.dataset.util import forecast_start
-from gluonts.model import Predictor
-from gluonts.model.forecast import QuantileForecast
-from gluonts.time_feature import get_seasonality
-from gluonts.transform.feature import LastValueImputation
-from statsforecast import StatsForecast
-from statsforecast.models import SeasonalNaive
 
 from leaderboards.gift.configs import DATA, GIFT_REPO, SPLITS, configurations, select
 from leaderboards.gift.evaluation import (
@@ -46,13 +47,21 @@ from leaderboards.gift.evaluation import (
     save_row,
 )
 from leaderboards.gift.windows import load, windows
+from leaderboards.vendored.gluonts.dataset.util import forecast_start
+from leaderboards.vendored.gluonts.model.forecast import QuantileForecast
+from leaderboards.vendored.gluonts.model.predictor import Predictor
+from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
+from leaderboards.vendored.gluonts.transform.feature import LastValueImputation
+from leaderboards.vendored.statsforecast.core import GroupedArray
+from leaderboards.vendored.statsforecast.models import SeasonalNaive
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from gluonts.dataset import DataEntry
+    import pandas as pd
 
     from leaderboards.gift.configs import Config
+    from leaderboards.vendored.gluonts.dataset import DataEntry
 
 QUANTILE_LEVELS = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 MODEL = "SeasonalNaive"  # statsforecast's column of the point forecast.
@@ -77,19 +86,13 @@ class SeasonalNaivePredictor(Predictor):
         self,
         prediction_length: int,
         season_length: int,
-        freq: str,
         max_length: int | None = None,
         batch_size: int = BATCH_SIZE,
     ) -> None:
-        """Forecast `prediction_length` steps of series of frequency `freq`."""
+        """Forecast `prediction_length` steps, with seasons of `season_length`."""
         super().__init__(prediction_length=prediction_length)
-        self.freq = freq
-        self.model = StatsForecast(
-            models=[SeasonalNaive(season_length=season_length)],
-            freq=freq,
-            fallback_model=SeasonalNaive(season_length=season_length),
-            n_jobs=1,
-        )
+        self.model = SeasonalNaive(season_length=season_length)
+        self.fallback_model = SeasonalNaive(season_length=season_length)
         self.forecast_keys = ["mean", *(str(level) for level in QUANTILE_LEVELS)]
         self.columns = [MODEL, *(column(level) for level in QUANTILE_LEVELS)]
         self.levels = sorted({interval(level) for level in QUANTILE_LEVELS} - {0})
@@ -99,48 +102,47 @@ class SeasonalNaivePredictor(Predictor):
 
     def predict(self, dataset: Iterable[DataEntry]) -> Iterator[QuantileForecast]:
         """Forecast each series of `dataset`, `batch_size` series at a time."""
-        batch = {}
+        batch = []
         for entry in dataset:
-            target, start = entry["target"], entry["start"]
+            target = entry["target"]
             if target.ndim != 1 or len(target) < 1:
                 msg = f"{entry['item_id']}: not a univariate series"
                 raise ValueError(msg)
             if self.max_length is not None:
-                start += len(target[: -self.max_length])
                 target = target[-self.max_length :]
             target = np.asarray(target, np.float32)
             if np.isnan(target).any():
                 target = self.imputation(target.copy())
             unique_id = f"{entry['item_id']}_{forecast_start(entry)}_{len(batch)}"
-            batch[unique_id] = pd.DataFrame(
-                {
-                    "unique_id": unique_id,
-                    "ds": pd.date_range(
-                        start=start.to_timestamp(),
-                        periods=len(target),
-                        freq=start.freq,
-                    ).to_numpy(),
-                    "y": target,
-                }
-            )
+            batch.append((unique_id, target, forecast_start(entry)))
             if len(batch) == self.batch_size:
                 yield from self._forecast(batch)
-                batch = {}
+                batch = []
         if batch:
             yield from self._forecast(batch)
 
-    def _forecast(self, batch: dict[str, pd.DataFrame]) -> Iterator[QuantileForecast]:
-        results = self.model.forecast(
-            df=pd.concat(batch.values()), h=self.prediction_length, level=self.levels
-        ).set_index("unique_id")
-        for unique_id in batch:
-            prediction = results.loc[unique_id]
+    def _forecast(
+        self, batch: list[tuple[str, np.ndarray, pd.Period]]
+    ) -> Iterator[QuantileForecast]:
+        h = self.prediction_length
+        targets = [target for _, target, _ in batch]
+        result = GroupedArray(
+            np.concatenate(targets), np.cumsum([0, *map(len, targets)])
+        ).forecast(
+            models=[self.model],
+            h=h,
+            fallback_model=self.fallback_model,
+            level=self.levels,
+        )
+        forecasts = result["forecasts"]
+        index = [result["cols"].index(name) for name in self.columns]
+        for i, (unique_id, _, start_date) in enumerate(batch):
             yield QuantileForecast(
                 forecast_arrays=np.stack(
-                    [prediction.loc[:, name].to_numpy() for name in self.columns]
+                    [forecasts[i * h : (i + 1) * h, j] for j in index]
                 ),
                 forecast_keys=self.forecast_keys,
-                start_date=prediction.ds.iloc[0].to_period(freq=self.freq),
+                start_date=start_date,
                 item_id=unique_id,
             )
 
@@ -155,7 +157,6 @@ def run(
     predictor = SeasonalNaivePredictor(
         dataset.prediction_length,
         season_length=season_length,
-        freq=dataset.freq,
         max_length=max_length,
         batch_size=batch_size,
     )
