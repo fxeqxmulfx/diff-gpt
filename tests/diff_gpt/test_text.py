@@ -136,7 +136,6 @@ def test_char_encoder_decode_drops_padded_ids() -> None:
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not DATA_PATH.exists(), reason=f"{DATA_PATH} not available")
 @pytest.mark.skipif(
     not torch.cuda.is_available(),
     reason="the baseline is measured on CUDA",
