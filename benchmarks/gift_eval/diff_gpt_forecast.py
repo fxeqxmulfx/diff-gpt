@@ -13,7 +13,9 @@ configuration whose forecasts exist is skipped, so a stopped run resumes;
 --overwrite redraws them. Forecasts of other settings go to another --model.
 
 - The model is the run's: its config.json gives the sizes and the encoder
-  settings, --checkpoint (best.bin, the lowest holdout CRPS) the weights.
+  settings, --checkpoint (best.bin, the lowest holdout CRPS) the weights,
+  read straight onto --device, so that a process that sees no GPU forecasts
+  with the weights of a GPU run.
   --dtype float16 or bfloat16 casts this loaded copy for the forward passes;
   the checkpoint keeps its float32 weights.
 - A context is forecast in its own units: predict_samples_normalized divides
@@ -53,9 +55,8 @@ from benchmarks.gift_eval.files import (
     write_forecasts,
 )
 from benchmarks.synthetic_pretrain import LIBRARY_SOURCES
-from diff_gpt.diff_gpt import DiffGPT
+from benchmarks.synthetic_rescore import load_checkpoint
 from diff_gpt.encoder_decoder import prefix_rows
-from diff_gpt.model.gpt import GPT
 from diff_gpt.normalization import predict_samples_normalized
 from diff_gpt.sampler.temperature import TemperatureSampler
 
@@ -63,6 +64,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from benchmarks.gift_eval.files import Windows
+    from diff_gpt.diff_gpt import DiffGPT
     from diff_gpt.sampler.sampler import Sampler
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -234,29 +236,21 @@ def forecast(
 
 def load_model(
     run: Path,
-    checkpoint: Path,
+    checkpoint: str,
     device: str,
     dtype: torch.dtype | None,
 ) -> tuple[DiffGPT, dict[str, Any]]:
-    """Return the run's DiffGPT with the weights of `checkpoint`, and its config."""
-    config = json.loads((run / "config.json").read_text())
-    args = config["args"]
-    gpt = GPT(
-        vocab_size=args["vocab"],
-        n_embd=args["width"],
-        block_size=args["block_size"],
-        n_head=args["heads"],
-        n_layer=args["layers"],
-    )
-    model = DiffGPT(
-        model=gpt,
-        order_of_derivative=args["order"],
-        domain_of_definition=np.array(config["domain_of_definition"]),
-        tokenizer=config["tokenizer"],
-    )
-    model.load(str(checkpoint))
-    # These weights only forecast: casting them leaves the checkpoint's be.
-    gpt.to(device=device, dtype=dtype)
+    """
+    Return the run's DiffGPT with the weights of its file `checkpoint`, and its config.
+
+    The weights are read straight onto `device`, whichever device saved them
+    (synthetic_rescore.load_checkpoint): a process that sees no GPU forecasts
+    with the weights of a GPU run.
+    """
+    model, config = load_checkpoint(run, checkpoint, device)
+    if dtype is not None:
+        # These weights only forecast: casting them leaves the checkpoint's be.
+        model.model.to(dtype=dtype)
     return model, config
 
 
@@ -318,7 +312,7 @@ def main(argv: list[str] | None = None) -> None:
     args = _parser().parse_args(argv)
     checkpoint = args.run / args.checkpoint
     dtype = None if args.dtype == "float32" else getattr(torch, args.dtype)
-    model, run_config = load_model(args.run, checkpoint, args.device, dtype)
+    model, run_config = load_model(args.run, args.checkpoint, args.device, dtype)
     name = args.model or f"diff_gpt-{args.run.name}"
     min_context = args.min_context or model.model.block_size // 2
     paths = [

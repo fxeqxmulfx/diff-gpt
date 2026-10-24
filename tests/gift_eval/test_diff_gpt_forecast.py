@@ -1,18 +1,25 @@
 """Check the DiffGPT forecaster of the GIFT-Eval windows on a tiny pretraining run."""
 
 import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
+import torch
 
 from benchmarks.gift_eval.diff_gpt_forecast import chunk_plan, main
 from benchmarks.gift_eval.files import QUANTILE_LEVELS
 from benchmarks.synthetic_pretrain import main as pretrain
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from collections.abc import Iterator
 
+ROOT = Path(__file__).resolve().parents[2]
 BLOCK_SIZE = 32
 SHORT = 8  # one pass of the tiny model
 LONG = 40  # three passes of it, from min_context = 16 rows: 17, 17 and 6 points
@@ -134,3 +141,51 @@ def test_forecasts_of_a_tiny_run(tmp_path: Path) -> None:
                 assert np.array_equal(file[key], array), (config, key)
     with pytest.raises(ValueError, match="other settings"):
         main([*argv, "--seed", "1"])
+
+
+def _forecast_files(folder: Path) -> Iterator[tuple[str, dict[str, np.ndarray]]]:
+    for path in sorted(folder.glob("*.npz")):
+        with np.load(path) as file:
+            yield path.name, {key: file[key] for key in file.files}
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a GPU's checkpoint")
+def test_a_process_without_a_gpu_forecasts_with_a_gpu_runs_weights(
+    tmp_path: Path,
+) -> None:
+    """
+    The weights of a GPU run load onto the CPU of a process that sees no GPU.
+
+    A run trained on a GPU saves CUDA tensors, which torch.load would read
+    back onto the GPU. The forecasts of such a copy of the tiny run, drawn
+    with CUDA_VISIBLE_DEVICES empty, equal those of the run itself.
+    """
+    run = _tiny_run(tmp_path)
+    on_gpu = tmp_path / "gpu" / run.name
+    on_gpu.mkdir(parents=True)
+    shutil.copy(run / "config.json", on_gpu / "config.json")
+    saved = torch.load(run / "best.bin", weights_only=True)
+    saved["model"] = {name: value.cuda() for name, value in saved["model"].items()}
+    torch.save(saved, on_gpu / "best.bin")
+    windows = tmp_path / "windows"
+    _write_windows(windows / "val", "toy/H/short", SHORT)
+    argv = ["--windows", str(windows), "--num-samples", "4", "--device", "cpu"]
+    main([*argv, "--run", str(run), "--forecasts", str(tmp_path / "cpu_run")])
+    subprocess.run(  # noqa: S603 - this interpreter and the module, no shell.
+        [
+            sys.executable,
+            *("-m", "benchmarks.gift_eval.diff_gpt_forecast"),
+            *argv,
+            *("--run", str(on_gpu), "--forecasts", str(tmp_path / "gpu_run")),
+        ],
+        cwd=ROOT,
+        env=os.environ | {"CUDA_VISIBLE_DEVICES": ""},
+        check=True,
+    )
+    drawn = dict(_forecast_files(tmp_path / "cpu_run" / "diff_gpt-pilot" / "val"))
+    again = dict(_forecast_files(tmp_path / "gpu_run" / "diff_gpt-pilot" / "val"))
+    assert drawn
+    assert drawn.keys() == again.keys()
+    for name, arrays in drawn.items():
+        for key, array in arrays.items():
+            assert np.array_equal(again[name][key], array), (name, key)
