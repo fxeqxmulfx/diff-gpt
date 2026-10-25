@@ -91,11 +91,14 @@ Everything before that point stays local.
   laptop's; every estimate is checked against the machine it runs on.
 - Python versions: diff-gpt requires Python ≥ 3.14. gift-eval and timebench
   pin gluonts ~0.15.1 and numpy ~1.26, which do not run on 3.14, so the
-  evaluation, `leaderboards/`, runs copies of the code it uses from them, from
-  gluonts and from statsforecast; diff-gpt imports none of it, and the two
-  sides exchange files. The synthetic corpus is made by `synthetic/` with
-  TempoPFN's code from its clone; it hands diff-gpt .npy files. The three
-  share one uv workspace, one lock and one environment, the root's `.venv`.
+  evaluation, `src/diff_gpt/infrastructure/leaderboards/`, runs copies of the
+  code it uses from them, from gluonts, from statsforecast and from
+  utilsforecast; the rest of diff-gpt imports none of it, and the two sides
+  exchange files. The synthetic corpus is made by
+  `src/diff_gpt/infrastructure/corpus/` with TempoPFN's code from its clone;
+  it hands the training .npy files. All of it is one project, with one
+  `pyproject.toml`, whose `dev` group holds the `leaderboards` and `corpus`
+  groups, one `uv.lock` and one environment, the root's `.venv`.
 - Compare changes by training FLOPs and validation scores, averaged over seeds
   11, 17 and 23 on the GPU.
 - Select settings on validation only. Test windows are scored once per
@@ -327,18 +330,20 @@ token-level GPT without leakage would be the first on the board.
   - TempoPFN's code runs from a clone next to this repository,
     `../TempoPFN` at commit 5969ec6; a run refuses another commit or a
     changed clone. Four of its modules are replaced by stand-ins in
-    `synthetic/src`. Among them, KernelSynth samples its GP prior by a
-    pivoted Cholesky factorization of a kernel matrix built from lags, and
-    CauKer draws its roots independently on the CPU, as the original CauKer
-    does, where TempoPFN's port gave all roots of a series one noise.
+    `src/diff_gpt/infrastructure/corpus/tempopfn/`. Among them, KernelSynth
+    samples its GP prior by a pivoted Cholesky factorization of a kernel
+    matrix built from lags, and CauKer draws its roots independently on the
+    CPU, as the original CauKer does, where TempoPFN's port gave all roots of
+    a series one noise.
   - 16 sources, 14 generators and 2 offline augmentations, of series of
     2,048 steps. The full corpus has 65,536 train and 4,096 holdout series
     per source: about 20 CPU hours, 61% of them in gp, or at least 7 hours
     on three cores of the laptop.
   - Series j of a source gets the seed run_id + j in whichever process makes
     it, with PYTHONHASHSEED=0, so the corpus can be built in parts.
-  - `tempopfn_corpus.export` writes `npy/<split>/<source>.npy`, float32 of
-    shape (N, 2048), and `manifest.json`.
+  - `diff_gpt.infrastructure.corpus.export`, run by its command line
+    `diff_gpt.interfaces.corpus.export`, writes `npy/<split>/<source>.npy`,
+    float32 of shape (N, 2048), and `manifest.json`.
   - A pilot of 5,120 series per source, made by earlier stand-ins, is set
     aside in `datasets/tempopfn-synthetic/set-aside/pilot`.
 - Never read TempoPFN's `data/nan_stats.json`: it is computed from the
@@ -346,7 +351,8 @@ token-level GPT without leakage would be the first on the board.
   each series' frequency from GIFT_EVAL_FREQUENCY_WEIGHTS, the benchmark's mix
   of frequencies; on 2026-10-22 the user kept it as TempoPFN has it, as
   metadata rather than data.
-- Training: `benchmarks/synthetic_pretrain.py`, in diff-gpt's environment.
+- Training: `src/diff_gpt/application/synthetic_pretrain.py`, run by its
+  command line `diff_gpt.interfaces.synthetic_pretrain`.
   `DiffCorpusDataLoader` takes windows of the train split, each in the units
   of a prefix of itself, so that one vocabulary serves series of every
   scale. `--train-dtype bfloat16` runs bfloat16 forward passes on float32
@@ -356,8 +362,9 @@ token-level GPT without leakage would be the first on the board.
   naive forecast, geometric mean over the sources; `best.bin` holds the
   lowest holdout CRPS. GIFT validation windows are scored once per candidate
   as a go/no-go check, never for tuning, so the zero-shot label stays honest.
-- `benchmarks/gift_eval/diff_gpt_forecast.py` forecasts the exported GIFT
-  windows with a `synthetic_pretrain` run.
+- `src/diff_gpt/application/gift_eval/diff_gpt_forecast.py`, run by its
+  command line `diff_gpt.interfaces.gift_eval.diff_gpt_forecast`, forecasts
+  the exported GIFT windows with a `synthetic_pretrain` run.
 - Model size: start at 1–10M parameters. The nearest precedents:
   - goia-forecast-nano-v0: 4.73M parameters, trained from scratch on a single
     consumer GPU, 0.815;
@@ -377,7 +384,8 @@ token-level GPT without leakage would be the first on the board.
 
 The pipeline has three stages, with files passed between them:
 
-1. **Export** (`leaderboards/`, with its copies of gift-eval and timebench).
+1. **Export** (`src/diff_gpt/infrastructure/leaderboards/`, with its copies of
+   gift-eval and timebench).
    For every configuration or task, write each window's context, truncated to
    the context limit, together with:
    - the configuration key, item id and window index;
@@ -388,7 +396,7 @@ The pipeline has three stages, with files passed between them:
 2. **Forecast** (diff-gpt). Normalize each window, sample S
    trajectories, compute the quantiles and the mean, invert the
    normalization, and write one array per configuration.
-3. **Score** (`leaderboards/`).
+3. **Score** (`src/diff_gpt/infrastructure/leaderboards/`).
    - GIFT: wrap the arrays as gluonts `QuantileForecast` objects with the keys
      "0.025", "0.1", …, "0.9", "0.975" and "mean". MSIS reads the 0.025 and
      0.975 quantiles. Replay them through `evaluate_model` with the notebook's
@@ -431,15 +439,17 @@ Adapter details:
   `datasets/gift-eval`, `datasets/time`, `datasets/tempopfn-synthetic` and,
   if it is ever downloaded, `datasets/gift-eval-pretrain`. All of these are
   ignored by git.
-- **Code.** The adapter lives in `leaderboards/` in this repository, with its
-  own `pyproject.toml` in the root's uv workspace and copies of the code it
-  uses from gift-eval at commit 3c7be6d and timebench at commit c633e23. Its
-  ruff config extends the repository's with target py314, so the whole
-  repository stays ruff clean.
+- **Code.** The adapter lives in `src/diff_gpt/infrastructure/leaderboards/`
+  in this repository, with its command lines in
+  `diff_gpt.interfaces.leaderboards`, its dependencies in the `leaderboards`
+  group of the root's `pyproject.toml` and copies of the code it uses from
+  gift-eval at commit 3c7be6d and timebench at commit c633e23. The
+  repository's one ruff config covers it, so the whole repository stays ruff
+  clean.
   Keeping it here lets `code_link` point at the diff-gpt repository. The
   GIFT-Eval side is built: export, score, aggregate and the official
-  Seasonal_Naive (`leaderboards/README.md`). The export cuts contexts to
-  their last 4,096 steps.
+  Seasonal_Naive (`src/diff_gpt/infrastructure/leaderboards/README.md`). The
+  export cuts contexts to their last 4,096 steps.
 - **Fast tests** cover:
   - window order and keys;
   - the normalization round trip;
