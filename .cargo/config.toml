@@ -1,0 +1,7 @@
+# libtorch for burn's LibTorch backend, outside the repository in a folder of
+# its version: burn-tch 0.22.1 builds on torch-sys 0.22.0, which needs
+# libtorch 2.9.0. This one is the CUDA 12.6 build, libtorch-shared-with-deps-
+# 2.9.0+cu126.zip from download.pytorch.org, its sha256 in ../SHA256SUMS.
+# Only the builds that take burn's `tch` feature read it.
+[env]
+LIBTORCH = "/home/misha/libtorch/2.9.0+cu126/libtorch"
