@@ -9,7 +9,6 @@ the repository's ScheduleFreeAdamW throughout.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import json
@@ -24,7 +23,8 @@ import pandas as pd
 import torch
 from torch.nn import functional as F
 
-from benchmarks.grokking.div97 import (
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.div97 import (
     LIBRARY_SOURCES,
     NORMALIZATION,
     REPLAY_LOSS_TOLERANCE,
@@ -39,8 +39,7 @@ from benchmarks.grokking.div97 import (
     vocabulary,
     write_json,
 )
-from benchmarks.grokking.recurrence_field_sampler import CanonicalFieldSampler
-from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.recurrence_field_sampler import CanonicalFieldSampler
 from diff_gpt.domain.encoder_decoder import (
     ENCODER_VERSION,
     decode,
@@ -64,8 +63,8 @@ SOURCE_SNAPSHOT = {
     str(path.relative_to(ROOT)): path.read_bytes()
     for path in (
         Path(__file__),
-        ROOT / "benchmarks/grokking/div97.py",
-        ROOT / "benchmarks/grokking/recurrence_field_sampler.py",
+        ROOT / "src/diff_gpt/application/grokking/div97.py",
+        ROOT / "src/diff_gpt/application/grokking/recurrence_field_sampler.py",
         *LIBRARY_SOURCES,
     )
 }
@@ -620,10 +619,12 @@ def run(
     else:
         write_json(directory / "metadata.json", metadata)
         (directory / "measured_source.py").write_bytes(
-            SOURCE_SNAPSHOT["benchmarks/grokking/recurrence.py"]
+            SOURCE_SNAPSHOT["src/diff_gpt/application/grokking/recurrence.py"]
         )
         (directory / "measured_field_sampler.py").write_bytes(
-            SOURCE_SNAPSHOT["benchmarks/grokking/recurrence_field_sampler.py"]
+            SOURCE_SNAPSHOT[
+                "src/diff_gpt/application/grokking/recurrence_field_sampler.py"
+            ]
         )
     start_time = time.monotonic()
     status = {}
@@ -828,50 +829,19 @@ def verify(directory: Path, device: str, *, full: bool = False) -> dict[str, Any
     return result
 
 
-def main() -> None:
-    """Run a fixed-optimizer plan, extend a checkpoint, or verify saved weights."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output", type=Path, default=ROOT / "runs/grokking-div97-rows"
-    )
-    parser.add_argument("--plan", type=Path)
-    parser.add_argument("--verify", type=Path)
-    parser.add_argument("--full", action="store_true")
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument(
-        "--device",
-        choices=["cpu", "cuda"],
-        default="cuda" if torch.cuda.is_available() else "cpu",
-    )
-    parser.add_argument("--threads", type=int, default=2)
-    for field, default in asdict(Config()).items():
-        parser.add_argument(
-            "--" + field.replace("_", "-"), type=type(default), default=default
-        )
-    args = parser.parse_args()
-    torch.set_num_threads(args.threads)
-    torch.set_float32_matmul_precision("highest")
-    if args.verify:
-        print(json.dumps(verify(args.verify, args.device, full=args.full), indent=2))
-        return
-    configs = (
-        [Config(**item) for item in json.loads(args.plan.read_text())]
-        if args.plan
-        else [Config(**{key: getattr(args, key) for key in asdict(Config())})]
-    )
-    args.output.mkdir(parents=True, exist_ok=True)
+def run_plan(
+    configs: list[Config], output: Path, *, device: str, resume: bool, full: bool
+) -> None:
+    """Run, or resume, then verify each configuration of the plan."""
+    output.mkdir(parents=True, exist_ok=True)
     for config in configs:
-        directory = args.output / config.name()
+        directory = output / config.name()
         result = directory / "result.json"
         # A completed run resumes only to extend it to more epochs.
         if result.exists() and (
-            not args.resume or json.loads(result.read_text())["epoch"] >= config.epochs
+            not resume or json.loads(result.read_text())["epoch"] >= config.epochs
         ):
             print(f"Completed: {directory}", flush=True)
             continue
-        run(config, directory, args.device, resume=args.resume)
-        verify(directory, args.device, full=args.full)
-
-
-if __name__ == "__main__":
-    main()
+        run(config, directory, device, resume=resume)
+        verify(directory, device, full=full)

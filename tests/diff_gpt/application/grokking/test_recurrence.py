@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 import torch
 
-from benchmarks.grokking.div97 import domain, vocabulary
-from benchmarks.grokking.recurrence import (
+from diff_gpt.application.grokking.div97 import domain, vocabulary
+from diff_gpt.application.grokking.recurrence import (
     DEFAULT_BETA1,
     Config,
     P,
@@ -28,7 +28,7 @@ from benchmarks.grokking.recurrence import (
     verify,
     windows,
 )
-from benchmarks.grokking.recurrence_readouts import (
+from diff_gpt.application.grokking.recurrence_readouts import (
     AliasSampler,
     FieldSampler,
     MeanSampler,
@@ -336,7 +336,7 @@ def test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder(
     tokens, scale = encode_windows(raw, config)
     bases = future_grid(raw[:, :-1], config)
     for index, row in enumerate(raw):
-        _, actual_scale, actual_tokens = encode(
+        _, actual_grid, actual_tokens = encode(
             row[:, None].astype(float),
             grid_vocabulary(config),
             grid_domain(config),
@@ -344,10 +344,10 @@ def test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder(
             tokenizer=tokenizer,
         )
         np.testing.assert_array_equal(tokens[index], actual_tokens[:, 0])
-        assert scale[index] == actual_scale[0]
+        assert scale[index] == actual_grid[0]
         actual = decode(
             row[-1 - order : -1, None].astype(float),
-            actual_scale,
+            actual_grid,
             actual_tokens[-1:],
             grid_vocabulary(config),
             config.order,

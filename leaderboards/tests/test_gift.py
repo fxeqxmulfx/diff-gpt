@@ -143,7 +143,7 @@ def runs(data: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
         command = [
             ROOT / ".venv" / "bin" / "python",
             "-m",
-            "benchmarks.gift_eval.seasonal_naive",
+            "diff_gpt.interfaces.gift_eval.seasonal_naive",
             "--split",
             split,
             "--windows",

@@ -1,7 +1,7 @@
 """
 Multi-query associative recall (MQAR): train the GPT at one length, test longer.
 
-Run with ``uv run --locked -m benchmarks.mqar --help``. The task is the lab's
+Run with ``uv run --locked -m diff_gpt.interfaces.mqar --help``. The task is the lab's
 MQAR (``/home/misha/lean_projects/transformer/python``: ``lab.domain.tasks.MQAR``
 and ``lab.infrastructure.benchmarks.synthetic``): Procedure 1 of Zoology
 (arXiv:2312.04927v1, Appendix E.1) with a BOS token. After BOS, `pairs` rows
@@ -18,7 +18,6 @@ trained on. `rope` and `rope_base` set the GPT's RoPE layers and base.
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import math
@@ -26,7 +25,6 @@ import random
 import sys
 import time
 from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import torch
@@ -37,6 +35,7 @@ from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from pathlib import Path
 
 BOS = 1
 IDENTITY_BASE = 36  # The lab's structural tokens and digits come first.
@@ -45,7 +44,6 @@ SPLIT_VERSION = 2  # The lab's GENERATOR_VERSION: hashed into split seeds.
 PAD_VOCAB_TO = 64
 SCORE_BUDGET = 1 << 25  # Attention scores per evaluation batch: B·heads·T².
 EVALUATION_FIELDS = ("test", "ood")  # Settings that leave training unchanged.
-ROOT = Path(__file__).resolve().parents[1]
 
 Example = tuple[list[int], list[int]]  # Tokens and their targets.
 
@@ -633,46 +631,3 @@ def run(
     result["test"] = evaluate_lengths(config, state, splits, device)
     result_path.write_text(json.dumps(result, indent=2) + "\n")
     return result
-
-
-def main() -> None:
-    """Train the configured runs, one per seed, and print their scores."""
-    defaults = RunConfig()
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT / "runs/mqar")
-    parser.add_argument(
-        "--device", default="cuda" if torch.cuda.is_available() else "cpu"
-    )
-    parser.add_argument("--seeds", type=int, nargs="+", default=[defaults.seed])
-    parser.add_argument("--ood", type=int, nargs="*", default=list(defaults.ood))
-    for item in RunConfig.__dataclass_fields__.values():
-        if item.name in {"seed", "ood"}:
-            continue
-        parser.add_argument(
-            "--" + item.name.replace("_", "-"),
-            type=type(getattr(defaults, item.name)),
-            default=getattr(defaults, item.name),
-        )
-    parser.add_argument("--quiet", action="store_true")
-    args = parser.parse_args()
-    # Full FP32 matmuls: TF32 rounds their inputs to 10 bits of mantissa.
-    torch.set_float32_matmul_precision("highest")
-    settings = {
-        name: getattr(args, name)
-        for name in RunConfig.__dataclass_fields__
-        if name not in {"seed", "ood"}
-    }
-    for seed in args.seeds:
-        config = RunConfig(**settings, ood=tuple(args.ood), seed=seed)
-        result = run(config, args.output, args.device, log=not args.quiet)
-        scores = {
-            key: round(value["token_accuracy"], 4)
-            for key, value in result["test"].items()
-        }
-        print(
-            json.dumps({"name": result["name"], "token_accuracy": scores}), flush=True
-        )
-
-
-if __name__ == "__main__":
-    main()

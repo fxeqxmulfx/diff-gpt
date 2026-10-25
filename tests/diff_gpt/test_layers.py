@@ -5,6 +5,10 @@ A module's layer is its folder under src/diff_gpt: domain, application,
 infrastructure or interfaces, and the docstring of the layer's __init__.py
 states its rule. One test parses every module with `ast`, without importing
 it, and names every break of the rule as `path:line: what`.
+
+A second test keeps Track B apart from the legacy benchmarks: the modules
+that its entry points import, directly or not, hold none of them, so no
+path of a Track B run reaches the data they train on.
 """
 
 import ast
@@ -309,3 +313,68 @@ def test_every_module_keeps_the_rule_of_its_layer() -> None:
     for path in sorted(PACKAGE.rglob("*.py")):
         breaks += _breaks(path)
     assert not breaks, "\n".join(breaks)
+
+
+TRACK_B = (
+    "application.synthetic_pretrain",
+    "interfaces.synthetic_pretrain",
+    "application.synthetic_rescore",
+    "interfaces.synthetic_rescore",
+    "application.gift_eval.diff_gpt_forecast",
+    "interfaces.gift_eval.diff_gpt_forecast",
+    "application.gift_eval.seasonal_naive",
+    "interfaces.gift_eval.seasonal_naive",
+    "application.gift_eval.files",
+)
+LEGACY = (
+    "anomaly_demo",
+    "ett_bench",
+    "m4_bench",
+    "prob_m4_bench",
+    "m4_eval",
+    "grokking.series_data",
+)
+
+
+def _module_file(module: str) -> Path | None:
+    """Return the file of the diff_gpt module `module`, or None for another one."""
+    if module != "diff_gpt" and not module.startswith("diff_gpt."):
+        return None
+    base = PACKAGE.joinpath(*module.split(".")[1:])
+    for path in (base.with_suffix(".py"), base / "__init__.py"):
+        if path.is_file():
+            return path
+    return None
+
+
+def _closure(modules: tuple[str, ...]) -> set[str]:
+    """Return the diff_gpt modules that importing `modules` may load."""
+    seen: set[str] = set()
+    todo = [f"diff_gpt.{module}" for module in modules]
+    while todo:
+        module = todo.pop()
+        parts = module.split(".")
+        for name in (".".join(parts[:end]) for end in range(1, len(parts) + 1)):
+            path = _module_file(name)
+            if path is None or name in seen:
+                continue
+            seen.add(name)
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    todo += _loaded(node)
+    return seen
+
+
+def test_track_b_imports_none_of_the_legacy_benchmarks() -> None:
+    """No module that a Track B entry point may load is a legacy benchmark."""
+    assert all(_module_file(f"diff_gpt.{module}") for module in TRACK_B)
+    loaded = _closure(TRACK_B)
+    reached = sorted(
+        module
+        for module in loaded
+        for layer in ("application", "interfaces")
+        for legacy in LEGACY
+        if module == f"diff_gpt.{layer}.{legacy}"
+    )
+    assert not reached, reached

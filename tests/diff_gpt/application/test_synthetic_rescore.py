@@ -6,8 +6,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 
-from benchmarks import synthetic_pretrain, synthetic_rescore
-from benchmarks.synthetic_pretrain import forecast_scores, holdout_windows, load_split
+from diff_gpt.application.synthetic_pretrain import (
+    forecast_scores,
+    holdout_windows,
+    load_split,
+)
+from diff_gpt.interfaces import synthetic_pretrain, synthetic_rescore
 
 if TYPE_CHECKING:
     from pathlib import Path

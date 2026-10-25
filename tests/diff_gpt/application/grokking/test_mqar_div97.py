@@ -9,7 +9,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from benchmarks.grokking.div97 import (
+from diff_gpt.application.grokking.div97 import (
     BLOCK,
     TRAIN,
     VOCAB,
@@ -17,7 +17,7 @@ from benchmarks.grokking.div97 import (
     P,
     token_table,
 )
-from benchmarks.grokking.mqar_div97 import (
+from diff_gpt.application.grokking.mqar_div97 import (
     COLUMNS,
     EMPTY,
     IGNORE,
@@ -42,9 +42,10 @@ from benchmarks.grokking.mqar_div97 import (
     stream,
     verify_checkpoint,
 )
-from benchmarks.grokking.mqar_div97_copy_audit import VARIANTS, variant
+from diff_gpt.application.grokking.mqar_div97_copy_audit import VARIANTS, variant
 from diff_gpt.domain.encoder_decoder import encode
 from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.infrastructure import provenance
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -446,7 +447,7 @@ def test_saved_weights_replay_metrics_and_public_predict(
 ) -> None:
     """The checkpoint replays both splits, query weights and DiffGPT.predict."""
     directory = tmp_path / "run"
-    result = run_experiment(config, directory)
+    result = run_experiment(config, directory, git_head=provenance.git_head)
     verified = verify_checkpoint(directory)
     assert verified["epoch"] == result["epoch"] == 1
     assert verified["metrics"] == result["metrics"]
@@ -464,7 +465,7 @@ def test_full_public_predict_scores_every_test_frame(tmp_path: Path) -> None:
     """Every test frame goes through DiffGPT.predict and agrees with the logits."""
     directory = tmp_path / "run"
     config = RunConfig(keys=8, loads=4, computed=2, **TINY)
-    run_experiment(config, directory)
+    run_experiment(config, directory, git_head=provenance.git_head)
     public = verify_checkpoint(directory, full_predict=True)["diffgpt_predict"]
     assert public["complete_test_split"]
     assert public["disagreements_with_benchmark"] == 0

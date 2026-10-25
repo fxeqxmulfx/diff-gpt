@@ -15,11 +15,15 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from benchmarks.grokking import series
-from benchmarks.grokking.series_data import REGISTRY, token_coverage, weather_formula
+from diff_gpt.application.grokking import series
+from diff_gpt.application.grokking.series_data import (
+    REGISTRY,
+    token_coverage,
+    weather_formula,
+)
 
 if TYPE_CHECKING:
-    from benchmarks.grokking.series_data import DataConfig, Dataset
+    from diff_gpt.application.grokking.series_data import DataConfig, Dataset
 
 
 def binary_prompts(tokens: np.ndarray, vocab: int) -> np.ndarray:
@@ -72,13 +76,3 @@ def register() -> None:
         }
 
     series.source_hashes = with_codec
-
-
-def main() -> None:
-    """Use the unchanged shared training/resume/verifier after registering codec."""
-    register()
-    series.main()
-
-
-if __name__ == "__main__":
-    main()

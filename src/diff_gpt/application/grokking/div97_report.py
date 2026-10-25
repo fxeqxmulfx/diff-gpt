@@ -7,38 +7,23 @@ The summary keeps censored runs and distinguishes averaged and query weights.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import json
-import shutil
-import subprocess
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from benchmarks.grokking.div97 import (
+from diff_gpt.application.grokking.div97 import (
     ROOT,
     TARGET_ACCURACY,
     Criterion,
 )
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Sequence
+    from pathlib import Path
 
-BROWSER_REPLAY = """
-import {pathToFileURL} from 'node:url';
-import {readFileSync} from 'node:fs';
-const {ShortGrokking} = await import(pathToFileURL(process.argv[1]).href);
-const output = [];
-for (const entry of JSON.parse(readFileSync(0, 'utf8'))) {
-  const rule = new ShortGrokking();
-  for (const row of entry.rows) rule.observe(row);
-  output.push({name: entry.name, first99: rule.event?.epoch ?? null,
-    first90: rule.first90, plateau_epochs: rule.plateau.epochs,
-    rise_epochs: rule.rise, delayed: Boolean(rule.event?.delayed)});
-}
-console.log(JSON.stringify(output));
-"""
+    from diff_gpt.application.ports import BrowserReplay
 
 
 def history(directory: Path) -> list[dict[str, float]]:
@@ -130,6 +115,8 @@ def summarize(directory: Path) -> dict[str, Any]:
 def replay_browser(
     summaries: list[dict[str, Any]],
     module: Path,
+    *,
+    node: BrowserReplay,
 ) -> dict[str, Any]:
     """Compare both trajectories to the actual browser implementation in Node."""
     entries = []
@@ -168,18 +155,7 @@ def replay_browser(
                     },
                 }
             )
-    node = shutil.which("node")
-    if node is None:
-        msg = "Node is required for --browser-module"
-        raise FileNotFoundError(msg)
-    process = subprocess.run(  # noqa: S603 - fixed JS and argv; no shell interpolation.
-        [node, "--input-type=module", "--eval", BROWSER_REPLAY, str(module.resolve())],
-        input=json.dumps(entries),
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    actual = json.loads(process.stdout)
+    actual = node(entries, module)
     if actual != expected:
         msg = "browser ShortGrokking replay disagrees with the Python classifier"
         raise ValueError(msg)
@@ -258,14 +234,8 @@ def plot_runs(summaries: list[dict[str, Any]], destination: Path) -> None:
     plt.close(figure)
 
 
-def main() -> None:
-    """Write a compact JSON summary, replay check and optional plots."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("runs", type=Path, nargs="+")
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--browser-module", type=Path)
-    parser.add_argument("--plot", action="store_true")
-    args = parser.parse_args()
+def report(args: argparse.Namespace, *, node: BrowserReplay) -> None:
+    """Summarize the runs, replay them in the browser module if asked, and plot."""
     directories = sorted(
         {path.parent for root in args.runs for path in root.glob("*/verification.json")}
     )
@@ -273,7 +243,7 @@ def main() -> None:
     report = {"runs": summaries}
     if args.browser_module:
         report["browser_criterion_replay"] = replay_browser(
-            summaries, args.browser_module
+            summaries, args.browser_module, node=node
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
@@ -292,7 +262,3 @@ def main() -> None:
             indent=2,
         )
     )
-
-
-if __name__ == "__main__":
-    main()

@@ -11,9 +11,9 @@ import pandas as pd
 import pytest
 import torch
 
-from benchmarks.grokking.div97 import Criterion, division_rows
-from benchmarks.grokking.series import Config, run, skill, verify
-from benchmarks.grokking.series_data import (
+from diff_gpt.application.grokking.div97 import Criterion, division_rows
+from diff_gpt.application.grokking.series import Config, run, skill, verify
+from diff_gpt.application.grokking.series_data import (
     DataConfig,
     array_hash,
     corrupt_answers,
@@ -21,9 +21,12 @@ from benchmarks.grokking.series_data import (
     generate_ar,
     tabulation,
 )
-from benchmarks.grokking.series_numeric_codec import binary_prompts, bits_dataset
-from benchmarks.grokking.series_oracle import conditional_reference
-from benchmarks.grokking.series_weather_audit import formula_comparators
+from diff_gpt.application.grokking.series_numeric_codec import (
+    binary_prompts,
+    bits_dataset,
+)
+from diff_gpt.application.grokking.series_oracle import conditional_reference
+from diff_gpt.application.grokking.series_weather_audit import formula_comparators
 from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 
 if TYPE_CHECKING:

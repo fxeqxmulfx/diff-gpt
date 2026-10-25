@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import io
@@ -10,11 +9,12 @@ import json
 import math
 from dataclasses import asdict, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 
-from benchmarks.grokking.div97 import load_checkpoint, write_json
-from benchmarks.grokking.recurrence import (
+from diff_gpt.application.grokking.div97 import load_checkpoint, write_json
+from diff_gpt.application.grokking.recurrence import (
     RATE_FIELDS,
     ROOT,
     SOURCE_SNAPSHOT,
@@ -22,6 +22,9 @@ from benchmarks.grokking.recurrence import (
     run,
     verify,
 )
+
+if TYPE_CHECKING:
+    import argparse
 
 
 def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, object]:
@@ -138,10 +141,10 @@ def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, obj
     write_json(directory / "metadata.json", metadata)
     write_json(directory / "restart.json", provenance)
     (directory / "measured_source.py").write_bytes(
-        SOURCE_SNAPSHOT["benchmarks/grokking/recurrence.py"]
+        SOURCE_SNAPSHOT["src/diff_gpt/application/grokking/recurrence.py"]
     )
     (directory / "measured_field_sampler.py").write_bytes(
-        SOURCE_SNAPSHOT["benchmarks/grokking/recurrence_field_sampler.py"]
+        SOURCE_SNAPSHOT["src/diff_gpt/application/grokking/recurrence_field_sampler.py"]
     )
     (directory / "measured_restart.py").write_bytes(restart_source)
     write_json(
@@ -163,18 +166,8 @@ def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, obj
     return provenance
 
 
-def main() -> None:
-    """Continue a frozen parent with a deterministic second warmup, without reset."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--parent", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--learning-rate", type=float, default=0.03)
-    parser.add_argument("--warmup", type=int, default=500)
-    parser.add_argument("--epochs", type=int, default=20000)
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
-    parser.add_argument("--threads", type=int, default=2)
-    parser.add_argument("--resume", action="store_true")
-    args = parser.parse_args()
+def restart(args: argparse.Namespace) -> None:
+    """Fork the parent as `args` say, then train and verify the fork."""
     torch.set_num_threads(args.threads)
     torch.set_float32_matmul_precision("highest")
     saved = load_checkpoint(args.parent, "cpu")
@@ -191,7 +184,3 @@ def main() -> None:
         print(json.dumps(prepare_fork(args.parent, directory, config)), flush=True)
     run(config, directory, args.device, resume=True)
     print(json.dumps(verify(directory, args.device, full=True)), flush=True)
-
-
-if __name__ == "__main__":
-    main()

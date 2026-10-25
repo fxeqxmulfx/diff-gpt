@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 import torch
 from torch.nn import functional as F
 
-from benchmarks.grokking.div97 import NORMALIZATION
+from diff_gpt.application.grokking.div97 import NORMALIZATION
 from diff_gpt.domain.model.rope import apply_rope
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from torch import nn
 
-    from benchmarks.grokking.mqar_div97 import Task
+    from diff_gpt.application.grokking.mqar_div97 import Task
     from diff_gpt.domain.model.gpt import GPT
     from diff_gpt.domain.model.mha import MultiHeadAttention
     from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW

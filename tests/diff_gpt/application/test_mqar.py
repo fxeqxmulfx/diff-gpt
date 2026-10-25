@@ -8,7 +8,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from benchmarks.mqar import (
+from diff_gpt.application.mqar import (
     IGNORE,
     MQAR,
     RunConfig,

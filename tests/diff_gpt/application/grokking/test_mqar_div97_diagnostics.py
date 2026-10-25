@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 import torch
 
-from benchmarks.grokking.mqar_div97 import (
+from diff_gpt.application.grokking.mqar_div97 import (
     RunConfig,
     Task,
     attention,
@@ -15,7 +15,11 @@ from benchmarks.grokking.mqar_div97 import (
     score,
     verify_checkpoint,
 )
-from benchmarks.grokking.mqar_div97_diagnostics import DiagnosticConfig, Diagnostics
+from diff_gpt.application.grokking.mqar_div97_diagnostics import (
+    DiagnosticConfig,
+    Diagnostics,
+)
+from diff_gpt.infrastructure import provenance
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -149,11 +153,12 @@ def test_logged_training_matches_unlogged_weights_and_metrics(
         width=8, heads=1, loads=2, keys=4, layers=2, epochs=2, labels="dividend"
     )
     baseline, logged = tmp_path / "baseline", tmp_path / "logged"
-    ordinary = run_experiment(config, baseline)
+    ordinary = run_experiment(config, baseline, git_head=provenance.git_head)
     result = run_experiment(
         config,
         logged,
         logging=DiagnosticConfig(every=every, frames=16, snapshot_every=1),
+        git_head=provenance.git_head,
     )
     expected = torch.load(baseline / "checkpoint.pt", weights_only=True)
     actual = torch.load(logged / "checkpoint.pt", weights_only=True)
@@ -203,7 +208,9 @@ def test_logged_training_matches_unlogged_weights_and_metrics(
             model.load_state_dict(saved[f"{state}_model"])
             measured, _ = score(model, inputs, targets)
             assert measured == saved[key]["test"]
-    assert (logged / "source/benchmarks/grokking/mqar_div97_diagnostics.py").exists()
+    assert (
+        logged / "source/src/diff_gpt/application/grokking/mqar_div97_diagnostics.py"
+    ).exists()
 
 
 @pytest.mark.parametrize(
@@ -219,5 +226,10 @@ def test_unsupported_layout_fails_before_creating_run(tmp_path: Path) -> None:
     """The two-recalled-operand probes reject a directly supplied divisor."""
     directory = tmp_path / "invalid"
     with pytest.raises(ValueError, match="two operands"):
-        run_experiment(RunConfig(operands=1), directory, logging=DiagnosticConfig())
+        run_experiment(
+            RunConfig(operands=1),
+            directory,
+            logging=DiagnosticConfig(),
+            git_head=provenance.git_head,
+        )
     assert not directory.exists()

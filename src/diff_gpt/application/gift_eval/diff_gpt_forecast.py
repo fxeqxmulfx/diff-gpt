@@ -3,7 +3,7 @@ Forecast the exported GIFT-Eval windows with a DiffGPT that synthetic_pretrain t
 
 Run from the repository root:
 
-    uv run --no-sync python -m benchmarks.gift_eval.diff_gpt_forecast \
+    uv run --no-sync python -m diff_gpt.interfaces.gift_eval.diff_gpt_forecast \
         --run runs/synthetic-pretrain/pilot --split val
 
 It forecasts every exported window of the split into
@@ -38,43 +38,39 @@ it then stands.
   LastValueImputation fills such a context for Seasonal_Naive.
 """
 
-import argparse
-import fcntl
 import fnmatch
 import hashlib
 import json
-import shutil
-import subprocess
 import time
-from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
 
-from benchmarks.gift_eval.files import (
+from diff_gpt.application.gift_eval.files import (
     QUANTILE_LEVELS,
-    RUNS,
     forecast_path,
     read_windows,
     windows_paths,
     write_forecasts,
 )
-from benchmarks.synthetic_pretrain import LIBRARY_SOURCES
-from benchmarks.synthetic_rescore import load_checkpoint
 from diff_gpt.application.normalization import predict_samples_normalized
+from diff_gpt.application.paths import ROOT
+from diff_gpt.application.synthetic_pretrain import LIBRARY_SOURCES
+from diff_gpt.application.synthetic_rescore import load_checkpoint
 from diff_gpt.domain.encoder_decoder import prefix_rows
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    import argparse
+    from collections.abc import Sequence
 
-    from benchmarks.gift_eval.files import Windows
     from diff_gpt.application.diff_gpt import DiffGPT
+    from diff_gpt.application.gift_eval.files import Windows
+    from diff_gpt.application.ports import FileLock, GitHead
     from diff_gpt.domain.sampler.sampler import Sampler
 
-ROOT = Path(__file__).resolve().parents[2]
 TERMS = ("short", "medium", "long")
 # predict_samples_normalized seeds its b-th batch with seed + b. Each pass
 # of each call gets its own range of seeds, this many wide.
@@ -263,27 +259,8 @@ def load_model(
     return model, config
 
 
-def _git_head() -> str:
-    return subprocess.check_output(  # noqa: S603 - fixed git argv, no shell.
-        [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
-        cwd=ROOT,
-        text=True,
-    ).strip()
-
-
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-@contextmanager
-def _locked(folder: Path) -> Iterator[None]:
-    """Hold the folder's lock, so one run at a time writes into it."""
-    with (folder / LOCK).open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def read_record(folder: Path, settings: dict[str, Any]) -> dict[str, Any]:
@@ -313,50 +290,10 @@ def read_record(folder: Path, settings: dict[str, Any]) -> dict[str, Any]:
     return record
 
 
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--run", type=Path, required=True)
-    parser.add_argument("--checkpoint", default="best.bin", help="a file of --run")
-    parser.add_argument("--split", choices=("test", "val"), default="val")
-    parser.add_argument("--model", help="the forecasts' folder; diff_gpt-<run name>")
-    parser.add_argument("--terms", nargs="+", choices=TERMS, default=list(TERMS))
-    parser.add_argument(
-        "--configs",
-        nargs="+",
-        default=["*"],
-        help="fnmatch patterns of the file keys, such as 'm4_*'",
-    )
-    parser.add_argument("--num-samples", type=int, default=20)
-    parser.add_argument("--temperature", type=float, default=1.0)
-    parser.add_argument(
-        "--min-context",
-        type=int,
-        help="the context rows of a pass of a long horizon; block_size / 2",
-    )
-    parser.add_argument(
-        "--dtype",
-        choices=("float32", "float16", "bfloat16"),
-        default="float32",
-    )
-    parser.add_argument("--batch-size", type=int, default=512, help="decode rows")
-    parser.add_argument("--windows-per-call", type=int, default=1024)
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument(
-        "--device",
-        default="cuda" if torch.cuda.is_available() else "cpu",
-    )
-    parser.add_argument("--windows", type=Path, default=RUNS / "windows")
-    parser.add_argument("--forecasts", type=Path, default=RUNS / "forecasts")
-    parser.add_argument("--overwrite", action="store_true")
-    return parser
-
-
-def main(argv: list[str] | None = None) -> None:
-    """Forecast the selected windows of a split; ValueError on other settings."""
-    args = _parser().parse_args(argv)
+def forecast_split(
+    args: argparse.Namespace, *, git_head: GitHead, lock: FileLock
+) -> None:
+    """Forecast every window of the split as `args` say, one file per window."""
     checkpoint = args.run / args.checkpoint
     dtype = None if args.dtype == "float32" else getattr(torch, args.dtype)
     model, run_config = load_model(args.run, args.checkpoint, args.device, dtype)
@@ -387,7 +324,7 @@ def main(argv: list[str] | None = None) -> None:
     folder = args.forecasts / name / args.split
     read_record(folder, settings)  # other settings fail before any work
     code = {
-        "git_head": _git_head(),
+        "git_head": git_head(),
         "source_sha256": {
             str(path.relative_to(ROOT)): _sha256(path)
             for path in (Path(__file__), *LIBRARY_SOURCES)
@@ -424,7 +361,7 @@ def main(argv: list[str] | None = None) -> None:
             prefix_rows(model.order_of_derivative),
             min_context,
         )
-        with _locked(folder):
+        with lock(folder / LOCK):
             write_forecasts(target, windows, quantiles, mean)
             # The record as it stands now, with the entries of any other run.
             record = read_record(folder, settings) | code
@@ -447,7 +384,3 @@ def main(argv: list[str] | None = None) -> None:
             f"{tokens / seconds / 1e3:.1f}k points/s",
             flush=True,
         )
-
-
-if __name__ == "__main__":
-    main()

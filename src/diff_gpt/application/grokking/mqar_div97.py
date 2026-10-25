@@ -1,13 +1,13 @@
 """
 Grokking a / b mod 97 through associative recall down the rows of a frame.
 
-Run with ``uv run --locked -m benchmarks.grokking.mqar_div97 --help``. A frame
+Run with ``uv run --locked -m diff_gpt.interfaces.grokking.mqar_div97 --help``. A frame
 has the columns (a, b, y). A load row (k, empty, v) writes the value v to the
 key k. A compute row (i, j, y) is supervised with y = R[i] / R[j] mod 97, R[k]
 being the latest value written to k, and writes R[i] := y. One compute row
 after the loads is associative recall that feeds division; several make a
 register machine whose rows read what earlier rows computed. Every compute
-row divides an equation of the browser split of ``benchmarks.grokking.div97``:
+row divides an equation of the browser split of ``diff_gpt.application.grokking.div97``:
 train and test frames retrieve alike and differ in their equations alone, so
 the test accuracy measures division. The single-step, two-query copying
 controls instead draw memory first, query its keys independently (including
@@ -21,14 +21,12 @@ weight states, per-head routing, norms, gradients and paired weight snapshots.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import json
 import math
 import platform
 import shutil
-import subprocess
 import time
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
@@ -39,7 +37,8 @@ import pandas as pd
 import torch
 from torch.nn import functional as F
 
-from benchmarks.grokking.div97 import (
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.div97 import (
     BATCH,
     DOMAIN,
     LIBRARY_SOURCES,
@@ -57,8 +56,9 @@ from benchmarks.grokking.div97 import (
     require_current_model,
     write_json,
 )
-from benchmarks.grokking.mqar_div97_diagnostics import DiagnosticConfig, Diagnostics
-from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.mqar_div97_diagnostics import (
+    Diagnostics,
+)
 from diff_gpt.domain.encoder_decoder import ENCODER_VERSION, decode, encode
 from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.model.rope import apply_rope
@@ -67,6 +67,11 @@ from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from diff_gpt.application.grokking.mqar_div97_diagnostics import (
+        DiagnosticConfig,
+    )
+    from diff_gpt.application.ports import GitHead
 
 COLUMNS = ["a", "b", "y"]
 VALUE = COLUMNS.index("y")
@@ -970,12 +975,14 @@ def breakdown(
     return result
 
 
-def _metadata(task: Task, model: GPT, device: str) -> dict[str, Any]:
+def _metadata(
+    task: Task, model: GPT, device: str, *, git_head: GitHead
+) -> dict[str, Any]:
     config = task.config
     sources = [
         Path(__file__),
-        ROOT / "benchmarks/grokking/mqar_div97_diagnostics.py",
-        ROOT / "benchmarks/grokking/div97.py",
+        ROOT / "src/diff_gpt/application/grokking/mqar_div97_diagnostics.py",
+        ROOT / "src/diff_gpt/application/grokking/div97.py",
         *LIBRARY_SOURCES,
     ]
     tokens_per_epoch = task.sequences * (config.block - 1)
@@ -983,11 +990,7 @@ def _metadata(task: Task, model: GPT, device: str) -> dict[str, Any]:
         "config": asdict(config),
         "normalization": NORMALIZATION,
         "data_protocol": config.data_protocol,
-        "git_head": subprocess.check_output(  # noqa: S603 - fixed git argv, no shell.
-            [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
-            cwd=ROOT,
-            text=True,
-        ).strip(),
+        "git_head": git_head(),
         "source_sha256": {
             str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sources
@@ -1056,6 +1059,7 @@ def run_experiment(
     device: str = "cpu",
     log_every: int = 25,
     logging: DiagnosticConfig | None = None,
+    git_head: GitHead,
 ) -> dict[str, Any]:
     """Train the repository GPT and ScheduleFreeAdamW while retaining every epoch."""
     task = Task(config)
@@ -1067,7 +1071,7 @@ def run_experiment(
     }
     torch.manual_seed(config.seed)
     model = build(config, device)
-    metadata = _metadata(task, model, device)
+    metadata = _metadata(task, model, device, git_head=git_head)
     write_json(directory / "metadata.json", metadata)
     if logging is not None:
         for relative in metadata["source_sha256"]:
@@ -1321,103 +1325,26 @@ def verify_checkpoint(
     return result
 
 
-def _arguments() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output", type=Path, default=ROOT / "runs/grokking-div97-mqar"
-    )
-    parser.add_argument("--plan", type=Path)
-    parser.add_argument(
-        "--verify", type=Path, help="Directory containing a saved checkpoint"
-    )
-    parser.add_argument(
-        "--full-predict",
-        action="store_true",
-        help="Verify every test frame through DiffGPT.predict",
-    )
-    parser.add_argument(
-        "--device",
-        choices=["cpu", "cuda"],
-        default="cuda" if torch.cuda.is_available() else "cpu",
-    )
-    parser.add_argument("--threads", type=int, default=2)
-    parser.add_argument("--log-every", type=int, default=25)
-    parser.add_argument(
-        "--diagnostics-every",
-        type=int,
-        default=0,
-        help="Extended probes for both optimizer states every N epochs; 0 disables",
-    )
-    parser.add_argument("--diagnostics-frames", type=int, default=512)
-    parser.add_argument(
-        "--snapshot-every",
-        type=int,
-        default=10,
-        help="With diagnostics, save both weight states every N epochs; 0 disables",
-    )
-    types = {"int": int, "float": float, "str": str}
-    choices = {"labels": LABELS, "contexts": CONTEXTS}
-    for field in fields(RunConfig):
-        flag = "--" + field.name.replace("_", "-")
-        if field.type == "bool":
-            parser.add_argument(
-                flag, action=argparse.BooleanOptionalAction, default=field.default
-            )
-        else:
-            parser.add_argument(
-                flag,
-                type=types[field.type],
-                default=field.default,
-                choices=choices.get(field.name),
-            )
-    return parser
-
-
-def main() -> None:
-    """Run one experiment, a resumable JSON plan, or checkpoint verification."""
-    args = _arguments().parse_args()
-    logging = (
-        DiagnosticConfig(
-            every=args.diagnostics_every,
-            frames=args.diagnostics_frames,
-            snapshot_every=args.snapshot_every,
-        )
-        if args.diagnostics_every
-        else None
-    )
-    torch.set_num_threads(args.threads)
-    torch.set_float32_matmul_precision("highest")
-    if args.device == "cuda":
-        torch.backends.cuda.matmul.allow_tf32 = False
-        torch.backends.cudnn.allow_tf32 = False
-    if args.verify:
-        print(
-            json.dumps(
-                verify_checkpoint(
-                    args.verify, args.device, full_predict=args.full_predict
-                ),
-                indent=2,
-            )
-        )
-        return
-    if args.plan:
-        configs = [RunConfig(**config) for config in json.loads(args.plan.read_text())]
-    else:
-        configs = [
-            RunConfig(
-                **{field.name: getattr(args, field.name) for field in fields(RunConfig)}
-            )
-        ]
-    args.output.mkdir(parents=True, exist_ok=True)
+def run_plan(
+    configs: list[RunConfig],
+    output: Path,
+    *,
+    device: str,
+    log_every: int,
+    logging: DiagnosticConfig | None,
+    git_head: GitHead,
+) -> None:
+    """Run, or skip when complete, then verify each configuration of the plan."""
+    output.mkdir(parents=True, exist_ok=True)
     for config in configs:
-        directory = args.output / config.name()
+        directory = output / config.name()
         if (directory / "result.json").exists():
             recorded = json.loads((directory / "metadata.json").read_text())
             if config_from_record(recorded) != config:
                 msg = f"different configuration already exists at {directory}"
                 raise ValueError(msg)
             if not (directory / "verification.json").exists():
-                verify_checkpoint(directory, args.device)
+                verify_checkpoint(directory, device)
             print(f"Completed: {directory}", flush=True)
             continue
         if directory.exists():
@@ -1429,12 +1356,9 @@ def main() -> None:
         run_experiment(
             config,
             directory,
-            device=args.device,
-            log_every=args.log_every,
+            device=device,
+            log_every=log_every,
             logging=logging,
+            git_head=git_head,
         )
-        verify_checkpoint(directory, args.device)
-
-
-if __name__ == "__main__":
-    main()
+        verify_checkpoint(directory, device)

@@ -23,34 +23,38 @@ the run's corpus, and a manifest that changed since the run is refused.
 source, the settings and the decoding time.
 
 Usage:
-    uv run --no-sync python -m benchmarks.synthetic_rescore \
+    uv run --no-sync python -m diff_gpt.interfaces.synthetic_rescore \
         --run runs/synthetic-pretrain/pilot --context 512 --horizon 720 \
         --output runs/synthetic-pretrain/pilot/rescore-c512-h720.json
 """
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
-import os
-import shutil
-import subprocess
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
 
-from benchmarks.synthetic_pretrain import forecast_scores, holdout_windows, load_split
 from diff_gpt.application.diff_gpt import DiffGPT
 from diff_gpt.application.normalization import predict_samples_normalized
+from diff_gpt.application.ports import UsageError
+from diff_gpt.application.synthetic_pretrain import (
+    forecast_scores,
+    holdout_windows,
+    load_split,
+)
 from diff_gpt.domain.encoder_decoder import prefix_rows
 from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
-ROOT = Path(__file__).resolve().parents[1]
+if TYPE_CHECKING:
+    import argparse
+
+    from diff_gpt.application.ports import GitHead
 
 
 def load_checkpoint(
@@ -146,60 +150,10 @@ def rescore(
     }
 
 
-def _git_head() -> str:
-    return subprocess.check_output(  # noqa: S603 - fixed git argv, no shell.
-        [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
-        cwd=ROOT,
-        text=True,
-    ).strip()
-
-
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--run", type=Path, required=True, help="the run's --output")
-    parser.add_argument("--checkpoint", default="last.bin", help="a file of --run")
-    parser.add_argument("--output", type=Path, required=True, help="a new JSON file")
-    parser.add_argument("--per-source", type=int, default=64)
-    parser.add_argument("--window-seed", type=int, default=1)
-    parser.add_argument(
-        "--context",
-        type=int,
-        help="context rows; by default the rest of the block after --horizon",
-    )
-    parser.add_argument("--horizon", type=int, help="by default the run's --horizon")
-    parser.add_argument("--num-samples", type=int, default=100)
-    parser.add_argument(
-        "--score-samples",
-        type=int,
-        nargs="*",
-        default=[],
-        help="also score forecasts of each of these numbers of samples, at most "
-        "--num-samples, from disjoint groups of the ones drawn",
-    )
-    parser.add_argument("--temperature", type=float, help="by default the run's")
-    parser.add_argument("--batch-size", type=int, default=1000, help="decode rows")
-    parser.add_argument("--sample-seed", type=int, default=0)
-    parser.add_argument(
-        "--dtype",
-        choices=("float32", "float16", "bfloat16"),
-        default="float32",
-    )
-    parser.add_argument(
-        "--device",
-        default="cuda" if torch.cuda.is_available() else "cpu",
-    )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> None:
-    """Rescore the checkpoint as the arguments say and write the JSON record."""
-    parser = _parser()
-    args = parser.parse_args(argv)
-    if args.output.exists():
-        parser.error(f"{args.output} exists")
+def rescore_run(
+    args: argparse.Namespace, *, git_head: GitHead, environment: dict[str, Any]
+) -> None:
+    """Rescore the run's checkpoint as `args` say and write the record."""
     config = json.loads((args.run / "config.json").read_text())
     run_args = config["args"]
     block_size = run_args["block_size"]
@@ -207,18 +161,21 @@ def main(argv: list[str] | None = None) -> None:
     horizon = run_args["horizon"] if args.horizon is None else args.horizon
     context = block_size + prefix - horizon if args.context is None else args.context
     if horizon < 1 or context <= prefix or context - prefix + horizon > block_size:
-        parser.error(
+        msg = (
             f"a context of {context} rows and {horizon} points need {prefix} < C, "
-            f"1 <= H and C - {prefix} + H <= {block_size}, the block",
+            f"1 <= H and C - {prefix} + H <= {block_size}, the block"
         )
+        raise UsageError(msg)
     if any(not 1 <= size <= args.num_samples for size in args.score_samples):
-        parser.error(f"--score-samples must lie in [1, {args.num_samples}]")
+        msg = f"--score-samples must lie in [1, {args.num_samples}]"
+        raise UsageError(msg)
     manifest = Path(run_args["corpus"]).parent / "manifest.json"
     digest = None
     if manifest.exists():
         digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
     if config["manifest_sha256"] not in {None, digest}:
-        parser.error(f"{manifest} is not the corpus manifest the run trained with")
+        msg = f"{manifest} is not the corpus manifest the run trained with"
+        raise UsageError(msg)
     model, config = load_checkpoint(args.run, args.checkpoint, args.device)
     temperature = args.temperature
     if temperature is None:
@@ -251,12 +208,10 @@ def main(argv: list[str] | None = None) -> None:
         "dtype": args.dtype,
         "device": args.device,
         **result,
-        "git_head": _git_head(),
+        "git_head": git_head(),
         "torch": torch.__version__,
         "threads": torch.get_num_threads(),
-        "affinity": sorted(os.sched_getaffinity(0)),
-        "ld_preload": os.environ.get("LD_PRELOAD"),
-        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+        **environment,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=1) + "\n")
@@ -267,7 +222,3 @@ def main(argv: list[str] | None = None) -> None:
         f"mase {scores['mase']:.4f}, crps {scores['crps']:.4f}, "
         f"{result['decode_seconds']:.1f} s",
     )
-
-
-if __name__ == "__main__":
-    main()

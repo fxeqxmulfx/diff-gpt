@@ -2,20 +2,24 @@
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import math
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
 
-from benchmarks.grokking import recurrence as experiment
-from benchmarks.grokking.div97 import digest, load_checkpoint, write_json
-from benchmarks.grokking.div97_report import classify, history, replay_browser
+from diff_gpt.application.grokking import recurrence as experiment
+from diff_gpt.application.grokking.div97 import digest, load_checkpoint, write_json
+from diff_gpt.application.grokking.div97_report import classify, history, replay_browser
 from diff_gpt.domain.encoder_decoder import encode
+
+if TYPE_CHECKING:
+    import argparse
+    from pathlib import Path
+
+    from diff_gpt.application.ports import BrowserReplay
 
 MASKED_LABEL = -100
 
@@ -169,18 +173,8 @@ def audit(directory: Path, device: str) -> dict[str, Any]:
     return result
 
 
-def main() -> None:
-    """Audit confirmed runs with bounded GPU memory and actual public forecasts."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    parser.add_argument("--evaluation-batch", type=int, default=128)
-    parser.add_argument("--browser-module", type=Path)
-    args = parser.parse_args()
-    torch.set_num_threads(2)
-    torch.set_float32_matmul_precision("highest")
-    experiment.EVALUATION_BATCH = args.evaluation_batch
+def audit_report(args: argparse.Namespace, *, node: BrowserReplay) -> None:
+    """Audit each run of the report, then write the audit report."""
     source = json.loads(args.report.read_text())
     results = []
     for run in source["runs"]:
@@ -199,11 +193,7 @@ def main() -> None:
     report = {"runs": results, "evaluation_batch": args.evaluation_batch}
     if args.browser_module:
         report["browser_criterion_replay"] = replay_browser(
-            results, args.browser_module
+            results, args.browser_module, node=node
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     write_json(args.output, report)
-
-
-if __name__ == "__main__":
-    main()

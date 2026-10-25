@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -11,8 +10,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import torch
 
-from benchmarks.grokking.div97 import digest, write_json
-from benchmarks.grokking.mqar_div97 import (
+from diff_gpt.application.grokking.div97 import digest, write_json
+from diff_gpt.application.grokking.mqar_div97 import (
     VALUE,
     Frames,
     Task,
@@ -26,7 +25,7 @@ from benchmarks.grokking.mqar_div97 import (
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
-    from benchmarks.grokking.mqar_div97 import RunConfig
+    from diff_gpt.application.grokking.mqar_div97 import RunConfig
 
 AUDIT_STREAM = 0x434F5059
 LOADS = 2
@@ -145,21 +144,3 @@ def audit(directory: Path, device: str = "cpu") -> dict[str, Any]:
         result["states"][state] = measured
     write_json(directory / "copy-audit.json", result)
     return result
-
-
-def main() -> None:
-    """Audit complete run directories; never update or transfer trained weights."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("directories", type=Path, nargs="+")
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    args = parser.parse_args()
-    torch.set_num_threads(2)
-    torch.set_float32_matmul_precision("highest")
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
-    for directory in args.directories:
-        print(json.dumps({"run": str(directory), **audit(directory, args.device)}))
-
-
-if __name__ == "__main__":
-    main()

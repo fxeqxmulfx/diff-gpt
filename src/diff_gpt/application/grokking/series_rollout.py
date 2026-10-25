@@ -10,23 +10,25 @@ the full-budget validation-best weights, persistence and seasonal naive.
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 import torch
 
-from benchmarks.grokking.div97 import ROOT, load_checkpoint, write_json
-from benchmarks.grokking.series import build, config_from_dict
-from benchmarks.grokking.series_data import _raw_series
 from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.div97 import ROOT, load_checkpoint, write_json
+from diff_gpt.application.grokking.series import build, config_from_dict
+from diff_gpt.application.grokking.series_data import _raw_series
 from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
+
+if TYPE_CHECKING:
+    import argparse
 
 HORIZONS = {"weather": 144, "etth1": 24, "m4_hourly": 48}
 
@@ -255,20 +257,8 @@ def rollout(directory: Path, device: str, *, maximum: int = 8) -> dict[str, Any]
     return result
 
 
-def main() -> None:
-    """Score completed forecast families after GPU training has finished."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "output", type=Path, nargs="?", default=ROOT / "runs/grokking-series/fast-first"
-    )
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    parser.add_argument("--maximum", type=int, default=8)
-    parser.add_argument("--selected-only", action="store_true")
-    args = parser.parse_args()
-    torch.set_num_threads(2)
-    torch.set_float32_matmul_precision("highest")
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
+def rollouts(args: argparse.Namespace) -> None:
+    """Write the rollouts of every forecast run in the output directory."""
     for path in sorted(args.output.glob("forecast-*/*/result.json")):
         if args.selected_only:
             choice = json.loads(
@@ -296,7 +286,3 @@ def main() -> None:
             ),
             flush=True,
         )
-
-
-if __name__ == "__main__":
-    main()

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 
-from benchmarks.gift_eval.files import (
+from diff_gpt.application.gift_eval.files import (
     QUANTILE_LEVELS,
     forecast_path,
     read_windows,

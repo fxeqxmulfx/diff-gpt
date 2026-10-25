@@ -10,16 +10,16 @@ import pandas as pd
 import pytest
 import torch
 
-from benchmarks.grokking import series_suite
-from benchmarks.grokking.series import forecast_one_row
-from benchmarks.grokking.series_data import DataConfig, dataset
-from benchmarks.grokking.series_suite import quality, selection_key
+from diff_gpt.application.grokking import series_suite
+from diff_gpt.application.grokking.series import forecast_one_row
+from diff_gpt.application.grokking.series_data import DataConfig, dataset
+from diff_gpt.application.grokking.series_suite import quality, selection_key
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from benchmarks.grokking.series import Config
+    from diff_gpt.application.grokking.series import Config
 
 
 def _curve(directory: Path, *, known: bool, anchor: bool = False) -> None:

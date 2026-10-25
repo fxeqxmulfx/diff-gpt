@@ -9,25 +9,24 @@ screen triggers a longer run; every selected setting is confirmed on 3 seeds.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import json
 import math
 import traceback
 from dataclasses import asdict, replace
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import torch
 
-from benchmarks.grokking import series as series_runner
-from benchmarks.grokking.div97 import ROOT, write_json
-from benchmarks.grokking.series import Config, run, verify
-from benchmarks.grokking.series_data import DataConfig, dataset
+from diff_gpt.application.grokking import series as series_runner
+from diff_gpt.application.grokking.div97 import write_json
+from diff_gpt.application.grokking.series import Config, run, verify
+from diff_gpt.application.grokking.series_data import DataConfig, dataset
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Sequence
+    from pathlib import Path
 
 SEEDS = (11, 17, 23)
 FAST_EPOCHS = 250
@@ -524,41 +523,8 @@ def gaussian(output: Path, device: str) -> None:
         confirm(selected, output, stage, device)
 
 
-def main() -> None:
-    """Run requested stages sequentially on the single available GPU."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output", type=Path, default=ROOT / "runs/grokking-series/fast-first-current"
-    )
-    parser.add_argument(
-        "--stages",
-        nargs="+",
-        choices=(
-            "formula",
-            "formula_refined",
-            "noise",
-            "temporal",
-            "temporal_late",
-            "synthetic",
-            "gaussian",
-            "forecasting",
-        ),
-        default=[
-            "formula_refined",
-            "synthetic",
-            "gaussian",
-            "noise",
-            "temporal",
-            "forecasting",
-            "temporal_late",
-        ],
-    )
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
-    args = parser.parse_args()
-    torch.set_num_threads(2)
-    torch.set_float32_matmul_precision("highest")
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
+def run_stages(args: argparse.Namespace) -> None:
+    """Run the stages that `args` name and write the suite's summary."""
     args.output.mkdir(parents=True, exist_ok=True)
     actions = {
         "formula": formula,
@@ -583,7 +549,3 @@ def main() -> None:
     write_json(
         args.output / "loop-status.json", {"state": "complete", "stages": args.stages}
     )
-
-
-if __name__ == "__main__":
-    main()

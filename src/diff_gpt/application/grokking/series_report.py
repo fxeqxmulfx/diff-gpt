@@ -10,7 +10,6 @@ the first-patience early-stop checkpoint is also reported with its smaller cost.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import json
@@ -21,13 +20,13 @@ from typing import Any
 
 import numpy as np
 
-from benchmarks.grokking.div97 import ROOT, Criterion, write_json
-from benchmarks.grokking.series import skill
-from benchmarks.grokking.series_data import FORMULAS, WEATHER, _read_weather
-from benchmarks.grokking.series_oracle import conditional_reference
-from benchmarks.grokking.series_shortcuts import formula_shortcuts
-from benchmarks.grokking.series_suite import FAST_EPOCHS, quality
-from benchmarks.grokking.series_weather_audit import formula_comparators
+from diff_gpt.application.grokking.div97 import Criterion, write_json
+from diff_gpt.application.grokking.series import skill
+from diff_gpt.application.grokking.series_data import FORMULAS, WEATHER, _read_weather
+from diff_gpt.application.grokking.series_oracle import conditional_reference
+from diff_gpt.application.grokking.series_shortcuts import formula_shortcuts
+from diff_gpt.application.grokking.series_suite import FAST_EPOCHS, quality
+from diff_gpt.application.grokking.series_weather_audit import formula_comparators
 from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 
 CONFIRMATION_SEEDS = 3
@@ -834,34 +833,3 @@ def report(
             writer.writerows(validation_ranking)
     write_json(output / "summary.json", value)
     return value
-
-
-def main() -> None:
-    """Summarize completed stages while another process trains later stages."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "output",
-        type=Path,
-        nargs="?",
-        default=ROOT / "runs/grokking-series/fast-first-current",
-    )
-    parser.add_argument("--include", type=Path, nargs="*", default=[])
-    args = parser.parse_args()
-    value = report(args.output, include=args.include)
-    print(
-        json.dumps(
-            {
-                "completed_runs": len(value["runs"]),
-                "three_seed_groups": sum(
-                    group["confirmed_on_three_seeds"] for group in value["groups"]
-                ),
-                "stages_complete": value["stages_complete"],
-                "summary": str(args.output / "summary.json"),
-            },
-            indent=2,
-        )
-    )
-
-
-if __name__ == "__main__":
-    main()

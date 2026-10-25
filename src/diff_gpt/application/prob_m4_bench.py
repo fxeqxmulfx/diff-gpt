@@ -16,15 +16,14 @@ Baseline: seasonal-naive + residual empirical quantiles (bootstrap). A
 calibrated model should at minimum match this on MSIS/CRPS.
 
 Usage:
-    uv run --no-sync python -m benchmarks.prob_m4_bench
+    uv run --no-sync python -m diff_gpt.interfaces.prob_m4_bench
     M4_NUM_SAMPLES=200 M4_N_SERIES=50 \
-        uv run --no-sync python -m benchmarks.prob_m4_bench
+        uv run --no-sync python -m diff_gpt.interfaces.prob_m4_bench
 """
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -32,6 +31,7 @@ import torch
 
 from diff_gpt.application.data_loader import DiffDataFrameDataLoader
 from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.paths import ROOT
 from diff_gpt.domain.encoder_decoder import get_domain_of_definition
 from diff_gpt.domain.metrics import (
     crps_empirical,
@@ -43,7 +43,7 @@ from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.sampler.nucleus import NucleusSampler
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
-M4_DIR = Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
+M4_DIR = ROOT / "datasets" / "short_term_forecast" / "m4"
 
 HORIZONS = {
     "Yearly": 6,
@@ -98,21 +98,33 @@ def mase(
     return float(np.mean(np.abs(true - pred)) / naive)
 
 
-def main() -> None:
-    """
-    Train one global diff-gpt on M4 and print point and probabilistic scores.
+@dataclass(frozen=True)
+class Settings:
+    """The settings of bench, read from the M4_* environment variables."""
 
-    Each series gets M4_NUM_SAMPLES trajectories sampled at M4_TEMPERATURE
-    (with nucleus top-p when M4_TOP_P is set); their per-step median is the
-    point forecast.
-    """
-    torch.set_float32_matmul_precision("high")
+    freq: str
+    n_series: int
+    num_samples: int
+    temperature: float
+    train_part: float
+    target_bs: int
+    vocab_size: int
+    n_embd: int
+    n_head: int
+    n_layer: int
+    max_iters: int
+    eval_interval: int
+    top_p_env: str | None
+
+
+def bench(settings: Settings) -> None:
+    """Train on the picked M4 series and print the probabilistic scores."""
     torch.manual_seed(0)
 
-    freq = os.environ.get("M4_FREQ", "Hourly")
-    n_series = int(os.environ.get("M4_N_SERIES", "50"))
-    num_samples = int(os.environ.get("M4_NUM_SAMPLES", "100"))
-    temperature = float(os.environ.get("M4_TEMPERATURE", "1.0"))
+    freq = settings.freq
+    n_series = settings.n_series
+    num_samples = settings.num_samples
+    temperature = settings.temperature
     horizon = HORIZONS[freq]
     season = SEASONALITY[freq]
 
@@ -133,10 +145,10 @@ def main() -> None:
     series_norm = [(s - mu) / sd for s, (mu, sd) in zip(series_raw, stats, strict=True)]
     dfs = [pd.DataFrame({"x": s}) for s in series_norm]
 
-    train_part = float(os.environ.get("M4_TRAIN_PART", "0.8"))
+    train_part = settings.train_part
     min_series_len = min(len(s) for s in series_norm)
     min_val_tokens = int(min_series_len * (1 - train_part))
-    target_bs = int(os.environ.get("M4_BLOCK_SIZE", "256"))
+    target_bs = settings.target_bs
     block_size = min(target_bs, min_val_tokens - 1)
     block_size = max(block_size, horizon + 16)
 
@@ -146,13 +158,13 @@ def main() -> None:
         order_of_derivative=1,
     )
 
-    vocab_size = int(os.environ.get("M4_VOCAB_SIZE", "256"))
+    vocab_size = settings.vocab_size
     base = GPT(
         vocab_size=vocab_size,
-        n_embd=int(os.environ.get("M4_N_EMBD", "64")),
+        n_embd=settings.n_embd,
         block_size=block_size,
-        n_head=int(os.environ.get("M4_N_HEAD", "4")),
-        n_layer=int(os.environ.get("M4_N_LAYER", "2")),
+        n_head=settings.n_head,
+        n_layer=settings.n_layer,
         use_checkpoint=False,
     ).to(device=device)
     if device == "cuda":
@@ -163,7 +175,7 @@ def main() -> None:
         domain_of_definition=domain_of_definition,
     )
 
-    max_iters = int(os.environ.get("M4_MAX_ITERS", "20000"))
+    max_iters = settings.max_iters
     loader = DiffDataFrameDataLoader(
         dfs=dfs,
         block_size=block_size,
@@ -180,7 +192,7 @@ def main() -> None:
         betas=(0.9, 0.95),
         weight_decay=0.1,
         max_iters=max_iters,
-        eval_interval=int(os.environ.get("M4_EVAL_INTERVAL", "500")),
+        eval_interval=settings.eval_interval,
         eval_iters=40,
         use_tqdm=False,
         use_early_stopping=False,
@@ -188,7 +200,7 @@ def main() -> None:
     print(f"train: val_loss={val_loss:.4f} train_time_s={train_time_s}")
 
     base.eval()
-    top_p_env = os.environ.get("M4_TOP_P")
+    top_p_env = settings.top_p_env
     if top_p_env is not None:
         top_p = float(top_p_env)
         if not 0.0 < top_p <= 1.0:
@@ -239,7 +251,3 @@ def main() -> None:
     print(f"  CRPS                      = {np.mean(crpses):.4f}")
     print(f"  MSIS       (alpha=0.05)   = {np.nanmean(msises):.3f}")
     print(f"  coverage@80 (nominal 0.80) = {np.mean(covs):.3f}")
-
-
-if __name__ == "__main__":
-    main()

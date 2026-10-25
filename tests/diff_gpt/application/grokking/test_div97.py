@@ -8,7 +8,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from benchmarks.grokking.div97 import (
+from diff_gpt.application.grokking.div97 import (
     BATCH,
     DOMAIN,
     MIN_PLATEAU,
@@ -30,6 +30,7 @@ from benchmarks.grokking.div97 import (
 )
 from diff_gpt.domain.encoder_decoder import decode, encode
 from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.infrastructure import provenance
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -146,7 +147,7 @@ def test_saved_weights_replay_full_metrics_and_public_diffgpt(
     """Both optimizer modes save the scored state and public predict agrees."""
     directory = tmp_path / optimizer
     config = RunConfig(width=8, heads=1, epochs=1, optimizer=optimizer, order=order)
-    result = run_experiment(config, directory)
+    result = run_experiment(config, directory, git_head=provenance.git_head)
     verified = verify_checkpoint(directory)
     assert verified["epoch"] == result["epoch"] == 1
     assert verified["metrics"] == result["metrics"]
@@ -163,7 +164,11 @@ def test_full_public_verification_keeps_the_original_answers(
 ) -> None:
     """Every test forecast is scored; the query replay still decodes against q."""
     directory = tmp_path / "run"
-    run_experiment(RunConfig(width=8, heads=1, epochs=1, order=order), directory)
+    run_experiment(
+        RunConfig(width=8, heads=1, epochs=1, order=order),
+        directory,
+        git_head=provenance.git_head,
+    )
     verified = verify_checkpoint(directory, full_predict=True)
     public = verified["diffgpt_predict_many"]
     assert public["test_rows"] == TRAIN
@@ -176,7 +181,9 @@ def test_full_public_verification_keeps_the_original_answers(
 def test_a_checkpoint_of_an_earlier_model_is_rejected(tmp_path: Path) -> None:
     """Parameter-free norms load into any GPT; only the saved marker differs."""
     directory = tmp_path / "run"
-    run_experiment(RunConfig(width=8, heads=1, epochs=1), directory)
+    run_experiment(
+        RunConfig(width=8, heads=1, epochs=1), directory, git_head=provenance.git_head
+    )
     checkpoint = torch.load(directory / "checkpoint.pt", weights_only=True)
     assert checkpoint.pop("normalization") == "peri_rms_qk_rms"
     torch.save(checkpoint, directory / "checkpoint.pt")

@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from benchmarks.grokking import series_rollout
-from benchmarks.grokking.series import Config
-from benchmarks.grokking.series_data import DataConfig
+from diff_gpt.application.grokking import series_rollout
+from diff_gpt.application.grokking.series import Config
+from diff_gpt.application.grokking.series_data import DataConfig
 
 if TYPE_CHECKING:
     from pathlib import Path

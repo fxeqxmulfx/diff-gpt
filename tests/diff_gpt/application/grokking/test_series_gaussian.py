@@ -5,8 +5,8 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from benchmarks.grokking import series_gaussian as gaussian
-from benchmarks.grokking.series_data import DataConfig, dataset
+from diff_gpt.application.grokking import series_gaussian as gaussian
+from diff_gpt.application.grokking.series_data import DataConfig, dataset
 from diff_gpt.domain.encoder_decoder import encode
 
 

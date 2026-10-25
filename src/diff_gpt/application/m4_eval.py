@@ -2,7 +2,7 @@
 Per-series diagnostics for saved M4 Hourly checkpoints (see m4_bench.py).
 
 Usage:
-    uv run --no-sync python -m benchmarks.m4_eval runs/a.pt runs/b.pt
+    uv run --no-sync python -m diff_gpt.interfaces.m4_eval runs/a.pt runs/b.pt
 Each argument is a state_dict path. Data preparation is m4_bench's `prepare`
 (same normalisation, block_size, domain), so run with the M4_* settings of the
 training run; the tokenizer comes from DIFF_GPT_TOKENIZER. Prints paired
@@ -11,17 +11,16 @@ per-series comparisons between the first checkpoint and every other one.
 
 from __future__ import annotations
 
-import os
-import sys
 import warnings
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import torch
 
-from benchmarks.m4_bench import mase, prepare, smape
 from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.m4_bench import mase, prepare, smape
 from diff_gpt.domain.encoder_decoder import (
     DEFAULT_TOKENIZER,
     TokenClippingWarning,
@@ -38,13 +37,29 @@ from diff_gpt.domain.sampler.median import MedianSampler
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
+    from diff_gpt.application.m4_bench import DataSettings
     from diff_gpt.domain.sampler.sampler import Sampler
 
 # M4 Hourly Naive2 reference values (Makridakis et al. 2020), used for OWA.
 SMAPE_REF, MASE_REF = 18.383, 2.395
 
 
-def load_model(path: str, data: dict, device: str) -> DiffGPT:
+@dataclass(frozen=True)
+class Settings:
+    """The settings of load_model and evaluate, from the M4_* environment variables."""
+
+    data: DataSettings
+    vocab_size: int
+    n_embd: int
+    n_head: int
+    n_layer: int
+    device: str
+    eval_readouts: str | None
+    n_samples: int
+    eval_summary_only: str | None
+
+
+def load_model(path: str, data: dict, device: str, settings: Settings) -> DiffGPT:
     """
     Load a saved GPT state_dict from `path` and wrap it in a DiffGPT.
 
@@ -53,11 +68,11 @@ def load_model(path: str, data: dict, device: str) -> DiffGPT:
     torch.compile is stripped. The model is moved to `device` in eval mode.
     """
     base = GPT(
-        vocab_size=int(os.environ.get("M4_VOCAB_SIZE", "256")),
-        n_embd=int(os.environ.get("M4_N_EMBD", "64")),
+        vocab_size=settings.vocab_size,
+        n_embd=settings.n_embd,
         block_size=data["block_size"],
-        n_head=int(os.environ.get("M4_N_HEAD", "4")),
-        n_layer=int(os.environ.get("M4_N_LAYER", "2")),
+        n_head=settings.n_head,
+        n_layer=settings.n_layer,
         use_checkpoint=False,
     )
     sd = torch.load(path, map_location="cpu", weights_only=True)
@@ -184,22 +199,10 @@ def readouts_and_scores(
     return {k: np.array(v) for k, v in out.items()}
 
 
-def main() -> None:
-    """
-    Evaluate the checkpoints given as arguments and print diagnostics.
-
-    Prints a median-path summary per checkpoint. Then, if M4_EVAL_READOUTS is
-    set, prints Bayes readouts and proper scores from M4_NUM_SAMPLES
-    trajectories; else, unless M4_EVAL_SUMMARY_ONLY is set, prints paired
-    per-series comparisons of every checkpoint against the first one.
-    M4_EVAL_DEVICE selects the device (default cpu).
-    """
-    paths = sys.argv[1:]
-    if not paths:
-        msg = "need at least one checkpoint path"
-        raise SystemExit(msg)
-    device = os.environ.get("M4_EVAL_DEVICE", "cpu")
-    data = prepare()
+def evaluate(paths: list[str], settings: Settings) -> None:
+    """Score the checkpoints at `paths` and print the diagnostics."""
+    device = settings.device
+    data = prepare(settings.data)
     if data["quantile"] is not None:
         # A quantile domain clips the steps beyond it on purpose.
         warnings.filterwarnings("ignore", category=TokenClippingWarning)
@@ -209,7 +212,7 @@ def main() -> None:
     )
     results = {}
     for path in paths:
-        model = load_model(path, data, device)
+        model = load_model(path, data, device, settings)
         results[path] = forecast(model, data, MedianSampler())
         sm, ms, b = results[path]
         keep = ms <= np.nanquantile(ms, 0.98)
@@ -219,15 +222,17 @@ def main() -> None:
             f"trimmed2% sMAPE={sm[keep].mean():.2f} MASE={ms[keep].mean():.3f} | "
             f"bias={b.mean():+.3f}",
         )
-    if os.environ.get("M4_EVAL_READOUTS"):
-        n_samples = int(os.environ.get("M4_NUM_SAMPLES", "100"))
+    if settings.eval_readouts:
+        n_samples = settings.n_samples
         print(
             f"\nBayes readouts from {n_samples} trajectories + proper scores "
             f"(OWA = ½(sMAPE/{SMAPE_REF} + MASE/{MASE_REF}))",
         )
         print(f"{'checkpoint':28s} {'readout':12s} {'sMAPE':>7} {'MASE':>7} {'OWA':>7}")
         for path in paths:
-            r = readouts_and_scores(load_model(path, data, device), data, n_samples)
+            r = readouts_and_scores(
+                load_model(path, data, device, settings), data, n_samples
+            )
             for name, label in (
                 ("path", "median path"),
                 ("med", "MC median"),
@@ -245,7 +250,7 @@ def main() -> None:
                 f"cov80={r['cov80'].mean():.3f} NLL(test tokens)={r['nll'].mean():.3f}",
             )
         return
-    if os.environ.get("M4_EVAL_SUMMARY_ONLY"):
+    if settings.eval_summary_only:
         return
     ref_path = paths[0]
     sm0, ms0, b0 = results[ref_path]
@@ -289,7 +294,3 @@ def main() -> None:
             f"  by |mean|/std of series: low half ΔsMAPE {d_sm[lo].mean():+.2f}, "
             f"high half {d_sm[~lo].mean():+.2f}",
         )
-
-
-if __name__ == "__main__":
-    main()

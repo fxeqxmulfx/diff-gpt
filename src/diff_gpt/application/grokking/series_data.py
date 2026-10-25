@@ -18,9 +18,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 
-from benchmarks.grokking import div97, recurrence
-from benchmarks.grokking import series_gaussian as gaussian
-from benchmarks.grokking.series_oracle import conditional_reference
+from diff_gpt.application.grokking import div97, recurrence
+from diff_gpt.application.grokking import series_gaussian as gaussian
+from diff_gpt.application.grokking.series_oracle import conditional_reference
+from diff_gpt.application.paths import ROOT
 from diff_gpt.domain.encoder_decoder import (
     ENCODER_VERSION,
     TokenClippingWarning,
@@ -34,7 +35,6 @@ if TYPE_CHECKING:
 
     from diff_gpt.domain.encoder_decoder import Grid
 
-ROOT = Path(__file__).resolve().parents[2]
 WEATHER = ROOT / "datasets/long_term_forecast/weather/weather.csv"
 ETTH1 = ROOT / "datasets/long_term_forecast/ETT-small/ETTh1.csv"
 M4 = ROOT / "datasets/short_term_forecast/m4"

@@ -1,7 +1,7 @@
 """
 Full-split series grokking runner using the unchanged GPT/ScheduleFreeAdamW.
 
-Run ``.venv/bin/python -m benchmarks.grokking.series --help``. A JSON plan is
+Run ``.venv/bin/python -m diff_gpt.interfaces.grokking.series --help``. A JSON plan is
 a list of Config dictionaries; dataset choices live under ``data``. Every epoch
 scores both optimizer states. Checkpoints contain the codec/split fingerprints,
 source hashes, sampling state, RNG state and the architecture marker.
@@ -9,7 +9,6 @@ source hashes, sampling state, RNG state and the architecture marker.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import json
@@ -24,7 +23,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from benchmarks.grokking.div97 import (
+from diff_gpt.application.grokking.div97 import (
     LIBRARY_SOURCES,
     NORMALIZATION,
     ROOT,
@@ -34,16 +33,16 @@ from benchmarks.grokking.div97 import (
     load_checkpoint,
     write_json,
 )
-from benchmarks.grokking.recurrence import batch_slices, optimizer_progress
-from benchmarks.grokking.recurrence_field_sampler import CanonicalFieldSampler
-from benchmarks.grokking.series_data import DataConfig, dataset
+from diff_gpt.application.grokking.recurrence import batch_slices, optimizer_progress
+from diff_gpt.application.grokking.recurrence_field_sampler import CanonicalFieldSampler
+from diff_gpt.application.grokking.series_data import DataConfig, dataset
 from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from benchmarks.grokking.series_data import Dataset, Split
+    from diff_gpt.application.grokking.series_data import Dataset, Split
 
 FORMAT_VERSION = 2
 SHORT_CONTEXT_LIMIT = 4
@@ -781,34 +780,13 @@ def verify(directory: Path, device: str) -> dict[str, Any]:
     return result
 
 
-def main() -> None:
-    """Run a frozen plan, prepare datasets, resume, or replay saved states."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--plan", type=Path)
-    parser.add_argument(
-        "--output", type=Path, default=ROOT / "runs/grokking-series/experiments"
-    )
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    parser.add_argument("--threads", type=int, default=2)
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--prepare", action="store_true")
-    parser.add_argument("--verify", type=Path)
-    args = parser.parse_args()
-    torch.set_num_threads(args.threads)
-    torch.set_float32_matmul_precision("highest")
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
-    if args.verify:
-        print(json.dumps(verify(args.verify, args.device), indent=2))
-        return
-    configs = (
-        [config_from_dict(value) for value in json.loads(args.plan.read_text())]
-        if args.plan
-        else [Config()]
-    )
+def run_plan(
+    configs: list[Config], output: Path, *, device: str, resume: bool, prepare: bool
+) -> None:
+    """Prepare the data of, or run and verify, each configuration of the plan."""
     for config in configs:
-        directory = args.output / config.name()
-        if args.prepare:
+        directory = output / config.name()
+        if prepare:
             data = dataset(config.data)
             print(
                 json.dumps(
@@ -821,15 +799,11 @@ def main() -> None:
             )
             continue
         if (directory / "result.json").exists() and (
-            not args.resume
+            not resume
             or json.loads((directory / "result.json").read_text())["epoch"]
             >= config.epochs
         ):
             print(f"Completed: {directory}", flush=True)
             continue
-        run(config, directory, args.device, resume=args.resume and directory.exists())
-        verify(directory, args.device)
-
-
-if __name__ == "__main__":
-    main()
+        run(config, directory, device, resume=resume and directory.exists())
+        verify(directory, device)

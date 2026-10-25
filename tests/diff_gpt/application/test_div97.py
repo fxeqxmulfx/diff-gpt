@@ -3,8 +3,8 @@ Modular division mod 97 against a compute budget for generalization.
 
 A GPT learns q = a * b^(-1) mod 97 from a random half of the 9,312 equations
 (a in 0..96, b in 1..96) and answers the other half: the task of
-`benchmarks/grokking/div97.py`, but trained by the library's own `train()`.
-The input is [a, b] and only q is supervised; batches of 512 are drawn with
+`src/diff_gpt/application/grokking/div97.py`, but trained by the library's own
+`train()`. The input is [a, b] and only q is supervised; batches of 512 are drawn with
 replacement. The benchmark is the training compute until the test accuracy of
 the schedule-free average weights first reaches 99%. The final accuracy only
 shows that the model stays there: it saturates at 100%.

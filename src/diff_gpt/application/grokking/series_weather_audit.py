@@ -16,9 +16,9 @@ from typing import Any
 
 import numpy as np
 
-from benchmarks.grokking.div97 import write_json
-from benchmarks.grokking.series_data import FORMULAS, WEATHER, _read_weather
-from benchmarks.grokking.series_oracle import conditional_reference
+from diff_gpt.application.grokking.div97 import write_json
+from diff_gpt.application.grokking.series_data import FORMULAS, WEATHER, _read_weather
+from diff_gpt.application.grokking.series_oracle import conditional_reference
 from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 
 
@@ -99,18 +99,9 @@ def formula_comparators(directory: Path, metadata: dict[str, Any]) -> dict[str, 
     return result
 
 
-def main() -> None:
-    """Audit every completed multivariate weather run in an output directory."""
-    import argparse  # noqa: PLC0415
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("output", type=Path)
-    args = parser.parse_args()
-    for path in args.output.glob("*/*/metadata.json"):
+def audit_runs(output: Path) -> None:
+    """Audit every completed multivariate weather run in `output`."""
+    for path in output.glob("*/*/metadata.json"):
         metadata = json.loads(path.read_text())
         if metadata["config"]["data"]["dataset"] == "weather":
             formula_comparators(path.parent, metadata)
-
-
-if __name__ == "__main__":
-    main()

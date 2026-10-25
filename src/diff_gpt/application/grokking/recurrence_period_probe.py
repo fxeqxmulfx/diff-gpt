@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import argparse
 from dataclasses import replace
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 
-from benchmarks.grokking.div97 import load_checkpoint, write_json
-from benchmarks.grokking.recurrence import Config, build, tensors
+from diff_gpt.application.grokking.div97 import load_checkpoint, write_json
+from diff_gpt.application.grokking.recurrence import Config, build, tensors
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @torch.inference_mode()
@@ -86,18 +88,3 @@ def probe(directory: Path, device: str, samples: int) -> dict[str, object]:
     }
     write_json(directory / f"period-probe-epoch{saved['epoch']}.json", result)
     return result
-
-
-def main() -> None:
-    """Run reproducible controls without altering a checkpoint or sampler."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("directory", type=Path)
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    parser.add_argument("--samples", type=int, default=1024)
-    args = parser.parse_args()
-    torch.set_num_threads(2)
-    print(probe(args.directory, args.device, args.samples), flush=True)
-
-
-if __name__ == "__main__":
-    main()

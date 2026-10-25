@@ -29,9 +29,8 @@ def mae(x: np.ndarray, y: np.ndarray) -> float:
 # CLR train: val_loss=0.19 train_time=33.67 MAE=0.0024
 
 
-def main() -> None:
-    """Train three models on sin/cos and print their mean val_loss, time and MAE."""
-    torch.set_float32_matmul_precision("high")
+def bench() -> None:
+    """Train and score the differentiated-series model three times."""
     n_embd = 64
     block_size = 32
     n_head = 4
@@ -113,7 +112,3 @@ def main() -> None:
         f"val_loss={round(val_loss, 2)} train_time={round(train_time, 2)} "
         f"MAE={round(mae_loss, 4)}",
     )
-
-
-if __name__ == "__main__":
-    main()

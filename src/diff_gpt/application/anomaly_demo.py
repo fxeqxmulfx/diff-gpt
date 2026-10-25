@@ -11,15 +11,14 @@ Procedure:
   5. Compare against the seeded anomaly positions to verify detection.
 
 Usage:
-    uv run --no-sync python -m benchmarks.anomaly_demo
+    uv run --no-sync python -m diff_gpt.interfaces.anomaly_demo
     ANOMALY_N_INJECT=5 ANOMALY_MAX_ITERS=3000 \
-        uv run --no-sync python -m benchmarks.anomaly_demo
+        uv run --no-sync python -m diff_gpt.interfaces.anomaly_demo
 """
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -27,36 +26,33 @@ import torch
 
 from diff_gpt.application.data_loader import DiffDataFrameDataLoader
 from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.paths import ROOT
 from diff_gpt.domain.encoder_decoder import get_domain_of_definition
 from diff_gpt.domain.model.gpt import GPT
 
-ETT_CSV = (
-    Path(__file__).resolve().parents[1]
-    / "datasets"
-    / "long_term_forecast"
-    / "ETT-small"
-    / "ETTh1.csv"
-)
+ETT_CSV = ROOT / "datasets" / "long_term_forecast" / "ETT-small" / "ETTh1.csv"
 
 # Smallest top-K recall of the injected spikes that counts as a passing demo.
 MIN_RECALL = 0.5
 
 
-def main() -> None:
-    """
-    Train on clean ETTh1 OT, score a spiked test window and print the top-K anomalies.
+@dataclass(frozen=True)
+class Settings:
+    """The settings of demo, read from the ANOMALY_* environment variables."""
 
-    Settings come from ANOMALY_N_INJECT (spikes to inject), ANOMALY_MAX_ITERS
-    (training steps) and ANOMALY_TOP_K (positions to report); the recall of the
-    injected spikes in the top-K is printed last.
-    """
-    torch.set_float32_matmul_precision("high")
+    n_inject: int
+    max_iters: int
+    top_k: int
+
+
+def demo(settings: Settings) -> None:
+    """Train on ETTh1's OT, inject spikes and rank the anomaly scores."""
     torch.manual_seed(0)
     rng = np.random.default_rng(0)
 
-    n_inject = int(os.environ.get("ANOMALY_N_INJECT", "5"))
-    max_iters = int(os.environ.get("ANOMALY_MAX_ITERS", "2000"))
-    top_k = int(os.environ.get("ANOMALY_TOP_K", "10"))
+    n_inject = settings.n_inject
+    max_iters = settings.max_iters
+    top_k = settings.top_k
 
     # Load ETTh1 and take OT channel only. Keep first 4 months for train,
     # next month for scoring. Hourly → 24*30 ≈ 720 rows per month.
@@ -169,7 +165,3 @@ def main() -> None:
         print("✓ model detects injected anomalies above noise floor.")
     else:
         print("(!) detection weak — try ANOMALY_MAX_ITERS > 3000 or larger model.")
-
-
-if __name__ == "__main__":
-    main()

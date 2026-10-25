@@ -2,21 +2,25 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 from dataclasses import asdict
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from benchmarks.grokking.div97 import write_json
-from benchmarks.grokking.div97_report import classify, history, replay_browser
-from benchmarks.grokking.recurrence import (
+from diff_gpt.application.grokking.div97 import write_json
+from diff_gpt.application.grokking.div97_report import classify, history, replay_browser
+from diff_gpt.application.grokking.recurrence import (
     BATCH,
     DEFAULT_BETA1,
     ROOT,
     TARGET_ACCURACY,
     Config,
 )
+
+if TYPE_CHECKING:
+    import argparse
+    from pathlib import Path
+
+    from diff_gpt.application.ports import BrowserReplay
 
 DIVISION_PERIOD = 48
 
@@ -126,7 +130,9 @@ def compare_tokenizers(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     msg = "paired tokenizers have different models or optimizers"
                     raise ValueError(msg)
                 core = [
-                    name for name in lgt["source_sha256"] if name.startswith("src/")
+                    name
+                    for name in lgt["source_sha256"]
+                    if name.startswith("src/") and "/grokking/" not in name
                 ]
                 if any(
                     lgt["source_sha256"][name] != mash["source_sha256"].get(name)
@@ -293,15 +299,8 @@ def plot(runs: list[dict[str, Any]], destination: Path) -> None:
     plt.close(figure)
 
 
-def main() -> None:
-    """Record current progress, optional browser replay and scientific plots."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("roots", nargs="+", type=Path)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--plot", action="store_true")
-    parser.add_argument("--confirmed-only", action="store_true")
-    parser.add_argument("--browser-module", type=Path)
-    args = parser.parse_args()
+def report(args: argparse.Namespace, *, node: BrowserReplay) -> None:
+    """Summarize the runs and their tokenizer pairs, then write the report."""
     directories = sorted(
         {path.parent for root in args.roots for path in root.glob("*/status.json")}
     )
@@ -317,7 +316,7 @@ def main() -> None:
     report = {"runs": runs, "tokenizer_comparisons": comparisons}
     if args.browser_module:
         report["browser_criterion_replay"] = replay_browser(
-            [run for run in runs if run["completed"]], args.browser_module
+            [run for run in runs if run["completed"]], args.browser_module, node=node
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     write_json(args.output, report)
@@ -340,7 +339,3 @@ def main() -> None:
         ),
         flush=True,
     )
-
-
-if __name__ == "__main__":
-    main()

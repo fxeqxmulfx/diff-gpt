@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import math
@@ -14,8 +13,9 @@ import numpy as np
 import pandas as pd
 import torch
 
-from benchmarks.grokking.div97 import P, digest, load_checkpoint, write_json
-from benchmarks.grokking.recurrence import (
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.div97 import P, digest, load_checkpoint, write_json
+from diff_gpt.application.grokking.recurrence import (
     Config,
     build,
     encode_windows,
@@ -24,8 +24,7 @@ from benchmarks.grokking.recurrence import (
     grid_vocabulary,
     tensors,
 )
-from benchmarks.grokking.recurrence_field_sampler import CanonicalFieldSampler
-from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.grokking.recurrence_field_sampler import CanonicalFieldSampler
 from diff_gpt.domain.encoder_decoder import encode
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 from diff_gpt.domain.sampler.median import MedianSampler
@@ -34,6 +33,7 @@ from diff_gpt.domain.sampler.sampler import Sampler
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Callable
 
     from diff_gpt.domain.model.gpt import GPT
@@ -416,16 +416,8 @@ def verify_readout(directory: Path, name: str, device: str) -> dict[str, object]
     }
 
 
-def main() -> None:
-    """Persist frozen-weight comparisons without interrupting training."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("directories", nargs="+", type=Path)
-    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    parser.add_argument("--repeats", type=int, default=5)
-    parser.add_argument("--verify-readout")
-    parser.add_argument("--threads", type=int, default=2)
-    args = parser.parse_args()
-    torch.set_num_threads(args.threads)
+def persist_readouts(args: argparse.Namespace) -> None:
+    """Write the frozen-weight readout comparisons of each directory."""
     for directory in args.directories:
         if args.verify_readout:
             result = verify_readout(directory, args.verify_readout, args.device)
@@ -436,7 +428,3 @@ def main() -> None:
         output = directory.parent if directory.is_file() else directory
         write_json(output / filename, result)
         print(json.dumps(result, indent=2), flush=True)
-
-
-if __name__ == "__main__":
-    main()

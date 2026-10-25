@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 
-from benchmarks.grokking.series_shortcuts import formula_shortcuts
+from diff_gpt.application.grokking.series_shortcuts import formula_shortcuts
 
 if TYPE_CHECKING:
     from pathlib import Path

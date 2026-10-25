@@ -52,7 +52,7 @@ run does not. With --score-every above 1, that evaluation was also scored,
 as the last.
 
 Usage:
-    uv run --no-sync python -m benchmarks.synthetic_pretrain \
+    uv run --no-sync python -m diff_gpt.interfaces.synthetic_pretrain \
         --output runs/synthetic-pretrain/pilot --max-iters 2000
 """
 
@@ -64,8 +64,6 @@ import hashlib
 import json
 import platform
 import random
-import shutil
-import subprocess
 import time
 from datetime import UTC, datetime
 from functools import partial
@@ -78,11 +76,12 @@ import torch
 from diff_gpt.application.data_loader import DiffCorpusDataLoader, corpus_domain
 from diff_gpt.application.diff_gpt import DiffGPT
 from diff_gpt.application.normalization import predict_samples_normalized
+from diff_gpt.application.paths import ROOT
+from diff_gpt.application.ports import UsageError
 from diff_gpt.application.train import train
 from diff_gpt.domain.encoder_decoder import ENCODER_VERSION, prefix_rows
 from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.normalization import (
-    NORMALIZATIONS,
     window_scale,
 )
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
@@ -91,9 +90,9 @@ from diff_gpt.domain.sampler.temperature import TemperatureSampler
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
+    from diff_gpt.application.ports import GitHead
     from diff_gpt.application.train import Evaluation
 
-ROOT = Path(__file__).resolve().parents[1]
 # The library files a run executes; config.json records their hashes, since
 # other sessions edit the working tree.
 LIBRARY_SOURCES = (
@@ -316,14 +315,6 @@ def forecast_scores(
     }
 
 
-def _git_head() -> str:
-    return subprocess.check_output(  # noqa: S603 - fixed git argv, no shell.
-        [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
-        cwd=ROOT,
-        text=True,
-    ).strip()
-
-
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -391,35 +382,21 @@ def _drop_after(path: Path, step: int, *, header: bool) -> None:
     path.write_bytes(b"".join([*head, *kept]))
 
 
-def _given(parser: argparse.ArgumentParser, argv: list[str] | None) -> set[str]:
-    """Return the destinations of the options that `argv` sets."""
-    unset = object()
-    probe = argparse.Namespace(**dict.fromkeys(vars(parser.parse_args(argv)), unset))
-    # argparse sets the default of an option only where the namespace has none.
-    parser.parse_args(argv, probe)
-    return {key for key, value in vars(probe).items() if value is not unset}
-
-
-def _resumed(
-    parser: argparse.ArgumentParser,
-    argv: list[str] | None,
+def resumed(
     args: argparse.Namespace,
+    given: set[str],
 ) -> tuple[argparse.Namespace, dict[str, Any], dict[str, Any]]:
     """
     Return the settings, config.json and saved state of the run in --output.
 
-    The settings are those of config.json, with --max-iters if given. Any
-    other option, a run without state.pt, or a --max-iters not above the
-    updates made exits through `parser.error`.
+    The settings are those of config.json, with --max-iters if `given` holds
+    it. A run without state.pt, or a --max-iters not above the updates made,
+    raises UsageError.
     """
-    given = _given(parser, argv)
-    other = sorted(given - RESUME_OPTIONS)
-    if other:
-        named = ", ".join("--" + name.replace("_", "-") for name in other)
-        parser.error(f"--resume takes the settings of config.json, not {named}")
     path = args.output / RESUME_STATE
     if not path.is_file():
-        parser.error(f"--resume goes on from {path}, which does not exist")
+        msg = f"--resume goes on from {path}, which does not exist"
+        raise UsageError(msg)
     config = json.loads((args.output / "config.json").read_text())
     settings = {**vars(args), **config["args"], "output": args.output, "resume": True}
     settings["corpus"] = Path(settings["corpus"])
@@ -427,11 +404,11 @@ def _resumed(
         settings["max_iters"] = args.max_iters
     saved = torch.load(path, map_location="cpu", weights_only=True)
     if saved["version"] != STATE_VERSION:
-        parser.error(f"{path} is of version {saved['version']}, not {STATE_VERSION}")
+        msg = f"{path} is of version {saved['version']}, not {STATE_VERSION}"
+        raise UsageError(msg)
     if not saved["step"] < settings["max_iters"]:
-        parser.error(
-            f"the run has made {saved['step']} updates: give --max-iters above them",
-        )
+        msg = f"the run has made {saved['step']} updates: give --max-iters above them"
+        raise UsageError(msg)
     return argparse.Namespace(**settings), config, saved
 
 
@@ -447,114 +424,14 @@ def gradient_checkpointing(setting: str, device: str) -> bool:
     return setting == "on"
 
 
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "--corpus",
-        type=Path,
-        default=ROOT / "datasets/tempopfn-synthetic/npy",
-    )
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument(
-        "--weights",
-        type=json.loads,
-        default={},
-        help="JSON map of source to weight, over TempoPFN's proportions",
-    )
-    parser.add_argument("--block-size", type=int, default=512)
-    parser.add_argument("--width", type=int, default=128)
-    parser.add_argument("--layers", type=int, default=4)
-    parser.add_argument("--heads", type=int, default=4)
-    parser.add_argument("--vocab", type=int, default=1024)
-    parser.add_argument("--order", type=int, default=1)
-    parser.add_argument("--tokenizer", choices=["lgt", "mash", "mash-half"])
-    parser.add_argument(
-        "--normalization",
-        choices=NORMALIZATIONS,
-        default="mean_abs_step",
-    )
-    parser.add_argument("--domain-quantile", type=float, default=0.999)
-    parser.add_argument("--domain-windows", type=int, default=4096)
-    parser.add_argument("--asymmetric", action="store_true")
-    parser.add_argument("--min-context", type=int, default=16)
-    parser.add_argument("--missing-prob", type=float, default=0.0)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--grad-accum", type=int, default=1)
-    parser.add_argument("--max-iters", type=int, default=10_000)
-    parser.add_argument("--eval-interval", type=int, default=500)
-    parser.add_argument("--eval-iters", type=int, default=20)
-    parser.add_argument("--learning-rate", type=float, default=1e-2)
-    parser.add_argument("--weight-decay", type=float, default=0.03)
-    parser.add_argument("--warmup", type=int, default=1000)
-    parser.add_argument("--grad-clip", type=float)
-    parser.add_argument(
-        "--train-dtype",
-        choices=["float32", "bfloat16"],
-        default="float32",
-    )
-    parser.add_argument(
-        "--gradient-checkpointing",
-        choices=["auto", "on", "off"],
-        default="auto",
-        help="recompute each block's activations in the backward pass instead "
-        "of keeping them; auto: on a GPU, not on a CPU",
-    )
-    parser.add_argument("--score-every", type=int, default=1)
-    parser.add_argument("--score-windows", type=int, default=16)
-    parser.add_argument("--horizon", type=int, default=64)
-    parser.add_argument("--num-samples", type=int, default=20)
-    parser.add_argument(
-        "--score-samples",
-        type=int,
-        nargs="*",
-        default=[],
-        help="also score forecasts of each of these numbers of samples, at most "
-        "--num-samples, from disjoint groups of the ones drawn",
-    )
-    parser.add_argument("--temperature", type=float, default=1.0)
-    parser.add_argument("--score-batch", type=int, default=256)
-    parser.add_argument("--score-seed", type=int, default=0)
-    parser.add_argument(
-        "--score-dtype",
-        choices=["float32", "float16", "bfloat16"],
-        default="float32",
-    )
-    parser.add_argument("--seed", type=int, default=11)
-    parser.add_argument(
-        "--device",
-        default="cuda" if torch.cuda.is_available() else "cpu",
-    )
-    parser.add_argument(
-        "--keep-every",
-        type=float,
-        metavar="FLOPS",
-        help="also keep the weights of the first evaluation at or past each "
-        "multiple of FLOPS training FLOPs, as step_<updates>_flops_<FLOPs>.bin",
-    )
-    parser.add_argument(
-        "--resume",
-        action="store_true",
-        help="go on from the state.pt of --output, with the settings of its "
-        "config.json, to --max-iters (by default the saved one)",
-    )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> None:
-    """Pretrain one model as the arguments say and record its curve."""
-    parser = _parser()
-    args = parser.parse_args(argv)
-    config: dict[str, Any] = {}
-    saved: dict[str, Any] | None = None
-    if args.resume:
-        args, config, saved = _resumed(parser, argv, args)
-    if any(not 1 <= size <= args.num_samples for size in args.score_samples):
-        parser.error(f"--score-samples must lie in [1, {args.num_samples}]")
-    if args.keep_every is not None and not args.keep_every > 0:
-        parser.error("--keep-every must be above 0")
+def pretrain(
+    args: argparse.Namespace,
+    config: dict[str, Any],
+    saved: dict[str, Any] | None,
+    *,
+    git_head: GitHead,
+) -> None:
+    """Pretrain one model as `args` say and record its curve."""
     if saved is None:
         args.output.mkdir(parents=True)
     torch.manual_seed(args.seed)
@@ -624,7 +501,7 @@ def main(argv: list[str] | None = None) -> None:
             key: str(value) if isinstance(value, Path) else value
             for key, value in vars(args).items()
         },
-        "git_head": _git_head(),
+        "git_head": git_head(),
         "source_sha256": {
             str(path.relative_to(ROOT)): _sha256(path)
             for path in (Path(__file__), *LIBRARY_SOURCES)
@@ -674,10 +551,11 @@ def main(argv: list[str] | None = None) -> None:
     else:
         differing = [key for key in SAME_RUN if run[key] != config[key]]
         if differing:
-            parser.error(
+            msg = (
                 f"the corpus and the code now give other {', '.join(differing)} "
-                f"than {args.output / 'config.json'}",
+                f"than {args.output / 'config.json'}"
             )
+            raise UsageError(msg)
         config["args"]["max_iters"] = args.max_iters
         config.setdefault("resumes", []).append(
             {
@@ -793,7 +671,3 @@ def main(argv: list[str] | None = None) -> None:
         autocast=_dtype(args.train_dtype),
         start_step=0 if saved is None else saved["step"],
     )
-
-
-if __name__ == "__main__":
-    main()

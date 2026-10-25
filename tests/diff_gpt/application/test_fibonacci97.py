@@ -4,7 +4,7 @@ Fibonacci mod 97 across rows at derivative order 1 against a compute budget.
 One column follows x[t+2] = x[t] + x[t+1] mod 97. Its 9,408 states (a, b)
 other than (0, 0) fall into 48 cycles of 196, and a random half of the
 cycles trains while the other half tests, so no test window, nor any shift
-of it, is ever trained on: the task of `benchmarks/grokking/recurrence.py`
+of it, is ever trained on: the task of `src/diff_gpt/application/grokking/recurrence.py`
 at k=1 with context 2, but trained by the library's own `train()`. `encode`
 turns a window of four rows into its first row and three difference tokens,
 anchored at that row as `DiffGPT.predict` anchors a context. The input is

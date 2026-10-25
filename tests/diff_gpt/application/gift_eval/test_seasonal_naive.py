@@ -10,8 +10,8 @@ from statistics import NormalDist
 import numpy as np
 import pytest
 
-from benchmarks.gift_eval.files import QUANTILE_LEVELS, Windows
-from benchmarks.gift_eval.seasonal_naive import (
+from diff_gpt.application.gift_eval.files import QUANTILE_LEVELS, Windows
+from diff_gpt.application.gift_eval.seasonal_naive import (
     LEVELS,
     TOL,
     Z,

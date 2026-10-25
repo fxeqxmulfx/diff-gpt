@@ -16,8 +16,8 @@ from typing import Any
 
 import numpy as np
 
-from benchmarks.grokking.div97 import write_json
-from benchmarks.grokking.series_data import array_hash
+from diff_gpt.application.grokking.div97 import write_json
+from diff_gpt.application.grokking.series_data import array_hash
 
 PRIOR_COUNT = 0.5
 PRIOR_STRENGTHS = (0.01, 0.1, 1.0, 10.0, 32.0, 100.0)

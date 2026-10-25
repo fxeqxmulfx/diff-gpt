@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 import pytest
 import torch
 
-from benchmarks.grokking.recurrence import Config, run, update_learning_rate
-from benchmarks.grokking.recurrence_restart import prepare_fork
+from diff_gpt.application.grokking.recurrence import Config, run, update_learning_rate
+from diff_gpt.application.grokking.recurrence_restart import prepare_fork
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:

@@ -5,21 +5,22 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
 import torch
 
-from benchmarks.gift_eval.diff_gpt_forecast import chunk_plan, main
-from benchmarks.gift_eval.files import QUANTILE_LEVELS
-from benchmarks.synthetic_pretrain import main as pretrain
+from diff_gpt.application.gift_eval.diff_gpt_forecast import chunk_plan
+from diff_gpt.application.gift_eval.files import QUANTILE_LEVELS
+from diff_gpt.application.paths import ROOT
+from diff_gpt.interfaces.gift_eval.diff_gpt_forecast import main
+from diff_gpt.interfaces.synthetic_pretrain import main as pretrain
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
 BLOCK_SIZE = 32
 SHORT = 8  # one pass of the tiny model
 LONG = 40  # three passes of it, from min_context = 16 rows: 17, 17 and 6 points
@@ -197,7 +198,7 @@ def test_processes_at_once_keep_each_others_entries(tmp_path: Path) -> None:
         subprocess.Popen(  # noqa: S603 - this interpreter and the module, no shell.
             [
                 sys.executable,
-                *("-m", "benchmarks.gift_eval.diff_gpt_forecast"),
+                *("-m", "diff_gpt.interfaces.gift_eval.diff_gpt_forecast"),
                 *("--run", str(run), "--windows", str(windows)),
                 *("--forecasts", str(forecasts), "--num-samples", "4"),
                 *("--device", "cpu", "--configs", config.replace("/", "__")),
@@ -247,7 +248,7 @@ def test_a_process_without_a_gpu_forecasts_with_a_gpu_runs_weights(
     subprocess.run(  # noqa: S603 - this interpreter and the module, no shell.
         [
             sys.executable,
-            *("-m", "benchmarks.gift_eval.diff_gpt_forecast"),
+            *("-m", "diff_gpt.interfaces.gift_eval.diff_gpt_forecast"),
             *argv,
             *("--run", str(on_gpu), "--forecasts", str(tmp_path / "gpu_run")),
         ],

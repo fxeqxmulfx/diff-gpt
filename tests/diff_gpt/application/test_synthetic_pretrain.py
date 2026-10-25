@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 import torch
 
-from benchmarks.synthetic_pretrain import (
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.synthetic_pretrain import (
     RESUME_STATE,
     TEMPOPFN_WEIGHTS,
     _rng_states,
@@ -19,15 +20,14 @@ from benchmarks.synthetic_pretrain import (
     forecast_scores,
     gradient_checkpointing,
     holdout_windows,
-    main,
 )
-from diff_gpt.application.diff_gpt import DiffGPT
 from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.interfaces.synthetic_pretrain import main
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from benchmarks.synthetic_pretrain import Windows
+    from diff_gpt.application.synthetic_pretrain import Windows
 
 CONTEXT = 24
 HORIZON = 8

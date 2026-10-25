@@ -10,11 +10,15 @@ configuration, e.g. "m4_hourly/H/short", with "/" as "__".
 """
 
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[2]
+from diff_gpt.application.paths import ROOT
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 RUNS = ROOT / "runs" / "leaderboards" / "gift-eval"
 QUANTILE_LEVELS = (0.025, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.975)
 

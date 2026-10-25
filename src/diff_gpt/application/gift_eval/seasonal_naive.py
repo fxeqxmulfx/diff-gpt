@@ -2,7 +2,7 @@
 Seasonal naive in numpy, as GIFT-Eval's Seasonal_Naive forecasts.
 
 Run from the repository root:
-``uv run python -m benchmarks.gift_eval.seasonal_naive --split test``. It
+``uv run python -m diff_gpt.interfaces.gift_eval.seasonal_naive --split test``. It
 forecasts every exported window of the split into
 RUNS/forecasts/seasonal_naive/<split>/, for leaderboards' score.
 
@@ -25,24 +25,24 @@ follows it step by step:
   the 0.025 and 0.975 written here.
 """
 
-import argparse
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from benchmarks.gift_eval.files import (
+from diff_gpt.application.gift_eval.files import (
     QUANTILE_LEVELS,
-    RUNS,
     forecast_path,
     read_windows,
     windows_paths,
     write_forecasts,
 )
+from diff_gpt.application.ports import UsageError
 
 if TYPE_CHECKING:
-    from benchmarks.gift_eval.files import Windows
+    import argparse
+
+    from diff_gpt.application.gift_eval.files import Windows
 
 LEVELS = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 # scipy.stats.norm.ppf(LEVELS): statsforecast's bounds at its levels 20, 40,
@@ -146,19 +146,12 @@ def forecast(windows: Windows) -> tuple[np.ndarray, np.ndarray]:
     return quantiles, mean
 
 
-def main() -> None:
-    """Forecast every exported window of a split."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--split", choices=("test", "val"), default="test")
-    parser.add_argument("--model", default="seasonal_naive")
-    parser.add_argument("--windows", type=Path, default=RUNS / "windows")
-    parser.add_argument("--forecasts", type=Path, default=RUNS / "forecasts")
-    args = parser.parse_args()
+def forecast_split(args: argparse.Namespace) -> None:
+    """Forecast every window of the split with the seasonal naive model."""
     paths = windows_paths(args.split, args.windows)
     if not paths:
-        parser.error(f"no windows in {args.windows / args.split}")
+        msg = f"no windows in {args.windows / args.split}"
+        raise UsageError(msg)
     for path in paths:
         started = time.perf_counter()
         windows = read_windows(path)
@@ -171,7 +164,3 @@ def main() -> None:
         )
         seconds = time.perf_counter() - started
         print(f"{windows.config}: {len(windows)} windows, {seconds:.1f} s", flush=True)
-
-
-if __name__ == "__main__":
-    main()

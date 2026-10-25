@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from benchmarks.m4_bench import nll_x
+from diff_gpt.application.m4_bench import nll_x
 from diff_gpt.domain.encoder_decoder import encode
 
 
@@ -23,3 +23,14 @@ def test_nll_x_of_uniform_tokens_is_the_uniform_density_of_the_steps(
     # At the order 1, s = (V - 2) / 2D, so the V - 2 levels span [-D, D]:
     # uniform tokens, NLL log(V - 2), are the density 1 / 2D of the steps.
     assert f"{nll_x(math.log(256 - 2), grid):.4f}" == f"{math.log(2 * bound):.4f}"
+
+
+def test_nll_x_is_a_float() -> None:
+    """The NLL of the values is a Python float, as its signature says, not NumPy's."""
+    _, grid, _ = encode(
+        inp=np.zeros((4, 1)),
+        vocab_size=256,
+        domain_of_definition=np.array([3.0]),
+        order_of_derivative=1,
+    )
+    assert type(nll_x(math.log(256 - 2), grid)) is float

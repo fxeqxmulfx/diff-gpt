@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from benchmarks.grokking.recurrence import Config, run
-from benchmarks.grokking.recurrence_audit import audit
+from diff_gpt.application.grokking.recurrence import Config, run
+from diff_gpt.application.grokking.recurrence_audit import audit
 
 if TYPE_CHECKING:
     from pathlib import Path

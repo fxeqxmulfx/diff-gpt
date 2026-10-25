@@ -16,15 +16,15 @@ Matches arXiv 2310.06625v4 evaluation:
     can be overridden via ETT_STRIDE env var)
 
 Usage:
-    uv run --no-sync python -m benchmarks.ett_bench
-    ETT_DATASET=ETTh2 uv run --no-sync python -m benchmarks.ett_bench
-    ETT_PRED_LENS=96,192 ETT_STRIDE=1 uv run --no-sync python -m benchmarks.ett_bench
+    uv run --no-sync python -m diff_gpt.interfaces.ett_bench
+    ETT_DATASET=ETTh2 uv run --no-sync python -m diff_gpt.interfaces.ett_bench
+    ETT_PRED_LENS=96,192 ETT_STRIDE=1 \
+        uv run --no-sync python -m diff_gpt.interfaces.ett_bench
 """
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -32,18 +32,14 @@ import torch
 
 from diff_gpt.application.data_loader import DiffDataFrameDataLoader
 from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.paths import ROOT
 from diff_gpt.domain.encoder_decoder import DEFAULT_TOKENIZER, get_domain_of_definition
 from diff_gpt.domain.metrics import bayes_point
 from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.sampler.median import MedianSampler
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
-ETT_DIR = (
-    Path(__file__).resolve().parents[1]
-    / "datasets"
-    / "long_term_forecast"
-    / "ETT-small"
-)
+ETT_DIR = ROOT / "datasets" / "long_term_forecast" / "ETT-small"
 
 # iTransformer / TSLib split boundaries in ROWS per subset.
 # ETTh is hourly, ETTm is 15-min. Convention (from Dataset_ETT_hour /
@@ -148,6 +144,7 @@ def run_horizon(
     device: str,
     *,
     use_checkpoint: bool,
+    compile_model: bool,
     seed: int = 0,
     vocab_size: int = 64,
     readouts: list[str] | None = None,
@@ -200,7 +197,7 @@ def run_horizon(
         n_layer=n_layer,
         use_checkpoint=use_checkpoint,
     ).to(device=device)
-    if device == "cuda" and os.environ.get("ETT_COMPILE", "1") == "1":
+    if device == "cuda" and compile_model:
         base.compile(mode="max-autotune")
     model = DiffGPT(
         model=base,
@@ -252,36 +249,51 @@ def run_horizon(
     return results, n_windows, train_time_s
 
 
-def main() -> None:
-    """
-    Train and evaluate one model per horizon in ETT_PRED_LENS.
+@dataclass(frozen=True)
+class Settings:
+    """The settings of bench, read from the ETT_* environment variables."""
 
-    All settings come from ETT_* environment variables; prints the per-readout
-    results of every horizon as it finishes and a summary table at the end.
-    """
-    torch.set_float32_matmul_precision("high")
+    compile_model: bool
+    dataset: str
+    seq_len: int
+    pred_lens: list[int]
+    stride_env: str | None
+    max_iters: int
+    n_embd: int
+    n_layer: int
+    n_head: int
+    use_checkpoint: bool
+    batch_size_override: str | None
+    seed: int
+    vocab_size: int
+    readouts: list[str]
+    num_samples: int
+    save_prefix: str | None
+    align_windows: bool
+
+
+def bench(settings: Settings) -> None:
+    """Train and score one model per horizon, then print the summary table."""
     torch.manual_seed(0)
 
-    dataset = os.environ.get("ETT_DATASET", "ETTh1")
-    seq_len = int(os.environ.get("ETT_SEQ_LEN", "96"))
-    pred_lens = [
-        int(x) for x in os.environ.get("ETT_PRED_LENS", "96,192,336,720").split(",")
-    ]
-    stride_env = os.environ.get("ETT_STRIDE")
-    max_iters = int(os.environ.get("ETT_MAX_ITERS", "2000"))
-    n_embd = int(os.environ.get("ETT_N_EMBD", "128"))
-    n_layer = int(os.environ.get("ETT_N_LAYER", "2"))
-    n_head = int(os.environ.get("ETT_N_HEAD", "4"))
-    use_checkpoint = os.environ.get("ETT_USE_CHECKPOINT", "0") == "1"
-    batch_size_override = os.environ.get("ETT_BATCH_SIZE")
-    seed = int(os.environ.get("ETT_SEED", "0"))
-    vocab_size = int(os.environ.get("ETT_VOCAB_SIZE", "64"))
-    readouts = os.environ.get("ETT_READOUTS", "argmax").split(",")
-    num_samples = int(os.environ.get("ETT_NUM_SAMPLES", "50"))
-    save_prefix = os.environ.get(
-        "ETT_SAVE",
+    dataset = settings.dataset
+    seq_len = settings.seq_len
+    pred_lens = settings.pred_lens
+    stride_env = settings.stride_env
+    max_iters = settings.max_iters
+    n_embd = settings.n_embd
+    n_layer = settings.n_layer
+    n_head = settings.n_head
+    use_checkpoint = settings.use_checkpoint
+    batch_size_override = settings.batch_size_override
+    seed = settings.seed
+    vocab_size = settings.vocab_size
+    readouts = settings.readouts
+    num_samples = settings.num_samples
+    save_prefix = (
+        settings.save_prefix
     )  # e.g. runs/ett_step6 -> runs/ett_step6_p96_seed0.pt
-    align_windows = os.environ.get("ETT_ALIGN_WINDOWS", "0") == "1"  # step 7
+    align_windows = settings.align_windows  # step 7
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(
@@ -319,6 +331,7 @@ def main() -> None:
             batch_size=batch_size,
             device=device,
             use_checkpoint=use_checkpoint,
+            compile_model=settings.compile_model,
             seed=seed,
             vocab_size=vocab_size,
             readouts=readouts,
@@ -339,7 +352,3 @@ def main() -> None:
     )
     for pred_len, name, mse, mae, n, t in rows:
         print(f"{pred_len:>8}  {name:>9}  {mse:7.4f}  {mae:7.4f}  {n:>8}  {t:>8}")
-
-
-if __name__ == "__main__":
-    main()
