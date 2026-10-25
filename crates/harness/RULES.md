@@ -15,9 +15,10 @@ break; the checks that every task runs; or the review of each task.
    the adapters of the ports (files, formats, processes) and the backends;
    and `interfaces`, the command lines. The harness, the port's tools, sits
    above them, and nothing depends on it or on the interfaces.
-   Held by `tests/layers.rs`, which reads `cargo metadata`, `cargo tree`, the
-   manifests and the source; the docs of `src/layers.rs` give every part of
-   the rule.
+   Held by `tests/layers.rs` for the dependencies, which it reads from
+   `cargo metadata`, `cargo tree`, the manifests and the source (the docs of
+   `src/layers.rs` give every part of the rule), and by the review for the
+   ports and their adapters.
 2. **The command lines only parse and wire.** A command line parses its
    flags, builds the adapters and the devices, hands them to a use case, and
    makes the settings of the whole process: threads, CPU affinity, the
@@ -35,7 +36,8 @@ break; the checks that every task runs; or the review of each task.
 4. **No mocks or monkeypatching.** A test double implements a port of the
    application. No crate declares a mocking crate, and unsafe code, the only
    way to patch code at run time, is forbidden (rule 8). Held by
-   `tests/layers.rs`.
+   `tests/layers.rs` for the crates and the unsafe code, and by the review
+   for the doubles.
 5. **Every pytest id ported or dropped.** `port_map.toml` names the Rust test
    of every id of the reference's tests, or the reason to drop it, and the
    check of each part against the reference; each task ports its share as the
