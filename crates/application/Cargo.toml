@@ -1,0 +1,16 @@
+[package]
+name = "diff-gpt-application"
+description = "The application layer: the use cases, which drive the domain, and the ports the outer layers implement."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+diff-gpt-domain.workspace = true
+burn.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,17 @@
+[package]
+name = "diff-gpt-interfaces"
+description = "The interfaces layer: the command lines, which parse, set the process and wire the adapters to a use case."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+diff-gpt-domain.workspace = true
+diff-gpt-application.workspace = true
+diff-gpt-infrastructure.workspace = true
+
+[lints]
+workspace = true

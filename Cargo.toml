@@ -1,0 +1,57 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/domain",
+    "crates/application",
+    "crates/infrastructure",
+    "crates/interfaces",
+    "crates/harness",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT AND Apache-2.0"
+repository = "https://github.com/fxeqxmulfx/diff-gpt"
+publish = false
+
+[workspace.dependencies]
+diff-gpt-domain = { path = "crates/domain" }
+diff-gpt-application = { path = "crates/application" }
+diff-gpt-infrastructure = { path = "crates/infrastructure" }
+# The tensor and nn API without a backend. Since burn 0.22 a tensor's type
+# names no backend: burn's features compile the backends in, and a `Device`
+# picks one at run time. The infrastructure and the interfaces add the
+# backends' features; the layer test keeps them out of the layers below.
+burn = { version = "0.22.1", default-features = false, features = ["std"] }
+cargo_metadata = "0.23.1"
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+serde = { version = "1.0.229", features = ["derive"] }
+syn = { version = "3.0.9", default-features = false, features = ["full", "parsing", "visit", "printing"] }
+toml = "1.1.8"
+
+[workspace.lints.rust]
+# Forbidden in every crate root; a module named in the layer test's list may
+# allow it with its reason.
+unsafe_code = "deny"
+missing_docs = "deny"
+unreachable_pub = "deny"
+unused_qualifications = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+# An allow or expect says why, on the item it covers.
+allow_attributes_without_reason = "deny"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+private_intra_doc_links = "deny"
+missing_crate_level_docs = "deny"
+invalid_codeblock_attributes = "deny"
+invalid_html_tags = "deny"
+invalid_rust_codeblocks = "deny"
+bare_urls = "deny"
+unescaped_backticks = "deny"
+redundant_explicit_links = "deny"

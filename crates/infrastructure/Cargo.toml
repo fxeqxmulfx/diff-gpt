@@ -1,0 +1,16 @@
+[package]
+name = "diff-gpt-infrastructure"
+description = "The infrastructure layer: the adapters that reach outside the process, and the burn backends."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+diff-gpt-domain.workspace = true
+diff-gpt-application.workspace = true
+
+[lints]
+workspace = true
