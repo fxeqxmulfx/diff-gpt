@@ -65,6 +65,35 @@ fn the_map_takes_in_every_part_of_the_reference() {
 }
 
 #[test]
+fn the_repository_keeps_the_reference_frozen_and_its_tools_in_rust() {
+    let root = root();
+    let map = map();
+    let commit = &map.reference.commit;
+    let tracked = port_map::tracked_files(&root).unwrap_or_else(|error| panic!("{error}"));
+    let reference =
+        port_map::reference_files(&root, commit, ".").unwrap_or_else(|error| panic!("{error}"));
+    let changed = port_map::changed_files(
+        &root,
+        commit,
+        &[map.reference.package.as_str(), map.reference.tests.as_str()],
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
+    let breaks = port_map::check_repository(&map, &tracked, &reference, &changed);
+    println!(
+        "{} files tracked; {} in the reference at {commit}, {} of them changed since",
+        tracked.len(),
+        reference.len(),
+        changed.len()
+    );
+    assert!(
+        breaks.is_empty(),
+        "{} breaks of the port's rules on the repository's files:\n  {}",
+        breaks.len(),
+        breaks.join("\n  ")
+    );
+}
+
+#[test]
 #[ignore = "reads the clone of TempoPFN at ../TempoPFN beside the repository"]
 fn the_map_takes_in_every_module_of_tempopfn_that_the_corpus_imports() {
     let root = root();

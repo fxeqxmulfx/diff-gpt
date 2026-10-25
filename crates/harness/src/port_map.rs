@@ -24,6 +24,13 @@
 //! [`fate`] gives the Rust test of an id or the reason it is dropped,
 //! [`summary`] what each task ports, and [`tempopfn_walk`] the modules of
 //! `TempoPFN` that the corpus imports, by a walk of the import statements.
+//!
+//! [`check_repository`] holds the repository to the rules of the port on
+//! its files: the reference's package and tests unchanged since its commit
+//! until the last task removes them; no script that git tracks but the
+//! reference's ([`SCRIPTS`]), since the port's tools are Rust; and nothing
+//! tracked in the folders of what the commands regenerate
+//! ([`REGENERATED`]) but the reference's own files there.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt;
@@ -53,6 +60,16 @@ pub const CRATES: &[&str] = &[
 /// The kinds of check, the keys of `[checks]`: `exact`, `none`, `ulp:N`,
 /// `tolerance:NAME` and `distribution:NAME`.
 pub const CHECKS: &[&str] = &["distribution", "exact", "none", "tolerance", "ulp"];
+
+/// The extensions of the scripting languages' files.
+pub const SCRIPTS: &[&str] = &[
+    "bash", "bat", "fish", "ipynb", "js", "lua", "mjs", "pl", "ps1", "py", "pyi", "rb", "sh", "ts",
+    "zsh",
+];
+
+/// The folders of what the commands regenerate: the build's, the runs' and
+/// the datasets'.
+pub const REGENERATED: &[&str] = &["datasets", "runs", "target"];
 
 /// The words Rust keeps, which no module or test may be named.
 const KEYWORDS: &[&str] = &[
@@ -352,6 +369,78 @@ pub fn reference_text(root: &Path, commit: &str, path: &str) -> Result<Option<St
         return Ok(None);
     }
     git(root, &["show", &object]).map(Some)
+}
+
+/// The files that git tracks in the repository at `root`, by their paths
+/// in it.
+///
+/// # Errors
+///
+/// When git does not run or `root` is no repository.
+pub fn tracked_files(root: &Path) -> Result<Vec<String>, String> {
+    let listing = git(root, &["ls-files", "--full-name"])?;
+    Ok(listing.lines().map(str::to_owned).collect())
+}
+
+/// The files under `dirs` that differ between the commit `commit` and the
+/// working tree of the repository at `root`, changed or deleted.
+///
+/// # Errors
+///
+/// When git does not run or does not know the commit.
+pub fn changed_files(root: &Path, commit: &str, dirs: &[&str]) -> Result<Vec<String>, String> {
+    let mut args = vec!["diff", "--name-only", commit, "--"];
+    args.extend(dirs);
+    let listing = git(root, &args)?;
+    Ok(listing.lines().map(str::to_owned).collect())
+}
+
+/// The breaks of the repository's files: `tracked` those that git tracks,
+/// `reference` those of the reference's commit, and `changed` those of its
+/// package and tests that differ from it (all by their paths in the
+/// repository).
+#[must_use]
+pub fn check_repository(
+    map: &Map,
+    tracked: &[String],
+    reference: &[String],
+    changed: &[String],
+) -> Vec<String> {
+    let reference: BTreeSet<&str> = reference.iter().map(String::as_str).collect();
+    let mut breaks = Vec::new();
+    for file in changed {
+        breaks.push(format!(
+            "{file}: the frozen reference, changed since its commit {}",
+            map.reference.commit
+        ));
+    }
+    for file in tracked {
+        if reference.contains(file.as_str()) {
+            continue;
+        }
+        if is_script(file) {
+            breaks.push(format!(
+                "{file}: a script that the reference does not hold; the port's tools are Rust"
+            ));
+        }
+        if let Some(dir) = REGENERATED.iter().find(|dir| {
+            file.strip_prefix(**dir)
+                .is_some_and(|rest| rest.starts_with('/'))
+        }) {
+            breaks.push(format!(
+                "{file}: in {dir}/, which holds what the commands regenerate"
+            ));
+        }
+    }
+    breaks
+}
+
+/// Whether `path` names a file of a scripting language.
+fn is_script(path: &str) -> bool {
+    Path::new(path)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| SCRIPTS.contains(&extension))
 }
 
 /// The commit that the repository at `root` has checked out.
@@ -1288,6 +1377,37 @@ test_Two = { task = 36 }
             [
                 "[tests] tests/test_a.py: the file defines no test_Two",
                 "[tests] tests/test_a.py: no id of test_three",
+            ]
+        );
+    }
+
+    #[test]
+    fn a_script_a_regenerated_file_or_a_changed_reference_breaks_the_repository() {
+        let map = map(str::to_owned);
+        let owned = |files: &[&str]| -> Vec<String> {
+            files.iter().map(|file| (*file).to_owned()).collect()
+        };
+        let reference = owned(&["src/p/domain/a.py", "runs/run.sh", "README.md"]);
+        let tracked = owned(&[
+            "src/p/domain/a.py",
+            "runs/run.sh",
+            "README.md",
+            "tools/x.py",
+            "crates/h/run.sh",
+            "runs/out.json",
+            "datasets/x.csv",
+            "runsheet.md",
+            "Cargo.toml",
+        ]);
+        assert_eq!(
+            check_repository(&map, &tracked, &reference, &owned(&["src/p/domain/a.py"])),
+            [
+                "src/p/domain/a.py: the frozen reference, changed since its commit abc",
+                "tools/x.py: a script that the reference does not hold; the port's tools are Rust",
+                "crates/h/run.sh: a script that the reference does not hold; the port's tools are \
+                 Rust",
+                "runs/out.json: in runs/, which holds what the commands regenerate",
+                "datasets/x.csv: in datasets/, which holds what the commands regenerate",
             ]
         );
     }
