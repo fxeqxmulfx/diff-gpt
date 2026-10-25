@@ -88,9 +88,27 @@ break; the checks that every task runs; or the review of each task.
 
 ## Data and the machine
 
-13. GIFT-Eval's and TIME's data stay in the ignored `datasets/`: no training
-    on real data, no submission or upload, and TIME's data (CC BY-NC 4.0) is
-    never committed, copied or redistributed. TempoPFN's `data/nan_stats.json`
-    is never read. Held by the review, and by rule 11's check of `datasets/`.
-14. CPUs 27 and 55 stay free for the desktop: a run takes
-    `taskset -c 0-26,28-54` or a socket's CPUs. Held by the review.
+13. **The data.** GIFT-Eval's and TIME's data stay in the ignored
+    `datasets/`. TIME's data (CC BY-NC 4.0) is never committed, copied or
+    redistributed. Track B's pretraining reads only
+    `datasets/tempopfn-synthetic`: it never reads
+    `datasets/long_term_forecast`, `datasets/short_term_forecast` or the
+    local illness data. Nothing trains on fev-bench's `epf_*`. TempoPFN's
+    `data/nan_stats.json` is never read. Nothing is submitted or uploaded to
+    GIFT-Eval or TIME without the user's explicit go-ahead. Held by the
+    review, and by rule 11's check of `datasets/`.
+14. **Two CPUs for the desktop.** CPUs 27 and 55 stay free for the desktop:
+    a run takes `taskset -c 0-26,28-54`, socket 0's `0-13,28-41`, or socket 1
+    without 27 and 55, `14-26,42-54`. Held by the review.
+
+## Evaluation
+
+15. **Scored once, tuned on validation.** Settings are chosen on validation
+    only; for Track B, that is its pretraining holdout. A candidate's test is
+    scored once. GIFT-Eval's validation is a go/no-go check, run once per
+    candidate and never used for tuning. The GIFT blank-cell rule is never
+    exploited. GIFT validation forecasts made for timing or for the port's
+    checks are deleted unscored. The port scores no forecast of ours on
+    GIFT's or TIME's data; the official baselines of #33's "G1 again" are
+    scored as the reference scores them. Held by the review, and by rule 11's
+    check of `datasets/`.
