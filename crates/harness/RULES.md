@@ -14,7 +14,10 @@ break; the checks that every task runs; or the review of each task.
    `application`, the use cases and their ports, as traits; `infrastructure`,
    the adapters of the ports (files, formats, processes) and the backends;
    and `interfaces`, the command lines. The harness, the port's tools, sits
-   above them, and nothing depends on it or on the interfaces.
+   above them, and nothing depends on it or on the interfaces. The domain
+   and the application start no thread: a task that needs parallel loops in
+   them changes this rule, the check of `src/layers.rs` and its docs
+   together, and gives its reason.
    Held by `tests/layers.rs` for the dependencies, which it reads from
    `cargo metadata`, `cargo tree`, the manifests and the source (the docs of
    `src/layers.rs` give every part of the rule), and by the review for the

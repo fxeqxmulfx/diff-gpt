@@ -45,8 +45,10 @@
 //!   CPU affinity, signals, burn's and cubecl's global configurations): only
 //!   the command lines make them;
 //! - the domain and the application name nothing of `std::env`,
-//!   `std::process`, `std::net` and `std::os`: they read no environment
-//!   variable and start no process;
+//!   `std::process`, `std::thread`, `std::net` and `std::os`: they read no
+//!   environment variable and start no process or thread. A task that needs
+//!   parallel loops in them changes this rule, its check and `RULES.md`
+//!   together, and gives its reason;
 //! - the domain and the application, outside their `#[cfg(test)]` modules,
 //!   build no device ([`DEVICE_CONSTRUCTORS`]) and name no backend
 //!   ([`BACKENDS`]);
@@ -900,7 +902,7 @@ impl Scan<'_> {
                 && segments[1] == name
         };
         if layer.is_lower() {
-            for module in ["env", "process", "net", "os"] {
+            for module in ["env", "process", "thread", "net", "os"] {
                 if std_module(module) {
                     self.add(
                         span,
@@ -1354,6 +1356,30 @@ mod tests {
                 "x.rs:1: the application uses std::env: std::env",
                 "x.rs:3: the application uses std::env: std::env::var",
                 "x.rs:4: the application uses std::process: std::process::Command::new",
+            ]
+        );
+        assert_eq!(
+            scan(Some(Layer::Infrastructure), false, text),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn a_thread_started_breaks_it_below() {
+        let text = "use std::thread::JoinHandle;\n\
+                    pub fn f() { std::thread::spawn(|| ()); }\n";
+        assert_eq!(
+            scan(Some(Layer::Domain), false, text),
+            [
+                "x.rs:1: the domain uses std::thread: std::thread::JoinHandle",
+                "x.rs:2: the domain uses std::thread: std::thread::spawn",
+            ]
+        );
+        assert_eq!(
+            scan(Some(Layer::Application), false, text),
+            [
+                "x.rs:1: the application uses std::thread: std::thread::JoinHandle",
+                "x.rs:2: the application uses std::thread: std::thread::spawn",
             ]
         );
         assert_eq!(
