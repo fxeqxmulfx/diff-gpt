@@ -5,7 +5,8 @@ The tokens hold the steps c(B) x on one grid (`encoder_decoder.encode`), so a
 model that serves many series needs their values in common units.
 `window_scale` reads a location and a scale off a forecast's context,
 `normalize` puts the context in those units and `denormalize` takes the
-forecast back; `predict_samples_normalized` does all three around a model.
+forecast back. Two modules of diff_gpt.application use them:
+`normalization.predict_samples_normalized` does all three around a model, and
 `data_loader.DiffCorpusDataLoader` divides each training window by the
 statistics of a prefix of it, with the same function, so that training and
 forecasting see the same units.

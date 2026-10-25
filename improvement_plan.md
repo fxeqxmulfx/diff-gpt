@@ -20,7 +20,7 @@ Hardware: RTX 3050 Laptop, 4 GB; about five minutes per seed initially.
 # One seed; run_m4.sh runs a seed list and writes runs/<step>.pid.
 M4_N_SERIES=414 M4_MAX_ITERS=20000 M4_LABEL_SMOOTHING_SIGMA=2.0 \
 M4_SEED=0 M4_SAMPLERS=argmax,median M4_SAVE=runs/step0_seed0.pt \
-uv run --no-sync python -m benchmarks.m4_bench
+uv run --no-sync python -m diff_gpt.interfaces.m4_bench
 # Four seeds of one configuration; additional M4_* variables are forwarded.
 runs/run_m4.sh <step> 0 1 2 3
 # To stop a run: kill $(cat runs/<step>.pid)

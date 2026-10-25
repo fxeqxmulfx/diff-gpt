@@ -214,8 +214,8 @@ $hi - lo$ takes the place of $2D$.
   a model generalizes. `on_eval` sees every evaluation with the scored
   weights in the model, so it can save checkpoints and score forecasts.
 - **NUMA-aware training**: single-process CPU-affinity pin via
-  `DiffGPT.train(pin_node=...)`, or one-worker-per-node DDP via
-  `DiffGPT.train_numa` on multi-socket boxes.
+  `numa.pin_to_node` before `DiffGPT.train`, or one-worker-per-node DDP via
+  `train_ddp.train_numa` on multi-socket boxes.
 
 The forecasting numbers in this README come from earlier model versions,
 which carried model-side additions that have since been removed: Gaussian
@@ -229,11 +229,11 @@ carries the step-by-step ablation of the earlier versions.
 
 ```python
 import numpy as np, pandas as pd, torch
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.model.gpt import GPT
-from diff_gpt.data_loader import DiffDataFrameDataLoader
-from diff_gpt.encoder_decoder import get_domain_of_definition
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.application.data_loader import DiffDataFrameDataLoader
+from diff_gpt.domain.encoder_decoder import get_domain_of_definition
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 # Your data as DataFrames (one per series); NaN marks a missing value.
 dfs: list[pd.DataFrame] = [...]
@@ -285,7 +285,7 @@ prediction = model.predict_point(
     num_samples=100,
 )
 # Deterministic single-path readouts are still available:
-from diff_gpt.sampler.median import MedianSampler
+from diff_gpt.domain.sampler.median import MedianSampler
 
 path = model.predict(df=context, max_new_points=48, sampler=MedianSampler())
 ```
@@ -299,8 +299,8 @@ temperature-1 trajectories give Monte-Carlo samples from the joint future
 distribution, which we can reduce to any set of quantiles.
 
 ```python
-from diff_gpt.sampler.temperature import TemperatureSampler
-from diff_gpt.sampler.nucleus import NucleusSampler
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
+from diff_gpt.domain.sampler.nucleus import NucleusSampler
 
 # N Monte-Carlo trajectories, shape (N, H, F).
 # Plain temperature-1 sampling — the most diverse readout.
@@ -382,7 +382,7 @@ Regression-based forecasters have to approximate this with $\|y_t - \hat
 y_t\|$, which miscalibrates on heteroscedastic series; the categorical
 head's log-likelihood is proper under the learned distribution.
 
-**ETTh1 oil-temperature demo** ([`benchmarks/anomaly_demo.py`](benchmarks/anomaly_demo.py)):
+**ETTh1 oil-temperature demo** ([`src/diff_gpt/application/anomaly_demo.py`](src/diff_gpt/application/anomaly_demo.py)):
 train on 2880 clean hours, inject 5 synthetic ±5σ spikes into a 336-hour
 test window, rank positions by NLL. After only 2000 training iterations
 the top-10 contains **3 of 5 injected spikes (60% recall)**; the rest of
@@ -423,7 +423,7 @@ model = DiffGPT(
 model.train(loader=loader, max_iters=20_000, eval_interval=500)
 ```
 
-Combined with `DiffGPT.train_numa`, compile inside the factory so every
+Combined with `train_ddp.train_numa`, compile inside the factory so every
 worker DDP-wraps an already-compiled module:
 
 ```python
@@ -455,26 +455,31 @@ is smaller than at training time.
 On multi-socket CPU boxes, cross-socket memory traffic and thread migration
 dominate wall-clock for this size of model. Two entry points:
 
-**Single-process pin.** Pass a NUMA node id to `train()` — pins CPU affinity
-to the node's CPUs that the process may use (a cpuset or a SLURM job may allow
-fewer than the node has) and aligns `torch.set_num_threads` /
-`OMP_NUM_THREADS` to their count before the hot loop:
+**Single-process pin.** Pass a NUMA node id to `pin_to_node` before
+`train()` — pins CPU affinity to the node's CPUs that the process may use (a
+cpuset or a SLURM job may allow fewer than the node has) and aligns
+`torch.set_num_threads` / `OMP_NUM_THREADS` to their count before the hot
+loop:
 
 ```python
-model.train(loader=loader, max_iters=20_000, pin_node=0)
+from diff_gpt.infrastructure.numa import pin_to_node
+
+pin_to_node(0)
+model.train(loader=loader, max_iters=20_000)
 ```
 
 **One process per NUMA node (DDP).** For linear scaling across sockets,
-`DiffGPT.train_numa` spawns one worker per NUMA node with a CPU the process
+`train_ddp.train_numa` spawns one worker per NUMA node with a CPU the process
 may use, pins each to those CPUs, and wraps the inner GPT in `DistributedDataParallel`. Both
 factories run *inside* the pinned worker so allocations land on local
 memory; seed the loader by `rank` so workers draw different batches
 (otherwise DDP averages identical gradients).
 
 ```python
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.model.gpt import GPT
-from diff_gpt.data_loader import DiffDataFrameDataLoader
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.application.data_loader import DiffDataFrameDataLoader
+from diff_gpt.infrastructure.train_ddp import train_numa
 import torch
 
 
@@ -497,7 +502,7 @@ def build_loader(rank: int, world: int) -> DiffDataFrameDataLoader:
     )
 
 
-val_loss, _ = DiffGPT.train_numa(
+val_loss, _ = train_numa(
     model_factory=build_gpt,
     loader_factory=build_loader,
     train_kwargs={"max_iters": 20_000, "eval_interval": 500},
@@ -556,24 +561,24 @@ trajectories match the actual browser's classifier.
 
 ```bash
 # Three seeds and a random-label control; completed runs are retained.
-uv run --locked -m benchmarks.grokking.div97 --device cuda \
-  --plan benchmarks/grokking/plans/div97_confirm.json \
+uv run --locked -m diff_gpt.interfaces.grokking.div97 --device cuda \
+  --plan src/diff_gpt/interfaces/grokking/plans/div97_confirm.json \
   --output runs/grokking-div97-confirm
 
 # Curves and compact results; --plot also writes SVG and PNG figures.
-uv run --locked -m benchmarks.grokking.div97_report \
+uv run --locked -m diff_gpt.interfaces.grokking.div97_report \
   runs/grokking-div97-confirm --output runs/grokking-div97-confirm/summary.json
 ```
 
 The five-configuration ScheduleFreeAdamW screening plan is in
-`benchmarks/grokking/plans/div97_screen.json`. Local run directories retain full CSV
+`src/diff_gpt/interfaces/grokking/plans/div97_screen.json`. Local run directories retain full CSV
 curves, optimizer checkpoints, codec metadata and source hashes. The
 `--verify DIR --full-predict` mode checks a checkpoint through the public
 DiffGPT forecasting interface.
 
 ### Recurrent modular division across rows (k >= 1, ongoing)
 
-`benchmarks/grokking/recurrence.py` uses one actual time-series column:
+`src/diff_gpt/application/grokking/recurrence.py` uses one actual time-series column:
 `x[t+2] = x[t] / x[t+1] mod 97`. Finite differences run down consecutive
 rows; there is no synthetic zero prefix. Complete recurrence orbits are
 held out, including every time shift of each test orbit. The seed-11 split
@@ -629,7 +634,7 @@ and 3.42% for LGT. At epoch 3,000 the corresponding values are 93.81% and
 6.42%. These are exploratory seed-11 results; both long native-argmax runs
 continue. `progress-tokenizers.json` records matched budgets and checks
 that the raw data, model sizes and core source versions agree. A one-head
-pair is also in `benchmarks/grokking/plans/recurrence_tokenizer_heads.json`.
+pair is also in `src/diff_gpt/interfaces/grokking/plans/recurrence_tokenizer_heads.json`.
 
 The finite-field readout also supports this non-unit grid, using the actual
 codec to encode its chosen canonical continuation. On frozen one-head MASH
@@ -669,40 +674,40 @@ seed-11 field run exactly.
 
 ```bash
 # Reproduce the full-period result.
-uv run --locked -m benchmarks.grokking.recurrence --device cuda \
+uv run --locked -m diff_gpt.interfaces.grokking.recurrence --device cuda \
   --task division --order 1 --context 48 --width 128 --layers 2 \
   --learning-rate 0.003 --weight-decay 1 --epochs 3000 \
   --output runs/grokking-div97-rows-period
 
 # Verify every held-out forecast through the public API.
-uv run --locked -m benchmarks.grokking.recurrence --device cuda --full \
+uv run --locked -m diff_gpt.interfaces.grokking.recurrence --device cuda --full \
   --verify runs/grokking-div97-rows-period/division-k1-c48-w128-l2-h4-sf-lr0.003-wd1-b20.98-wu10-s11
 
 # Identical model, data split and initialization; only the tokenizer changes.
-uv run --locked -m benchmarks.grokking.recurrence --device cuda \
-  --plan benchmarks/grokking/plans/recurrence_compare.json \
+uv run --locked -m diff_gpt.interfaces.grokking.recurrence --device cuda \
+  --plan src/diff_gpt/interfaces/grokking/plans/recurrence_compare.json \
   --output runs/grokking-div97-rows-tokenizers
 
 # Reproduce positive-order Fibonacci grokking; verify every public forecast.
-uv run --locked -m benchmarks.grokking.recurrence --device cuda --full \
-  --plan benchmarks/grokking/plans/recurrence_field.json \
+uv run --locked -m diff_gpt.interfaces.grokking.recurrence --device cuda --full \
+  --plan src/diff_gpt/interfaces/grokking/plans/recurrence_field.json \
   --output runs/grokking-div97-rows-field
 ```
 
 Checkpoints retain the complete optimizer, batch sampler and criterion state;
 `--resume` extends the epoch budget without restarting training. New runs
 require 101 consecutive observations with token and decoded test accuracy
-at least 99% before stopping. `benchmarks.grokking.recurrence_readouts` saves exact
-checkpoint copies for sampler comparisons; `benchmarks.grokking.recurrence_period_probe`
-provides the copy controls. `benchmarks.grokking.recurrence_report` summarizes active
+at least 99% before stopping. `diff_gpt.interfaces.grokking.recurrence_readouts` saves exact
+checkpoint copies for sampler comparisons; `diff_gpt.interfaces.grokking.recurrence_period_probe`
+provides the copy controls. `diff_gpt.interfaces.grokking.recurrence_report` summarizes active
 and completed curves and can export PNG/SVG plots with `--plot`.
 
-`benchmarks.grokking.recurrence_report --confirmed-only` exports only results with
+`diff_gpt.interfaces.grokking.recurrence_report --confirmed-only` exports only results with
 complete public verification and the required stable tail. Its JSON keeps
 the native-argmax criterion separately from the configured sampler's curve;
 the plot draws native argmax with a dashed line where the sampler differs.
 
-`benchmarks.grokking.recurrence_audit` independently checks every saved raw state
+`diff_gpt.interfaces.grokking.recurrence_audit` independently checks every saved raw state
 and transition, closure of both splits under all orbit shifts, equality of
 actual encoder inputs with encoding of observed rows alone, all supervised
 tokens, optimizer iterates and batch sampler state. It then repeats every
@@ -733,19 +738,19 @@ The Fibonacci sampler improvement does not resolve this short-division case.
 The search prioritizes the earliest stable 99% generalization. A memorization
 plateau is a diagnostic for delayed grokking, not a target to induce. New
 non-unit-grid trials prioritize MASH; LGT remains a paired control.
-`benchmarks/grokking/plans/recurrence_division_tokenizers.json` also compares MASH
+`src/diff_gpt/interfaces/grokking/plans/recurrence_division_tokenizers.json` also compares MASH
 with LGT directly on division, with k=1/C=4, width 128, two blocks and four
 heads on the non-unit grid (vocabulary 512, domain 96). The paired preflight
 checks every state: observed-only inputs match full-window inputs, target
 tokens decode to the correct integers, and both splits and raw rows agree.
-`benchmarks/grokking/plans/recurrence_compact.json` tests an exact unit grid with
+`src/diff_gpt/interfaces/grokking/plans/recurrence_compact.json` tests an exact unit grid with
 vocabulary 192 and domain 95 for division. Its tokens represent the same
 integer differences as the default vocabulary 256, shifted by 32 token
 indices; 191 classes are used, leaving one unused class instead of 65.
 All 9,216 states pass observed-only encoding and exact target-decoding checks.
 The two settings use balanced batches and ScheduleFreeAdamW weight decay
 1 or 3, with the same learning rate 0.01 and model sizes.
-`benchmarks/grokking/plans/recurrence_depth.json` adds eight- and four-block
+`src/diff_gpt/interfaces/grokking/plans/recurrence_depth.json` adds eight- and four-block
 models at width 128 on this same compact grid, raw state space and orbit
 split. Both use learning rate 0.01, weight decay 1 and balanced effective
 batches of at most 512 rows, accumulated in 256-row microbatches. Each has
@@ -754,7 +759,7 @@ the four-block model has 810,496. Their preflight checks all 9,216 observed
 inputs and target decodes and exercises a finite forward/backward optimizer
 update. The depth comparison is an experiment; its generalization is not
 yet established.
-`benchmarks/grokking/plans/recurrence_beta1.json` prepares a matched compact-grid
+`src/diff_gpt/interfaces/grokking/plans/recurrence_beta1.json` prepares a matched compact-grid
 division comparison of ScheduleFreeAdamW beta1 0.5 and 0.95 against the
 existing beta1 0.9 control. Only that optimizer parameter changes; default
 run names and continuation of checkpoints without a beta1 config field
@@ -764,7 +769,7 @@ six-row tail. Balanced sampling uses six 461-row batches and four 462-row
 batches, preserving the row order, complete corpus and ten optimizer
 updates. All growing runs retain full resume state and extended budgets.
 
-`benchmarks/grokking/plans/recurrence_full_batch.json` tests one optimizer update
+`src/diff_gpt/interfaces/grokking/plans/recurrence_full_batch.json` tests one optimizer update
 over all 4,614 training rows per epoch, with a budget of 100,000 epochs.
 Gradients accumulate in 512-row microbatches, weighted by their row counts;
 there is one ScheduleFreeAdamW update after the complete effective batch.
@@ -779,7 +784,7 @@ warmup. At the short-division epoch-8,000 checkpoint, its global step is
 80,000, its base rate is still 0.01 and its averaging coefficient is
 0.0000125077. The growing averaging history can slow changes to evaluation
 weights even while base updates remain active.
-`benchmarks.grokking.recurrence_restart` forks a frozen complete checkpoint and ramps
+`diff_gpt.interfaces.grokking.recurrence_restart` forks a frozen complete checkpoint and ramps
 the learning rate again, without resetting global steps, moments, base and
 evaluation iterates, batch order or RNG state. The original run continues.
 The first trial branches from non-unit-grid MASH division at epoch 1,500,
@@ -796,7 +801,7 @@ agreement between continuous and resumed training interrupted during the ramp.
 ### Fast generalization on series
 
 `grokking_plan.md` prioritizes fast learning; long grokking runs are fallbacks
-after unsuccessful 250-epoch screens. The new `benchmarks.grokking.series`
+after unsuccessful 250-epoch screens. The new `diff_gpt.interfaces.grokking.series`
 runner uses the current plain GPT and unchanged ScheduleFreeAdamW. It freezes
 data splits and train-fitted codecs, evaluates every split in both optimizer
 weight states each epoch, reports losses and decoded errors per column, and
@@ -857,27 +862,27 @@ spread, coverage exclusions and per-column errors.
 
 ```bash
 # Fresh experiments; use a new directory when any training source changes.
-uv run --locked -m benchmarks.grokking.series_suite --device cuda \
+uv run --locked -m diff_gpt.interfaces.grokking.series_suite --device cuda \
   --stages formula_refined synthetic gaussian noise temporal forecasting temporal_late \
   --output runs/grokking-series/reproduction
 
 # A small explicit plan, exact continuation, and strict checkpoint replay.
-uv run --locked -m benchmarks.grokking.series --device cuda \
-  --plan benchmarks/grokking/plans/series_fast_initial.json \
+uv run --locked -m diff_gpt.interfaces.grokking.series --device cuda \
+  --plan src/diff_gpt/interfaces/grokking/plans/series_fast_initial.json \
   --output runs/grokking-series/initial
-uv run --locked -m benchmarks.grokking.series --device cuda --resume \
+uv run --locked -m diff_gpt.interfaces.grokking.series --device cuda --resume \
   --plan path/to/extended-plan.json --output runs/grokking-series/initial
-uv run --locked -m benchmarks.grokking.series --device cuda \
+uv run --locked -m diff_gpt.interfaces.grokking.series --device cuda \
   --verify path/to/completed-run
 
 # Combine recorded source versions and score free-running forecast horizons.
-uv run --locked -m benchmarks.grokking.series_report \
+uv run --locked -m diff_gpt.interfaces.grokking.series_report \
   runs/grokking-series/fast-first-current \
   --include runs/grokking-series/fast-first \
   runs/grokking-series/formula-batched runs/grokking-series/gaussian-current
 
 # Free-running evaluation for a fresh run using the current source.
-uv run --locked -m benchmarks.grokking.series_rollout \
+uv run --locked -m diff_gpt.interfaces.grokking.series_rollout \
   runs/grokking-series/reproduction --device cuda --selected-only
 ```
 
@@ -951,15 +956,16 @@ pip install git+https://github.com/fxeqxmulfx/diff-gpt
 uv sync
 uv run --no-sync pytest            # skips the tests marked slow
 uv run --no-sync pytest --runslow  # runs everything
-(cd leaderboards && uv run --no-sync pytest)
-(cd synthetic && uv run --no-sync pytest)
 ```
 
-`uv sync` makes one environment, `.venv`, on Python 3.14, from one `uv.lock`:
-diff-gpt and the two other projects of its uv workspace, `leaderboards/`
-(the GIFT-Eval and TIME evaluation, `leaderboards/README.md`) and
-`synthetic/` (the synthetic pretraining corpus). Each of the three keeps its
-tests in a package named `tests`, so each runs them from its own folder.
+`uv sync` makes one environment, `.venv`, on Python 3.14, from one `uv.lock`.
+Its `dev` group holds the `leaderboards` group, for the GIFT-Eval and TIME
+evaluation (`src/diff_gpt/infrastructure/leaderboards/README.md`), and the
+`corpus` group, for the synthetic pretraining corpus made with TempoPFN's
+generators. pytest runs every test, all under `tests/`, from the repository
+root. The corpus's tests load TempoPFN's code from its clone, `TEMPOPFN_ROOT`,
+by default `../TempoPFN` at commit 5969ec6; some of the leaderboards' tests
+read the gift-eval clone and `datasets/time-output` (see their README).
 
 ## References
 

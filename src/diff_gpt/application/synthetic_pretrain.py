@@ -1,12 +1,12 @@
 r"""
 Pretrain one DiffGPT on the synthetic corpus: Track B of leaderboard_plan.md.
 
-The corpus is what synthetic/ writes from TempoPFN's generators: one file
-<corpus>/<split>/<source>.npy per generator, float32 of shape (N, L), and
-its manifest <corpus>/../manifest.json, whose SHA-256 config.json records. The
-model trains on windows of the "train" split (`DiffCorpusDataLoader`, each
-window in the units of a prefix of itself) and is scored on the "holdout"
-split, other series of the same generators:
+The corpus is what diff_gpt.infrastructure.corpus writes from TempoPFN's
+generators: one file <corpus>/<split>/<source>.npy per generator, float32 of
+shape (N, L), and its manifest <corpus>/../manifest.json, whose SHA-256
+config.json records. The model trains on windows of the "train" split
+(`DiffCorpusDataLoader`, each window in the units of a prefix of itself) and
+is scored on the "holdout" split, other series of the same generators:
 - the loss of its windows at every evaluation (val_loss);
 - every --score-every evaluations, the forecasts of fixed holdout windows,
   --score-windows per source: --horizon points after a context of the rest

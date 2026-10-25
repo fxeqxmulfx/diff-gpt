@@ -7,8 +7,9 @@ forecasts every exported window of the split into
 RUNS/forecasts/seasonal_naive/<split>/, for leaderboards' score.
 
 The leaderboard's Seasonal_Naive is statsforecast's SeasonalNaive behind
-gift-eval's notebook predictor (leaderboards.gift.official), and this
-follows it step by step:
+gift-eval's notebook predictor
+(diff_gpt.infrastructure.leaderboards.gift.official), and this follows it
+step by step:
 
 - A context with NaN is filled by gluonts' LastValueImputation: a NaN takes
   the last value before it, and leading NaN the first value; a context that

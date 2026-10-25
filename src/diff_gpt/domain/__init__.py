@@ -15,6 +15,11 @@ tarfile, uses os only as os.environ, and calls no file reader or writer (open,
 torch.save, torch.load, numpy's and pandas' readers and writers). It reads no
 environment variable and no CPU affinity, with one exception:
 encoder_decoder.DEFAULT_TOKENIZER, the tokenizer of a caller that names none,
-from DIFF_GPT_TOKENIZER. It has no `__main__` block.
+from DIFF_GPT_TOKENIZER. It makes no setting of the whole process: it calls
+none of torch.set_num_threads, torch.set_num_interop_threads,
+torch.set_float32_matmul_precision, signal.signal, logging.basicConfig,
+sys.addaudithook and sys.meta_path.insert or append, and assigns nothing in
+torch.backends, sys.dont_write_bytecode or sys.meta_path. It has no
+`__main__` block.
 tests/diff_gpt/test_layers.py checks the rule on the source.
 """

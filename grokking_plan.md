@@ -119,7 +119,7 @@ FLOPs to 99%; record plateau lengths as diagnostics. Every later step compares
 against these anchors. If an anchor generalizes quickly at its old settings,
 keep it even if delayed grokking disappears. If it fails to generalize quickly,
 re-screen the learning rate and weight decay first
-(`benchmarks/grokking/plans/div97_screen.json`), then investigate a longer run
+(`src/diff_gpt/interfaces/grokking/plans/div97_screen.json`), then investigate a longer run
 as a fallback. This is the first place where parameters may have to change.
 
 ### 1. Noise tolerance on the anchors

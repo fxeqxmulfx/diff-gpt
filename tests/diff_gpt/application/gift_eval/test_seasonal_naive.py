@@ -1,8 +1,8 @@
 """
 Check the numpy seasonal naive against hand-computed forecasts.
 
-leaderboards/tests checks it against statsforecast through the leaderboard's
-own evaluation; these cases pin each step without it.
+tests/diff_gpt/infrastructure/leaderboards checks it against statsforecast
+through the leaderboard's own evaluation; these cases pin each step without it.
 """
 
 from statistics import NormalDist

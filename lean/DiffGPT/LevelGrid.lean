@@ -5,7 +5,7 @@ public import Mathlib
 /-!
 # Level-grid tokens fit the vocabulary
 
-The tokenizers of `diff_gpt.encoder_decoder` difference the levels by an integer operator
+The tokenizers of `diff_gpt.domain.encoder_decoder` difference the levels by an integer operator
 `c(B) = (1 - B^S₁)⋯(1 - B^Sₘ)` over the lags `l = [S₁, …, Sₘ]`, `Sᵢ ≥ 1`: `Δᵏ` is `k` lags of
 `1` (`diffs_replicate`), `1 - B²⁴` the seasonal difference. With the forward differences
 `Δ_[S] f n = f (n + S) - f n`, `diffs l f n` reads `f n, …, f (n + p)` for the degree

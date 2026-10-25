@@ -158,10 +158,10 @@ def test_a_tiny_run_writes_its_curve_and_checkpoints(
     The history holds the evaluations after 0, 2 and 4 updates with their
     FLOPs, each one scored, with all four samples, with two and with three,
     and best.bin loads into the model config.json describes, with the
-    digest of the manifest one level above the corpus, where synthetic/'s
-    export writes it. Trained in mixed precision and scored in float16 too,
-    the checkpoints hold the float32 master weights. Scores of more samples
-    than are drawn are refused.
+    digest of the manifest one level above the corpus, where the corpus's
+    export (diff_gpt.infrastructure.corpus.export) writes it. Trained in mixed
+    precision and scored in float16 too, the checkpoints hold the float32
+    master weights. Scores of more samples than are drawn are refused.
     """
     rng = np.random.default_rng(0)
     corpus = tmp_path / "corpus"

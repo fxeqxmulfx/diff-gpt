@@ -87,7 +87,7 @@ Everything before that point stays local.
   float32. One process pinned to one socket does about 1.0 TFLOPS in float32
   on the CPU, two such processes about 2.0 in all, and one process across
   both sockets 0.16-0.22: CPU jobs run one process per NUMA node
-  (`diff_gpt.numa.pin_to_node`). Numbers measured on the RTX 3050 are the
+  (`diff_gpt.infrastructure.numa.pin_to_node`). Numbers measured on the RTX 3050 are the
   laptop's; every estimate is checked against the machine it runs on.
 - Python versions: diff-gpt requires Python ≥ 3.14. gift-eval and timebench
   pin gluonts ~0.15.1 and numpy ~1.26, which do not run on 3.14, so the
@@ -100,7 +100,7 @@ Everything before that point stays local.
   11, 17 and 23 on the GPU.
 - Select settings on validation only. Test windows are scored once per
   candidate submission and are never used to choose a setting.
-- Do not choose checkpoints by validation loss. `diff_gpt.train.train()`,
+- Do not choose checkpoints by validation loss. `diff_gpt.application.train.train()`,
   which `DiffGPT.train` runs, keeps the final weights by default; leave its
   `use_early_stopping` and `save_best` off, because both select by validation
   loss and so hide late generalization. That loss is also one-step
@@ -321,8 +321,9 @@ token-level GPT without leakage would be the first on the board.
   2026-10-21: TempoPFN's model is dropped; its generators and its GIFT-Eval
   path are kept. TempoPFN itself, 38M parameters pretrained on its synthetic
   series, scores 0.797 / 0.537 on GIFT-Eval, zero-shot.
-- The corpus is made in `synthetic/` (see the docstrings of `src/__init__.py`
-  and `tempopfn_corpus/`):
+- The corpus is made in `synthetic/` (see the docstrings of
+  `src/diff_gpt/infrastructure/corpus/tempopfn/__init__.py` and of the
+  modules of `src/diff_gpt/infrastructure/corpus/`):
   - TempoPFN's code runs from a clone next to this repository,
     `../TempoPFN` at commit 5969ec6; a run refuses another commit or a
     changed clone. Four of its modules are replaced by stand-ins in
@@ -712,12 +713,12 @@ Decided with the user on 2026-10-21 and 22:
 In the order agreed with the user:
 
 1. Finish G1 with TIME's part of M1 (GIFT-Eval's passed on 2026-10-22).
-2. Generate the full corpus, from `synthetic/`:
+2. Generate the full corpus, from the repository root:
 
    ```sh
-   PYTHONHASHSEED=0 taskset -c <cores> uv run python -m tempopfn_corpus.schedule \
+   PYTHONHASHSEED=0 taskset -c <cores> uv run python -m diff_gpt.interfaces.corpus.schedule \
        --series train=65536 --series holdout=4096
-   uv run python -m tempopfn_corpus.export
+   uv run python -m diff_gpt.interfaces.corpus.export
    ```
 
 3. Pilot `synthetic_pretrain.py` on the GPU: float32 against bfloat16
@@ -732,12 +733,15 @@ Git carries the code only. On the new machine:
   - TempoPFN at the commit the corpus checks:
     `git clone https://github.com/automl/TempoPFN ../TempoPFN`, then
     `git -C ../TempoPFN checkout 5969ec6ddbded5a8d2976d42504c1ae436a2f1b3`;
-  - gift-eval at 3c7be6d, as `leaderboards/README.md` says.
+  - gift-eval at 3c7be6d, as
+    `src/diff_gpt/infrastructure/leaderboards/README.md` says.
 - Run `uv sync` in the root (Python 3.14): one environment, `.venv`, for
-  diff-gpt, `leaderboards/` and `synthetic/`. pyo's wheel bundles PortAudio
-  and its other libraries, so the audio generators need no system packages.
-- Data, ignored by git: download GIFT-Eval again (`leaderboards/README.md`)
-  or copy `datasets/gift-eval`. `datasets/long_term_forecast` and
+  all of diff-gpt, the leaderboards and the corpus included. pyo's wheel
+  bundles PortAudio and its other libraries, so the audio generators need no
+  system packages.
+- Data, ignored by git: download GIFT-Eval again
+  (`src/diff_gpt/infrastructure/leaderboards/README.md`) or copy
+  `datasets/gift-eval`. `datasets/long_term_forecast` and
   `datasets/short_term_forecast` serve only the older benchmarks, never
   Track B (see **Pitfalls**). The set-aside pilot,
   `datasets/tempopfn-synthetic/set-aside`, is not needed.
@@ -750,8 +754,8 @@ Git carries the code only. On the new machine:
   versions of Python and the libraries, but not the CPU, whose BLAS kernels
   may change the last bits of a series.
 - Measure again before scheduling: `SECONDS_PER_SERIES` in
-  `synthetic/tempopfn_corpus/schedule.py`, the GPU's throughput (M2), and
-  the CPU threads and memory that jobs may use.
+  `src/diff_gpt/infrastructure/corpus/schedule.py`, the GPU's throughput
+  (M2), and the CPU threads and memory that jobs may use.
 
 ## Sources
 

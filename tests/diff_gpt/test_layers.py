@@ -39,9 +39,27 @@ SYSTEM = (
 # The names of os that domain and application must not use: the environment
 # and the CPU affinity.
 ENVIRONMENT = {"environ", "getenv", "putenv", "sched_getaffinity", "sched_setaffinity"}
+# The names of os that domain and application must not use, by their start:
+# the calls that start a process.
+PROCESSES = ("system", "popen", "fork", "spawn", "exec", "posix_spawn")
 # The one environment read the domain keeps: the assignment of this name in
 # this module.
 EXCEPTION = ("domain/encoder_decoder.py", "DEFAULT_TOKENIZER")
+# What domain and application must not call, nor import by name: the settings
+# of the whole process, which the command lines and the infrastructure make.
+SETTINGS = {
+    "torch.set_num_threads",
+    "torch.set_num_interop_threads",
+    "torch.set_float32_matmul_precision",
+    "signal.signal",
+    "logging.basicConfig",
+    "sys.addaudithook",
+    "sys.meta_path.insert",
+    "sys.meta_path.append",
+}
+# What domain and application must not assign, nor assign in: torch's backend
+# flags and the settings of the import system.
+SETTINGS_ASSIGNED = ("torch.backends", "sys.dont_write_bytecode", "sys.meta_path")
 # The modules that the domain must not import, since they open files.
 FILES = (
     "pathlib",
@@ -225,7 +243,7 @@ def _imports(tree: ast.Module, layer: str) -> list[Break]:
 
 
 def _environment(tree: ast.Module, layer: str, exempt: set[int]) -> list[Break]:
-    """Return the uses of os that break the rule: environment, affinity, files."""
+    """Return the uses of os that break the rule: environment, processes, files."""
     aliases = {"os"} | {
         alias.asname
         for node in ast.walk(tree)
@@ -239,7 +257,7 @@ def _environment(tree: ast.Module, layer: str, exempt: set[int]) -> list[Break]:
             breaks += [
                 (node.lineno, f"{layer} imports os.{alias.name}")
                 for alias in node.names
-                if alias.name in ENVIRONMENT
+                if alias.name in ENVIRONMENT or alias.name.startswith(PROCESSES)
             ]
         if not (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)):
             continue
@@ -247,8 +265,61 @@ def _environment(tree: ast.Module, layer: str, exempt: set[int]) -> list[Break]:
             continue
         if node.attr in ENVIRONMENT and node.lineno not in exempt:
             breaks.append((node.lineno, f"{layer} reads os.{node.attr}"))
+        if node.attr.startswith(PROCESSES):
+            breaks.append((node.lineno, f"{layer} starts a process: os.{node.attr}"))
         if layer == "domain" and node.attr != "environ":
             breaks.append((node.lineno, f"domain uses os.{node.attr}"))
+    return breaks
+
+
+def _imported_names(tree: ast.Module) -> dict[str, str]:
+    """Return the full name of each name that an import binds, if not the same."""
+    names: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names |= {alias.asname: alias.name for alias in node.names if alias.asname}
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            names |= {
+                alias.asname or alias.name: f"{node.module}.{alias.name}"
+                for alias in node.names
+            }
+    return names
+
+
+def _dotted(node: ast.expr, names: dict[str, str]) -> str:
+    """Return the dotted name of `node`, its first name resolved by `names`, or ""."""
+    if isinstance(node, ast.Name):
+        return names.get(node.id, node.id)
+    if isinstance(node, ast.Attribute):
+        inner = _dotted(node.value, names)
+        return f"{inner}.{node.attr}" if inner else ""
+    if isinstance(node, ast.Subscript):
+        return _dotted(node.value, names)
+    return ""
+
+
+def _settings(tree: ast.Module, layer: str) -> list[Break]:
+    """Return the settings of the whole process that the module makes."""
+    names = _imported_names(tree)
+    breaks: list[Break] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            breaks += [
+                (node.lineno, f"{layer} imports {node.module}.{alias.name}")
+                for alias in node.names
+                if f"{node.module}.{alias.name}" in SETTINGS
+            ]
+        elif isinstance(node, ast.Call):
+            name = _dotted(node.func, names)
+            if name in SETTINGS:
+                breaks.append((node.lineno, f"{layer} sets the process: {name}"))
+        elif isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            breaks += [
+                (node.lineno, f"{layer} sets the process: {name}")
+                for name in (_dotted(target, names) for target in targets)
+                if _within(name, SETTINGS_ASSIGNED)
+            ]
     return breaks
 
 
@@ -292,6 +363,7 @@ def _breaks(path: Path) -> list[str]:
             breaks += _environment(
                 tree, layer, _exempt_lines(tree, relative.as_posix())
             )
+            breaks += _settings(tree, layer)
         if layer == "domain":
             breaks += _calls(tree)
         if layer != "interfaces":
