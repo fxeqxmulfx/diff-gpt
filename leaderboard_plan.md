@@ -321,9 +321,9 @@ token-level GPT without leakage would be the first on the board.
   2026-10-21: TempoPFN's model is dropped; its generators and its GIFT-Eval
   path are kept. TempoPFN itself, 38M parameters pretrained on its synthetic
   series, scores 0.797 / 0.537 on GIFT-Eval, zero-shot.
-- The corpus is made in `synthetic/` (see the docstrings of
-  `src/diff_gpt/infrastructure/corpus/tempopfn/__init__.py` and of the
-  modules of `src/diff_gpt/infrastructure/corpus/`):
+- The corpus is made in `synthetic/`, now
+  `src/diff_gpt/infrastructure/corpus/` (see the docstrings of its modules
+  and of `tempopfn/__init__.py`):
   - TempoPFN's code runs from a clone next to this repository,
     `../TempoPFN` at commit 5969ec6; a run refuses another commit or a
     changed clone. Four of its modules are replaced by stand-ins in
