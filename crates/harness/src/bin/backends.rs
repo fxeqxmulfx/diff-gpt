@@ -21,23 +21,28 @@
 //! - `checkpointed`: the same on an Autodiff device with burn's balanced
 //!   gradient checkpointing, which recomputes the memory-bound ops in the
 //!   backward;
-//! - `autodiff-forward`: the op alone on the Autodiff device, on tensors
-//!   that track gradients, with no backward.
+//! - `autodiff-forward` and `checkpointed-forward`: the op alone on the
+//!   Autodiff device, without and with the checkpointing, on tensors that
+//!   track gradients, with no backward: `--memory` then shows what each
+//!   forward keeps for a backward.
 //!
 //! The first two are the default.
 //!
 //! It prints a line per op and pass: the device, the rows, the op, the pass,
 //! and the median, the least and the most of the iterations' times in
-//! milliseconds, each timed from the op's start to the device's sync. Before
-//! them, `--warmup-seconds` of plain matmuls (10 on a GPU, none on the CPU)
-//! bring a GPU out of idle, and it prints the GPU's state after them as
-//! `nvidia-smi` gives it. With `--memory`, it prints a line before the
-//! rounds of each pass and after each round, its outputs dropped: the GPU's
-//! used memory as `nvidia-smi` gives it, and the bytes that burn's allocator
-//! holds in use and reserved where the backend reports them (`CubeCL`'s
-//! does, `LibTorch`'s does not), all in MiB. The command that starts it sets
-//! the threads (`numactl`, `RAYON_NUM_THREADS`, `OMP_NUM_THREADS`); the
-//! bench sets none.
+//! milliseconds, each timed from the op's start to the device's sync. After
+//! each round it reads the round's outputs, the gradients in a backward
+//! pass: `CubeCL`'s sync reports no failed launch, such as one that found no
+//! memory, which shows only on the read of an output it left unwritten.
+//! Before the rounds, `--warmup-seconds` of plain matmuls (10 on a GPU, none
+//! on the CPU) bring a GPU out of idle, and it prints the GPU's state after
+//! them as `nvidia-smi` gives it. With `--memory`, it prints a line before
+//! the rounds of each pass and after each round, its outputs read and
+//! dropped: the GPU's used memory as `nvidia-smi` gives it, and the bytes
+//! that burn's allocator holds in use and reserved where the backend reports
+//! them (`CubeCL`'s does, `LibTorch`'s does not), all in MiB. The command
+//! that starts it sets the threads (`numactl`, `RAYON_NUM_THREADS`,
+//! `OMP_NUM_THREADS`); the bench sets none.
 #![forbid(unsafe_code)]
 
 use std::process::{Command, ExitCode};
@@ -63,7 +68,8 @@ const GPU_WARMUP_SECONDS: u64 = 10;
 
 const USAGE: &str = "usage: backends <ndarray|flex|libtorch|libtorch-cuda|cuda> \
                      [--ops matmul,softmax,cross_entropy,attention] \
-                     [--passes forward,forward+backward,checkpointed,autodiff-forward] \
+                     [--passes forward,forward+backward,checkpointed,autodiff-forward,\
+                     checkpointed-forward] \
                      [--rows N] [--warmup N] [--iterations N] [--warmup-seconds N] [--memory]";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -98,14 +104,16 @@ enum Pass {
     ForwardBackward,
     Checkpointed,
     AutodiffForward,
+    CheckpointedForward,
 }
 
 impl Pass {
-    const ALL: [Self; 4] = [
+    const ALL: [Self; 5] = [
         Self::Forward,
         Self::ForwardBackward,
         Self::Checkpointed,
         Self::AutodiffForward,
+        Self::CheckpointedForward,
     ];
 
     const fn name(self) -> &'static str {
@@ -114,6 +122,7 @@ impl Pass {
             Self::ForwardBackward => "forward+backward",
             Self::Checkpointed => "checkpointed",
             Self::AutodiffForward => "autodiff-forward",
+            Self::CheckpointedForward => "checkpointed-forward",
         }
     }
 
@@ -122,7 +131,9 @@ impl Pass {
         match self {
             Self::Forward => plain.clone(),
             Self::ForwardBackward | Self::AutodiffForward => plain.clone().autodiff(),
-            Self::Checkpointed => plain.clone().autodiff().gradient_checkpointing(),
+            Self::Checkpointed | Self::CheckpointedForward => {
+                plain.clone().autodiff().gradient_checkpointing()
+            }
         }
     }
 
@@ -356,17 +367,28 @@ fn measure<const D: usize, const E: usize>(
             let grads = forward().sum().backward();
             inputs
                 .iter()
-                .map(|input| input.grad(&grads))
-                .collect::<Vec<_>>()
+                .map(|input| input.grad(&grads).expect("the input tracks its gradient"))
+                .collect()
         });
     } else {
-        time(settings, device, op, pass, forward);
+        time(settings, device, op, pass, || vec![forward()]);
     }
 }
 
 /// Run `run` the warm-up times and then the timed ones, each up to the
-/// device's sync, its outputs kept until then; print the times.
-fn time<T>(settings: &Settings, device: &Device, op: Op, pass: Pass, mut run: impl FnMut() -> T) {
+/// device's sync, its outputs kept until then and read after it; print the
+/// times.
+///
+/// # Panics
+///
+/// If a round leaves an output unwritten, which its read reports.
+fn time<const D: usize>(
+    settings: &Settings,
+    device: &Device,
+    op: Op,
+    pass: Pass,
+    mut run: impl FnMut() -> Vec<Tensor<D>>,
+) {
     eprintln!("{} {}: {device:?}", op.name(), pass.name());
     if settings.memory {
         memory(settings, device, op, pass, "-", "-");
@@ -377,7 +399,15 @@ fn time<T>(settings: &Settings, device: &Device, op: Op, pass: Pass, mut run: im
         let outputs = run();
         device.sync().expect("the device runs the pass");
         let elapsed = start.elapsed().as_secs_f64() * 1e3;
-        drop(outputs);
+        for output in outputs {
+            if let Err(error) = output.try_into_data() {
+                panic!(
+                    "round {round} of {} {} left an output unwritten: {error}",
+                    op.name(),
+                    pass.name()
+                );
+            }
+        }
         if settings.memory {
             let round = round.to_string();
             memory(settings, device, op, pass, &round, &format!("{elapsed:.3}"));
