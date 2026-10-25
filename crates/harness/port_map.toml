@@ -1,0 +1,1872 @@
+# The port map: where each part of the frozen Python reference goes in the
+# Rust workspace, which port task brings it over, and how its outputs are
+# checked against the reference's. The harness reads it (src/port_map.rs),
+# and its test (tests/port_map.rs) checks it whole against the reference's
+# commit. A port task that finds an entry wrong changes it here, in a commit
+# that says why.
+#
+# [modules]      each module of the reference's package, keyed by its path in
+#                the package: its crate, its Rust module ("lib" for the
+#                crate's root), its port task and its check. `others` is the
+#                check on the backends other than LibTorch, `command` the
+#                subcommand of the `diff-gpt` binary that a command line
+#                becomes, `also` the task that ports the rest of a module,
+#                `note` what an entry needs said.
+# [data]         each other file of the package: its place in the workspace,
+#                its port task and its check, `also` and `note` as above.
+# [tempopfn]     each module of the TempoPFN clone that the corpus imports.
+# [rust_only]    the Rust modules with no module of the reference.
+# [tests]        each test file of the reference, keyed by its path in the
+#                repository: the Rust test file that its ids go to, their port
+#                task and check, the ids, the slow ones, the dropped ones with
+#                their reasons (`drop`), and the ids that go elsewhere
+#                (`overrides`). A `drop` or `overrides` key is an id or a test
+#                function, whose cases it all covers. The Rust test of the id
+#                `test_NAME[CASE]` is the test NAME of the file, and CASE the
+#                case of it that pytest labels so; a slow test is
+#                `#[ignore = "slow"]`, run by `cargo test -- --ignored`.
+# [test_support] the other files of the reference's tests.
+#
+# The map covers the reference: its package, its tests and the modules of
+# TempoPFN that the corpus imports. The repository's other files (README.md,
+# the plans, runs/*.sh, lean/, pyproject.toml, uv.lock) are #36's, as the
+# board says, with the removal of the Python.
+#
+# A check is how the Rust outputs are compared with the reference's
+# ([checks]); a test's check is the kind of comparison its assertions make,
+# which its port asserts as the pytest does, with the pytest's tolerances,
+# and with the map's tolerance where another backend than LibTorch computes
+# the numbers.
+
+[reference]
+commit = "5afe1a1"
+package = "src/diff_gpt"
+tests = "tests"
+# `pytest --collect-only -q tests` at the commit: "927 tests collected";
+# with `-m slow`, 19 of them.
+pytest_ids = 927
+
+[tasks]
+27 = "Rust port 1: Cargo workspace on burn in clean architecture, strict lints, burn backends measured here, the port map"
+28 = "Rust port 2: the frozen Python reference and the comparison harness in Rust"
+29 = "Rust port 3: the domain without the model: the MASH Σ-Δ tokenizer, normalization, metrics, a numpy-compatible RNG"
+30 = "Rust port 4: the model on burn: GPT, KV cache and engine, samplers, ScheduleFreeAdamW, the Python checkpoints"
+31 = "Rust port 5: training: the data loaders, train, synthetic_pretrain with resume and kept checkpoints, NUMA pinning, the two-socket path"
+32 = "Rust port 6: forecasting and benchmarks: predict_samples_many, synthetic_rescore, the GIFT forecast, M4, ETT, diff_bench, the anomaly demo"
+33 = "Rust port 7: evaluation: GIFT-Eval and TIME export, score, aggregate and official, with the copies of gift-eval, timebench, gluonts, statsforecast and utilsforecast"
+34 = "Rust port 8: the corpus: TempoPFN's 14 generators and 2 augmentations, the stand-ins, schedule, generate, export and stats"
+35 = "Rust port 9: the research code: grokking (div97, mqar_div97, recurrence, series) and mqar, with their reports"
+36 = "Rust port 10: done: every command and document on Rust, Python removed, the full sweep"
+
+[checks]
+exact = "bit for bit: the same tokens, integers, strings, bytes and files, and floats of the same bits"
+ulp = "ulp:N: every float within N units in the last place of the reference's"
+tolerance = "tolerance:NAME: every float within the tolerance NAME of [tolerances], |rust - reference| <= atol + rtol * |reference|"
+distribution = "distribution:NAME: sampled outputs, by the test NAME of [distributions]"
+none = "nothing of its own to compare: a package's docs, re-exports or import set-up, whose modules' checks cover it"
+
+[tolerances]
+f32_rounding = { rtol = 1.3e-6, atol = 1e-5, note = "float32 rounding: torch.testing.assert_close's default for float32, the reference's float32 operations in another order" }
+backend = { rtol = 1e-4, atol = 1e-5, note = "the model on a backend other than LibTorch: other kernels, other orders of reduction" }
+train = { rtol = 1e-3, atol = 1e-5, note = "the numbers of a short training run from the reference's initial weights: the losses of each step, the holdout's CRPS and MASE" }
+
+[distributions]
+frequencies = "draws of tokens: their counts against the sampler's probabilities, a chi-squared test at p >= 0.001 over at least 10^4 draws"
+seeds = "sampled series and forecasts: their moments, autocorrelation, spectra and scores (CRPS, MASE) within the spread of two seeds of the reference"
+
+[modules]
+"__init__.py" = { crate = "workspace", rust = "Cargo.toml", task = 27, check = "none", note = "the package's docs: the workspace's manifest" }
+"application/__init__.py" = { crate = "application", rust = "lib", task = 27, check = "none" }
+"application/anomaly_demo.py" = { crate = "application", rust = "anomaly_demo", task = 32, check = "tolerance:train" }
+"application/data_loader.py" = { crate = "application", rust = "data_loader", task = 31, check = "exact", note = "the batches exact: the draws of torch's CPU generator ported (domain::rng::torch_cpu) and numpy's (domain::rng::pcg64)" }
+"application/diff_bench.py" = { crate = "application", rust = "diff_bench", task = 32, check = "tolerance:train" }
+"application/diff_gpt.py" = { crate = "application", rust = "diff_gpt", task = 31, check = "tolerance:train", also = 32, note = "DiffGPT: its training in #31; its forecasts (predict, predict_samples_many, predict_quantiles, anomaly_scores, calibrate_temperature) in #32, by distribution:seeds where sampled" }
+"application/ett_bench.py" = { crate = "application", rust = "ett_bench", task = 32, check = "tolerance:train" }
+"application/gift_eval/__init__.py" = { crate = "application", rust = "gift_eval", task = 32, check = "none" }
+"application/gift_eval/diff_gpt_forecast.py" = { crate = "application", rust = "gift_eval::diff_gpt_forecast", task = 32, check = "distribution:seeds" }
+"application/gift_eval/files.py" = { crate = "application", rust = "gift_eval::files", task = 32, check = "exact" }
+"application/gift_eval/seasonal_naive.py" = { crate = "application", rust = "gift_eval::seasonal_naive", task = 33, check = "ulp:1" }
+"application/grokking/__init__.py" = { crate = "application", rust = "grokking", task = 35, check = "none" }
+"application/grokking/div97.py" = { crate = "application", rust = "grokking::div97", task = 35, check = "tolerance:train" }
+"application/grokking/div97_report.py" = { crate = "application", rust = "grokking::div97_report", task = 35, check = "exact" }
+"application/grokking/mqar_div97.py" = { crate = "application", rust = "grokking::mqar_div97", task = 35, check = "tolerance:train" }
+"application/grokking/mqar_div97_copy_audit.py" = { crate = "application", rust = "grokking::mqar_div97_copy_audit", task = 35, check = "exact" }
+"application/grokking/mqar_div97_diagnostics.py" = { crate = "application", rust = "grokking::mqar_div97_diagnostics", task = 35, check = "tolerance:train" }
+"application/grokking/recurrence.py" = { crate = "application", rust = "grokking::recurrence", task = 35, check = "tolerance:train" }
+"application/grokking/recurrence_audit.py" = { crate = "application", rust = "grokking::recurrence_audit", task = 35, check = "exact" }
+"application/grokking/recurrence_field_sampler.py" = { crate = "application", rust = "grokking::recurrence_field_sampler", task = 35, check = "distribution:frequencies" }
+"application/grokking/recurrence_period_probe.py" = { crate = "application", rust = "grokking::recurrence_period_probe", task = 35, check = "tolerance:train" }
+"application/grokking/recurrence_readouts.py" = { crate = "application", rust = "grokking::recurrence_readouts", task = 35, check = "tolerance:train" }
+"application/grokking/recurrence_report.py" = { crate = "application", rust = "grokking::recurrence_report", task = 35, check = "exact" }
+"application/grokking/recurrence_restart.py" = { crate = "application", rust = "grokking::recurrence_restart", task = 35, check = "tolerance:train" }
+"application/grokking/series.py" = { crate = "application", rust = "grokking::series", task = 35, check = "tolerance:train" }
+"application/grokking/series_data.py" = { crate = "application", rust = "grokking::series_data", task = 35, check = "exact" }
+"application/grokking/series_gaussian.py" = { crate = "application", rust = "grokking::series_gaussian", task = 35, check = "ulp:1" }
+"application/grokking/series_numeric_codec.py" = { crate = "application", rust = "grokking::series_numeric_codec", task = 35, check = "exact" }
+"application/grokking/series_oracle.py" = { crate = "application", rust = "grokking::series_oracle", task = 35, check = "ulp:1" }
+"application/grokking/series_report.py" = { crate = "application", rust = "grokking::series_report", task = 35, check = "exact" }
+"application/grokking/series_rollout.py" = { crate = "application", rust = "grokking::series_rollout", task = 35, check = "tolerance:train" }
+"application/grokking/series_shortcuts.py" = { crate = "application", rust = "grokking::series_shortcuts", task = 35, check = "tolerance:train" }
+"application/grokking/series_suite.py" = { crate = "application", rust = "grokking::series_suite", task = 35, check = "tolerance:train" }
+"application/grokking/series_weather_audit.py" = { crate = "application", rust = "grokking::series_weather_audit", task = 35, check = "exact" }
+"application/m4_bench.py" = { crate = "application", rust = "m4_bench", task = 32, check = "tolerance:train" }
+"application/m4_eval.py" = { crate = "application", rust = "m4_eval", task = 32, check = "tolerance:train" }
+"application/mqar.py" = { crate = "application", rust = "mqar", task = 35, check = "tolerance:train", note = "its draws are Python's random.randrange (domain::rng::python)" }
+"application/normalization.py" = { crate = "application", rust = "normalization", task = 29, check = "ulp:1", note = "predict_samples_normalized against a port, a forecaster trait; its test needs DiffGPT and so comes in #32" }
+"application/paths.py" = { crate = "application", rust = "paths", task = 31, check = "exact" }
+"application/ports.py" = { crate = "application", rust = "ports", task = 31, check = "exact", note = "the ports: the traits that the infrastructure implements and the tests' doubles implement" }
+"application/prob_m4_bench.py" = { crate = "application", rust = "prob_m4_bench", task = 32, check = "distribution:seeds" }
+"application/synthetic_pretrain.py" = { crate = "application", rust = "synthetic_pretrain", task = 31, check = "tolerance:train" }
+"application/synthetic_rescore.py" = { crate = "application", rust = "synthetic_rescore", task = 32, check = "distribution:seeds" }
+"application/train.py" = { crate = "application", rust = "train", task = 31, check = "tolerance:train" }
+"domain/__init__.py" = { crate = "domain", rust = "lib", task = 27, check = "none" }
+"domain/encoder_decoder.py" = { crate = "domain", rust = "encoder_decoder", task = 29, check = "exact" }
+"domain/metrics/__init__.py" = { crate = "domain", rust = "metrics", task = 29, check = "none" }
+"domain/metrics/point.py" = { crate = "domain", rust = "metrics::point", task = 29, check = "ulp:1" }
+"domain/metrics/probabilistic.py" = { crate = "domain", rust = "metrics::probabilistic", task = 29, check = "ulp:1" }
+"domain/model/__init__.py" = { crate = "domain", rust = "model", task = 30, check = "none" }
+"domain/model/block.py" = { crate = "domain", rust = "model::block", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend" }
+"domain/model/engine.py" = { crate = "domain", rust = "model::engine", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend", note = "the logits by tolerance:f32_rounding; the deterministic samplers' tokens exact; the random ones by distribution:frequencies" }
+"domain/model/feed_forward.py" = { crate = "domain", rust = "model::feed_forward", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend" }
+"domain/model/gpt.py" = { crate = "domain", rust = "model::gpt", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend" }
+"domain/model/kv_cache.py" = { crate = "domain", rust = "model::kv_cache", task = 30, check = "exact", note = "positions, growth and the shared prefix exact; decode against the full forward by tolerance:f32_rounding" }
+"domain/model/mha.py" = { crate = "domain", rust = "model::mha", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend" }
+"domain/model/rope.py" = { crate = "domain", rust = "model::rope", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend" }
+"domain/normalization.py" = { crate = "domain", rust = "normalization", task = 29, check = "ulp:1" }
+"domain/optimizer/__init__.py" = { crate = "domain", rust = "optimizer", task = 30, check = "none" }
+"domain/optimizer/schedule_free.py" = { crate = "domain", rust = "optimizer::schedule_free", task = 30, check = "tolerance:f32_rounding", others = "tolerance:backend" }
+"domain/sampler/__init__.py" = { crate = "domain", rust = "sampler", task = 30, check = "none" }
+"domain/sampler/median.py" = { crate = "domain", rust = "sampler::median", task = 30, check = "exact" }
+"domain/sampler/nucleus.py" = { crate = "domain", rust = "sampler::nucleus", task = 30, check = "distribution:frequencies" }
+"domain/sampler/sampler.py" = { crate = "domain", rust = "sampler", task = 30, check = "exact", note = "the module's root: the sampler type" }
+"domain/sampler/temperature.py" = { crate = "domain", rust = "sampler::temperature", task = 30, check = "distribution:frequencies" }
+"infrastructure/__init__.py" = { crate = "infrastructure", rust = "lib", task = 27, check = "none" }
+"infrastructure/corpus/__init__.py" = { crate = "infrastructure", rust = "corpus", task = 34, check = "none" }
+"infrastructure/corpus/export.py" = { crate = "infrastructure", rust = "corpus::export", task = 34, check = "exact" }
+"infrastructure/corpus/generate.py" = { crate = "infrastructure", rust = "corpus::generate", task = 34, check = "distribution:seeds", note = "the same series as the reference where the math and the draws can match, shown per source in #34; otherwise by distribution:seeds" }
+"infrastructure/corpus/schedule.py" = { crate = "infrastructure", rust = "corpus::schedule", task = 34, check = "exact" }
+"infrastructure/corpus/sources.py" = { crate = "infrastructure", rust = "corpus::sources", task = 34, check = "exact" }
+"infrastructure/corpus/stats.py" = { crate = "infrastructure", rust = "corpus::stats", task = 34, check = "ulp:1" }
+"infrastructure/corpus/tempopfn/__init__.py" = { crate = "infrastructure", rust = "corpus::tempopfn", task = 34, check = "none", note = "Python's import set-up of TempoPFN's clone and the stand-ins: the Rust port compiles the ported modules in their place" }
+"infrastructure/corpus/tempopfn/gift_eval/__init__.py" = { crate = "infrastructure", rust = "corpus::tempopfn::gift_eval", task = 34, check = "none" }
+"infrastructure/corpus/tempopfn/gift_eval/data.py" = { crate = "infrastructure", rust = "corpus::tempopfn::gift_eval::data", task = 34, check = "exact", note = "a stand-in of TempoPFN's module" }
+"infrastructure/corpus/tempopfn/synthetic_generation/__init__.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation", task = 34, check = "none" }
+"infrastructure/corpus/tempopfn/synthetic_generation/audio_generators/__init__.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators", task = 34, check = "none" }
+"infrastructure/corpus/tempopfn/synthetic_generation/audio_generators/utils.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::utils", task = 34, check = "distribution:seeds", note = "a stand-in of TempoPFN's module" }
+"infrastructure/corpus/tempopfn/synthetic_generation/cauker/__init__.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::cauker", task = 34, check = "none" }
+"infrastructure/corpus/tempopfn/synthetic_generation/cauker/cauker_generator.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::cauker::cauker_generator", task = 34, check = "distribution:seeds", note = "a stand-in of TempoPFN's module; exact where #34 shows the draws match" }
+"infrastructure/corpus/tempopfn/synthetic_generation/kernel_synth/__init__.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::kernel_synth", task = 34, check = "none" }
+"infrastructure/corpus/tempopfn/synthetic_generation/kernel_synth/kernel_synth.py" = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::kernel_synth::kernel_synth", task = 34, check = "distribution:seeds", note = "a stand-in of TempoPFN's module; exact where #34 shows the draws match" }
+"infrastructure/file_lock.py" = { crate = "infrastructure", rust = "file_lock", task = 31, check = "exact" }
+"infrastructure/grokking/__init__.py" = { crate = "infrastructure", rust = "grokking", task = 35, check = "none" }
+"infrastructure/grokking/browser_replay.py" = { crate = "infrastructure", rust = "grokking::browser_replay", task = 35, check = "exact", note = "the browser's draws, replayed exactly" }
+"infrastructure/leaderboards/__init__.py" = { crate = "infrastructure", rust = "leaderboards", task = 33, check = "exact" }
+"infrastructure/leaderboards/gift/__init__.py" = { crate = "infrastructure", rust = "leaderboards::gift", task = 33, check = "exact" }
+"infrastructure/leaderboards/gift/aggregate.py" = { crate = "infrastructure", rust = "leaderboards::gift::aggregate", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/gift/compare.py" = { crate = "infrastructure", rust = "leaderboards::gift::compare", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/gift/configs.py" = { crate = "infrastructure", rust = "leaderboards::gift::configs", task = 33, check = "exact" }
+"infrastructure/leaderboards/gift/evaluation.py" = { crate = "infrastructure", rust = "leaderboards::gift::evaluation", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/gift/export.py" = { crate = "infrastructure", rust = "leaderboards::gift::export", task = 33, check = "exact" }
+"infrastructure/leaderboards/gift/official.py" = { crate = "infrastructure", rust = "leaderboards::gift::official", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/gift/score.py" = { crate = "infrastructure", rust = "leaderboards::gift::score", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/gift/windows.py" = { crate = "infrastructure", rust = "leaderboards::gift::windows", task = 33, check = "exact" }
+"infrastructure/leaderboards/time/__init__.py" = { crate = "infrastructure", rust = "leaderboards::time", task = 33, check = "exact" }
+"infrastructure/leaderboards/time/aggregate.py" = { crate = "infrastructure", rust = "leaderboards::time::aggregate", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/time/compare.py" = { crate = "infrastructure", rust = "leaderboards::time::compare", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/time/configs.py" = { crate = "infrastructure", rust = "leaderboards::time::configs", task = 33, check = "exact" }
+"infrastructure/leaderboards/time/export.py" = { crate = "infrastructure", rust = "leaderboards::time::export", task = 33, check = "exact" }
+"infrastructure/leaderboards/time/official.py" = { crate = "infrastructure", rust = "leaderboards::time::official", task = 33, check = "ulp:1", note = "the predictor's draws from numpy's global RandomState (domain::rng::mt19937)" }
+"infrastructure/leaderboards/time/score.py" = { crate = "infrastructure", rust = "leaderboards::time::score", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/time/windows.py" = { crate = "infrastructure", rust = "leaderboards::time::windows", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gift_eval/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gift_eval", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gift_eval/data.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gift_eval::data", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/dataset/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::dataset", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/dataset/common.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::dataset::common", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/dataset/field_names.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::dataset::field_names", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/dataset/split.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::dataset::split", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/dataset/util.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::dataset::util", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/ev/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::ev", task = 33, check = "none" }
+"infrastructure/leaderboards/vendored/gluonts/ev/aggregations.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::ev::aggregations", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/gluonts/ev/metrics.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::ev::metrics", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/gluonts/ev/stats.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::ev::stats", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/gluonts/ev/ts_stats.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::ev::ts_stats", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/gluonts/exceptions.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::exceptions", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/itertools.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::itertools", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/model/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::model", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/model/evaluation.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::model::evaluation", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/gluonts/model/forecast.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::model::forecast", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/gluonts/model/predictor.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::model::predictor", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/time_feature/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::time_feature", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/time_feature/_base.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::time_feature::base", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/time_feature/seasonality.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::time_feature::seasonality", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/transform/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::transform", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/transform/_base.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::transform::base", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/gluonts/transform/feature.py" = { crate = "infrastructure", rust = "leaderboards::vendored::gluonts::transform::feature", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/statsforecast/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::statsforecast", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/statsforecast/core.py" = { crate = "infrastructure", rust = "leaderboards::vendored::statsforecast::core", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/statsforecast/models.py" = { crate = "infrastructure", rust = "leaderboards::vendored::statsforecast::models", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/statsforecast/utils.py" = { crate = "infrastructure", rust = "leaderboards::vendored::statsforecast::utils", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/evaluation/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::evaluation", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/evaluation/data.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::evaluation::data", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/evaluation/metrics.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::evaluation::metrics", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/timebench/evaluation/saver.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::evaluation::saver", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/evaluation/utils.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::evaluation::utils", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/models/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::models", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/timebench/models/statsforecast_predictor.py" = { crate = "infrastructure", rust = "leaderboards::vendored::timebench::models::statsforecast_predictor", task = 33, check = "ulp:1" }
+"infrastructure/leaderboards/vendored/utilsforecast/__init__.py" = { crate = "infrastructure", rust = "leaderboards::vendored::utilsforecast", task = 33, check = "exact" }
+"infrastructure/leaderboards/vendored/utilsforecast/grouped_array.py" = { crate = "infrastructure", rust = "leaderboards::vendored::utilsforecast::grouped_array", task = 33, check = "exact" }
+"infrastructure/numa.py" = { crate = "interfaces", rust = "numa", task = 31, check = "exact", note = "pin_to_node sets the threads and the CPU affinity, settings of the process, so the command lines' library holds it (the layer rule); the topology it reads from /sys is infrastructure::numa" }
+"infrastructure/provenance.py" = { crate = "infrastructure", rust = "provenance", task = 31, check = "exact" }
+"infrastructure/sqlite_data_loader.py" = { crate = "infrastructure", rust = "sqlite_data_loader", task = 31, check = "exact", note = "the batches exact: the draws of torch's CPU generator ported (domain::rng::torch_cpu)" }
+"infrastructure/train_ddp.py" = { crate = "infrastructure", rust = "train_ddp", task = 31, check = "tolerance:train", note = "the two-socket path; each worker's threads and affinity are set by its command line" }
+"interfaces/__init__.py" = { crate = "interfaces", rust = "lib", task = 27, check = "none" }
+"interfaces/anomaly_demo.py" = { crate = "interfaces", rust = "anomaly_demo", task = 32, check = "exact", command = "diff-gpt anomaly-demo" }
+"interfaces/corpus/__init__.py" = { crate = "interfaces", rust = "corpus", task = 34, check = "exact", note = "the thread settings of the corpus's command lines" }
+"interfaces/corpus/export.py" = { crate = "interfaces", rust = "corpus::export", task = 34, check = "exact", command = "diff-gpt corpus export" }
+"interfaces/corpus/generate.py" = { crate = "interfaces", rust = "corpus::generate", task = 34, check = "exact", command = "diff-gpt corpus generate" }
+"interfaces/corpus/schedule.py" = { crate = "interfaces", rust = "corpus::schedule", task = 34, check = "exact", command = "diff-gpt corpus schedule" }
+"interfaces/corpus/stats.py" = { crate = "interfaces", rust = "corpus::stats", task = 34, check = "exact", command = "diff-gpt corpus stats" }
+"interfaces/diff_bench.py" = { crate = "interfaces", rust = "diff_bench", task = 32, check = "exact", command = "diff-gpt diff-bench" }
+"interfaces/ett_bench.py" = { crate = "interfaces", rust = "ett_bench", task = 32, check = "exact", command = "diff-gpt ett-bench" }
+"interfaces/gift_eval/__init__.py" = { crate = "interfaces", rust = "gift_eval", task = 32, check = "exact" }
+"interfaces/gift_eval/diff_gpt_forecast.py" = { crate = "interfaces", rust = "gift_eval::diff_gpt_forecast", task = 32, check = "exact", command = "diff-gpt gift-eval diff-gpt-forecast" }
+"interfaces/gift_eval/seasonal_naive.py" = { crate = "interfaces", rust = "gift_eval::seasonal_naive", task = 33, check = "exact", command = "diff-gpt gift-eval seasonal-naive" }
+"interfaces/grokking/__init__.py" = { crate = "interfaces", rust = "grokking", task = 35, check = "exact" }
+"interfaces/grokking/div97.py" = { crate = "interfaces", rust = "grokking::div97", task = 35, check = "exact", command = "diff-gpt grokking div97" }
+"interfaces/grokking/div97_report.py" = { crate = "interfaces", rust = "grokking::div97_report", task = 35, check = "exact", command = "diff-gpt grokking div97-report" }
+"interfaces/grokking/mqar_div97.py" = { crate = "interfaces", rust = "grokking::mqar_div97", task = 35, check = "exact", command = "diff-gpt grokking mqar-div97" }
+"interfaces/grokking/mqar_div97_copy_audit.py" = { crate = "interfaces", rust = "grokking::mqar_div97_copy_audit", task = 35, check = "exact", command = "diff-gpt grokking mqar-div97-copy-audit" }
+"interfaces/grokking/recurrence.py" = { crate = "interfaces", rust = "grokking::recurrence", task = 35, check = "exact", command = "diff-gpt grokking recurrence" }
+"interfaces/grokking/recurrence_audit.py" = { crate = "interfaces", rust = "grokking::recurrence_audit", task = 35, check = "exact", command = "diff-gpt grokking recurrence-audit" }
+"interfaces/grokking/recurrence_period_probe.py" = { crate = "interfaces", rust = "grokking::recurrence_period_probe", task = 35, check = "exact", command = "diff-gpt grokking recurrence-period-probe" }
+"interfaces/grokking/recurrence_readouts.py" = { crate = "interfaces", rust = "grokking::recurrence_readouts", task = 35, check = "exact", command = "diff-gpt grokking recurrence-readouts" }
+"interfaces/grokking/recurrence_report.py" = { crate = "interfaces", rust = "grokking::recurrence_report", task = 35, check = "exact", command = "diff-gpt grokking recurrence-report" }
+"interfaces/grokking/recurrence_restart.py" = { crate = "interfaces", rust = "grokking::recurrence_restart", task = 35, check = "exact", command = "diff-gpt grokking recurrence-restart" }
+"interfaces/grokking/series.py" = { crate = "interfaces", rust = "grokking::series", task = 35, check = "exact", command = "diff-gpt grokking series" }
+"interfaces/grokking/series_numeric_codec.py" = { crate = "interfaces", rust = "grokking::series_numeric_codec", task = 35, check = "exact", command = "diff-gpt grokking series-numeric-codec" }
+"interfaces/grokking/series_report.py" = { crate = "interfaces", rust = "grokking::series_report", task = 35, check = "exact", command = "diff-gpt grokking series-report" }
+"interfaces/grokking/series_rollout.py" = { crate = "interfaces", rust = "grokking::series_rollout", task = 35, check = "exact", command = "diff-gpt grokking series-rollout" }
+"interfaces/grokking/series_suite.py" = { crate = "interfaces", rust = "grokking::series_suite", task = 35, check = "exact", command = "diff-gpt grokking series-suite" }
+"interfaces/grokking/series_weather_audit.py" = { crate = "interfaces", rust = "grokking::series_weather_audit", task = 35, check = "exact", command = "diff-gpt grokking series-weather-audit" }
+"interfaces/leaderboards/__init__.py" = { crate = "interfaces", rust = "leaderboards", task = 33, check = "exact" }
+"interfaces/leaderboards/gift/__init__.py" = { crate = "interfaces", rust = "leaderboards::gift", task = 33, check = "exact" }
+"interfaces/leaderboards/gift/aggregate.py" = { crate = "interfaces", rust = "leaderboards::gift::aggregate", task = 33, check = "exact", command = "diff-gpt leaderboards gift aggregate" }
+"interfaces/leaderboards/gift/compare.py" = { crate = "interfaces", rust = "leaderboards::gift::compare", task = 33, check = "exact", command = "diff-gpt leaderboards gift compare" }
+"interfaces/leaderboards/gift/export.py" = { crate = "interfaces", rust = "leaderboards::gift::export", task = 33, check = "exact", command = "diff-gpt leaderboards gift export" }
+"interfaces/leaderboards/gift/official.py" = { crate = "interfaces", rust = "leaderboards::gift::official", task = 33, check = "exact", command = "diff-gpt leaderboards gift official" }
+"interfaces/leaderboards/gift/score.py" = { crate = "interfaces", rust = "leaderboards::gift::score", task = 33, check = "exact", command = "diff-gpt leaderboards gift score" }
+"interfaces/leaderboards/time/__init__.py" = { crate = "interfaces", rust = "leaderboards::time", task = 33, check = "exact" }
+"interfaces/leaderboards/time/aggregate.py" = { crate = "interfaces", rust = "leaderboards::time::aggregate", task = 33, check = "exact", command = "diff-gpt leaderboards time aggregate" }
+"interfaces/leaderboards/time/compare.py" = { crate = "interfaces", rust = "leaderboards::time::compare", task = 33, check = "exact", command = "diff-gpt leaderboards time compare" }
+"interfaces/leaderboards/time/export.py" = { crate = "interfaces", rust = "leaderboards::time::export", task = 33, check = "exact", command = "diff-gpt leaderboards time export" }
+"interfaces/leaderboards/time/official.py" = { crate = "interfaces", rust = "leaderboards::time::official", task = 33, check = "exact", command = "diff-gpt leaderboards time official" }
+"interfaces/leaderboards/time/score.py" = { crate = "interfaces", rust = "leaderboards::time::score", task = 33, check = "exact", command = "diff-gpt leaderboards time score" }
+"interfaces/m4_bench.py" = { crate = "interfaces", rust = "m4_bench", task = 32, check = "exact", command = "diff-gpt m4-bench" }
+"interfaces/m4_eval.py" = { crate = "interfaces", rust = "m4_eval", task = 32, check = "exact", command = "diff-gpt m4-eval" }
+"interfaces/mqar.py" = { crate = "interfaces", rust = "mqar", task = 35, check = "exact", command = "diff-gpt mqar" }
+"interfaces/prob_m4_bench.py" = { crate = "interfaces", rust = "prob_m4_bench", task = 32, check = "exact", command = "diff-gpt prob-m4-bench" }
+"interfaces/synthetic_pretrain.py" = { crate = "interfaces", rust = "synthetic_pretrain", task = 31, check = "exact", command = "diff-gpt synthetic-pretrain" }
+"interfaces/synthetic_rescore.py" = { crate = "interfaces", rust = "synthetic_rescore", task = 32, check = "exact", command = "diff-gpt synthetic-rescore" }
+
+[data]
+"infrastructure/corpus/tempopfn/LICENSE-TempoPFN" = { crate = "infrastructure", path = "crates/infrastructure/src/corpus/tempopfn/LICENSE-TempoPFN", task = 34, check = "exact" }
+"infrastructure/leaderboards/LICENSE-gift-eval" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/LICENSE-gift-eval", task = 33, check = "exact" }
+"infrastructure/leaderboards/LICENSE-gluonts" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/LICENSE-gluonts", task = 33, check = "exact" }
+"infrastructure/leaderboards/LICENSE-statsforecast" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/LICENSE-statsforecast", task = 33, check = "exact" }
+"infrastructure/leaderboards/LICENSE-timebench" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/LICENSE-timebench", task = 33, check = "exact" }
+"infrastructure/leaderboards/LICENSE-utilsforecast" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/LICENSE-utilsforecast", task = 33, check = "exact" }
+"infrastructure/leaderboards/README.md" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/README.md", task = 33, check = "exact", also = 36, note = "its commands rewritten for the Rust ones" }
+"infrastructure/leaderboards/vendored/timebench/config/datasets.yaml" = { crate = "infrastructure", path = "crates/infrastructure/src/leaderboards/vendored/timebench/config/datasets.yaml", task = 33, check = "exact" }
+"interfaces/grokking/plans/div97_confirm.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/div97_confirm.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/div97_screen.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/div97_screen.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97_n2_capacity.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97_n2_capacity.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97_n2_diagnostics.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97_n2_diagnostics.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97_n2_hybrid.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97_n2_hybrid.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97_n2_independent.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97_n2_independent.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97_n2_residual.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97_n2_residual.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/mqar_div97_n2_residual_repeats.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/mqar_div97_n2_residual_repeats.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_batches.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_batches.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_beta1.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_beta1.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_compact.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_compact.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_compare.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_compare.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_confirm.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_confirm.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_deep.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_deep.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_depth.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_depth.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_division_tokenizers.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_division_tokenizers.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_fibonacci_settings.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_fibonacci_settings.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_field.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_field.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_full_batch.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_full_batch.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_large.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_large.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_prefix.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_prefix.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_screen.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_screen.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/recurrence_tokenizer_heads.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/recurrence_tokenizer_heads.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/series_fast_initial.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/series_fast_initial.json", task = 35, check = "exact" }
+"interfaces/grokking/plans/series_formula_bits_screen.json" = { crate = "interfaces", path = "crates/interfaces/src/grokking/plans/series_formula_bits_screen.json", task = 35, check = "exact" }
+
+[tempopfn]
+# TempoPFN at the commit below, the clone outside the repository: the modules
+# that an import walk reaches from the corpus's imports (generate.py imports
+# synthetic_generation.continuous_generation and the two augmentations), the
+# stand-ins of [modules] taking the place of theirs (10 of 56). A generator's
+# check is by distribution, or exact where #34 shows its math and draws match.
+commit = "5969ec6ddbded5a8d2976d42504c1ae436a2f1b3"
+
+[tempopfn.modules]
+'src.data' = { crate = "infrastructure", rust = "corpus::tempopfn::data", task = 34, check = "none" }
+'src.data.augmentations' = { crate = "infrastructure", rust = "corpus::tempopfn::data::augmentations", task = 34, check = "distribution:seeds" }
+'src.data.constants' = { crate = "infrastructure", rust = "corpus::tempopfn::data::constants", task = 34, check = "exact" }
+'src.data.containers' = { crate = "infrastructure", rust = "corpus::tempopfn::data::containers", task = 34, check = "exact" }
+'src.data.datasets' = { crate = "infrastructure", rust = "corpus::tempopfn::data::datasets", task = 34, check = "exact" }
+'src.data.filter' = { crate = "infrastructure", rust = "corpus::tempopfn::data::filter", task = 34, check = "exact" }
+'src.data.frequency' = { crate = "infrastructure", rust = "corpus::tempopfn::data::frequency", task = 34, check = "exact" }
+'src.data.scalers' = { crate = "infrastructure", rust = "corpus::tempopfn::data::scalers", task = 34, check = "ulp:1" }
+'src.synthetic_generation.abstract_classes' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::abstract_classes", task = 34, check = "exact" }
+'src.synthetic_generation.anomalies.anomaly_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::anomalies::anomaly_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.anomalies.anomaly_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::anomalies::anomaly_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.financial_volatility_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::financial_volatility_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.financial_volatility_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::financial_volatility_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.multi_scale_fractal_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::multi_scale_fractal_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.multi_scale_fractal_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::multi_scale_fractal_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.network_topology_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::network_topology_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.network_topology_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::network_topology_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.stochastic_rhythm_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::stochastic_rhythm_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.audio_generators.stochastic_rhythm_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::audio_generators::stochastic_rhythm_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.augmentations.offline_per_sample_iid_augmentations' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::augmentations::offline_per_sample_iid_augmentations", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.augmentations.offline_temp_batch_augmentations' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::augmentations::offline_temp_batch_augmentations", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.cauker.cauker_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::cauker::cauker_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.continuous_generation' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::continuous_generation", task = 34, check = "exact" }
+'src.synthetic_generation.forecast_pfn_prior.forecast_pfn_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::forecast_pfn_prior::forecast_pfn_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.forecast_pfn_prior.forecast_pfn_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::forecast_pfn_prior::forecast_pfn_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.forecast_pfn_prior.series_config' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::forecast_pfn_prior::series_config", task = 34, check = "exact" }
+'src.synthetic_generation.forecast_pfn_prior.utils' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::forecast_pfn_prior::utils", task = 34, check = "ulp:1" }
+'src.synthetic_generation.generator_params' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::generator_params", task = 34, check = "exact" }
+'src.synthetic_generation.gp_prior.constants' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::gp_prior::constants", task = 34, check = "exact" }
+'src.synthetic_generation.gp_prior.gp_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::gp_prior::gp_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.gp_prior.gp_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::gp_prior::gp_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.gp_prior.utils' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::gp_prior::utils", task = 34, check = "ulp:1" }
+'src.synthetic_generation.kernel_synth.kernel_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::kernel_synth::kernel_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.ornstein_uhlenbeck_process.ou_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::ornstein_uhlenbeck_process::ou_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.ornstein_uhlenbeck_process.ou_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::ornstein_uhlenbeck_process::ou_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.sawtooth' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::sawtooth", task = 34, check = "none" }
+'src.synthetic_generation.sawtooth.sawtooth_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::sawtooth::sawtooth_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.sawtooth.sawtooth_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::sawtooth::sawtooth_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.sine_waves' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::sine_waves", task = 34, check = "none" }
+'src.synthetic_generation.sine_waves.sine_wave_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::sine_waves::sine_wave_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.sine_waves.sine_wave_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::sine_waves::sine_wave_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.spikes.spikes_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::spikes::spikes_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.spikes.spikes_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::spikes::spikes_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.steps.step_generator' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::steps::step_generator", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.steps.step_generator_wrapper' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::steps::step_generator_wrapper", task = 34, check = "distribution:seeds" }
+'src.synthetic_generation.utils' = { crate = "infrastructure", rust = "corpus::tempopfn::synthetic_generation::utils", task = 34, check = "ulp:1" }
+
+[rust_only]
+"domain::rng::pcg64" = { task = 29, check = "exact", note = "numpy's PCG64 with its SeedSequence and the Generator methods the code calls" }
+"domain::rng::python" = { task = 31, check = "exact", note = "CPython's random: MT19937 seeded by init_by_array, getstate and setstate, and the methods the code calls; synthetic_pretrain's saved states, the corpus's random.seed, CauKer's random.Random and mqar's randrange" }
+"domain::rng::torch_cpu" = { task = 31, check = "exact", note = "torch's CPU generator (MT19937 seeded as torch seeds it) and the draws of torch.randint that the data loaders make" }
+"domain::rng::mt19937" = { task = 33, check = "exact", note = "numpy's legacy RandomState (np.random.seed): TIME's official draws and TempoPFN's generators" }
+"infrastructure::checkpoint" = { task = 30, check = "exact", note = "the Python checkpoints (torch's zip of pickles) read into burn's records, the same tensors; a converter in Rust if burn-import cannot read them" }
+"infrastructure::numa" = { task = 31, check = "exact", note = "the NUMA topology that numa.py reads from /sys; its pinning is interfaces::numa" }
+"infrastructure::corpus::tempopfn::salt" = { task = 34, check = "exact", note = "CPython's str hash (SipHash-1-3 keyed from the hash seed), which TempoPFN salts its seeds with, under the corpus's fixed seed" }
+"harness::layers" = { task = 27, check = "exact", note = "the layer rule: tests/layers.rs" }
+"harness::port_map" = { task = 27, check = "exact", note = "this map's reader and its check: tests/port_map.rs" }
+"harness::backends" = { task = 27, check = "none", note = "the bench of burn's backends: src/bin/backends.rs" }
+"harness::compare" = { task = 28, check = "exact", note = "the comparison of the reference's outputs with the Rust commands', file by file, by this map's checks" }
+
+[test_support]
+"tests/conftest.py" = { task = 27, note = "the slow marker: a slow test is #[ignore = \"slow\"], run by cargo test -- --ignored" }
+"tests/diff_gpt/domain/model/per_row.py" = { rust = "crates/domain/tests/common/per_row.rs", task = 30, note = "the per-row decode path, the reference of the shared-prefix tests; the application's tests take it by #[path]" }
+"tests/diff_gpt/infrastructure/leaderboards/conftest.py" = { rust = "crates/infrastructure/tests/common/tiny.rs", task = 33, note = "the tiny GIFT-Eval and TIME datasets on disk, written once per test binary" }
+"tests/diff_gpt/infrastructure/leaderboards/tiny.py" = { rust = "crates/infrastructure/tests/common/tiny.rs", task = 33 }
+"tests/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/application/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/application/gift_eval/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/application/grokking/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/domain/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/domain/encoder_decoder/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/domain/metrics/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/domain/model/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/domain/optimizer/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/domain/sampler/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/infrastructure/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/infrastructure/corpus/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/infrastructure/corpus/tempopfn/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+"tests/diff_gpt/infrastructure/leaderboards/__init__.py" = { task = 27, note = "a package marker: cargo's test targets need none" }
+
+[tests."tests/diff_gpt/application/gift_eval/test_diff_gpt_forecast.py"]
+rust = "crates/interfaces/tests/gift_eval_diff_gpt_forecast.rs"
+task = 32
+check = "distribution:seeds"
+ids = [
+    'test_chunk_plan_fills_the_block',
+    'test_forecasts_of_a_tiny_run',
+    'test_runs_of_other_batch_sizes_share_a_folder',
+    'test_processes_at_once_keep_each_others_entries',
+    'test_a_process_without_a_gpu_forecasts_with_a_gpu_runs_weights',
+]
+
+[tests."tests/diff_gpt/application/gift_eval/test_files.py"]
+rust = "crates/application/tests/gift_eval_files.rs"
+task = 32
+check = "exact"
+ids = [
+    'test_read_windows',
+    'test_write_forecasts',
+]
+
+[tests."tests/diff_gpt/application/gift_eval/test_seasonal_naive.py"]
+rust = "crates/application/tests/gift_eval_seasonal_naive.rs"
+task = 33
+check = "ulp:1"
+ids = [
+    'test_impute_is_last_value_imputation[context0-filled0]',
+    'test_impute_is_last_value_imputation[context1-filled1]',
+    'test_impute_is_last_value_imputation[context2-filled2]',
+    'test_impute_is_last_value_imputation[context3-filled3]',
+    'test_impute_is_last_value_imputation[context4-filled4]',
+    'test_z_is_the_normal_quantile',
+    'test_seasonal_naive_by_hand',
+    'test_seasonal_naive_without_a_full_season_more',
+    'test_tails_extrapolate_exponentially',
+    'test_forecast_lays_out_every_level',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_div97.py"]
+rust = "crates/application/tests/grokking_div97.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_rows_are_the_complete_task_with_the_browser_split[11]',
+    'test_rows_are_the_complete_task_with_the_browser_split[17]',
+    'test_rows_are_the_complete_task_with_the_browser_split[23]',
+    'test_epoch_sampler_matches_the_browser_without_replacement',
+    'test_zero_order_retains_every_residue_and_is_prefix_independent',
+    'test_answer_is_absent_from_context_and_only_it_is_supervised',
+    'test_grokking_uses_inclusive_plateau_and_first_rise[250-True]',
+    'test_grokking_uses_inclusive_plateau_and_first_rise[251-False]',
+    'test_generalization_without_memorization_is_not_delayed_grokking',
+    'test_saved_weights_replay_full_metrics_and_public_diffgpt[0-adamw]',
+    'test_saved_weights_replay_full_metrics_and_public_diffgpt[0-schedule-free]',
+    'test_saved_weights_replay_full_metrics_and_public_diffgpt[1-adamw]',
+    'test_saved_weights_replay_full_metrics_and_public_diffgpt[1-schedule-free]',
+    'test_saved_weights_replay_full_metrics_and_public_diffgpt[2-adamw]',
+    'test_saved_weights_replay_full_metrics_and_public_diffgpt[2-schedule-free]',
+    'test_full_public_verification_keeps_the_original_answers[0]',
+    'test_full_public_verification_keeps_the_original_answers[1]',
+    'test_a_checkpoint_of_an_earlier_model_is_rejected',
+    'test_positive_order_is_the_actual_codec_and_keeps_all_operands[1]',
+    'test_positive_order_is_the_actual_codec_and_keeps_all_operands[2]',
+    'test_without_initial_level_first_order_inputs_are_ambiguous',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_mqar_div97_diagnostics.py"]
+rust = "crates/application/tests/grokking_mqar_div97_diagnostics.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_probe_reconstructs_real_attention_without_side_effects[settings0]',
+    'test_probe_reconstructs_real_attention_without_side_effects[settings1]',
+    'test_probe_reconstructs_real_attention_without_side_effects[settings2]',
+    'test_peri_stream_diagnostics_measure_the_added_branch',
+    'test_qk_norm_separates_projection_scale_from_logits',
+    'test_logged_training_matches_unlogged_weights_and_metrics[1]',
+    'test_logged_training_matches_unlogged_weights_and_metrics[2]',
+    'test_invalid_diagnostic_settings_fail[settings0]',
+    'test_invalid_diagnostic_settings_fail[settings1]',
+    'test_invalid_diagnostic_settings_fail[settings2]',
+    'test_unsupported_layout_fails_before_creating_run',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_mqar_div97.py"]
+rust = "crates/application/tests/grokking_mqar_div97.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_every_level_has_its_own_token_and_the_actual_codec',
+    'test_query_frames_follow_a_reference_interpreter[division-fixed-normperi-qkrms-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_query_frames_follow_a_reference_interpreter[division-n8-k8-normperi-qkrms-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_query_frames_follow_a_reference_interpreter[division-n8-k32-normperi-qkrms-r8-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_query_frames_follow_a_reference_interpreter[division-n16-k16-normperi-qkrms-g8-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_query_frames_follow_a_reference_interpreter[division-n4-k8-normperi-qkrms-one-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_program_frames_follow_a_reference_interpreter[division]',
+    'test_program_frames_follow_a_reference_interpreter[dividend]',
+    'test_fixed_frames_are_the_anchor_equations_in_its_batch_order',
+    'test_only_compute_answers_are_supervised[division-n4-k8-normperi-qkrms-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_only_compute_answers_are_supervised[division-n4-k8-normperi-qkrms-m3-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_only_compute_answers_are_supervised[dividend-n2-k32-normperi-qkrms-independent-w128-l2-h4-lr0.01-wd1-b20.98-s11]',
+    'test_contexts_are_reproducible_and_fresh_unless_fixed',
+    'test_independent_copy_reads_memory[settings0-dividend]',
+    'test_independent_copy_reads_memory[settings0-divisor]',
+    'test_independent_copy_reads_memory[settings1-dividend]',
+    'test_independent_copy_reads_memory[settings1-divisor]',
+    'test_independent_copy_reads_memory[settings2-dividend]',
+    'test_independent_copy_reads_memory[settings2-divisor]',
+    'test_independent_copy_reads_memory[settings3-dividend]',
+    'test_independent_copy_reads_memory[settings3-divisor]',
+    'test_copy_quartets_close_the_other_query_shortcut[dividend]',
+    'test_copy_quartets_close_the_other_query_shortcut[divisor]',
+    'test_copy_split_is_by_memory_and_is_reproducible',
+    'test_copy_audit_relabels_changed_queries[dividend]',
+    'test_copy_audit_relabels_changed_queries[divisor]',
+    'test_error_classes_name_the_recognizable_mistakes',
+    'test_attention_probabilities_rebuild_each_attention_output[settings0]',
+    'test_attention_probabilities_rebuild_each_attention_output[settings1]',
+    'test_attention_probabilities_rebuild_each_attention_output[settings2]',
+    'test_attention_probabilities_rebuild_each_attention_output[settings3]',
+    'test_saved_weights_replay_metrics_and_public_predict[division-fixed-normperi-qkrms-w8-l1-h1-lr0.01-wd1-b20.98-s11]',
+    'test_saved_weights_replay_metrics_and_public_predict[division-n4-k8-normperi-qkrms-r2-w8-l2-h1-lr0.01-wd1-b20.98-s11]',
+    'test_saved_weights_replay_metrics_and_public_predict[random-n4-k8-normperi-qkrms-one-w8-l2-h1-lr0.01-wd1-b20.98-s11]',
+    'test_saved_weights_replay_metrics_and_public_predict[division-n4-k8-normperi-qkrms-m3-w8-l2-h1-lr0.01-wd1-b20.98-s11]',
+    'test_saved_weights_replay_metrics_and_public_predict[dividend-n2-k32-normperi-qkrms-independent-w8-l2-h1-rope10-lr0.01-wd1-b20.98-s11]',
+    'test_saved_weights_replay_metrics_and_public_predict[dividend-n2-k32-normperi-qkrms-independent-w8-l2-h1-base500-lr0.01-wd1-b20.98-s11]',
+    'test_saved_weights_replay_metrics_and_public_predict[dividend-n2-k32-normperi-qkrms-independent-w8-l2-h1-lr0.01-wd1-b20.98-s11]',
+    'test_full_public_predict_scores_every_test_frame',
+    'test_impossible_frames_are_rejected[settings0]',
+    'test_impossible_frames_are_rejected[settings1]',
+    'test_impossible_frames_are_rejected[settings2]',
+    'test_impossible_frames_are_rejected[settings3]',
+    'test_impossible_frames_are_rejected[settings4]',
+    'test_impossible_frames_are_rejected[settings5]',
+    'test_impossible_frames_are_rejected[settings6]',
+    'test_impossible_frames_are_rejected[settings7]',
+    'test_impossible_frames_are_rejected[settings8]',
+    'test_current_records_replay_the_same_config',
+    'test_old_copy_data_cannot_silently_replay_as_independent_queries',
+    'test_historical_architectures_cannot_silently_load_as_peri[None]',
+    'test_historical_architectures_cannot_silently_load_as_peri[pre]',
+    'test_historical_architectures_cannot_silently_load_as_peri[pre_embed]',
+    'test_historical_architectures_cannot_silently_load_as_peri[peri_rms]',
+]
+slow = [
+    'test_full_public_predict_scores_every_test_frame',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_recurrence_audit.py"]
+rust = "crates/application/tests/grokking_recurrence_audit.rs"
+task = 35
+check = "exact"
+ids = [
+    'test_audit_checks_a_run_and_rejects_it_without_a_stable_tail',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_recurrence.py"]
+rust = "crates/application/tests/grokking_recurrence.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_training_and_test_have_disjoint_complete_orbits[division]',
+    'test_training_and_test_have_disjoint_complete_orbits[fibonacci]',
+    'test_division_is_between_successive_rows_of_one_column',
+    'test_prefix_supervision_uses_true_next_tokens_without_future_inputs[0-expected0]',
+    'test_prefix_supervision_uses_true_next_tokens_without_future_inputs[1-expected1]',
+    'test_prefix_supervision_uses_true_next_tokens_without_future_inputs[3-expected2]',
+    'test_prefix_target_cannot_be_read_from_a_later_input_position',
+    'test_differences_are_down_rows_and_agree_with_the_actual_codec[1-division]',
+    'test_differences_are_down_rows_and_agree_with_the_actual_codec[1-fibonacci]',
+    'test_differences_are_down_rows_and_agree_with_the_actual_codec[2-division]',
+    'test_differences_are_down_rows_and_agree_with_the_actual_codec[2-fibonacci]',
+    'test_resume_reproduces_uninterrupted_weights_and_optimizer[argmax-tail-512-0-0.9]',
+    'test_resume_reproduces_uninterrupted_weights_and_optimizer[field-tail-512-0-0.9]',
+    'test_resume_reproduces_uninterrupted_weights_and_optimizer[argmax-balanced-512-0-0.9]',
+    'test_resume_reproduces_uninterrupted_weights_and_optimizer[argmax-tail-8192-512-0.9]',
+    'test_resume_reproduces_uninterrupted_weights_and_optimizer[argmax-balanced-512-0-0.5]',
+    'test_resume_leaves_a_run_that_reached_its_epochs',
+    'test_resume_rejects_a_history_with_other_columns',
+    'test_a_checkpoint_of_an_earlier_model_cannot_resume_or_verify',
+    'test_balanced_batches_keep_every_sample_and_avoid_the_six_sample_tail',
+    'test_accumulation_matches_a_full_batch_gradient_and_single_optimizer_update[0]',
+    'test_accumulation_matches_a_full_batch_gradient_and_single_optimizer_update[1]',
+    'test_accumulation_matches_a_full_batch_gradient_and_single_optimizer_update[3]',
+    'test_field_readout_preserves_training_weights_and_optimizer',
+    'test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder[1-lgt]',
+    'test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder[1-mash]',
+    'test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder[2-lgt]',
+    'test_nonunit_grid_replays_actual_encoding_and_reanchored_decoder[2-mash]',
+    'test_tokenizer_comparison_reports_the_grid_the_encoders_share[setting0-expected0]',
+    'test_tokenizer_comparison_reports_the_grid_the_encoders_share[setting1-expected1]',
+    'test_range_sampler_uses_only_observed_rows_and_known_support',
+    'test_field_sampler_combines_alias_mass_and_returns_an_actual_derivative',
+    'test_mean_readout_can_interpolate_an_unseen_ordinal_bin',
+    'test_quantized_field_pools_aliases_and_emits_the_actual_canonical_token[1-lgt]',
+    'test_quantized_field_pools_aliases_and_emits_the_actual_canonical_token[1-mash]',
+    'test_quantized_field_pools_aliases_and_emits_the_actual_canonical_token[2-lgt]',
+    'test_quantized_field_pools_aliases_and_emits_the_actual_canonical_token[2-mash]',
+    'test_alias_readout_is_invariant_to_observed_integer_representatives',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_recurrence_restart.py"]
+rust = "crates/application/tests/grokking_recurrence_restart.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_repeat_warmup_changes_only_rate_before_each_optimizer_update',
+    'test_fork_and_mid_warmup_resume_preserve_every_training_state',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_series_gaussian.py"]
+rust = "crates/application/tests/grokking_series_gaussian.rs"
+task = 35
+check = "ulp:1"
+ids = [
+    'test_gaussian_bin_edges_match_actual_codec_boundaries[lgt]',
+    'test_gaussian_bin_edges_match_actual_codec_boundaries[mash]',
+    'test_gaussian_oracle_matches_generated_transition_frequencies[1]',
+    'test_gaussian_oracle_matches_generated_transition_frequencies[24]',
+    'test_independent_gaussian_transition_is_the_marginal',
+    'test_gaussian_transition_preserves_stationarity_and_detailed_balance',
+    'test_gaussian_dataset_uses_relevant_phase_and_independent_calibration[gaussian_ar-1]',
+    'test_gaussian_dataset_uses_relevant_phase_and_independent_calibration[gaussian_seasonal_ar-24]',
+    'test_gaussian_generator_is_deterministic_and_seasonal',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_series.py"]
+rust = "crates/application/tests/grokking_series.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_tabulation_counts_ambiguity_and_entropy',
+    'test_full_table_oracle_keeps_ambiguity_in_a_one_row_test',
+    'test_formula_ceiling_uses_the_full_population',
+    'test_random_formula_control_has_no_input_rule_skill',
+    'test_formula_pair_split_calibration_and_coverage',
+    'test_formula_fit_excludes_all_heldout_values',
+    'test_binary_prompt_round_trip_preserves_quantized_values[64]',
+    'test_binary_prompt_round_trip_preserves_quantized_values[128]',
+    'test_binary_prompt_round_trip_preserves_quantized_values[256]',
+    'test_binary_codec_keeps_splits_labels_resolution_and_ceiling',
+    'test_noise_changes_only_fixed_training_answers[0.0]',
+    'test_noise_changes_only_fixed_training_answers[0.01]',
+    'test_noise_changes_only_fixed_training_answers[0.05]',
+    'test_noise_changes_only_fixed_training_answers[0.2]',
+    'test_anchor_noise_does_not_enter_model_inputs[div97-0]',
+    'test_anchor_noise_does_not_enter_model_inputs[fibonacci-1]',
+    'test_fibonacci_coverage_population_stays_fixed_across_noise',
+    'test_temporal_gaps_train_only_fit_and_vocabulary[lgt-0]',
+    'test_temporal_gaps_train_only_fit_and_vocabulary[lgt-1]',
+    'test_temporal_gaps_train_only_fit_and_vocabulary[mash-0]',
+    'test_temporal_gaps_train_only_fit_and_vocabulary[mash-1]',
+    'test_multivariate_formula_audit_uses_the_actual_future_row[False]',
+    'test_multivariate_formula_audit_uses_the_actual_future_row[True]',
+    'test_generator_hash_fixture_and_exact_bayes_floor',
+    'test_skill_criterion_requires_a_plateau_and_records_overshoot',
+    'test_resume_is_identical_and_replays_both_weight_states',
+    'test_resume_rejects_changed_experiment_before_mutating_run',
+    'test_resume_discards_history_after_durable_checkpoint',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_series_rollout.py"]
+rust = "crates/application/tests/grokking_series_rollout.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_rollout_feeds_generated_rows_and_baselines_use_only_the_past',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_series_shortcuts.py"]
+rust = "crates/application/tests/grokking_series_shortcuts.rs"
+task = 35
+check = "tolerance:train"
+ids = [
+    'test_single_operand_controls_fit_only_training_and_detect_copying',
+]
+
+[tests."tests/diff_gpt/application/grokking/test_series_suite.py"]
+rust = "crates/application/tests/grokking_series_suite.rs"
+task = 35
+check = "exact"
+ids = [
+    'test_fast_crossing_beats_better_but_slower_final_loss',
+    'test_screen_cannot_use_crossings_after_its_budget',
+    'test_anchor_selection_uses_accuracy',
+    'test_unknown_floor_selection_uses_validation',
+    'test_failed_replication_uses_next_fast_screened_setting',
+    'test_forecast_generates_future_columns_instead_of_reading_them',
+    'test_training_sample_cap_does_not_change_formula_calibration',
+]
+
+[tests."tests/diff_gpt/application/test_calibrate_temperature.py"]
+rust = "crates/application/tests/calibrate_temperature.rs"
+task = 32
+check = "distribution:seeds"
+ids = [
+    'test_returns_a_candidate_and_scores_every_temperature',
+    'test_lower_temperature_gives_tighter_bands_so_coverage_criterion_moves',
+    'test_rejects_bad_arguments',
+]
+
+[tests."tests/diff_gpt/application/test_checkpoint.py"]
+rust = "crates/application/tests/checkpoint.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_load_takes_weights_saved_with_the_same_settings',
+    'test_load_compares_the_lags_of_seasonal_operators',
+    'test_load_compares_a_domain_of_ranges_by_its_pairs',
+    'test_load_refuses_weights_saved_with_other_settings[settings0-tokenizer]',
+    'test_load_refuses_weights_saved_with_other_settings[settings1-tokenizer]',
+    'test_load_refuses_weights_saved_with_other_settings[settings2-order_of_derivative]',
+    'test_load_refuses_weights_saved_with_other_settings[settings3-domain_of_definition]',
+    'test_load_takes_a_bare_state_dict_unchecked',
+    'test_load_refuses_weights_of_another_token_scheme[3]',
+    'test_load_refuses_weights_of_another_token_scheme[None]',
+]
+
+[tests."tests/diff_gpt/application/test_corpus_data_loader.py"]
+rust = "crates/application/tests/corpus_data_loader.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_batches_are_windows_shifted_by_one_token',
+    'test_one_seed_repeats_the_batches',
+    'test_series_in_other_units_give_the_same_tokens',
+    'test_targets_that_read_a_missing_value_are_masked',
+    'test_missing_prob_takes_values_out_of_the_windows',
+    'test_weights_set_the_share_of_each_source',
+    'test_val_draws_from_its_own_sources',
+    'test_loader_rejects_bad_settings[change0-TypeError-univariate]',
+    'test_loader_rejects_bad_settings[change1-ValueError-shape]',
+    'test_loader_rejects_bad_settings[change2-ValueError-unknown normalization]',
+    'test_loader_rejects_bad_settings[change3-ValueError-min_context]',
+    'test_loader_rejects_bad_settings[change4-ValueError-min_context]',
+    'test_loader_rejects_bad_settings[change5-ValueError-missing_prob]',
+    'test_loader_rejects_bad_settings[change6-ValueError-max_missing_fraction]',
+    'test_loader_rejects_bad_settings[change7-ValueError-max_missing_run]',
+    'test_loader_rejects_bad_settings[change8-ValueError-at least one source]',
+    'test_loader_rejects_bad_settings[change9-ValueError-18 rows]',
+    'test_loader_rejects_bad_settings[change10-ValueError-no entry]',
+    'test_loader_rejects_bad_settings[change11-ValueError-non-negative]',
+    'test_corpus_domain_bounds_the_steps_within_windows',
+    'test_corpus_domain_quantile_and_ranges',
+    'test_a_model_trains_on_the_corpus',
+]
+
+[tests."tests/diff_gpt/application/test_corpus_data_loader.py".drop]
+'test_loader_rejects_bad_settings[change0-TypeError-univariate]' = "a list as the order of a univariate loader: the Rust setting is an integer by its type"
+
+[tests."tests/diff_gpt/application/test_data_loader_phase.py"]
+rust = "crates/application/tests/data_loader_phase.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_target_mask_keeps_only_the_target_column_at_any_phase',
+    'test_unaligned_windows_start_at_every_phase',
+    'test_aligned_windows_always_start_at_column_zero',
+    'test_aligned_windows_with_target_mask',
+    'test_val_target_mask_keeps_the_target_column_after_a_mid_row_cut',
+    'test_aligned_val_windows_start_at_column_zero_after_a_mid_row_cut',
+]
+
+[tests."tests/diff_gpt/application/test_diff_gpt.py"]
+rust = "crates/application/tests/diff_gpt.rs"
+task = 32
+check = "distribution:seeds"
+ids = [
+    'test_train_runs_with_target_columns_by_name',
+    'test_predict_teacher_forced_shape_and_covariate_fidelity',
+    'test_predict_autoregressive_shape',
+    'test_predict_rejects_both_modes_together',
+    'test_predict_teacher_forced_mismatched_columns_raises',
+    'test_per_column_order_train_and_predict_autoregressive',
+    'test_per_column_order_predict_teacher_forced',
+    'test_seasonal_orders_train_and_predict',
+    'test_per_column_order_shape_mismatch_raises',
+    'test_predict_samples_shape_and_distinct_trajectories',
+    'test_predict_quantiles_shape_and_ordering',
+    'test_predict_quantiles_rejects_out_of_range_quantile',
+    'test_predict_samples_matches_predict_when_n_equals_one_at_argmax',
+    'test_anomaly_scores_shape_and_nan_positions',
+    'test_anomaly_scores_spike_is_higher_than_baseline_after_training',
+    'test_probabilistic_sharpness_grows_with_horizon',
+    'test_probabilistic_argmax_inside_median_band',
+    'test_anomaly_scores_signal_longer_than_block_size_raises',
+    'test_teacher_forced_max_order_exceeds_context_raises',
+    'test_train_save_best_restores_best_val',
+    'test_train_save_best_false_returns_final_loss',
+    'test_train_hands_every_evaluation_to_on_eval',
+    'test_train_grad_accum_runs',
+    'test_predict_point_mae_equals_per_step_median_of_samples',
+    'test_predict_many_matches_predict',
+    'test_predict_many_rejects_bad_contexts',
+    'test_predict_samples_many_matches_predict_samples[1]',
+    'test_predict_samples_many_matches_predict_samples[order1]',
+    'test_predict_samples_many_is_seeded',
+    'test_predict_samples_many_rejects_bad_arguments',
+    'test_predict_samples_many_matches_the_per_row_path[1-cpu]',
+    'test_predict_samples_many_matches_the_per_row_path[1-cuda]',
+    'test_predict_samples_many_matches_the_per_row_path[4-cpu]',
+    'test_predict_samples_many_matches_the_per_row_path[4-cuda]',
+    'test_predict_samples_many_in_half_precision_keeps_the_model[dtype0]',
+    'test_predict_samples_many_in_half_precision_keeps_the_model[dtype1]',
+]
+slow = [
+    'test_probabilistic_argmax_inside_median_band',
+]
+
+[tests."tests/diff_gpt/application/test_diff_gpt.py".overrides]
+test_train_grad_accum_runs = { task = 31, check = "tolerance:train" }
+test_train_hands_every_evaluation_to_on_eval = { task = 31, check = "tolerance:train" }
+test_train_runs_with_target_columns_by_name = { task = 31, check = "tolerance:train" }
+test_train_save_best_false_returns_final_loss = { task = 31, check = "tolerance:train" }
+test_train_save_best_restores_best_val = { task = 31, check = "tolerance:train" }
+
+[tests."tests/diff_gpt/application/test_div97.py"]
+rust = "crates/application/tests/div97.rs"
+task = 31
+check = "tolerance:train"
+ids = [
+    'test_split_holds_every_division_once',
+    'test_batches_supervise_only_the_answer',
+    'test_div97_flops_to_generalize',
+]
+slow = [
+    'test_div97_flops_to_generalize',
+]
+
+[tests."tests/diff_gpt/application/test_fibonacci97.py"]
+rust = "crates/application/tests/fibonacci97.rs"
+task = 31
+check = "tolerance:train"
+ids = [
+    'test_split_holds_whole_cycles',
+    'test_batches_supervise_only_the_forecast_step',
+    'test_forecast_is_the_decoded_step[mash]',
+    'test_forecast_is_the_decoded_step[lgt]',
+    'test_forecast_is_the_decoded_step[mash-half]',
+    'test_tokenizers_differ_on_this_grid',
+    'test_fibonacci97_flops_to_generalize[mash]',
+    'test_fibonacci97_flops_to_generalize[lgt]',
+    'test_fibonacci97_flops_to_generalize[mash-half]',
+]
+slow = [
+    'test_fibonacci97_flops_to_generalize[mash]',
+    'test_fibonacci97_flops_to_generalize[lgt]',
+    'test_fibonacci97_flops_to_generalize[mash-half]',
+]
+
+[tests."tests/diff_gpt/application/test_m4_bench.py"]
+rust = "crates/application/tests/m4_bench.rs"
+task = 32
+check = "ulp:1"
+ids = [
+    'test_nll_x_of_uniform_tokens_is_the_uniform_density_of_the_steps[3.0]',
+    'test_nll_x_of_uniform_tokens_is_the_uniform_density_of_the_steps[0.25]',
+    'test_nll_x_is_a_float',
+]
+
+[tests."tests/diff_gpt/application/test_missing_values.py"]
+rust = "crates/infrastructure/tests/missing_values.rs"
+task = 32
+check = "tolerance:f32_rounding"
+ids = [
+    'test_dataframe_loader_masks_the_targets_that_read_a_nan',
+    'test_sqlite_loader_masks_the_targets_that_read_a_null',
+    'test_predict_forecasts_a_context_with_gaps_as_its_fill',
+    'test_teacher_forced_covariates_take_the_line_across_their_gaps',
+    'test_anomaly_scores_are_nan_at_the_steps_that_read_a_nan',
+    'test_calibration_scores_only_the_truth_that_is_not_nan',
+    'test_training_on_frames_with_gaps_gives_a_finite_loss',
+]
+
+[tests."tests/diff_gpt/application/test_missing_values.py".overrides]
+test_dataframe_loader_masks_the_targets_that_read_a_nan = { task = 31, check = "exact" }
+test_sqlite_loader_masks_the_targets_that_read_a_null = { task = 31, check = "exact" }
+test_training_on_frames_with_gaps_gives_a_finite_loss = { task = 31, check = "tolerance:train" }
+
+[tests."tests/diff_gpt/application/test_mqar.py"]
+rust = "crates/application/tests/mqar.rs"
+task = 35
+check = "exact"
+ids = [
+    'test_splits_are_the_labs[controls0-problem0-3c5d6848ab2a814ee050e56a34f6e611dbd0e0ff86bc624e269314c85665fde2]',
+    'test_splits_are_the_labs[controls1-problem1-10b4c4f3c3bffc1489775fa9f1c1a3d4012c8f7dd33adf91d40dae0c39bb966b]',
+    'test_splits_are_the_labs[controls2-problem2-e04dec2c99a2e7c93d7119ffa0a82877d453c36e451c0d383185224259d93796]',
+    'test_splits_are_the_labs[controls3-problem3-39fc0fddfede189df136104933ca3035043985b498b5a83f2da59b6eb050be10]',
+    'test_splits_are_the_labs[controls4-problem4-c62044c079cefd0816324c86daa54e7d21a93271b0139210e99ae73e76a1c686]',
+    'test_splits_are_the_labs[controls5-problem5-7baacfffb249a7662bc24ccf03e0b317042829fdf7d19155ecbdb9fb46613e3a]',
+    'test_queries_are_answered_with_the_latest_write[controls0-problem0-tokens0-answers0]',
+    'test_queries_are_answered_with_the_latest_write[controls1-problem1-tokens1-answers1]',
+    'test_uniform_draws_are_randrange_draws[1]',
+    'test_uniform_draws_are_randrange_draws[5]',
+    'test_uniform_draws_are_randrange_draws[64]',
+    'test_uniform_draws_are_randrange_draws[100]',
+    'test_uniform_draws_are_randrange_draws[1025]',
+    'test_labels_reject_inputs_outside_the_task[controls0-tokens0-incomplete MQAR prefix]',
+    'test_labels_reject_inputs_outside_the_task[controls1-tokens1-incomplete MQAR prefix]',
+    'test_labels_reject_inputs_outside_the_task[controls2-tokens2-invalid MQAR write]',
+    'test_labels_reject_inputs_outside_the_task[controls3-tokens3-invalid MQAR write]',
+    'test_labels_reject_inputs_outside_the_task[controls4-tokens4-rewrite must change]',
+    'test_labels_reject_inputs_outside_the_task[controls5-tokens5-one distinct prior key]',
+    'test_labels_reject_inputs_outside_the_task[controls6-tokens6-one distinct prior key]',
+    'test_labels_reject_inputs_outside_the_task[controls7-tokens7-fillers must be value tokens]',
+    'test_labels_reject_inputs_outside_the_task[controls8-tokens8-wrong number of supervised queries]',
+    'test_labels_reject_inputs_outside_the_task[controls9-tokens9-one distinct prior key]',
+    'test_labels_reject_inputs_outside_the_task[controls10-tokens10-pairs - overwrites distinct keys]',
+    'test_labels_reject_a_rewrite_to_the_current_value',
+    'test_task_rejects_invalid_controls[controls0]',
+    'test_task_rejects_invalid_controls[controls1]',
+    'test_task_rejects_invalid_controls[controls2]',
+    'test_task_rejects_invalid_controls[controls3]',
+    'test_task_rejects_invalid_controls[controls4]',
+    'test_task_rejects_invalid_controls[controls5]',
+    'test_task_rejects_invalid_controls[controls6]',
+    'test_task_rejects_invalid_controls[controls7]',
+    'test_task_rejects_invalid_controls[controls8]',
+    'test_task_rejects_invalid_controls[controls9]',
+    'test_run_rejects_invalid_settings[settings0]',
+    'test_run_rejects_invalid_settings[settings1]',
+    'test_run_rejects_invalid_settings[settings2]',
+    'test_run_rejects_invalid_settings[settings3]',
+    'test_run_rejects_invalid_settings[settings4]',
+    'test_run_rejects_invalid_settings[settings5]',
+    'test_run_rejects_invalid_settings[settings6]',
+    'test_run_rejects_invalid_settings[settings7]',
+    'test_run_rejects_invalid_settings[settings8]',
+    'test_rope_settings_build_their_gpt_and_name_their_run',
+    'test_evaluate_scores_each_query_and_each_example',
+    'test_run_saves_its_weights_and_rescores_them',
+    'test_a_run_saved_before_new_settings_is_rescored',
+]
+
+[tests."tests/diff_gpt/application/test_normalization.py"]
+rust = "crates/application/tests/normalization.rs"
+task = 32
+check = "ulp:1"
+ids = [
+    'test_samples_come_back_in_the_units_of_each_context',
+]
+
+[tests."tests/diff_gpt/application/test_predict_context.py"]
+rust = "crates/application/tests/predict_context.rs"
+task = 32
+check = "tolerance:f32_rounding"
+ids = [
+    'test_forecast_stays_at_the_last_context_value_after_a_clipped_step',
+    'test_forecast_continues_the_last_slope_after_clipped_steps',
+    'test_teacher_forced_covariates_come_back_as_supplied_after_a_clipped_step',
+    'test_mash_k1_covariates_come_back_as_supplied_after_a_jump_at_the_end',
+    'test_negative_target_column_is_sampled_like_its_name',
+    'test_predict_returns_float64_on_both_paths',
+    'test_a_context_of_max_order_rows_is_rejected',
+]
+
+[tests."tests/diff_gpt/application/test_sampling_seed.py"]
+rust = "crates/application/tests/sampling_seed.rs"
+task = 32
+check = "exact"
+ids = [
+    'test_same_seed_reproduces_and_different_seed_does_not',
+    'test_default_seed_is_still_reproducible',
+    'test_seed_reaches_quantiles_and_point_readouts',
+]
+
+[tests."tests/diff_gpt/application/test_synthetic_pretrain.py"]
+rust = "crates/interfaces/tests/synthetic_pretrain.rs"
+task = 31
+check = "tolerance:train"
+ids = [
+    'test_holdout_windows_are_slices_of_the_series',
+    'test_scores_are_ratios_to_the_naive_forecast',
+    'test_fewer_samples_average_the_scores_of_their_groups',
+    'test_scores_skip_missing_values',
+    'test_a_tiny_run_writes_its_curve_and_checkpoints[precision0]',
+    'test_a_tiny_run_writes_its_curve_and_checkpoints[precision1]',
+    'test_a_resumed_run_goes_on_as_an_unbroken_one',
+    'test_resume_takes_the_settings_of_the_run',
+    'test_gradient_checkpointing_is_a_gpus_by_default',
+    'test_kept_activations_train_the_run_of_recomputed_ones',
+    'test_saved_rng_states_draw_again_what_they_drew[cpu]',
+    'test_saved_rng_states_draw_again_what_they_drew[cuda]',
+]
+
+[tests."tests/diff_gpt/application/test_synthetic_rescore.py"]
+rust = "crates/interfaces/tests/synthetic_rescore.rs"
+task = 32
+check = "distribution:seeds"
+ids = [
+    'test_the_run_s_own_windows_and_seed_give_its_last_scores',
+    'test_kept_copies_score_as_the_run_scored_them',
+    'test_another_context_and_horizon_score_their_own_windows',
+    'test_draws_that_do_not_fit_are_refused[extra0]',
+    'test_draws_that_do_not_fit_are_refused[extra1]',
+    'test_draws_that_do_not_fit_are_refused[extra2]',
+    'test_draws_that_do_not_fit_are_refused[extra3]',
+    'test_an_existing_output_is_kept',
+    'test_other_encoder_settings_or_corpus_are_refused',
+]
+
+[tests."tests/diff_gpt/application/test_text.py"]
+rust = "crates/application/tests/text.rs"
+task = 31
+check = "tolerance:train"
+ids = [
+    'test_char_encoder_pads_vocab_to_multiple_of_64',
+    'test_char_encoder_decode_drops_padded_ids',
+    'test_text_training_flops_and_loss',
+]
+slow = [
+    'test_text_training_flops_and_loss',
+]
+
+[tests."tests/diff_gpt/application/test_tokenizer_setting.py"]
+rust = "crates/application/tests/tokenizer_setting.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_dataframe_loader_encodes_with_its_tokenizer[lgt]',
+    'test_dataframe_loader_encodes_with_its_tokenizer[mash]',
+    'test_dataframe_loader_encodes_with_its_tokenizer[mash-half]',
+    'test_diffgpt_keeps_its_tokenizer_and_refuses_a_loader_with_another',
+]
+
+[tests."tests/diff_gpt/application/test_train_optimizer_eval.py"]
+rust = "crates/application/tests/train_optimizer_eval.rs"
+task = 31
+check = "tolerance:train"
+ids = [
+    'test_train_returns_weights_at_schedule_free_x_point',
+    'test_train_returns_the_val_loss_of_the_weights_it_hands_back[False]',
+    'test_train_returns_the_val_loss_of_the_weights_it_hands_back[True]',
+    'test_train_one_step_keeps_the_update_when_it_lowers_val_loss',
+    'test_train_zero_steps_scores_the_initial_weights',
+    'test_early_stopping_hands_back_exactly_the_scored_weights',
+    'test_train_by_default_runs_every_step_and_keeps_the_final_weights',
+    'test_on_eval_sees_every_evaluation_with_the_scored_weights',
+    'test_on_eval_reports_no_val_loss_without_a_val_split',
+    'test_bfloat16_autocast_trains_float32_master_weights',
+    'test_autocast_takes_bfloat16_only',
+    'test_train_refuses_half_precision_master_weights[dtype0]',
+    'test_train_refuses_half_precision_master_weights[dtype1]',
+    'test_train_takes_float64_master_weights',
+    'test_train_goes_on_from_a_saved_state_as_an_unbroken_run',
+    'test_train_refuses_a_start_it_cannot_go_on_from[change0-use_early_stopping or save_best]',
+    'test_train_refuses_a_start_it_cannot_go_on_from[change1-use_early_stopping or save_best]',
+    'test_train_refuses_a_start_it_cannot_go_on_from[change2-needs the optimizer]',
+    'test_train_refuses_a_start_it_cannot_go_on_from[change3-must lie in]',
+    'test_train_refuses_a_start_it_cannot_go_on_from[change4-has made 3 steps, not start_step = 2]',
+]
+
+[tests."tests/diff_gpt/application/test_train.py"]
+rust = "crates/application/tests/train.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_dataframe_loader_shapes',
+    'test_dataframe_loader_train_val_split_exists',
+    'test_dataframe_loader_raises_on_unknown_split',
+    'test_dataframe_loader_target_column_mask',
+    'test_dataframe_loader_multi_series_blends',
+    'test_dataframe_loader_draws_every_window_and_only_those[1-False]',
+    'test_dataframe_loader_draws_every_window_and_only_those[2-False]',
+    'test_dataframe_loader_draws_every_window_and_only_those[2-True]',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_asymmetric_domain.py"]
+rust = "crates/domain/tests/asymmetric_domain.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_a_symmetric_domain_keeps_its_scale_in_either_form[0-0]',
+    'test_a_symmetric_domain_keeps_its_scale_in_either_form[1-2]',
+    'test_a_symmetric_domain_keeps_its_scale_in_either_form[2-4]',
+    'test_a_symmetric_domain_keeps_its_scale_in_either_form[order3-4]',
+    'test_a_range_fits_its_steps_at_most_a_level_short_of_the_best[0-0]',
+    'test_a_range_fits_its_steps_at_most_a_level_short_of_the_best[1-2]',
+    'test_a_range_fits_its_steps_at_most_a_level_short_of_the_best[2-4]',
+    'test_a_range_fits_its_steps_at_most_a_level_short_of_the_best[order3-4]',
+    'test_mash_half_fits_a_range_on_all_the_tokens[1-2]',
+    'test_mash_half_fits_a_range_on_all_the_tokens[2-4]',
+    'test_mash_half_fits_a_range_on_all_the_tokens[order2-4]',
+    'test_one_sided_ranges_take_the_whole_vocabulary[domain0-1-31.0--30]',
+    'test_one_sided_ranges_take_the_whole_vocabulary[domain1-1-62.0-1]',
+    'test_one_sided_ranges_take_the_whole_vocabulary[domain2-1-62.0-63]',
+    'test_one_sided_ranges_take_the_whole_vocabulary[domain3-0-63.99999999999999-0]',
+    'test_one_sided_ranges_take_the_whole_vocabulary[domain4-0-63.0-63]',
+    'test_counts_take_every_token_at_half_the_step_of_their_symmetric_hull',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[0-0-lgt]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[0-0-mash]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[0-0-mash-half]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[1-2-lgt]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[1-2-mash]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[1-2-mash-half]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[2-4-lgt]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[2-4-mash]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[2-4-mash-half]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[order3-4-lgt]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[order3-4-mash]',
+    'test_series_on_their_exact_ranges_decode_within_half_a_level[order3-4-mash-half]',
+    'test_a_constant_step_takes_the_middle_token[lgt]',
+    'test_a_constant_step_takes_the_middle_token[mash]',
+    'test_a_point_at_zero_takes_the_constant_column_scale[0-0]',
+    'test_a_point_at_zero_takes_the_constant_column_scale[1-2]',
+    'test_a_point_at_zero_takes_the_constant_column_scale[2-4]',
+    'test_a_point_at_zero_takes_the_constant_column_scale[order3-4]',
+    'test_bad_domains_are_rejected[domain0-ValueError-needs D >= 0, or lo <= hi]',
+    'test_bad_domains_are_rejected[domain1-ValueError-needs D >= 0, or lo <= hi]',
+    'test_bad_domains_are_rejected[domain2-ValueError-has shape \\(1, 3\\) for 1 col]',
+    'test_bad_domains_are_rejected[domain3-ValueError-has shape \\(2,\\) for 1 col]',
+    'test_bad_domains_are_rejected[domain4-ValueError-must be finite]',
+    'test_bad_domains_are_rejected[domain5-ValueError-must be finite]',
+    'test_bad_domains_are_rejected[domain6-TypeError-must be float64]',
+    'test_a_narrow_range_far_from_zero_raises',
+    'test_the_range_of_the_steps_is_exact[0-0]',
+    'test_the_range_of_the_steps_is_exact[1-2]',
+    'test_the_range_of_the_steps_is_exact[2-4]',
+    'test_the_range_of_the_steps_is_exact[order3-4]',
+    'test_a_quantile_range_is_the_central_interval_of_the_steps',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_asymmetric_domain.py".drop]
+'test_bad_domains_are_rejected[domain6-TypeError-must be float64]' = "an integer array as the domain: the Rust domain is f64 by its type, so no other dtype reaches the check"
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_decode_columns.py"]
+rust = "crates/domain/tests/decode_columns.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[0-mash]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[0-lgt]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[0-mash-half]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[1-mash]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[1-lgt]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[1-mash-half]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[2-mash]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[2-lgt]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[2-mash-half]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[seasonal-mash]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[seasonal-lgt]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[seasonal-mash-half]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[mixed-mash]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[mixed-lgt]',
+    'test_the_columns_of_an_operator_decode_together_as_each_alone[mixed-mash-half]',
+    'test_the_samples_of_a_context_decode_together_as_each_alone[mash]',
+    'test_the_samples_of_a_context_decode_together_as_each_alone[lgt]',
+    'test_the_samples_of_a_context_decode_together_as_each_alone[mash-half]',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_difference.py"]
+rust = "crates/domain/tests/difference.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_difference_sorts_its_lags_and_compares_by_them',
+    'test_difference_takes_integer_lags_of_at_least_1[lags0]',
+    'test_difference_takes_integer_lags_of_at_least_1[lags1]',
+    'test_difference_takes_integer_lags_of_at_least_1[lags2]',
+    'test_orders_name_the_lags_of_every_column',
+    'test_seasonal_operators_keep_theorem_1[order0-lgt]',
+    'test_seasonal_operators_keep_theorem_1[order0-mash]',
+    'test_seasonal_operators_keep_theorem_1[order1-lgt]',
+    'test_seasonal_operators_keep_theorem_1[order1-mash]',
+    'test_seasonal_operators_keep_theorem_1[order2-lgt]',
+    'test_seasonal_operators_keep_theorem_1[order2-mash]',
+    'test_the_seasonal_difference_beats_the_first_on_daily_cycles[lgt]',
+    'test_the_seasonal_difference_beats_the_first_on_daily_cycles[mash]',
+    'test_lgt_window_encoding_equals_slice_of_full_encoding[order0]',
+    'test_lgt_window_encoding_equals_slice_of_full_encoding[order1]',
+    'test_cancelling_factors_need_only_their_norm[lgt]',
+    'test_cancelling_factors_need_only_their_norm[mash]',
+    'test_seasonal_decode_raises_where_the_tokens_leave_int64[lgt]',
+    'test_seasonal_decode_raises_where_the_tokens_leave_int64[mash]',
+    'test_differentiate_and_integrate_take_operators',
+    'test_the_domain_max_is_exact_for_operators[order0]',
+    'test_the_domain_max_is_exact_for_operators[order1]',
+    'test_the_domain_max_is_exact_for_operators[order2]',
+    'test_order_0_uses_every_token_and_stays_within_d_over_v[lgt]',
+    'test_order_0_uses_every_token_and_stays_within_d_over_v[mash]',
+    'test_order_0_is_the_same_for_both_tokenizers',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_differentiate_integrate.py"]
+rust = "crates/domain/tests/differentiate_integrate.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_differentiate_integrate_sin_cos_round_trips[0]',
+    'test_differentiate_integrate_sin_cos_round_trips[1]',
+    'test_differentiate_integrate_sin_cos_round_trips[2]',
+    'test_differentiate_integrate_sin_cos_round_trips[3]',
+    'test_differentiate_integrate_sin_cos_round_trips[4]',
+    'test_differentiate_integrate_sin_cos_round_trips[5]',
+    'test_differentiate_integrate_sin_cos_round_trips[6]',
+    'test_differentiate_integrate_sin_cos_round_trips[7]',
+    'test_differentiate_integrate_is_exact_on_integer_series[0]',
+    'test_differentiate_integrate_is_exact_on_integer_series[1]',
+    'test_differentiate_integrate_is_exact_on_integer_series[2]',
+    'test_differentiate_integrate_is_exact_on_integer_series[3]',
+    'test_differentiate_integrate_is_exact_on_integer_series[4]',
+    'test_differentiate_integrate_is_exact_on_integer_series[5]',
+    'test_differentiate_integrate_is_exact_on_integer_series[6]',
+    'test_differentiate_integrate_is_exact_on_integer_series[7]',
+    'test_overflow_differentiate_integrate_square_x',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_encoder_contracts.py"]
+rust = "crates/domain/tests/encoder_contracts.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_encode_and_domain_reject_infinity[inf]',
+    'test_encode_and_domain_reject_infinity[-inf]',
+    'test_encode_rejects_nan_and_names_the_fill',
+    'test_values_other_than_float64_are_rejected',
+    'test_levels_past_the_int64_grid_are_rejected[lgt]',
+    'test_levels_past_the_int64_grid_are_rejected[mash]',
+    'test_levels_past_the_int64_grid_are_rejected[mash-half]',
+    'test_a_grid_finer_than_float64_resolves_is_rejected[lgt]',
+    'test_a_grid_finer_than_float64_resolves_is_rejected[mash]',
+    'test_a_grid_finer_than_float64_resolves_is_rejected[mash-half]',
+    'test_encode_warns_with_the_number_of_clipped_tokens[lgt]',
+    'test_encode_warns_with_the_number_of_clipped_tokens[mash]',
+    'test_encode_warns_with_the_number_of_clipped_tokens[mash-half]',
+    'test_a_clipped_step_offsets_the_values_after_it[lgt]',
+    'test_a_clipped_step_offsets_the_values_after_it[mash]',
+    'test_a_clipped_step_offsets_the_values_after_it[mash-half]',
+    'test_encode_in_domain_does_not_warn[lgt]',
+    'test_encode_in_domain_does_not_warn[mash]',
+    'test_encode_in_domain_does_not_warn[mash-half]',
+    'test_mash_scalar_order_0_rounds_like_the_per_column_order_0',
+    'test_integrate_inverts_differentiate_across_order_forms',
+    'test_integrate_rejects_a_start_of_the_wrong_shape',
+    'test_domain_needs_a_row_past_the_order[2]',
+    'test_domain_needs_a_row_past_the_order[order1]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[0-2-lgt]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[0-2-mash]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[0-2-mash-half]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[1-2-lgt]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[1-2-mash]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[1-2-mash-half]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[2-4-lgt]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[2-4-mash]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[2-4-mash-half]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[3-8-lgt]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[3-8-mash]',
+    'test_the_vocabulary_must_exceed_the_norm_of_c[3-8-mash-half]',
+    'test_the_vocabulary_stays_below_2_to_the_62[lgt]',
+    'test_the_vocabulary_stays_below_2_to_the_62[mash]',
+    'test_the_vocabulary_stays_below_2_to_the_62[mash-half]',
+    'test_decode_raises_where_the_tokens_leave_int64[lgt]',
+    'test_decode_raises_where_the_tokens_leave_int64[mash]',
+    'test_decode_raises_where_the_tokens_leave_int64[mash-half]',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_encoder_contracts.py".drop]
+'test_values_other_than_float64_are_rejected' = "object and float32 arrays: the Rust encode, decode and domain take f64 by their types"
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_encoder_decoder.py"]
+rust = "crates/domain/tests/encoder_decoder.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_diff_encoder_decoder_sin_cos[0-256]',
+    'test_diff_encoder_decoder_sin_cos[1-256]',
+    'test_diff_encoder_decoder_sin_cos[2-4096]',
+    'test_diff_encoder_decoder_sin_cos[3-65536]',
+    'test_diff_encoder_decoder_finely_sampled_period',
+    'test_diff_encoder_sin_cos_different_lenght',
+    'test_diff_encoder_decoder_lin',
+    'test_diff_encoder_decoder_const[1.0]',
+    'test_diff_encoder_decoder_const[0.01]',
+    'test_diff_encoder_decoder_mix',
+    'test_diff_encoder_decoder_square',
+    'test_mash_bound_holds_at_every_order[0]',
+    'test_mash_bound_holds_at_every_order[1]',
+    'test_mash_bound_holds_at_every_order[2]',
+    'test_mash_bound_holds_at_every_order[3]',
+    'test_mash_bound_holds_at_every_order[4]',
+    'test_mash_bound_holds_at_every_order[5]',
+    'test_mash_bound_holds_at_every_order[6]',
+    'test_mash_bound_holds_at_every_order[7]',
+    'test_mash_bound_holds_for_long_random_walks[0]',
+    'test_mash_bound_holds_for_long_random_walks[1]',
+    'test_mash_bound_holds_for_long_random_walks[2]',
+    'test_mash_bound_holds_for_long_random_walks[3]',
+    'test_mash_bound_holds_for_long_random_walks[4]',
+    'test_mash_bound_holds_for_long_random_walks[5]',
+    'test_k2_bound_is_uniform_in_T',
+    'test_k2_float64_beats_k1_recon_when_signal_is_smooth',
+    'test_per_column_order_of_derivative_round_trip',
+    'test_per_column_order_scalar_fallback_equivalence',
+]
+slow = [
+    'test_diff_encoder_decoder_sin_cos[0-256]',
+    'test_diff_encoder_decoder_sin_cos[1-256]',
+    'test_diff_encoder_decoder_sin_cos[2-4096]',
+    'test_diff_encoder_decoder_sin_cos[3-65536]',
+    'test_diff_encoder_sin_cos_different_lenght',
+    'test_diff_encoder_decoder_lin',
+    'test_diff_encoder_decoder_const[1.0]',
+    'test_diff_encoder_decoder_const[0.01]',
+    'test_diff_encoder_decoder_mix',
+    'test_diff_encoder_decoder_square',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_exact_levels.py"]
+rust = "crates/domain/tests/exact_levels.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_levels_are_exact_around_rounding_ties[33.972963704952626]',
+    'test_levels_are_exact_around_rounding_ties[1048576.0]',
+    'test_levels_are_exact_around_rounding_ties[1.2343594072551418]',
+    'test_a_step_within_the_domain_at_ties_does_not_clip[lgt]',
+    'test_a_step_within_the_domain_at_ties_does_not_clip[mash]',
+    'test_the_scale_rounds_down[lgt]',
+    'test_the_scale_rounds_down[mash]',
+    'test_the_domain_max_rounds_up',
+    'test_k2_tie_clip_no_longer_drifts[lgt]',
+    'test_k2_tie_clip_no_longer_drifts[mash]',
+    'test_the_domain_max_is_the_least_float_at_or_above_the_exact_max[0]',
+    'test_the_domain_max_is_the_least_float_at_or_above_the_exact_max[1]',
+    'test_the_domain_max_is_the_least_float_at_or_above_the_exact_max[2]',
+    'test_the_domain_max_is_the_least_float_at_or_above_the_exact_max[3]',
+    'test_the_float_next_to_a_rational_past_the_float64_range',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_lgt.py"]
+rust = "crates/domain/tests/lgt.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_lgt_bound_holds_exactly_in_float64_for_long_series[0]',
+    'test_lgt_bound_holds_exactly_in_float64_for_long_series[1]',
+    'test_lgt_bound_holds_exactly_in_float64_for_long_series[2]',
+    'test_lgt_bound_holds_exactly_in_float64_for_long_series[3]',
+    'test_lgt_bound_holds_exactly_in_float64_for_long_series[4]',
+    'test_lgt_bound_holds_exactly_in_float64_for_long_series[5]',
+    'test_lgt_window_encoding_equals_slice_of_full_encoding[1]',
+    'test_lgt_window_encoding_equals_slice_of_full_encoding[2]',
+    'test_lgt_window_encoding_equals_slice_of_full_encoding[3]',
+    'test_lgt_scalar_and_per_column_orders_agree_including_k0',
+    'test_lgt_mixed_orders_round_trip_per_column_bound',
+    'test_lgt_edge_cases_and_constant_column',
+    'test_unknown_tokenizer_rejected',
+    'test_lgt_requires_headroom_for_k_ge_2_and_is_bounded_with_it',
+    'test_lgt_mixed_columns_bound',
+    'test_quantile_domain_is_robust_to_one_extreme_step',
+    'test_quantile_domain_per_column',
+    'test_lgt_k1_keeps_the_bound_when_every_level_is_a_rounding_tie',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_mash_half.py"]
+rust = "crates/domain/tests/mash_half.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_the_error_stays_within_d_over_one_more_level[order0-2]',
+    'test_the_error_stays_within_d_over_one_more_level[order1-4]',
+    'test_the_error_stays_within_d_over_one_more_level[order2-8]',
+    'test_the_error_stays_within_d_over_one_more_level[order3-16]',
+    'test_the_error_stays_within_d_over_one_more_level[order4-32]',
+    'test_the_error_stays_within_d_over_one_more_level[order5-2]',
+    'test_the_error_stays_within_d_over_one_more_level[order6-4]',
+    'test_the_error_stays_within_d_over_one_more_level[order7-6]',
+    'test_a_symmetric_domain_takes_the_scale_of_one_more_level[order0-2]',
+    'test_a_symmetric_domain_takes_the_scale_of_one_more_level[order1-4]',
+    'test_ramps_at_the_edge_of_the_domain_take_the_first_and_the_last_token',
+    'test_a_constant_encodes_as_a_periodic_pattern[1-period0]',
+    'test_a_constant_encodes_as_a_periodic_pattern[2-period1]',
+    'test_a_constant_encodes_as_a_periodic_pattern[3-period2]',
+    'test_a_constant_encodes_as_a_periodic_pattern[4-period3]',
+    'test_the_order_0_takes_the_half_step_already',
+]
+
+[tests."tests/diff_gpt/domain/encoder_decoder/test_missing_values.py"]
+rust = "crates/domain/tests/missing_values.rs"
+task = 29
+check = "exact"
+ids = [
+    'test_fill_missing_draws_the_line_across_a_gap_and_holds_the_ends',
+    'test_fill_missing_rejects_a_column_of_nan_and_infinities',
+    'test_a_nan_leaves_out_the_tokens_of_the_steps_that_read_it[0-0-reach0]',
+    'test_a_nan_leaves_out_the_tokens_of_the_steps_that_read_it[1-1-reach1]',
+    'test_a_nan_leaves_out_the_tokens_of_the_steps_that_read_it[2-2-reach2]',
+    'test_a_nan_leaves_out_the_tokens_of_the_steps_that_read_it[order3-4-reach3]',
+    'test_observed_tokens_line_up_with_the_tokens_of_per_column_orders',
+    'test_the_observed_tokens_do_not_depend_on_the_fill[lgt]',
+    'test_the_observed_tokens_do_not_depend_on_the_fill[mash]',
+    'test_the_observed_tokens_do_not_depend_on_the_fill[mash-half]',
+    'test_the_domain_bounds_only_the_steps_that_read_no_nan',
+    'test_the_domain_of_a_column_without_an_observed_step_raises',
+]
+
+[tests."tests/diff_gpt/domain/metrics/test_point.py"]
+rust = "crates/domain/tests/metrics_point.rs"
+task = 29
+check = "ulp:1"
+ids = [
+    'test_mae_is_median_and_mse_is_mean',
+    'test_smape_is_concave_so_bimodal_optimum_is_a_mode',
+    'test_smape_optimum_moves_above_the_median_when_spread_is_large_vs_level',
+    'test_owa_point_lies_between_median_and_smape_point',
+    'test_shapes_and_per_column_naive_scale',
+    'test_degenerate_samples_return_that_value',
+    'test_unknown_metric_rejected',
+]
+
+[tests."tests/diff_gpt/domain/metrics/test_probabilistic.py"]
+rust = "crates/domain/tests/metrics_probabilistic.rs"
+task = 29
+check = "ulp:1"
+ids = [
+    'test_crps_zero_when_samples_concentrated_at_truth',
+    'test_crps_matches_pairwise_formula',
+    'test_crps_is_proper_scoring_rule',
+    'test_crps_shape_mismatch_raises',
+    'test_pinball_zero_when_pred_equals_truth',
+    'test_pinball_alpha_0p5_equals_half_mae',
+    'test_pinball_asymmetry',
+    'test_empirical_coverage_nominal_on_gaussian_samples',
+    'test_empirical_coverage_zero_for_delta_and_different_truth',
+    'test_msis_inside_interval_equals_width_over_naive',
+    'test_msis_penalizes_miss',
+]
+
+[tests."tests/diff_gpt/domain/model/test_block.py"]
+rust = "crates/domain/tests/model_block.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_block_forward_and_gradients',
+    'test_block_is_identity_when_residual_branches_are_zeroed',
+    'test_block_causality_preservation',
+    'test_block_kv_cache_step_consistency',
+]
+
+[tests."tests/diff_gpt/domain/model/test_engine.py"]
+rust = "crates/domain/tests/model_engine.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_engine_initialization',
+    'test_generate_batch_output_shape',
+    'test_generate_determinism',
+    'test_streaming_vs_batch_equivalence',
+    'test_generate_rejects_empty_prompt',
+    'test_generate_rejects_mixed_type_tokens',
+    'test_generate_early_return_when_prompt_at_position_ceiling',
+    'test_generate_respects_small_max_tokens',
+    'test_generate_rejects_max_tokens_past_position_ceiling',
+    'test_generate_rejects_prompt_longer_than_block_size',
+    'test_generate_rejects_negative_max_tokens',
+    'test_generate_no_max_tokens_uses_hard_ceiling',
+    'test_force_schedule_interleaves_forced_and_sampled',
+    'test_force_schedule_all_forced_matches_schedule',
+    'test_force_schedule_too_short_raises',
+    'test_prefill_clone_equivalence',
+    'test_generate_many_matches_generate_per_prompt',
+    'test_cached_generation_matches_full_forward',
+    'test_generate_many_is_seeded',
+    'test_generate_many_fills_the_positions_left',
+    'test_generate_many_rejects_bad_prompts',
+    'test_generate_many_draws_samples_of_each_prompt',
+    'test_samplers_get_float32_logits_from_a_half_precision_model',
+    'test_decoding_keeps_the_enabled_attention_backends[None]',
+    'test_decoding_keeps_the_enabled_attention_backends[backends1]',
+    'test_generate_many_matches_the_per_row_path[tiny-4-6-3-3-cpu]',
+    'test_generate_many_matches_the_per_row_path[tiny-4-6-3-3-cuda]',
+    'test_generate_many_matches_the_per_row_path[tiny-1-5-4-2-cpu]',
+    'test_generate_many_matches_the_per_row_path[tiny-1-5-4-2-cuda]',
+    'test_generate_many_matches_the_per_row_path[tiny-12-1-5-2-cpu]',
+    'test_generate_many_matches_the_per_row_path[tiny-12-1-5-2-cuda]',
+    'test_generate_many_matches_the_per_row_path[small-20-12-8-3-cpu]',
+    'test_generate_many_matches_the_per_row_path[small-20-12-8-3-cuda]',
+    'test_generate_many_matches_the_per_row_path[small-8-7-1-4-cpu]',
+    'test_generate_many_matches_the_per_row_path[small-8-7-1-4-cuda]',
+    'test_generate_many_matches_the_per_row_path[wide-30-34-2-1-cpu]',
+    'test_generate_many_matches_the_per_row_path[wide-30-34-2-1-cuda]',
+    'test_generate_matches_the_per_row_path[tiny-4-6-3-cpu]',
+    'test_generate_matches_the_per_row_path[tiny-4-6-3-cuda]',
+    'test_generate_matches_the_per_row_path[tiny-5-6-1-cpu]',
+    'test_generate_matches_the_per_row_path[tiny-5-6-1-cuda]',
+    'test_generate_matches_the_per_row_path[small-20-12-8-cpu]',
+    'test_generate_matches_the_per_row_path[small-20-12-8-cuda]',
+    'test_generate_matches_the_per_row_path[wide-1-40-2-cpu]',
+    'test_generate_matches_the_per_row_path[wide-1-40-2-cuda]',
+]
+
+[tests."tests/diff_gpt/domain/model/test_engine.py".drop]
+'test_generate_rejects_mixed_type_tokens' = "a float among the prompt's tokens: the Rust prompt is a slice of token ids by its type"
+'test_decoding_keeps_the_enabled_attention_backends' = "torch's switches of its SDPA backends, process state of torch's: burn has none, and the attention is the model's own code"
+
+[tests."tests/diff_gpt/domain/model/test_feed_forward.py"]
+rust = "crates/domain/tests/model_feed_forward.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_ffn_shape_and_gradients',
+    'test_ffn_token_independence',
+    'test_ffn_batch_invariance',
+    'test_ffn_is_the_swiglu_of_the_paper',
+    'test_ffn_hidden_size_keeps_the_parameters_of_a_4x_mlp[16]',
+    'test_ffn_hidden_size_keeps_the_parameters_of_a_4x_mlp[32]',
+    'test_ffn_hidden_size_keeps_the_parameters_of_a_4x_mlp[64]',
+    'test_ffn_hidden_size_keeps_the_parameters_of_a_4x_mlp[96]',
+]
+
+[tests."tests/diff_gpt/domain/model/test_gpt.py"]
+rust = "crates/domain/tests/model_gpt.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_gpt_initialization_and_shapes',
+    'test_gpt_init',
+    'test_model_has_no_biases_or_norm_gains',
+    'test_estimate_flops_matches_flop_counter',
+    'test_gpt_kv_cache_consistency[None]',
+    'test_gpt_kv_cache_consistency[rope_layers1]',
+    'test_forward_rejects_positions_beyond_block_size',
+    'test_loss_ignores_masked_targets',
+    'test_every_parameter_receives_gradient',
+    'test_gradient_checkpointing_flow[None]',
+    'test_gradient_checkpointing_flow[rope_layers1]',
+    'test_generation_output_len',
+    'test_generate_slides_window_past_block_size',
+    'test_generate_seed_determinism',
+    'test_vocab_size_must_be_aligned_to_pad',
+    'test_overfitting_capability',
+    'test_forward_takes_non_contiguous_targets',
+    'test_gpt_rejects_n_layer_below_one',
+    'test_gpt_rejects_invalid_rope_layers[rope_layers0]',
+    'test_gpt_rejects_invalid_rope_layers[rope_layers1]',
+    'test_gpt_rejects_invalid_rope_layers[rope_layers2]',
+    'test_gpt_rejects_invalid_rope_layers[rope_layers3]',
+    'test_explicit_rope_layers_preserve_initialization_and_default_outputs',
+    'test_gpt_rejects_invalid_rope_base[0.0]',
+    'test_gpt_rejects_invalid_rope_base[-10000.0]',
+    'test_gpt_rejects_invalid_rope_base[inf]',
+    'test_gpt_rejects_invalid_rope_base[nan]',
+    'test_rope_base_sets_the_frequencies_and_keeps_the_initialization',
+    'test_device_keeps_the_index',
+]
+
+[tests."tests/diff_gpt/domain/model/test_gpt.py".overrides]
+test_estimate_flops_matches_flop_counter = { check = "exact", note = "against the FLOPs that torch's FlopCounterMode counts in the reference's dump (#28)" }
+
+[tests."tests/diff_gpt/domain/model/test_kv_cache.py"]
+rust = "crates/domain/tests/model_kv_cache.rs"
+task = 30
+check = "exact"
+ids = [
+    'test_kv_cache_resize',
+    'test_initialization_state',
+    'test_insert_kv_lazy_init_and_pos_update',
+    'test_insert_sequence_chunk',
+    'test_dynamic_growth_rounding',
+    'test_prefill_broadcasting',
+    'test_reset',
+    'test_prefill_from_a_grown_cache_checks_cached_positions_not_capacity',
+    'test_prefill_repeats_each_row_consecutively',
+    'test_share_prefix_continues_positions_without_copying',
+    'test_share_prefix_rejects_caches_it_cannot_continue',
+]
+
+[tests."tests/diff_gpt/domain/model/test_mha.py"]
+rust = "crates/domain/tests/model_mha.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_shape_and_gradients',
+    'test_xsa_output_is_orthogonal_to_the_tokens_own_value',
+    'test_xsa_first_position_outputs_zero[dtype0]',
+    'test_xsa_first_position_outputs_zero[dtype1]',
+    'test_xsa_first_position_outputs_zero[dtype2]',
+    'test_without_rope_matches_identity_rotation_and_ignores_positions',
+    'test_rejects_odd_head_size',
+    'test_qk_norm_logits_are_scaled_cosines[4]',
+    'test_qk_norm_logits_are_scaled_cosines[8]',
+    'test_qk_norm_logits_are_scaled_cosines[16]',
+    'test_qk_norm_ignores_the_scale_of_query_and_key_weights',
+    'test_causal_masking_property',
+    'test_kv_cache_equivalence_step_by_step',
+    'test_chunked_prefill_inference',
+    'test_one_query_attention_matches_scaled_dot_product_attention[dtype0-cpu]',
+    'test_one_query_attention_matches_scaled_dot_product_attention[dtype0-cuda]',
+    'test_one_query_attention_matches_scaled_dot_product_attention[dtype1-cpu]',
+    'test_one_query_attention_matches_scaled_dot_product_attention[dtype1-cuda]',
+    'test_shared_prefix_decoding_matches_a_copied_prefix[cpu]',
+    'test_shared_prefix_decoding_matches_a_copied_prefix[cuda]',
+    'test_shared_prefix_takes_one_position_per_call',
+]
+
+[tests."tests/diff_gpt/domain/model/test_rope.py"]
+rust = "crates/domain/tests/model_rope.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_rope_tables_start_at_identity_and_turn_pair_0_a_radian_per_step',
+    'test_apply_rope_pairs_channel_i_with_i_plus_half',
+    'test_apply_rope_keeps_norms',
+    'test_scores_depend_only_on_the_offset',
+]
+
+[tests."tests/diff_gpt/domain/optimizer/test_schedule_free.py"]
+rust = "crates/domain/tests/schedule_free.rs"
+task = 30
+check = "tolerance:f32_rounding"
+ids = [
+    'test_step_follows_the_update[0]',
+    'test_step_follows_the_update[3]',
+    'test_eval_writes_x_and_train_writes_y_back',
+    'test_switching_modes_before_a_step_keeps_the_weights',
+    'test_zero_gradients_without_decay_keep_every_iterate',
+    'test_state_dict_resumes_the_same_steps',
+    'test_converges_on_a_quadratic',
+    'test_step_in_eval_mode_raises',
+    'test_step_needs_a_gradient_for_every_parameter',
+    'test_leaves_out_tensors_that_do_not_require_grad',
+    'test_takes_one_parameter_group',
+    'test_rejects_hyperparameters_out_of_range[kwargs0-lr]',
+    'test_rejects_hyperparameters_out_of_range[kwargs1-lr]',
+    'test_rejects_hyperparameters_out_of_range[kwargs2-lr]',
+    'test_rejects_hyperparameters_out_of_range[kwargs3-weight_decay]',
+    'test_rejects_hyperparameters_out_of_range[kwargs4-eps]',
+    'test_rejects_hyperparameters_out_of_range[kwargs5-betas]',
+    'test_rejects_hyperparameters_out_of_range[kwargs6-betas]',
+    'test_rejects_hyperparameters_out_of_range[kwargs7-betas]',
+    'test_rejects_hyperparameters_out_of_range[kwargs8-warmup]',
+    'test_rejects_hyperparameters_out_of_range[kwargs9-warmup]',
+]
+
+[tests."tests/diff_gpt/domain/sampler/test_median_sampler.py"]
+rust = "crates/domain/tests/sampler_median.rs"
+task = 30
+check = "exact"
+ids = [
+    'test_median_of_known_distribution',
+    'test_median_differs_from_argmax_on_skewed_distribution',
+    'test_median_equals_argmax_for_symmetric_peaked_distribution',
+    'test_median_batch_shape_and_range',
+]
+
+[tests."tests/diff_gpt/domain/sampler/test_nucleus_sampler.py"]
+rust = "crates/domain/tests/sampler_nucleus.rs"
+task = 30
+check = "distribution:frequencies"
+ids = [
+    'test_output_shape',
+    'test_determinism_with_rng',
+    'test_nucleus_selection_logic',
+    'test_edge_case_p_equals_one',
+    'test_edge_case_p_very_small_is_argmax',
+    'test_p_equals_one_passes_every_logit_through',
+    'test_nucleus_samples_logits_with_several_leading_dims',
+]
+
+[tests."tests/diff_gpt/domain/sampler/test_temperature_sampler.py"]
+rust = "crates/domain/tests/sampler_temperature.rs"
+task = 30
+check = "distribution:frequencies"
+ids = [
+    'test_output_shape',
+    'test_determinism_with_rng',
+    'test_temperature_zero_is_argmax',
+    'test_high_temperature_approaches_uniform',
+    'test_statistical_correctness',
+    'test_samples_logits_with_several_leading_dims',
+]
+
+[tests."tests/diff_gpt/domain/test_normalization.py"]
+rust = "crates/domain/tests/normalization.rs"
+task = 29
+check = "ulp:1"
+ids = [
+    'test_window_scale_reads_each_method[mean_abs]',
+    'test_window_scale_reads_each_method[z]',
+    'test_window_scale_reads_each_method[mean_abs_step]',
+    'test_denormalize_inverts_normalize[mean_abs]',
+    'test_denormalize_inverts_normalize[z]',
+    'test_denormalize_inverts_normalize[mean_abs_step]',
+    'test_normalized_context_is_free_of_the_units[mean_abs-0.0]',
+    'test_normalized_context_is_free_of_the_units[z-10000.0]',
+    'test_normalized_context_is_free_of_the_units[mean_abs_step-10000.0]',
+    'test_window_scale_reads_only_observed_values',
+    'test_window_scale_falls_back_to_the_level_then_to_one[mean_abs]',
+    'test_window_scale_falls_back_to_the_level_then_to_one[z]',
+    'test_window_scale_falls_back_to_the_level_then_to_one[mean_abs_step]',
+    'test_window_scale_rejects_bad_contexts',
+]
+
+[tests."tests/diff_gpt/infrastructure/corpus/tempopfn/test_cauker.py"]
+rust = "crates/infrastructure/tests/corpus_cauker.rs"
+task = 34
+check = "distribution:seeds"
+ids = [
+    'test_tempopfn_wrapper_takes_the_stand_in',
+    'test_roots_of_one_kernel_are_independent',
+    'test_series_follow_their_seed',
+]
+
+[tests."tests/diff_gpt/infrastructure/corpus/tempopfn/test_cauker.py".drop]
+'test_tempopfn_wrapper_takes_the_stand_in' = "Python's import set-up that puts the stand-in in place of TempoPFN's module: the Rust port compiles the stand-in's code in its place, with nothing to swap"
+
+[tests."tests/diff_gpt/infrastructure/corpus/tempopfn/test_kernel_synth.py"]
+rust = "crates/infrastructure/tests/corpus_kernel_synth.rs"
+task = 34
+check = "distribution:seeds"
+ids = [
+    'test_tempopfn_wrapper_takes_the_stand_in',
+    'test_samples_have_the_moments_of_the_prior[rank-9]',
+    'test_samples_have_the_moments_of_the_prior[full-rank]',
+    'test_a_rank_one_prior_gives_lines_through_the_origin',
+    'test_lag_matrices_are_sklearns',
+    'test_lag_matrices_refuse_other_kernels',
+    'test_series_follow_their_seed',
+]
+
+[tests."tests/diff_gpt/infrastructure/corpus/tempopfn/test_kernel_synth.py".drop]
+'test_tempopfn_wrapper_takes_the_stand_in' = "Python's import set-up that puts the stand-in in place of TempoPFN's module: the Rust port compiles the stand-in's code in its place, with nothing to swap"
+
+[tests."tests/diff_gpt/infrastructure/corpus/test_export.py"]
+rust = "crates/infrastructure/tests/corpus_export.rs"
+task = 34
+check = "exact"
+ids = [
+    'test_export_keeps_the_finite_series_in_order',
+]
+
+[tests."tests/diff_gpt/infrastructure/corpus/test_generate.py"]
+rust = "crates/interfaces/tests/corpus_generate.rs"
+task = 34
+check = "exact"
+ids = [
+    'test_generate_refuses_a_random_hash_seed',
+    'test_files_made_apart_equal_files_made_together[sinewave]',
+    'test_files_made_apart_equal_files_made_together[audio_network_topology]',
+    'test_thread_settings_belong_to_the_clis',
+]
+
+[tests."tests/diff_gpt/infrastructure/corpus/test_generate.py".drop]
+'test_generate_refuses_a_random_hash_seed' = "PYTHONHASHSEED: TempoPFN salts its seeds with Python's hash of a class name, which the Rust port computes as CPython does under the corpus's fixed hash seed (infrastructure::corpus::tempopfn::salt), reading no environment; #34's same series check the salts"
+
+[tests."tests/diff_gpt/infrastructure/corpus/test_generate.py".overrides]
+test_thread_settings_belong_to_the_clis = { rust = "crates/harness/tests/layers.rs::the_workspace_keeps_the_layer_rule", task = 27, note = "the layer rule's source scan: no thread setting below the command lines" }
+
+[tests."tests/diff_gpt/infrastructure/leaderboards/test_gift.py"]
+rust = "crates/infrastructure/tests/leaderboards_gift.rs"
+task = 33
+check = "ulp:1"
+ids = [
+    'test_configurations_are_the_leaderboards',
+    'test_export_writes_the_windows_in_order[test]',
+    'test_export_writes_the_windows_in_order[val]',
+    'test_export_splits_the_variates',
+    'test_replayed_seasonal_naive_is_the_leaderboards[tiny-test]',
+    'test_replayed_seasonal_naive_is_the_leaderboards[tiny-val]',
+    'test_replayed_seasonal_naive_is_the_leaderboards[tiny_multi-test]',
+    'test_replayed_seasonal_naive_is_the_leaderboards[tiny_multi-val]',
+    'test_score_rejects_misaligned_forecasts',
+    'test_save_row_keeps_one_row_per_configuration',
+    'test_aggregate_is_the_geometric_mean_of_ratios',
+    'test_aggregate_reproduces_the_published_leaderboard[PatchTST-0.849-0.587]',
+    'test_aggregate_reproduces_the_published_leaderboard[TiRex-0.716-0.488]',
+    'test_differences_are_relative_to_the_reference',
+]
+
+[tests."tests/diff_gpt/infrastructure/leaderboards/test_time.py"]
+rust = "crates/infrastructure/tests/leaderboards_time.rs"
+task = 33
+check = "ulp:1"
+ids = [
+    'test_tasks_are_the_leaderboards',
+    'test_export_writes_the_windows_in_order[test]',
+    'test_export_writes_the_windows_in_order[val]',
+    'test_export_splits_the_variates',
+    'test_replayed_seasonal_naive_is_times[tiny/H-test]',
+    'test_replayed_seasonal_naive_is_times[tiny/H-val]',
+    'test_replayed_seasonal_naive_is_times[tiny_multi/H-test]',
+    'test_replayed_seasonal_naive_is_times[tiny_multi/H-val]',
+    'test_score_reads_the_labels_of_its_split[test]',
+    'test_score_reads_the_labels_of_its_split[val]',
+    'test_score_rejects_misaligned_and_infinite_forecasts',
+    'test_official_draws_repeat_with_a_seed',
+    'test_official_seeds_each_task_by_its_key',
+    'test_task_seed_depends_only_on_the_seed_and_the_key',
+    'test_read_scores_are_nanmeans',
+    'test_baselines_are_hosted_for_test_and_numpy_for_val',
+    'test_aggregate_reproduces_the_hosted_leaderboard[Chronos-2-0.662-0.556]',
+    'test_aggregate_reproduces_the_hosted_leaderboard[TiRex-0.683-0.573]',
+    'test_differences_are_relative_to_the_reference',
+]
+
+[tests."tests/diff_gpt/infrastructure/test_numa.py"]
+rust = "crates/interfaces/tests/numa.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_parse_cpulist_ranges_and_singletons',
+    'test_list_numa_nodes_returns_at_least_one',
+    'test_cpus_on_node_nonempty_for_first_node',
+    'test_pin_to_node_sets_thread_count_and_affinity',
+    'test_plain_ddp_runs_gpt_training_steps',
+    'test_train_numa_single_node_fast_path',
+    'test_nodes_and_cpus_are_limited_to_the_allowed_cpus',
+    'test_without_a_topology_every_allowed_cpu_forms_node_0',
+    'test_pin_is_a_no_op_without_the_affinity_calls',
+    'test_pin_counts_threads_from_the_allowed_cpus_of_the_node',
+    'test_pin_moves_from_one_node_to_another',
+    'test_backend_follows_the_model_device',
+    'test_checkpoint_of_a_compiled_model_loads_into_a_plain_gpt',
+    'test_train_numa_spawns_cpu_workers_on_gloo',
+    'test_train_raises_on_every_rank_when_has_val_differs',
+]
+slow = [
+    'test_train_numa_spawns_cpu_workers_on_gloo',
+    'test_train_raises_on_every_rank_when_has_val_differs',
+]
+
+[tests."tests/diff_gpt/infrastructure/test_numa.py".drop]
+'test_backend_follows_the_model_device' = "the choice of Gloo or NCCL for torch.distributed: the Rust two-socket path (#31) runs on no torch.distributed backend"
+
+[tests."tests/diff_gpt/infrastructure/test_numa.py".overrides]
+test_checkpoint_of_a_compiled_model_loads_into_a_plain_gpt = { rust = "crates/infrastructure/tests/checkpoint.rs::checkpoint_of_a_compiled_model_loads_into_a_plain_gpt", task = 30, note = "a state dict saved through torch.compile, its keys prefixed _orig_mod." }
+test_pin_is_a_no_op_without_the_affinity_calls = { note = "the affinity calls behind a port, the test's double implementing it" }
+
+[tests."tests/diff_gpt/infrastructure/test_sqlite_data_loader.py"]
+rust = "crates/infrastructure/tests/sqlite_data_loader.rs"
+task = 31
+check = "exact"
+ids = [
+    'test_initialization_metadata',
+    'test_retrieval_order_0',
+    'test_retrieval_order_1_offset',
+    'test_sub_row_slicing',
+    'test_cross_row_slicing',
+    'test_exact_boundary_end',
+    'test_table_filtering',
+    'test_wide_table_flattening',
+    'test_get_batch_structure',
+    'test_split_defaults_to_train_only',
+    'test_unknown_split_raises',
+    'test_sqlite_train_val_split_disjoint',
+    'test_stress_random_access',
+    'test_get_data_with_real_encoder_multi_feature',
+    'test_get_batch_with_real_encoder',
+    'test_default_rng_is_not_shared_between_instances',
+    'test_sql_identifier_quoting_for_weird_table_name',
+    'test_get_batch_tolerates_short_reads_without_recursion',
+    'test_get_batch_raises_when_no_train_part_has_room',
+    'test_loader_returns_the_tokens_of_the_real_encoder',
+    'test_tables_of_different_widths_take_a_domain_each',
+    'test_a_domain_mapping_must_cover_every_sampled_table',
+    'test_sqlite_loader_encodes_with_its_tokenizer[lgt]',
+    'test_sqlite_loader_encodes_with_its_tokenizer[mash]',
+    'test_sqlite_loader_offsets_follow_the_degree_of_the_operator',
+]
+
+[tests."tests/diff_gpt/test_layers.py"]
+rust = "crates/harness/tests/layers.rs"
+task = 27
+check = "exact"
+ids = [
+    'test_every_module_keeps_the_rule_of_its_layer',
+    'test_track_b_imports_none_of_the_legacy_benchmarks',
+]
+
+[tests."tests/diff_gpt/test_layers.py".overrides]
+test_every_module_keeps_the_rule_of_its_layer = { rust = "crates/harness/tests/layers.rs::the_workspace_keeps_the_layer_rule" }
+test_track_b_imports_none_of_the_legacy_benchmarks = { rust = "crates/harness/tests/layers.rs::track_b_uses_none_of_the_legacy_benchmarks", task = 32, note = "once the benchmarks are Rust: synthetic_pretrain, synthetic_rescore, the GIFT forecast and the corpus use none of m4_bench, m4_eval, prob_m4_bench, ett_bench, diff_bench and anomaly_demo" }
+
