@@ -1,13 +1,13 @@
-"""
+r"""
 Generate the series [start, stop) of one source of one split, deterministically.
 
-Usage, from synthetic/, with PYTHONHASHSEED fixed (see sources.python_hash_seed):
+Usage, with PYTHONHASHSEED fixed (see sources.python_hash_seed):
 
-    PYTHONHASHSEED=0 uv run python -m tempopfn_corpus.generate train kernel \
+    PYTHONHASHSEED=0 uv run python -m diff_gpt.interfaces.corpus.generate train kernel \
         --stop 4096 --file-size 256
-    PYTHONHASHSEED=0 uv run python -m tempopfn_corpus.generate train kernel \
+    PYTHONHASHSEED=0 uv run python -m diff_gpt.interfaces.corpus.generate train kernel \
         --start 4096 --stop 8192 --file-size 256
-    PYTHONHASHSEED=0 uv run python -m tempopfn_corpus.generate \
+    PYTHONHASHSEED=0 uv run python -m diff_gpt.interfaces.corpus.generate \
         train augmented_per_sample_2048 --stop 4096 --file-size 256
 
 A base source runs TempoPFN's ContinuousGenerator with the run_id of
@@ -32,10 +32,8 @@ from the GIFT-Eval train splits) or of the repository's datasets/ outside
 
 from __future__ import annotations
 
-import argparse
 import datetime as dt
 import json
-import logging
 import os
 import random
 import resource
@@ -47,20 +45,21 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from pyarrow import feather
-from src.synthetic_generation.augmentations import (
+
+from diff_gpt.infrastructure.corpus import sources
+from diff_gpt.infrastructure.corpus.tempopfn import TEMPOPFN_ROOT
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.augmentations import (
     offline_per_sample_iid_augmentations,
     offline_temp_batch_augmentations,
 )
-from src.synthetic_generation.continuous_generation import (
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.continuous_generation import (  # noqa: E501 - the module's name alone is wider than the line.
     ContinuousGenerator,
     GeneratorWrapper,
     TimeSeriesDatasetManager,
 )
 
-from src import TEMPOPFN_ROOT
-from tempopfn_corpus import sources
-
 if TYPE_CHECKING:
+    import argparse
     from types import ModuleType
 
 AUGMENTATIONS: dict[str, ModuleType] = {
@@ -264,39 +263,9 @@ def refuse_real_data(root: Path) -> None:
     sys.addaudithook(hook)
 
 
-def main() -> None:
-    """Generate one range of series of one source of one split."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("split", choices=sources.SPLITS)
-    parser.add_argument("source", choices=sources.SOURCES)
-    parser.add_argument("--start", type=int, default=0, help="first series")
-    parser.add_argument("--stop", type=int, required=True, help="last series + 1")
-    parser.add_argument("--file-size", type=int, default=1024, help="series per file")
-    parser.add_argument("--root", type=Path, default=sources.DEFAULT_ROOT)
-    parser.add_argument(
-        "--replace",
-        action="store_true",
-        help="augmented sources: replace the old output once the new one is made",
-    )
-    args = parser.parse_args()
+def generate(args: argparse.Namespace, environment: dict[str, object]) -> None:
+    """Generate the series that `args` name and record the run with `environment`."""
     augmented = args.source in sources.AUGMENTED_SOURCES
-    if (
-        args.file_size % sources.CHUNK
-        or args.start % args.file_size
-        or args.stop % args.file_size
-        or not 0 <= args.start < args.stop <= sources.SEEDS_PER_SOURCE
-        or (augmented and args.start)
-    ):
-        parser.error(
-            "need 0 <= --start < --stop <= 2**24 in multiples of --file-size, "
-            f"itself one of {sources.CHUNK}; --start 0 for augmented sources",
-        )
-    environment = sources.environment()
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
-    )
-    refuse_real_data(args.root)
-
     started = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
     if augmented:
         run = generate_augmented(
@@ -329,7 +298,3 @@ def main() -> None:
         f"{args.split}/{args.source} {args.start}-{args.stop}: {run['seconds']:.0f} s"
     )
     print(f"recorded in {path}")
-
-
-if __name__ == "__main__":
-    main()

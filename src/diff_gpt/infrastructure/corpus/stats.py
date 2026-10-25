@@ -1,9 +1,10 @@
-"""
+r"""
 Value ranges and duplicates of the exported corpus, to plan its normalization.
 
-Usage, from synthetic/:
+Usage:
 
-    uv run python -m tempopfn_corpus.stats [--root ../datasets/tempopfn-synthetic]
+    uv run python -m diff_gpt.interfaces.corpus.stats \
+        [--root datasets/tempopfn-synthetic]
 
 Per (split, source) of npy/: the minimum, median and maximum of |x| and of
 |dx| (dx_t = x_t - x_{t-1}) over all values; the median of |dx_t| / |x_{t-1}|
@@ -13,15 +14,17 @@ byte for byte, to another of their split, and to one of another split.
 Prints a table and writes stats.json under --root.
 """
 
-import argparse
 import hashlib
 import json
 from collections import Counter
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tempopfn_corpus import sources
+from diff_gpt.infrastructure.corpus import sources
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def value_ranges(series: np.ndarray) -> dict[str, object]:
@@ -49,11 +52,8 @@ def digests(series: np.ndarray) -> list[bytes]:
     return [hashlib.blake2b(row.tobytes(), digest_size=16).digest() for row in series]
 
 
-def main() -> None:
-    """Print and save the statistics of the corpus under --root."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--root", type=Path, default=sources.DEFAULT_ROOT)
-    args = parser.parse_args()
+def write_stats(root: Path) -> None:
+    """Print and save the statistics of the corpus under `root`."""
     ranges: dict[str, dict[str, object]] = {}
     split_digests: dict[str, Counter[bytes]] = {}
     print(
@@ -64,7 +64,7 @@ def main() -> None:
     for split in sources.SPLITS:
         counter: Counter[bytes] = Counter()
         for source in sources.SOURCES:
-            path = args.root / "npy" / split / f"{source}.npy"
+            path = root / "npy" / split / f"{source}.npy"
             if not path.exists():
                 continue
             series = np.load(path)
@@ -97,8 +97,4 @@ def main() -> None:
     }
     print(f"series equal to another: {json.dumps(duplicates)}")
     stats = {"value_ranges": ranges, "duplicates": duplicates}
-    (args.root / "stats.json").write_text(json.dumps(stats, indent=2) + "\n")
-
-
-if __name__ == "__main__":
-    main()
+    (root / "stats.json").write_text(json.dumps(stats, indent=2) + "\n")

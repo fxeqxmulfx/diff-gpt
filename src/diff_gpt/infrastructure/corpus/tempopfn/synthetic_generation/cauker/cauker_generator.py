@@ -13,11 +13,14 @@ original CauKer (github.com/ShifengXIE/CauKer, CauKer.py at ed00670) passes
 no seed there, and draws its roots independently.
 
 This is TempoPFN's `CauKerGenerator` (Apache-2.0, a copy of the license in
-synthetic/LICENSE-TempoPFN), changed in two places:
+src/diff_gpt/infrastructure/corpus/tempopfn/LICENSE-TempoPFN), changed in
+three places:
 - each root draws its noise from a generator of its own, seeded by the
   series' seed and the root: independent roots, as in the original;
 - the roots are drawn on the CPU, by `sample_gaussian` from the matrix of
-  `lag_kernel_matrix`, the KernelSynth stand-in's, in about 0.15 s each.
+  `lag_kernel_matrix`, the KernelSynth stand-in's, in about 0.15 s each;
+- its imports name the modules of `src` by their names in
+  diff_gpt.infrastructure.corpus.tempopfn.
 Its other draws come from a RandomState and a Random of the series' seed,
 where TempoPFN seeds numpy's and Python's global generators with it: the same
 streams, so a seed gives TempoPFN's DAG, kernels, means and activations, and
@@ -41,8 +44,10 @@ from sklearn.gaussian_process.kernels import (
     WhiteKernel,
 )
 
-from src.synthetic_generation.abstract_classes import AbstractTimeSeriesGenerator
-from src.synthetic_generation.kernel_synth.kernel_synth import (
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.abstract_classes import (  # noqa: E501 - the module's name alone is wider than the line.
+    AbstractTimeSeriesGenerator,
+)
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.kernel_synth.kernel_synth import (  # noqa: E501 - the module's name alone is wider than the line.
     lag_kernel_matrix,
     sample_gaussian,
 )
@@ -50,7 +55,9 @@ from src.synthetic_generation.kernel_synth.kernel_synth import (
 if TYPE_CHECKING:
     from sklearn.gaussian_process.kernels import Kernel
 
-    from src.synthetic_generation.generator_params import CauKerGeneratorParams
+    from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.generator_params import (  # noqa: E501 - the module's name alone is wider than the line.
+        CauKerGeneratorParams,
+    )
 
 
 class CauKerGenerator(AbstractTimeSeriesGenerator):

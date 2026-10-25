@@ -16,9 +16,12 @@ from sklearn.gaussian_process.kernels import (
     WhiteKernel,
 )
 
-from src import TEMPOPFN_ROOT
-from src.synthetic_generation.kernel_synth import kernel_generator_wrapper, kernel_synth
-from tempopfn_corpus import sources
+from diff_gpt.infrastructure.corpus import sources
+from diff_gpt.infrastructure.corpus.tempopfn import TEMPOPFN_ROOT
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.kernel_synth import (
+    kernel_generator_wrapper,
+    kernel_synth,
+)
 
 if TYPE_CHECKING:
     from sklearn.gaussian_process.kernels import Kernel

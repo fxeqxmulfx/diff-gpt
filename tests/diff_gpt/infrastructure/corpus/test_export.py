@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-from src.synthetic_generation.continuous_generation import TimeSeriesDatasetManager
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.continuous_generation import (  # noqa: E501 - the module's name alone is wider than the line.
+    TimeSeriesDatasetManager,
+)
 
-from tempopfn_corpus import export, sources
+from diff_gpt.infrastructure.corpus import export, sources
 
 if TYPE_CHECKING:
     from pathlib import Path

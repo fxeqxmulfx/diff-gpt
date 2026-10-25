@@ -1,9 +1,10 @@
-"""
+r"""
 Build or extend the corpus: every missing range of every source, in parallel.
 
-Usage, from synthetic/, with PYTHONHASHSEED fixed and the CPUs it may use:
+Usage, with PYTHONHASHSEED fixed and the CPUs it may use:
 
-    PYTHONHASHSEED=0 taskset -c 4,6,8 uv run python -m tempopfn_corpus.schedule \
+    PYTHONHASHSEED=0 taskset -c 4,6,8 \
+        uv run python -m diff_gpt.interfaces.corpus.schedule \
         --series train=4096 --series holdout=1024 --file-size 256
 
 Each split's base sources grow to the given number of series in `generate`
@@ -20,7 +21,6 @@ logs/<split>/<source>/<first file>.log under --root, and the kernel kills it
 when the scheduler exits.
 """
 
-import argparse
 import ctypes
 import functools
 import itertools
@@ -31,9 +31,12 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
-from tempopfn_corpus import sources
+from diff_gpt.infrastructure.corpus import sources
+
+if TYPE_CHECKING:
+    import argparse
 
 # Seconds per series of one single-threaded `generate` process at 1024 series
 # per file (gp mostly at 256, as fast), 56 at a time on the 56 logical CPUs
@@ -187,7 +190,13 @@ def launch(job: Job, root: Path, file_size: int) -> subprocess.Popen[bytes]:
     log = root / "logs" / job.split / job.source / f"{job.start // file_size:08d}.log"
     log.parent.mkdir(parents=True, exist_ok=True)
     argv = [
-        *(sys.executable, "-m", "tempopfn_corpus.generate", job.split, job.source),
+        *(
+            sys.executable,
+            "-m",
+            "diff_gpt.interfaces.corpus.generate",
+            job.split,
+            job.source,
+        ),
         *("--start", str(job.start), "--stop", str(job.stop)),
         *("--file-size", str(file_size), "--root", str(root)),
         *(["--replace"] if job.source in sources.AUGMENTED_SOURCES else []),
@@ -257,46 +266,3 @@ def run(
             process.kill()
             process.wait()
     return failed
-
-
-def main() -> None:
-    """Run the jobs that bring every split to its --series."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument(
-        "--series",
-        action="append",
-        required=True,
-        metavar="SPLIT=N",
-        help="series per source of a split, e.g. train=4096; repeatable",
-    )
-    parser.add_argument("--file-size", type=int, default=1024)
-    parser.add_argument("--jobs", type=int, default=len(os.sched_getaffinity(0)))
-    parser.add_argument("--part-seconds", type=float, default=1200.0)
-    parser.add_argument("--max-rss-gib", type=float, default=80.0)
-    parser.add_argument("--min-available-gib", type=float, default=8.0)
-    parser.add_argument("--root", type=Path, default=sources.DEFAULT_ROOT)
-    args = parser.parse_args()
-    targets = {split: int(n) for split, n in (item.split("=") for item in args.series)}
-    if not set(targets) <= set(sources.SPLITS):
-        parser.error(f"splits must be among {sources.SPLITS}")
-    sources.environment()  # refuses an unfixed PYTHONHASHSEED or a changed clone
-
-    root = args.root.resolve()
-    ready = [
-        job
-        for split, series in targets.items()
-        for job in base_jobs(root, split, series, args.file_size, args.part_seconds)
-    ]
-    for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
-        signal.signal(signum, stop)
-    failed = run(ready, targets, root, args)
-    if failed:
-        print(
-            f"{len(failed)} jobs failed: see their logs under {root / 'logs'}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

@@ -6,11 +6,13 @@ GaussianProcessRegressor.sample_y, which samples with the legacy
 RandomState.multivariate_normal: an SVD of the 2048 x 2048 covariance, 8.6 s
 of the 9 a series takes on one thread. This is TempoPFN's
 `KernelSynthGenerator` (Apache-2.0, a copy of the license in
-synthetic/LICENSE-TempoPFN), changed in one place: `_sample_from_gp_prior`
-builds the covariance from the lags of the grid (`lag_kernel_matrix`), factors
-it with LAPACK's pivoted Cholesky, dpstrf, in 0.15 s, and draws from the same
-Gaussian with the RandomState of the same seed. Most of the composite kernels
-are of low numerical rank (a median of 295 of 2048 over 40 of them), where the
+src/diff_gpt/infrastructure/corpus/tempopfn/LICENSE-TempoPFN), changed in two
+places: its import names the module of `src` by its name in
+diff_gpt.infrastructure.corpus.tempopfn; `_sample_from_gp_prior` builds the
+covariance from the lags of the grid (`lag_kernel_matrix`), factors it with
+LAPACK's pivoted Cholesky, dpstrf, in 0.15 s, and draws from the same Gaussian
+with the RandomState of the same seed. Most of the composite kernels are of low
+numerical rank (a median of 295 of 2048 over 40 of them), where the
 factorization stops, with no jitter. A seed gives another series than in
 TempoPFN, from the same distribution: over 2304 seeds paired with the SVD, the
 series differ in neither spread, lag-1 autocorrelation, increments nor range,
@@ -43,7 +45,9 @@ from sklearn.gaussian_process.kernels import (
 )
 from sklearn.utils import check_random_state
 
-from src.synthetic_generation.abstract_classes import AbstractTimeSeriesGenerator
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.abstract_classes import (  # noqa: E501 - the module's name alone is wider than the line.
+    AbstractTimeSeriesGenerator,
+)
 
 if TYPE_CHECKING:
     from sklearn.gaussian_process.kernels import Kernel

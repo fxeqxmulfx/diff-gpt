@@ -1,9 +1,10 @@
-"""
+r"""
 Export the Arrow batches of the corpus to float32 .npy arrays, with a manifest.
 
-Usage, from synthetic/:
+Usage:
 
-    uv run python -m tempopfn_corpus.export [--root ../datasets/tempopfn-synthetic]
+    uv run python -m diff_gpt.interfaces.corpus.export \
+        [--root datasets/tempopfn-synthetic]
 
 For each split and each source with recorded runs, npy/<split>/<source>.npy
 gets its series in the order of their files: float32 of shape (N, LENGTH),
@@ -16,15 +17,17 @@ over its runs and their largest peak RSS, next to the training proportions of
 TempoPFN's configs/example.yaml.
 """
 
-import argparse
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pyarrow.compute as pc
 from pyarrow import feather
 
-from tempopfn_corpus import sources
+from diff_gpt.infrastructure.corpus import sources
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def read_values(path: Path, length: int) -> np.ndarray:
@@ -128,22 +131,3 @@ def export(root: Path) -> dict[str, object]:
     }
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     return manifest
-
-
-def main() -> None:
-    """Export the corpus under --root."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--root", type=Path, default=sources.DEFAULT_ROOT)
-    args = parser.parse_args()
-    manifest = export(args.root)
-    for split, entries in manifest["splits"].items():
-        for source, entry in entries.items():
-            dropped = entry["nonfinite_float32"], entry["nonfinite_float64"]
-            print(
-                f"{split}/{source}: {entry['series']} series, dropped "
-                f"{dropped[0]} ({dropped[1]} of them in float64)",
-            )
-
-
-if __name__ == "__main__":
-    main()

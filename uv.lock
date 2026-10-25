@@ -6,12 +6,6 @@ resolution-markers = [
     "sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 
-[manifest]
-members = [
-    "diff-gpt",
-    "tempopfn-corpus",
-]
-
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.7.1"
@@ -360,16 +354,32 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+corpus = [
+    { name = "gpytorch" },
+    { name = "joblib" },
+    { name = "networkx" },
+    { name = "pyarrow" },
+    { name = "pyo" },
+    { name = "pyyaml" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "statsmodels" },
+]
 dev = [
     { name = "datasets" },
+    { name = "gpytorch" },
+    { name = "joblib" },
     { name = "matplotlib" },
+    { name = "networkx" },
     { name = "pyarrow" },
+    { name = "pyo" },
     { name = "pytest" },
     { name = "pyyaml" },
     { name = "ruff" },
     { name = "scalene" },
+    { name = "scikit-learn" },
     { name = "scipy" },
-    { name = "tempopfn-corpus" },
+    { name = "statsmodels" },
 ]
 leaderboards = [
     { name = "datasets" },
@@ -389,16 +399,35 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+corpus = [
+    { name = "gpytorch", specifier = ">=1.15.2" },
+    { name = "joblib", specifier = ">=1.6.0" },
+    { name = "networkx", specifier = ">=3.7" },
+    { name = "pyarrow", specifier = ">=26.0.0" },
+    { name = "pyo", specifier = ">=1.1.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "scikit-learn", specifier = ">=1.9.1" },
+    { name = "scipy", specifier = ">=1.18.1" },
+    { name = "statsmodels", specifier = ">=0.15.0" },
+]
 dev = [
     { name = "datasets", specifier = ">=2.17.1" },
+    { name = "gpytorch", specifier = ">=1.15.2" },
+    { name = "joblib", specifier = ">=1.6.0" },
     { name = "matplotlib", specifier = ">=3.11.2" },
+    { name = "networkx", specifier = ">=3.7" },
     { name = "pyarrow", specifier = ">=12" },
+    { name = "pyarrow", specifier = ">=26.0.0" },
+    { name = "pyo", specifier = ">=1.1.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruff", specifier = ">=0.17.2" },
     { name = "scalene", specifier = ">=2.4.0" },
+    { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "scipy", specifier = ">=1.11.3" },
-    { name = "tempopfn-corpus", editable = "synthetic" },
+    { name = "scipy", specifier = ">=1.18.1" },
+    { name = "statsmodels", specifier = ">=0.15.0" },
 ]
 leaderboards = [
     { name = "datasets", specifier = ">=2.17.1" },
@@ -1952,51 +1981,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/83/d3/803453b36afefb7c2
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5", size = 6299353, upload-time = "2025-04-27T18:04:59.103Z" },
 ]
-
-[[package]]
-name = "tempopfn-corpus"
-version = "0.1.0"
-source = { editable = "synthetic" }
-dependencies = [
-    { name = "gpytorch" },
-    { name = "joblib" },
-    { name = "networkx" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-    { name = "pyo" },
-    { name = "pyyaml" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "statsmodels" },
-    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
-    { name = "torch", version = "2.14.1+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "gpytorch", specifier = ">=1.15.2" },
-    { name = "joblib", specifier = ">=1.6.0" },
-    { name = "networkx", specifier = ">=3.7" },
-    { name = "numpy", specifier = ">=2.5.4" },
-    { name = "pandas", specifier = ">=3.1.0" },
-    { name = "pyarrow", specifier = ">=26.0.0" },
-    { name = "pyo", specifier = ">=1.1.0" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "scikit-learn", specifier = ">=1.9.1" },
-    { name = "scipy", specifier = ">=1.18.1" },
-    { name = "statsmodels", specifier = ">=0.15.0" },
-    { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = ">=2.14.1" },
-    { name = "torch", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=2.14.1", index = "https://download.pytorch.org/whl/cu126" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "threadpoolctl"

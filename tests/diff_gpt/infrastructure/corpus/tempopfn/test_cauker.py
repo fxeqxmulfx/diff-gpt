@@ -5,11 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from src.synthetic_generation.generator_params import CauKerGeneratorParams
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.generator_params import (  # noqa: E501 - the module's name alone is wider than the line.
+    CauKerGeneratorParams,
+)
 
-from src import TEMPOPFN_ROOT
-from src.synthetic_generation.cauker import cauker_generator, cauker_generator_wrapper
-from tempopfn_corpus import sources
+from diff_gpt.infrastructure.corpus import sources
+from diff_gpt.infrastructure.corpus.tempopfn import TEMPOPFN_ROOT
+from diff_gpt.infrastructure.corpus.tempopfn.synthetic_generation.cauker import (
+    cauker_generator,
+    cauker_generator_wrapper,
+)
 
 LENGTH = 2048
 # Two roots of the SCM of this seed, a series of the pilot's holdout, are of

@@ -26,12 +26,13 @@ from pathlib import Path
 
 import yaml
 
-from src import TEMPOPFN_ROOT
+from diff_gpt.application import paths
+from diff_gpt.infrastructure.corpus.tempopfn import TEMPOPFN_ROOT
 
 TEMPOPFN_COMMIT = "5969ec6ddbded5a8d2976d42504c1ae436a2f1b3"
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = paths.ROOT
 DEFAULT_ROOT = REPO_ROOT / "datasets" / "tempopfn-synthetic"
-STAND_INS = Path(__file__).resolve().parents[1] / "src"
+STAND_INS = Path(__file__).resolve().parent / "tempopfn"
 
 LENGTH = 2048
 SPLITS = ("train", "holdout")
