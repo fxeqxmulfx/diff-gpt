@@ -30,19 +30,21 @@
 //!
 //! It prints a line per op and pass: the device, the rows, the op, the pass,
 //! and the median, the least and the most of the iterations' times in
-//! milliseconds, each timed from the op's start to the device's sync. After
-//! each round it reads the round's outputs, the gradients in a backward
+//! milliseconds, each timed from the op's start to the device's sync. On
+//! `cuda` it then reads the round's outputs, the gradients in a backward
 //! pass: `CubeCL`'s sync reports no failed launch, such as one that found no
-//! memory, which shows only on the read of an output it left unwritten.
-//! Before the rounds, `--warmup-seconds` of plain matmuls (10 on a GPU, none
-//! on the CPU) bring a GPU out of idle, and it prints the GPU's state after
-//! them as `nvidia-smi` gives it. With `--memory`, it prints a line before
-//! the rounds of each pass and after each round, its outputs read and
-//! dropped: the GPU's used memory as `nvidia-smi` gives it, and the bytes
-//! that burn's allocator holds in use and reserved where the backend reports
-//! them (`CubeCL`'s does, `LibTorch`'s does not), all in MiB. The command
-//! that starts it sets the threads (`numactl`, `RAYON_NUM_THREADS`,
-//! `OMP_NUM_THREADS`); the bench sets none.
+//! memory, which shows only on the read of an output it left unwritten. The
+//! other backends fail at the op itself, and it reads none of their outputs:
+//! with the reads, `LibTorch`'s matmul forward on the CPU took 27 to 30 ms a
+//! round, and 15.7 without them. Before the rounds, `--warmup-seconds` of
+//! plain matmuls (10 on a GPU, none on the CPU) bring a GPU out of idle, and
+//! it prints the GPU's state after them as `nvidia-smi` gives it. With
+//! `--memory`, it prints a line before the rounds of each pass and after
+//! each round, its outputs dropped: the GPU's used memory as `nvidia-smi`
+//! gives it, and the bytes that burn's allocator holds in use and reserved
+//! where the backend reports them (`CubeCL`'s does, `LibTorch`'s does not),
+//! all in MiB. The command that starts it sets the threads (`numactl`,
+//! `RAYON_NUM_THREADS`, `OMP_NUM_THREADS`); the bench sets none.
 #![forbid(unsafe_code)]
 
 use std::process::{Command, ExitCode};
@@ -152,6 +154,7 @@ struct Settings {
     iterations: usize,
     warmup_seconds: u64,
     memory: bool,
+    read: bool,
 }
 
 fn main() -> ExitCode {
@@ -178,6 +181,7 @@ fn main() -> ExitCode {
 fn settings(mut args: impl Iterator<Item = String>) -> Result<Settings, String> {
     let device = args.next().ok_or(USAGE)?;
     let gpu = matches!(device.as_str(), "libtorch-cuda" | "cuda");
+    let read = device == "cuda";
     let mut settings = Settings {
         device,
         ops: Op::ALL.to_vec(),
@@ -187,6 +191,7 @@ fn settings(mut args: impl Iterator<Item = String>) -> Result<Settings, String> 
         iterations: 11,
         warmup_seconds: if gpu { GPU_WARMUP_SECONDS } else { 0 },
         memory: false,
+        read,
     };
     while let Some(flag) = args.next() {
         if flag == "--memory" {
@@ -376,8 +381,8 @@ fn measure<const D: usize, const E: usize>(
 }
 
 /// Run `run` the warm-up times and then the timed ones, each up to the
-/// device's sync, its outputs kept until then and read after it; print the
-/// times.
+/// device's sync, its outputs kept until then and, where the settings read
+/// them, read after it; print the times.
 ///
 /// # Panics
 ///
@@ -399,14 +404,18 @@ fn time<const D: usize>(
         let outputs = run();
         device.sync().expect("the device runs the pass");
         let elapsed = start.elapsed().as_secs_f64() * 1e3;
-        for output in outputs {
-            if let Err(error) = output.try_into_data() {
-                panic!(
-                    "round {round} of {} {} left an output unwritten: {error}",
-                    op.name(),
-                    pass.name()
-                );
+        if settings.read {
+            for output in outputs {
+                if let Err(error) = output.try_into_data() {
+                    panic!(
+                        "round {round} of {} {} left an output unwritten: {error}",
+                        op.name(),
+                        pass.name()
+                    );
+                }
             }
+        } else {
+            drop(outputs);
         }
         if settings.memory {
             let round = round.to_string();
