@@ -12,13 +12,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from leaderboards.vendored.gift_eval.data import Dataset
-from leaderboards.vendored.gluonts.dataset.split import split as split_dataset
+from diff_gpt.infrastructure.leaderboards.vendored.gift_eval.data import Dataset
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+    split as split_dataset,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from leaderboards.vendored.gluonts.dataset.split import TestData
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
 
 
 def load(name: str, term: str, data: Path) -> Dataset:

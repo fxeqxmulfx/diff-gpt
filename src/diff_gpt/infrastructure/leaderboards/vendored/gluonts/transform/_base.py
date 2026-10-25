@@ -15,9 +15,9 @@
 A transformation of a dataset, entry by entry, applied lazily.
 
 This is gluonts 0.15.1's `gluonts/transform/_base.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-gluonts), cut to Transformation, without
-its `chain` and `+`, and TransformedDataset. Unchanged but for the style of
-leaderboards.vendored.
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut
+to Transformation, without its `chain` and `+`, and TransformedDataset.
+Unchanged but for the style of diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations
@@ -25,12 +25,12 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
-from leaderboards.vendored.gluonts.dataset import Dataset
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import Dataset
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
 
 
 class Transformation(metaclass=abc.ABCMeta):

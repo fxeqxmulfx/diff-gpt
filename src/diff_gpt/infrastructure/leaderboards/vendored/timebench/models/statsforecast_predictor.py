@@ -4,12 +4,13 @@ StatsForecast model wrappers for TIME benchmark.
 Adapted from gift_eval implementation.
 
 This is timebench c633e23's `src/timebench/models/statsforecast_predictor.py`
-(MIT, a copy of the license in leaderboards/LICENSE-timebench), cut to
-SeasonalNaivePredictor and the samples of its SeasonalNaiveForecast (its
-`mean` and `median`, and the Naive classes, are left out), changed in one
-place besides the style of leaderboards.vendored:
+(MIT, a copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-timebench), cut to
+SeasonalNaivePredictor and the samples of its SeasonalNaiveForecast (its `mean`
+and `median`, and the Naive classes, are left out), changed in one place
+besides the style of diff_gpt.infrastructure.leaderboards.vendored:
 - `_forecast_single_variate` forecasts the series with statsforecast's
-  GroupedArray (leaderboards.vendored.statsforecast.core), and
+  GroupedArray (diff_gpt.infrastructure.leaderboards.vendored.statsforecast.core), and
   `_extract_quantile_forecasts` reads the forecasts by column name from the
   array it returns. timebench hands the series to StatsForecast.forecast as a
   DataFrame (`_create_dataframe`: the series as float32, dated from
@@ -27,13 +28,17 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.vendored.statsforecast.core import GroupedArray
-from leaderboards.vendored.statsforecast.models import SeasonalNaive
+from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.core import (
+    GroupedArray,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.models import (
+    SeasonalNaive,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
 
 # Default quantile levels aligned with GluonTS/gift_eval
 DEFAULT_QUANTILE_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]

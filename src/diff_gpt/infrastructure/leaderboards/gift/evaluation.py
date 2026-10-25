@@ -10,8 +10,8 @@ from __future__ import annotations
 import csv
 from typing import TYPE_CHECKING
 
-from leaderboards.gift.configs import RUNS
-from leaderboards.vendored.gluonts.ev.metrics import (
+from diff_gpt.infrastructure.leaderboards.gift.configs import RUNS
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.ev.metrics import (
     MAE,
     MAPE,
     MASE,
@@ -23,14 +23,20 @@ from leaderboards.vendored.gluonts.ev.metrics import (
     SMAPE,
     MeanWeightedSumQuantileLoss,
 )
-from leaderboards.vendored.gluonts.model.evaluation import evaluate_model
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.evaluation import (
+    evaluate_model,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from leaderboards.gift.configs import Config
-    from leaderboards.vendored.gluonts.dataset.split import TestData
-    from leaderboards.vendored.gluonts.model.predictor import Predictor
+    from diff_gpt.infrastructure.leaderboards.gift.configs import Config
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.predictor import (
+        Predictor,
+    )
 
 BATCH_SIZE = 512
 RESULTS = RUNS / "results"

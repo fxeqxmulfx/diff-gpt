@@ -15,8 +15,9 @@
 The windows of a dataset: an input up to a point of each series, a label after it.
 
 This is gluonts 0.15.1's `gluonts/dataset/split.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gluonts), cut to the split at an offset,
-changed in one place besides the style of leaderboards.vendored:
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut to
+the split at an offset, changed in one place besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - `split` takes an offset only: the split at a date (DateSplitter and
   periods_between, with the check that a call gives an offset or a date) is
   left out, since leaderboards splits at an offset.
@@ -30,12 +31,17 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from leaderboards.vendored.gluonts.dataset.field_names import FieldName
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.field_names import (
+    FieldName,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry, Dataset
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import (
+        DataEntry,
+        Dataset,
+    )
 
 
 def to_positive_slice(slice_: slice, length: int) -> slice:

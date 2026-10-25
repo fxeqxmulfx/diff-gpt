@@ -1,5 +1,6 @@
 """
-Copies from timebench c633e23's timebench/models: see leaderboards.vendored.timebench.
+Copies from timebench c633e23's timebench/models.
 
-MIT, a copy of the license in leaderboards/LICENSE-timebench.
+See diff_gpt.infrastructure.leaderboards.vendored.timebench. MIT, a copy of the
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-timebench.
 """

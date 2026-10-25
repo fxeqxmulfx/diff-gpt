@@ -15,11 +15,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import datasets
 import numpy as np
 import pandas as pd
 
-from leaderboards.gift.configs import Config
+import datasets
+from diff_gpt.infrastructure.leaderboards.gift.configs import Config
 
 if TYPE_CHECKING:
     from pathlib import Path

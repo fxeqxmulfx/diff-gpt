@@ -15,11 +15,12 @@
 A forecast as quantiles and mean, and the quantile between or beyond them.
 
 This is gluonts 0.15.1's `gluonts/model/forecast.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-gluonts), cut to `_linear_interpolation`,
-ExponentialTailApproximation, Quantile, Forecast's `mean`, `quantile`,
-`median` and `[]` (its `index` and the `_index` that caches it left out), and
-QuantileForecast's `__init__`, `quantile` and `mean`, changed in two places
-besides the style of leaderboards.vendored:
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut
+to `_linear_interpolation`, ExponentialTailApproximation, Quantile, Forecast's
+`mean`, `quantile`, `median` and `[]` (its `index` and the `_index` that caches
+it left out), and QuantileForecast's `__init__`, `quantile` and `mean`, changed
+in two places besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - Quantile is a plain dataclass, where gluonts makes it a pydantic one.
   `__post_init__` keeps pydantic's one check, that the value is in [0, 1],
   and raises a ValueError, as pydantic's ValidationError is one, so that

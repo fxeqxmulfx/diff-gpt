@@ -2,9 +2,10 @@
 statsforecast's forecast of series stored end to end, one model at a time.
 
 This is statsforecast 2.1.1's `statsforecast/core.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-statsforecast), cut to GroupedArray's
-`__init__`, `_get_cols`, `_output_fcst` and `forecast`, changed in two places
-besides the style of leaderboards.vendored:
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-statsforecast),
+cut to GroupedArray's `__init__`, `_get_cols`, `_output_fcst` and `forecast`,
+changed in two places besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - StatsForecast, the DataFrame interface around GroupedArray, is left out:
   leaderboards builds the GroupedArray of its series itself and reads their
   forecasts from the array `forecast` returns, by row and column name.
@@ -31,15 +32,19 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.vendored.statsforecast.utils import _ensure_float
-from leaderboards.vendored.utilsforecast.grouped_array import (
+from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.utils import (
+    _ensure_float,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.utilsforecast.grouped_array import (
     GroupedArray as BaseGroupedArray,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from leaderboards.vendored.statsforecast.models import SeasonalNaive
+    from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.models import (
+        SeasonalNaive,
+    )
 
 
 class GroupedArray(BaseGroupedArray):

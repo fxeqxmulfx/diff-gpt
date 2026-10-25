@@ -15,8 +15,9 @@
 The iteration helpers that gluonts' datasets and evaluation use.
 
 This is gluonts 0.15.1's `gluonts/itertools.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gluonts), cut to SizedIterable, `prod`,
-`batcher` and Map. Unchanged but for the style of leaderboards.vendored.
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut to
+SizedIterable, `prod`, `batcher` and Map. Unchanged but for the style of
+diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations

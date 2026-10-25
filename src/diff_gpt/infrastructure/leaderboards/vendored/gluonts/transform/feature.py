@@ -15,9 +15,10 @@
 The imputation of missing values that gift-eval's notebook applies to a context.
 
 This is gluonts 0.15.1's `gluonts/transform/feature.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-gluonts), cut to MissingValueImputation,
-DummyValueImputation and LastValueImputation, changed in one place besides
-the style of leaderboards.vendored:
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut
+to MissingValueImputation, DummyValueImputation and LastValueImputation,
+changed in one place besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - the `__init__` of MissingValueImputation and of DummyValueImputation is
   not wrapped in gluonts' pydantic `@validated()`, which only checks and
   converts the arguments: LastValueImputation() takes none, and

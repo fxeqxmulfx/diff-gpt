@@ -2,10 +2,11 @@
 Series stored end to end in one array, read one series at a time.
 
 This is utilsforecast 0.2.17's `utilsforecast/grouped_array.py` (Apache-2.0, a
-copy of the license in leaderboards/LICENSE-utilsforecast), cut to
+copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-utilsforecast), cut to
 GroupedArray's `[]`, the one method of it that statsforecast's GroupedArray
 uses: it iterates over its series with it. Unchanged but for the style of
-leaderboards.vendored.
+diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations

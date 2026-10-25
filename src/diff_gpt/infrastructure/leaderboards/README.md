@@ -1,36 +1,38 @@
 # leaderboards
 
-The GIFT-Eval and TIME evaluation for diff-gpt, a project of the
-repository's uv workspace, in its one environment on Python 3.14. It runs
-copies of the code it uses from gift-eval at commit 3c7be6d, TIME's
-timebench at commit c633e23, gluonts 0.15.1 and statsforecast 2.1.1
-(`src/leaderboards/vendored/`; each file names its source, its license and
-its changes, and the licenses are the `LICENSE-*` files here). diff-gpt
-imports none of it, so the copies never enter diff-gpt; the two exchange
-files:
+The GIFT-Eval and TIME evaluation for diff-gpt: the adapters in
+`diff_gpt.infrastructure.leaderboards`, run by the command lines in
+`diff_gpt.interfaces.leaderboards`, in the repository's one environment on
+Python 3.14. It runs copies of the code it uses from gift-eval at commit
+3c7be6d, TIME's timebench at commit c633e23, gluonts 0.15.1 and
+statsforecast 2.1.1 (`vendored/`; each file names its source, its license
+and its changes, and the licenses are the `LICENSE-*` files here). The rest
+of diff-gpt imports none of it, so the copies never enter the model or its
+forecasters; the two exchange files:
 
 1. **export** (leaderboards) writes the windows of each configuration;
-2. a **forecaster** (diff-gpt, `benchmarks/gift_eval/files.py`) reads them
-   and writes quantile forecasts;
+2. a **forecaster** (diff-gpt, `diff_gpt.application.gift_eval.files`) reads
+   them and writes quantile forecasts;
 3. **score** (leaderboards) replays the forecasts through gluonts'
    `evaluate_model` with the leaderboard's metrics;
 4. **aggregate** divides each configuration's MASE and CRPS by
    Seasonal_Naive's and takes the geometric mean over the 97 configurations.
 
-TIME (`leaderboards.time`, below) takes the same steps over its 98 tasks,
-with timebench's `save_window_predictions` as the scorer.
+TIME (`diff_gpt.infrastructure.leaderboards.time`, below) takes the same
+steps over its 98 tasks, with timebench's `save_window_predictions` as the
+scorer.
 
 ## Setup
 
-`uv sync` in the repository root installs leaderboards with the rest of the
-workspace, into the root's `.venv`. Not in this folder: here it would sync
-leaderboards alone and remove the other projects' packages. Then, from here:
+`uv sync` in the repository root installs the leaderboards' dependencies,
+the `leaderboards` group of the root's `pyproject.toml` (part of `dev`), into
+the root's `.venv`. Then, from the repository root:
 
 ```sh
-git clone https://github.com/SalesforceAIResearch/gift-eval ../../gift-eval
-git -C ../../gift-eval checkout 3c7be6deffb0046e1c08f9103db8bc84b3cf7ebd
+git clone https://github.com/SalesforceAIResearch/gift-eval ../gift-eval
+git -C ../gift-eval checkout 3c7be6deffb0046e1c08f9103db8bc84b3cf7ebd
 uvx --from 'huggingface_hub[hf_xet]' hf download Salesforce/GiftEval \
-    --repo-type=dataset --local-dir ../datasets/gift-eval    # 1.5 GB
+    --repo-type=dataset --local-dir datasets/gift-eval    # 1.5 GB
 ```
 
 The clone provides the configuration list (`scripts/dataset_configurations.csv`,
@@ -38,17 +40,16 @@ The clone provides the configuration list (`scripts/dataset_configurations.csv`,
 
 ## Commands
 
-From `leaderboards/`, unless noted. Everything is written under
+From the repository root. Everything is written under
 `runs/leaderboards/gift-eval/`.
 
 ```sh
-uv run python -m leaderboards.gift.export                  # windows/{test,val}/, 50 s
-# From the repository root:
-uv run python -m benchmarks.gift_eval.seasonal_naive --split test   # forecasts/seasonal_naive/test/
-uv run python -m leaderboards.gift.score --model seasonal_naive --split test
-uv run python -m leaderboards.gift.aggregate \
-    ../runs/leaderboards/gift-eval/results/seasonal_naive/test/all_results.csv
-uv run python -m leaderboards.gift.official --split test --jobs 2   # statsforecast reference
+uv run python -m diff_gpt.interfaces.leaderboards.gift.export   # windows/{test,val}/, 50 s
+uv run python -m diff_gpt.interfaces.gift_eval.seasonal_naive --split test   # forecasts/seasonal_naive/test/
+uv run python -m diff_gpt.interfaces.leaderboards.gift.score --model seasonal_naive --split test
+uv run python -m diff_gpt.interfaces.leaderboards.gift.aggregate \
+    runs/leaderboards/gift-eval/results/seasonal_naive/test/all_results.csv
+uv run python -m diff_gpt.interfaces.leaderboards.gift.official --split test --jobs 2   # statsforecast reference
 ```
 
 Every command takes `--only KEY ...` (e.g. `m4_hourly/H/short`), and `--help`
@@ -71,15 +72,15 @@ history than the board's Seasonal_Naive had.
 ## Tests
 
 ```sh
-uv run pytest                                   # here: names, windows, replay
-cd .. && uv run pytest tests/gift_eval          # the root side
+uv run pytest tests/diff_gpt/infrastructure/leaderboards   # names, windows, replay
+uv run pytest tests/diff_gpt/application/gift_eval         # the forecasters' side
 ```
 
-The replay test runs diff-gpt's `benchmarks.gift_eval.seasonal_naive` in a
-subprocess (`../.venv/bin/python`) on tiny datasets written to disk in
+The replay test runs diff-gpt's `diff_gpt.interfaces.gift_eval.seasonal_naive`
+in a subprocess (`.venv/bin/python`) on tiny datasets written to disk in
 the download's format, and requires the scored result to equal the
 statsforecast reference. Nothing is downloaded. The tests of the task list
-and of the aggregation read the gift-eval clone and `../datasets/time-output`.
+and of the aggregation read the gift-eval clone and `datasets/time-output`.
 
 ## TIME
 
@@ -92,36 +93,36 @@ folder a submission uploads.
 ```sh
 uvx --from 'huggingface_hub[hf_xet]' hf download Real-TSF/TIME --repo-type=dataset \
     --revision 83e3d0b3be28d11c7182bffcc1892d19b36c4da1 \
-    --local-dir ../datasets/time    # 212 MB
+    --local-dir datasets/time    # 212 MB
 uvx --from 'huggingface_hub[hf_xet]' hf download Real-TSF/TIME-Output --repo-type=dataset \
     --revision 4c93deaac0aa02e3be3ae385be7a8be6dde7aa91 \
     --include 'results/seasonal_naive/**' --include 'results/Chronos-2/**' \
     --include 'results/TiRex/**' --exclude '**/predictions.npz' \
-    --local-dir ../datasets/time-output    # 588 files, 20 MB
+    --local-dir datasets/time-output    # 588 files, 20 MB
 ```
 
 The first is TIME's data; the second, the hosted `metrics.npz` and
 `config.json` of seasonal_naive (the baseline `aggregate` divides test by),
-Chronos-2 and TiRex (whose leaderboard scores `tests/test_time.py`
-reproduces). Gate G1 ran on these revisions, both repositories' `main` on
-2026-10-22. With `--dry-run` either command counts the files it would fetch:
-none for a copy at its revision. TIME's data is CC BY-NC 4.0: it stays in the
-ignored `datasets/` and is never committed.
+Chronos-2 and TiRex (whose leaderboard scores
+`tests/diff_gpt/infrastructure/leaderboards/test_time.py` reproduces). Gate G1
+ran on these revisions, both repositories' `main` on 2026-10-22. With
+`--dry-run` either command counts the files it would fetch: none for a copy at
+its revision. TIME's data is CC BY-NC 4.0: it stays in the ignored `datasets/`
+and is never committed.
 
-From `leaderboards/`, unless noted; everything is written under
+From the repository root; everything is written under
 `runs/leaderboards/time/`.
 
 ```sh
-uv run python -m leaderboards.time.export                  # windows/{test,val}/
-# From the repository root:
-uv run python -m benchmarks.gift_eval.seasonal_naive --split test \
+uv run python -m diff_gpt.interfaces.leaderboards.time.export   # windows/{test,val}/
+uv run python -m diff_gpt.interfaces.gift_eval.seasonal_naive --split test \
     --model numpy_seasonal_naive \
     --windows runs/leaderboards/time/windows --forecasts runs/leaderboards/time/forecasts
-uv run python -m leaderboards.time.score --model numpy_seasonal_naive --split test --jobs 8
-uv run python -m leaderboards.time.aggregate \
-    ../runs/leaderboards/time/results/numpy_seasonal_naive/test
-uv run python -m leaderboards.time.official --split test --jobs 8   # TIME's seasonal_naive
-uv run python -m leaderboards.time.compare A B             # two results folders
+uv run python -m diff_gpt.interfaces.leaderboards.time.score --model numpy_seasonal_naive --split test --jobs 8
+uv run python -m diff_gpt.interfaces.leaderboards.time.aggregate \
+    runs/leaderboards/time/results/numpy_seasonal_naive/test
+uv run python -m diff_gpt.interfaces.leaderboards.time.official --split test --jobs 8   # TIME's seasonal_naive
+uv run python -m diff_gpt.interfaces.leaderboards.time.compare A B   # two results folders
 ```
 
 `official` runs timebench's SeasonalNaivePredictor as TIME's

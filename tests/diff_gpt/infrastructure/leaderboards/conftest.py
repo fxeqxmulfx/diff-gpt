@@ -1,4 +1,4 @@
-"""Shared fixtures: the tiny GIFT-Eval and TIME datasets of tests.tiny on disk."""
+"""Shared fixtures: the tiny GIFT-Eval and TIME datasets of tiny.py on disk."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.tiny import tiny, tiny_multi, write
+from tests.diff_gpt.infrastructure.leaderboards.tiny import tiny, tiny_multi, write
 
 if TYPE_CHECKING:
     from pathlib import Path

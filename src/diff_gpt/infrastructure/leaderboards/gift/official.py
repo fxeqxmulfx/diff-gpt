@@ -2,12 +2,13 @@
 The leaderboard's Seasonal_Naive: statsforecast's SeasonalNaive in the notebook.
 
 A port of StatsForecastPredictor from gift-eval's notebooks/naive.ipynb
-(Apache-2.0, a copy of the license in leaderboards/LICENSE-gift-eval) with
-SeasonalNaive as its model, the reference of gate G1. Run in leaderboards/:
-``uv run python -m leaderboards.gift.official --split test``. --max-length
-cuts each context to its last steps before imputation, as the predictor's
-max_length does; the notebook leaves it unset. --jobs scores that many
-configurations at once, each in a process of its own that exits after it.
+(Apache-2.0, a copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-gift-eval) with SeasonalNaive
+as its model, the reference of gate G1.
+``uv run python -m diff_gpt.interfaces.leaderboards.gift.official --split test``.
+--max-length cuts each context to its last steps before imputation, as the
+predictor's max_length does; the notebook leaves it unset. --jobs scores that
+many configurations at once, each in a process of its own that exits after it.
 
 Three departures from the notebook, none of which changes a forecast:
 
@@ -22,46 +23,59 @@ Three departures from the notebook, none of which changes a forecast:
   DataFrame it returns. Here the series go straight to statsforecast's
   GroupedArray, which StatsForecast makes of that DataFrame and forecasts
   in the same way, and the forecasts are read by row and column
-  (leaderboards.vendored.statsforecast.core): the same values. Each
-  forecast starts at forecast_start(entry), where the notebook takes the
-  first date of statsforecast's forecast as a period; the metrics never
-  read it.
+  (diff_gpt.infrastructure.leaderboards.vendored.statsforecast.core): the same
+  values. Each forecast starts at forecast_start(entry), where the notebook
+  takes the first date of statsforecast's forecast as a period; the metrics
+  never read it.
 """
 
 from __future__ import annotations
 
-import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.gift.configs import DATA, GIFT_REPO, SPLITS, configurations, select
-from leaderboards.gift.evaluation import (
+from diff_gpt.infrastructure.leaderboards.gift.configs import configurations, select
+from diff_gpt.infrastructure.leaderboards.gift.evaluation import (
     BATCH_SIZE,
-    RESULTS,
     evaluate,
     results_path,
     save_row,
 )
-from leaderboards.gift.windows import load, windows
-from leaderboards.vendored.gluonts.dataset.util import forecast_start
-from leaderboards.vendored.gluonts.model.forecast import QuantileForecast
-from leaderboards.vendored.gluonts.model.predictor import Predictor
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
-from leaderboards.vendored.gluonts.transform.feature import LastValueImputation
-from leaderboards.vendored.statsforecast.core import GroupedArray
-from leaderboards.vendored.statsforecast.models import SeasonalNaive
+from diff_gpt.infrastructure.leaderboards.gift.windows import load, windows
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.util import (
+    forecast_start,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.forecast import (
+    QuantileForecast,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.predictor import (
+    Predictor,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.transform.feature import (
+    LastValueImputation,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.core import (
+    GroupedArray,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.models import (
+    SeasonalNaive,
+)
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Iterable, Iterator
+    from pathlib import Path
 
     import pandas as pd
 
-    from leaderboards.gift.configs import Config
-    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.gift.configs import Config
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
 
 QUANTILE_LEVELS = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 MODEL = "SeasonalNaive"  # statsforecast's column of the point forecast.
@@ -164,23 +178,8 @@ def run(
     return config, metrics, time.perf_counter() - started
 
 
-def main() -> None:
-    """Score the seasonal naive on the chosen configurations."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--split", choices=SPLITS, default="test")
-    parser.add_argument("--max-length", type=int)
-    parser.add_argument(
-        "--model", help="default: statsforecast_seasonal_naive[_<max length>]"
-    )
-    parser.add_argument("--only", nargs="*", help="keys (default: all 97)")
-    parser.add_argument("--jobs", type=int, default=1, help="processes")
-    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
-    parser.add_argument("--data", type=Path, default=DATA)
-    parser.add_argument("--gift-repo", type=Path, default=GIFT_REPO)
-    parser.add_argument("--results", type=Path, default=RESULTS)
-    args = parser.parse_args()
+def score_configurations(args: argparse.Namespace) -> None:
+    """Score the seasonal naive on the configurations `args` choose, into one CSV."""
     model = args.model or "statsforecast_seasonal_naive" + (
         f"_{args.max_length}" if args.max_length else ""
     )
@@ -203,7 +202,3 @@ def main() -> None:
                 flush=True,
             )
     print(f"wrote {path}")
-
-
-if __name__ == "__main__":
-    main()

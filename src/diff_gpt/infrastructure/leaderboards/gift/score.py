@@ -1,7 +1,7 @@
 """
 Score forecasts that a forecaster wrote to files.
 
-Run in leaderboards/: ``uv run python -m leaderboards.gift.score --model NAME``.
+``uv run python -m diff_gpt.interfaces.leaderboards.gift.score --model NAME``.
 It reads RUNS/forecasts/<model>/<split>/<file key>.npz for every
 configuration:
 
@@ -18,36 +18,44 @@ after it; this process writes their rows as they finish.
 
 from __future__ import annotations
 
-import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.gift.configs import (
-    DATA,
-    GIFT_REPO,
-    RUNS,
-    SPLITS,
-    configurations,
-    select,
+from diff_gpt.application.ports import UsageError
+from diff_gpt.infrastructure.leaderboards.gift.configs import configurations, select
+from diff_gpt.infrastructure.leaderboards.gift.evaluation import (
+    evaluate,
+    results_path,
+    save_row,
 )
-from leaderboards.gift.evaluation import RESULTS, evaluate, results_path, save_row
-from leaderboards.gift.windows import load, windows
-from leaderboards.vendored.gluonts.dataset.util import forecast_start
-from leaderboards.vendored.gluonts.model.forecast import QuantileForecast
-from leaderboards.vendored.gluonts.model.predictor import Predictor
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
+from diff_gpt.infrastructure.leaderboards.gift.windows import load, windows
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.util import (
+    forecast_start,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.forecast import (
+    QuantileForecast,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.predictor import (
+    Predictor,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Iterable, Iterator
+    from pathlib import Path
 
-    from leaderboards.gift.configs import Config
-    from leaderboards.vendored.gluonts.dataset import DataEntry
-    from leaderboards.vendored.gluonts.dataset.split import TestData
+    from diff_gpt.infrastructure.leaderboards.gift.configs import Config
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
 
 QUANTILE_LEVELS = (0.025, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.975)
 FORECAST_KEYS = ["mean", *(str(level) for level in QUANTILE_LEVELS)]
@@ -159,25 +167,14 @@ def run(
     return config, metrics, time.perf_counter() - started
 
 
-def main() -> None:
-    """Score a model's forecasts of the chosen configurations."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--model", required=True)
-    parser.add_argument("--split", choices=SPLITS, default="test")
-    parser.add_argument("--only", nargs="*", help="keys (default: all 97)")
-    parser.add_argument("--jobs", type=int, default=1, help="processes")
-    parser.add_argument("--data", type=Path, default=DATA)
-    parser.add_argument("--gift-repo", type=Path, default=GIFT_REPO)
-    parser.add_argument("--forecasts", type=Path, default=RUNS / "forecasts")
-    parser.add_argument("--results", type=Path, default=RESULTS)
-    args = parser.parse_args()
+def score_forecasts(args: argparse.Namespace) -> None:
+    """Score the model's forecasts of the configurations `args` choose, into one CSV."""
     configs = select(configurations(args.gift_repo), args.only)
     folder = args.forecasts / args.model / args.split
     missing = [c.key for c in configs if not (folder / f"{c.file_key}.npz").exists()]
     if missing:
-        parser.error(f"no forecasts in {folder} for {missing}")
+        msg = f"no forecasts in {folder} for {missing}"
+        raise UsageError(msg)
     path = results_path(args.model, args.split, args.results)
     with ProcessPoolExecutor(args.jobs, max_tasks_per_child=1) as pool:
         runs = [
@@ -196,7 +193,3 @@ def main() -> None:
                 flush=True,
             )
     print(f"wrote {path}")
-
-
-if __name__ == "__main__":
-    main()

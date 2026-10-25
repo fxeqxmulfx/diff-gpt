@@ -2,10 +2,10 @@
 The seasonal naive forecast, and the normal intervals around a forecast.
 
 This is statsforecast 2.1.1's `statsforecast/utils.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-statsforecast), cut to `_repeat_val_seas`,
-`_ensure_float`, `_seasonal_naive`, `_quantiles`, `_calculate_intervals` and
-`_calculate_sigma`, changed in two places besides the style of
-leaderboards.vendored:
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-statsforecast),
+cut to `_repeat_val_seas`, `_ensure_float`, `_seasonal_naive`, `_quantiles`,
+`_calculate_intervals` and `_calculate_sigma`, changed in two places besides
+the style of diff_gpt.infrastructure.leaderboards.vendored:
 - `_quantiles` and `_calculate_intervals` take no `distribution` and
   `dist_params`: they keep the default, the normal distribution, the one
   SeasonalNaive's forecast uses. Its `frozen_error_distribution(1.0,

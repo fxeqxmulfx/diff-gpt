@@ -15,11 +15,11 @@
 gluonts.ev's metrics: a statistic aggregated, or metrics combined.
 
 This is gluonts 0.15.1's `gluonts/ev/metrics.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gluonts), cut to the metrics leaderboards
-computes (MSE, MAE, MASE, MAPE, sMAPE, MSIS, RMSE, NRMSE, ND and the mean
-weighted quantile loss) and the ones they are made of: Metric without
-`update_all`, BaseMetricDefinition without `+` and `add`. Unchanged but for
-the style of leaderboards.vendored.
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut to
+the metrics leaderboards computes (MSE, MAE, MASE, MAPE, sMAPE, MSIS, RMSE,
+NRMSE, ND and the mean weighted quantile loss) and the ones they are made of:
+Metric without `update_all`, BaseMetricDefinition without `+` and `add`.
+Unchanged but for the style of diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations
@@ -30,8 +30,11 @@ from typing import TYPE_CHECKING, Self
 
 import numpy as np
 
-from leaderboards.vendored.gluonts.ev.aggregations import Mean, Sum
-from leaderboards.vendored.gluonts.ev.stats import (
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.ev.aggregations import (
+    Mean,
+    Sum,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.ev.stats import (
     absolute_error,
     absolute_label,
     absolute_percentage_error,
@@ -45,7 +48,9 @@ from leaderboards.vendored.gluonts.ev.stats import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Mapping
 
-    from leaderboards.vendored.gluonts.ev.aggregations import Aggregation
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.ev.aggregations import (
+        Aggregation,
+    )
 
 
 @dataclass

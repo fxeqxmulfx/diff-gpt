@@ -12,13 +12,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from leaderboards.vendored.timebench.evaluation.data import Dataset
+from diff_gpt.infrastructure.leaderboards.vendored.timebench.evaluation.data import (
+    Dataset,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from leaderboards.time.configs import Task
-    from leaderboards.vendored.gluonts.dataset.split import TestData
+    from diff_gpt.infrastructure.leaderboards.time.configs import Task
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
 
 
 def load(task: Task, data: Path) -> Dataset:

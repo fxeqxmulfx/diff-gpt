@@ -1,7 +1,7 @@
 """
 TIME's seasonal_naive: timebench's predictor, as experiments/seasonal_naive.py runs it.
 
-Run in leaderboards/: ``uv run python -m leaderboards.time.official --split test``.
+``uv run python -m diff_gpt.interfaces.leaderboards.time.official --split test``.
 For each window the predictor fills a NaN with the value before it (leading
 NaN with the first value), forecasts with statsforecast's SeasonalNaive and
 its intervals at levels 20 to 80, and draws --samples paths (TIME: 100)
@@ -16,36 +16,38 @@ TIME's code does now; the hosted seasonal_naive drew a window's paths once
 for all the variates of a series (README.md, TIME).
 
 --samples 0 scores statsforecast's quantiles themselves, without the draws:
-the forecasts the numpy seasonal naive of benchmarks/gift_eval replays.
---max-length cuts each context to its last steps first, as
-leaderboards.time.export does. --jobs scores that many tasks at once, each
-in a process of its own that exits after it.
+the forecasts the numpy seasonal naive of src/diff_gpt/application/gift_eval
+replays. --max-length cuts each context to its last steps first, as
+diff_gpt.infrastructure.leaderboards.time.export does. --jobs scores that many
+tasks at once, each in a process of its own that exits after it.
 """
 
 from __future__ import annotations
 
-import argparse
 import time
 import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.time.configs import DATA, SPLITS, select, tasks
-from leaderboards.time.score import LEVELS, RESULTS, save
-from leaderboards.time.windows import load, split_of
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
-from leaderboards.vendored.timebench.models.statsforecast_predictor import (
+from diff_gpt.infrastructure.leaderboards.time.configs import select, tasks
+from diff_gpt.infrastructure.leaderboards.time.score import LEVELS, save
+from diff_gpt.infrastructure.leaderboards.time.windows import load, split_of
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.timebench.models.statsforecast_predictor import (  # noqa: E501 - the module's name alone is wider than the line.
     SeasonalNaivePredictor,
 )
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Iterable, Iterator
+    from pathlib import Path
 
-    from leaderboards.time.configs import Task
-    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.time.configs import Task
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
 
 SAMPLES = 100  # experiments/seasonal_naive.py's num_samples.
 
@@ -125,26 +127,8 @@ def run(
     return task, scores, time.perf_counter() - started
 
 
-def main() -> None:
-    """Score the seasonal naive on the chosen tasks."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--split", choices=SPLITS, default="test")
-    parser.add_argument("--samples", type=int, default=SAMPLES)
-    parser.add_argument("--seed", type=int)
-    parser.add_argument("--max-length", type=int)
-    parser.add_argument(
-        "--model",
-        help="default: statsforecast_seasonal_naive[_exact][_<max length>]",
-    )
-    parser.add_argument("--only", nargs="*", help="keys (default: all 98)")
-    parser.add_argument("--jobs", type=int, default=1, help="processes")
-    parser.add_argument("--data", type=Path, default=DATA)
-    parser.add_argument("--results", type=Path, default=RESULTS)
-    args = parser.parse_args()
-    if args.samples < 0:
-        parser.error("--samples must be 0 or more")
+def score_tasks(args: argparse.Namespace) -> None:
+    """Score the seasonal naive on the tasks `args` choose, one folder per task."""
     model = args.model or "statsforecast_seasonal_naive" + (
         "_exact" if args.samples == 0 else ""
     ) + (f"_{args.max_length}" if args.max_length else "")
@@ -171,7 +155,3 @@ def main() -> None:
                 flush=True,
             )
     print(f"wrote {folder}")
-
-
-if __name__ == "__main__":
-    main()

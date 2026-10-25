@@ -15,8 +15,9 @@
 The evaluation of a predictor's forecasts on test data, by gluonts.ev metrics.
 
 This is gluonts 0.15.1's `gluonts/model/evaluation.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-gluonts), changed in one place besides the
-style of leaderboards.vendored:
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts),
+changed in one place besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - `evaluate_forecasts_raw` shows no tqdm progress bar, and leaderboards no
   longer needs tqdm. The bar only counted the forecasts on stderr.
 toolz's `first` and `valmap` are written out: `next(iter(...))`, as `first`
@@ -33,18 +34,33 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from leaderboards.vendored.gluonts.ev.ts_stats import seasonal_error
-from leaderboards.vendored.gluonts.itertools import batcher, prod
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.ev.ts_stats import (
+    seasonal_error,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.itertools import (
+    batcher,
+    prod,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry
-    from leaderboards.vendored.gluonts.dataset.split import TestData
-    from leaderboards.vendored.gluonts.ev.metrics import BaseMetricDefinition
-    from leaderboards.vendored.gluonts.model.forecast import Forecast
-    from leaderboards.vendored.gluonts.model.predictor import Predictor
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.ev.metrics import (
+        BaseMetricDefinition,
+    )
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.forecast import (
+        Forecast,
+    )
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.predictor import (
+        Predictor,
+    )
 
 logger = logging.getLogger(__name__)
 

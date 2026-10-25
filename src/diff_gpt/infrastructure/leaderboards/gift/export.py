@@ -1,7 +1,7 @@
 """
 Export GIFT-Eval windows for a forecaster that reads them from files.
 
-Run in leaderboards/: ``uv run python -m leaderboards.gift.export``. For each
+``uv run python -m diff_gpt.interfaces.leaderboards.gift.export``. For each
 configuration and split it writes RUNS/windows/<split>/<file key>.npz:
 
 - values: float32, the contexts concatenated, each cut to its last
@@ -18,27 +18,27 @@ labels are written, for either split.
 
 from __future__ import annotations
 
-import argparse
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.gift.configs import (
-    DATA,
-    GIFT_REPO,
-    RUNS,
-    SPLITS,
-    configurations,
-    select,
+from diff_gpt.infrastructure.leaderboards.gift.configs import configurations, select
+from diff_gpt.infrastructure.leaderboards.gift.windows import load, windows
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.util import (
+    forecast_start,
 )
-from leaderboards.gift.windows import load, windows
-from leaderboards.vendored.gluonts.dataset.util import forecast_start
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
 
 if TYPE_CHECKING:
-    from leaderboards.vendored.gluonts.dataset.split import TestData
+    import argparse
+    from pathlib import Path
+
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
 
 MAX_CONTEXT = 4096
 
@@ -83,20 +83,8 @@ def export(
     return len(item_ids)
 
 
-def main() -> None:
-    """Export the windows of the chosen configurations and splits."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--split", nargs="+", choices=SPLITS, default=list(SPLITS))
-    parser.add_argument("--max-context", type=int, default=MAX_CONTEXT)
-    parser.add_argument("--only", nargs="*", help="keys (default: all 97)")
-    parser.add_argument("--data", type=Path, default=DATA)
-    parser.add_argument("--gift-repo", type=Path, default=GIFT_REPO)
-    parser.add_argument("--out", type=Path, default=RUNS / "windows")
-    args = parser.parse_args()
-    if args.max_context < 1:
-        parser.error("--max-context must be positive")
+def export_windows(args: argparse.Namespace) -> None:
+    """Export the windows of the configurations and splits that `args` choose."""
     for config in select(configurations(args.gift_repo), args.only):
         dataset = load(config.name, config.term, args.data)
         for split in args.split:
@@ -112,7 +100,3 @@ def main() -> None:
             )
             seconds = time.perf_counter() - started
             print(f"{split} {config.key}: {count} windows, {seconds:.1f} s", flush=True)
-
-
-if __name__ == "__main__":
-    main()

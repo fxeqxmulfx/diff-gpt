@@ -15,8 +15,9 @@
 The seasonality of a frequency, by which MASE scales its errors.
 
 This is gluonts 0.15.1's `gluonts/time_feature/seasonality.py` (Apache-2.0, a
-copy of the license in leaderboards/LICENSE-gluonts), changed in one place
-besides the style of leaderboards.vendored:
+copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), changed in one place
+besides the style of diff_gpt.infrastructure.leaderboards.vendored:
 - for pandas 3, `freq` is read as a period's frequency, in the codes of
   `period_freq` and by `to_offset(..., is_period=True)`, and the offset's
   `rule_code` is read for its `name`, the same string, which pandas 3.1
@@ -30,7 +31,10 @@ import logging
 
 import pandas as pd
 
-from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str, period_freq
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature._base import (
+    norm_freq_str,
+    period_freq,
+)
 
 logger = logging.getLogger(__name__)
 

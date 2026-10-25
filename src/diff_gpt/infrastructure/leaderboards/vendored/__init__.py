@@ -9,10 +9,10 @@ a copy of one upstream module cut to what leaderboards' calls run: the
 functions, classes and methods they reach, each whole with all its branches
 but those that need code left out (each named where it is cut). Each keeps
 its upstream license header, if it has one; its docstring names its source
-and license, a copy of the license in leaderboards/LICENSE-<project>, and
-lists every change from upstream with its reason. A package's `__init__`
-holds only a docstring: the copies import each name from the module that
-defines it.
+and license, a copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-<project>, and lists every
+change from upstream with its reason. A package's `__init__` holds only a
+docstring: the copies import each name from the module that defines it.
 
 Besides those changes, the copies are written in leaderboards' style, which
 changes no behavior leaderboards reaches:

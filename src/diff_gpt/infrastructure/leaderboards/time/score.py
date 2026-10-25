@@ -1,41 +1,51 @@
 """
 Score forecasts that a forecaster wrote to files.
 
-Run in leaderboards/: ``uv run python -m leaderboards.time.score --model NAME``.
+``uv run python -m diff_gpt.interfaces.leaderboards.time.score --model NAME``.
 It reads RUNS/forecasts/<model>/<split>/<file key>.npz for every task, in the
-format leaderboards.gift.score reads, checks that they are the windows' own
-and finite, and hands their quantiles 0.1 to 0.9 to timebench's
-save_window_predictions. That computes the metrics of every window and
-writes predictions.npz, metrics.npz and config.json (with the forecaster's
+format diff_gpt.infrastructure.leaderboards.gift.score reads, checks that they
+are the windows' own and finite, and hands their quantiles 0.1 to 0.9 to
+timebench's save_window_predictions. That computes the metrics of every window
+and writes predictions.npz, metrics.npz and config.json (with the forecaster's
 settings, from forecast_config.json if the folder has one) into
-RUNS/results/<model>/<split>/<dataset>/<freq>/<term>/: for test, the folder
-a submission uploads. --jobs scores that many tasks at once, each in a
-process of its own that exits after it.
+RUNS/results/<model>/<split>/<dataset>/<freq>/<term>/: for test, the folder a
+submission uploads. --jobs scores that many tasks at once, each in a process of
+its own that exits after it.
 """
 
 from __future__ import annotations
 
-import argparse
 import contextlib
 import io
 import json
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from leaderboards.gift.score import QUANTILE_LEVELS, check, read_forecasts
-from leaderboards.time.configs import DATA, RUNS, SPLITS, select, tasks
-from leaderboards.time.windows import load, split_of
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
-from leaderboards.vendored.timebench.evaluation.saver import save_window_predictions
+from diff_gpt.application.ports import UsageError
+from diff_gpt.infrastructure.leaderboards.gift.score import (
+    QUANTILE_LEVELS,
+    check,
+    read_forecasts,
+)
+from diff_gpt.infrastructure.leaderboards.time.configs import RUNS, select, tasks
+from diff_gpt.infrastructure.leaderboards.time.windows import load, split_of
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.timebench.evaluation.saver import (
+    save_window_predictions,
+)
 
 if TYPE_CHECKING:
-    from leaderboards.gift.score import Forecasts
-    from leaderboards.time.configs import Task
-    from leaderboards.time.windows import Split
+    import argparse
+    from pathlib import Path
+
+    from diff_gpt.infrastructure.leaderboards.gift.score import Forecasts
+    from diff_gpt.infrastructure.leaderboards.time.configs import Task
+    from diff_gpt.infrastructure.leaderboards.time.windows import Split
 
 LEVELS = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)  # The saver's default.
 RESULTS = RUNS / "results"
@@ -108,24 +118,14 @@ def run(
     return task, scores, time.perf_counter() - started
 
 
-def main() -> None:
-    """Score a model's forecasts of the chosen tasks."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--model", required=True)
-    parser.add_argument("--split", choices=SPLITS, default="test")
-    parser.add_argument("--only", nargs="*", help="keys (default: all 98)")
-    parser.add_argument("--jobs", type=int, default=1, help="processes")
-    parser.add_argument("--data", type=Path, default=DATA)
-    parser.add_argument("--forecasts", type=Path, default=RUNS / "forecasts")
-    parser.add_argument("--results", type=Path, default=RESULTS)
-    args = parser.parse_args()
+def score_forecasts(args: argparse.Namespace) -> None:
+    """Score the model's forecasts of the tasks `args` choose, one folder per task."""
     chosen = select(tasks(), args.only)
     source = args.forecasts / args.model / args.split
     missing = [t.key for t in chosen if not (source / f"{t.file_key}.npz").exists()]
     if missing:
-        parser.error(f"no forecasts in {source} for {missing}")
+        msg = f"no forecasts in {source} for {missing}"
+        raise UsageError(msg)
     hyperparams = {"model": args.model}
     record = source / "forecast_config.json"
     if record.exists():
@@ -152,7 +152,3 @@ def main() -> None:
                 flush=True,
             )
     print(f"wrote {folder}")
-
-
-if __name__ == "__main__":
-    main()

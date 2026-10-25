@@ -15,8 +15,9 @@
 The names of the fields of a dataset entry.
 
 This is gluonts 0.15.1's `gluonts/dataset/field_names.py` (Apache-2.0, a copy
-of the license in leaderboards/LICENSE-gluonts), cut to the names that the
-copies use. Unchanged but for the style of leaderboards.vendored.
+of the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts),
+cut to the names that the copies use. Unchanged but for the style of
+diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 

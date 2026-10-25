@@ -13,20 +13,42 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from leaderboards.gift.export import export
-from leaderboards.gift.score import QUANTILE_LEVELS, Forecasts, read_forecasts
-from leaderboards.time.aggregate import aggregate, baseline_path, read_scores
-from leaderboards.time.compare import METRICS, differences
-from leaderboards.time.configs import HOSTED, ROOT, SPLITS, select, tasks
-from leaderboards.time.official import run, task_seed
-from leaderboards.time.score import RESULTS, score
-from leaderboards.time.windows import load, split_of
-from tests.tiny import HORIZON, SEASON, TIME_CONFIG, WINDOWS, tiny, tiny_multi, write
+from diff_gpt.infrastructure.leaderboards.gift.export import export
+from diff_gpt.infrastructure.leaderboards.gift.score import (
+    QUANTILE_LEVELS,
+    Forecasts,
+    read_forecasts,
+)
+from diff_gpt.infrastructure.leaderboards.time.aggregate import (
+    aggregate,
+    baseline_path,
+    read_scores,
+)
+from diff_gpt.infrastructure.leaderboards.time.compare import METRICS, differences
+from diff_gpt.infrastructure.leaderboards.time.configs import (
+    HOSTED,
+    ROOT,
+    SPLITS,
+    select,
+    tasks,
+)
+from diff_gpt.infrastructure.leaderboards.time.official import run, task_seed
+from diff_gpt.infrastructure.leaderboards.time.score import RESULTS, score
+from diff_gpt.infrastructure.leaderboards.time.windows import load, split_of
+from tests.diff_gpt.infrastructure.leaderboards.tiny import (
+    HORIZON,
+    SEASON,
+    TIME_CONFIG,
+    WINDOWS,
+    tiny,
+    tiny_multi,
+    write,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from leaderboards.time.configs import Task
+    from diff_gpt.infrastructure.leaderboards.time.configs import Task
 
 MAX_CONTEXT = 200  # Shorter than every tiny context, so that the cut shows.
 TASKS = tuple(tasks(TIME_CONFIG))
@@ -270,7 +292,7 @@ def test_task_seed_depends_only_on_the_seed_and_the_key() -> None:
     assert seed == zlib.crc32(b"0:tiny/H/short")
     assert seed != task_seed(0, "twin/H/short")
     assert seed != task_seed(1, "tiny/H/short")
-    code = "from leaderboards.time.official import task_seed\n"
+    code = "from diff_gpt.infrastructure.leaderboards.time.official import task_seed\n"
     code += "print(task_seed(0, 'tiny/H/short'))"
     for hash_seed in ("0", "1"):
         done = subprocess.run(  # noqa: S603 - this environment's Python, no shell.

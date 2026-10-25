@@ -15,8 +15,9 @@
 Pandas frequency strings: their base, and the old codes in pandas 3's.
 
 This is gluonts 0.15.1's `gluonts/time_feature/_base.py` (Apache-2.0, a copy
-of the license in leaderboards/LICENSE-gluonts), cut to `norm_freq_str`,
-changed in two places besides the style of leaderboards.vendored:
+of the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts),
+cut to `norm_freq_str`, changed in two places besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - a start frequency ("MS", "QS", ...) becomes its end frequency with the "E"
   of pandas 2.2 and later ("ME", "QE", ...) without a check of pandas'
   version: leaderboards requires pandas 2.2 or later, so the copy needs no

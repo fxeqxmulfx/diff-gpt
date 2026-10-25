@@ -9,27 +9,46 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from leaderboards.gift.aggregate import aggregate, read_scores
-from leaderboards.gift.compare import differences
-from leaderboards.gift.configs import GIFT_REPO, ROOT, SPLITS, configurations, select
-from leaderboards.gift.evaluation import (
+from diff_gpt.infrastructure.leaderboards.gift.aggregate import aggregate, read_scores
+from diff_gpt.infrastructure.leaderboards.gift.compare import differences
+from diff_gpt.infrastructure.leaderboards.gift.configs import (
+    GIFT_REPO,
+    ROOT,
+    SPLITS,
+    configurations,
+    select,
+)
+from diff_gpt.infrastructure.leaderboards.gift.evaluation import (
     COLUMNS,
     METRIC_NAMES,
     evaluate,
     results_path,
     save_row,
 )
-from leaderboards.gift.export import export
-from leaderboards.gift.official import SeasonalNaivePredictor
-from leaderboards.gift.score import QUANTILE_LEVELS, Forecasts, read_forecasts, score
-from leaderboards.gift.windows import load, windows
-from leaderboards.vendored.gluonts.time_feature.seasonality import get_seasonality
-from tests.tiny import CONFIGS, HORIZON, SEASON, WINDOWS, tiny
+from diff_gpt.infrastructure.leaderboards.gift.export import export
+from diff_gpt.infrastructure.leaderboards.gift.official import SeasonalNaivePredictor
+from diff_gpt.infrastructure.leaderboards.gift.score import (
+    QUANTILE_LEVELS,
+    Forecasts,
+    read_forecasts,
+    score,
+)
+from diff_gpt.infrastructure.leaderboards.gift.windows import load, windows
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature.seasonality import (  # noqa: E501 - the module's name alone is wider than the line.
+    get_seasonality,
+)
+from tests.diff_gpt.infrastructure.leaderboards.tiny import (
+    CONFIGS,
+    HORIZON,
+    SEASON,
+    WINDOWS,
+    tiny,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from leaderboards.gift.configs import Config
+    from diff_gpt.infrastructure.leaderboards.gift.configs import Config
 
 MAX_CONTEXT = 200  # Shorter than every tiny context, so that the cut shows.
 PUBLISHED = GIFT_REPO / "results"

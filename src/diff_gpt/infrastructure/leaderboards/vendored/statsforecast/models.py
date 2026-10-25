@@ -2,10 +2,10 @@
 statsforecast's SeasonalNaive: the last season repeated, with normal intervals.
 
 This is statsforecast 2.1.1's `statsforecast/models.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-statsforecast), cut to SeasonalNaive's
-`__init__` and `forecast` and the `__repr__` of its base _TS, which names the
-columns of its forecasts; changed in three places besides the style of
-leaderboards.vendored:
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-statsforecast),
+cut to SeasonalNaive's `__init__` and `forecast` and the `__repr__` of its base
+_TS, which names the columns of its forecasts; changed in three places besides
+the style of diff_gpt.infrastructure.leaderboards.vendored:
 - SeasonalNaive has no base class and holds `__repr__` itself: of _TS, the
   base of statsforecast's models, only `__repr__` runs for these calls. Its
   `uses_exog`, `new` and conformal methods serve StatsForecast's checks, the
@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from leaderboards.vendored.statsforecast.utils import (
+from diff_gpt.infrastructure.leaderboards.vendored.statsforecast.utils import (
     _calculate_intervals,
     _calculate_sigma,
     _ensure_float,

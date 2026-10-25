@@ -9,8 +9,8 @@ Output structure:
             config.json    # Contains dataset config
 
 This is timebench c633e23's `src/timebench/evaluation/saver.py` (MIT, a copy of
-the license in leaderboards/LICENSE-timebench). Unchanged but for the style of
-leaderboards.vendored.
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-timebench).
+Unchanged but for the style of diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 
-from leaderboards.vendored.timebench.evaluation.metrics import (
+from diff_gpt.infrastructure.leaderboards.vendored.timebench.evaluation.metrics import (
     compute_per_window_metrics_from_quantiles,
 )
 

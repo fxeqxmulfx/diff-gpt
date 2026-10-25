@@ -15,8 +15,8 @@ Supported metrics:
 - CRPS: Continuous Ranked Probability Score (MeanWeightedSumQuantileLoss)
 
 This is timebench c633e23's `src/timebench/evaluation/metrics.py` (MIT, a copy
-of the license in leaderboards/LICENSE-timebench). Unchanged but for the style
-of leaderboards.vendored.
+of the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-timebench).
+Unchanged but for the style of diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations

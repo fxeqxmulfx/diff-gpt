@@ -2,8 +2,9 @@
 The terms of a TIME dataset that its configuration gives a horizon.
 
 This is timebench c633e23's `src/timebench/evaluation/utils.py` (MIT, a copy of
-the license in leaderboards/LICENSE-timebench), cut to `get_available_terms`.
-Unchanged but for the style of leaderboards.vendored.
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-timebench), cut
+to `get_available_terms`. Unchanged but for the style of
+diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations

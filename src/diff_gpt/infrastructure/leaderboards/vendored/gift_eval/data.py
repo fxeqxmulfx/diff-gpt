@@ -17,10 +17,11 @@
 A GIFT-Eval dataset: its series as gluonts entries, its horizon and test windows.
 
 This is gift-eval 3c7be6d's `src/gift_eval/data.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gift-eval), cut to the test split of Dataset
-(its `past_feat_dynamic_real_dim`, `sum_series_length`, `training_dataset` and
-`validation_dataset` and the TFB horizons are left out), changed in two places
-besides the style of leaderboards.vendored:
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gift-eval), cut to
+the test split of Dataset (its `past_feat_dynamic_real_dim`,
+`sum_series_length`, `training_dataset` and `validation_dataset` and the TFB
+horizons are left out), changed in two places besides the style of
+diff_gpt.infrastructure.leaderboards.vendored:
 - Dataset takes the folder of the datasets as `storage_path`. gift-eval reads
   it from the environment variable `storage_env_var` (GIFT_EVAL), after
   python-dotenv loads a .env file into the environment: leaderboards set
@@ -47,21 +48,30 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import datasets
 import pyarrow.compute as pc
 from pandas.tseries.frequencies import to_offset
 
-from leaderboards.vendored.gluonts.dataset.common import ProcessDataEntry
-from leaderboards.vendored.gluonts.dataset.split import split
-from leaderboards.vendored.gluonts.itertools import Map
-from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str, period_freq
-from leaderboards.vendored.gluonts.transform._base import Transformation
+import datasets
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.common import (
+    ProcessDataEntry,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import split
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.itertools import Map
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature._base import (
+    norm_freq_str,
+    period_freq,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.transform._base import (
+    Transformation,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry
-    from leaderboards.vendored.gluonts.dataset.split import TestData
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
 
 TEST_SPLIT = 0.1
 MAX_WINDOW = 20

@@ -15,20 +15,23 @@
 The period at which the forecast of an entry starts.
 
 This is gluonts 0.15.1's `gluonts/dataset/util.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gluonts), cut to `forecast_start`. Unchanged
-but for the style of leaderboards.vendored.
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut to
+`forecast_start`. Unchanged but for the style of
+diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from leaderboards.vendored.gluonts.dataset.field_names import FieldName
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.field_names import (
+    FieldName,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
 
 
 def forecast_start(entry: DataEntry, time_axis: int = -1) -> pd.Period:

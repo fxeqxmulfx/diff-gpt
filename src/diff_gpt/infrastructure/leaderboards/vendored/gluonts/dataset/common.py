@@ -15,9 +15,9 @@
 The processing of a dataset entry: its start a period, its series numpy arrays.
 
 This is gluonts 0.15.1's `gluonts/dataset/common.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gluonts), cut to ProcessDataEntry, the fields
-it processes and `_as_period`, changed in one place besides the style of
-leaderboards.vendored:
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut to
+ProcessDataEntry, the fields it processes and `_as_period`, changed in one
+place besides the style of diff_gpt.infrastructure.leaderboards.vendored:
 - ProcessStartField is a plain class, where gluonts makes it a pydantic
   model. pydantic only checks and converts its arguments, which
   ProcessDataEntry passes as their own types already: the frequency string of
@@ -32,13 +32,17 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 import pandas as pd
 
-from leaderboards.vendored.gluonts.dataset.field_names import FieldName
-from leaderboards.vendored.gluonts.exceptions import GluonTSDataError
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.field_names import (
+    FieldName,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.exceptions import (
+    GluonTSDataError,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from leaderboards.vendored.gluonts.dataset import DataEntry
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import DataEntry
 
 
 @functools.lru_cache(10_000)

@@ -15,10 +15,10 @@
 The error that gluonts' processing of a dataset entry raises on bad data.
 
 This is gluonts 0.15.1's `gluonts/exceptions.py` (Apache-2.0, a copy of the
-license in leaderboards/LICENSE-gluonts), cut to GluonTSException, without
-its `guard`, and GluonTSDataError, the error that the copy of
-`gluonts/dataset/common.py` raises. Unchanged but for the style of
-leaderboards.vendored.
+license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut to
+GluonTSException, without its `guard`, and GluonTSDataError, the error that the
+copy of `gluonts/dataset/common.py` raises. Unchanged but for the style of
+diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 

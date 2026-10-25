@@ -7,13 +7,15 @@ A TIME dataset: its series as gluonts entries, its test and validation windows.
 
 This is timebench c633e23's `src/timebench/evaluation/data.py`: gift-eval's
 `src/gift_eval/data.py` modified by TIME (Apache-2.0 by the notice above, a
-copy of the license in leaderboards/LICENSE-gift-eval; timebench is MIT, a
-copy of the license in leaderboards/LICENSE-timebench), cut to `Term`,
+copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-gift-eval; timebench is MIT, a
+copy of the license in
+src/diff_gpt/infrastructure/leaderboards/LICENSE-timebench), cut to `Term`,
 `load_dataset_config` and the test and validation windows of `Dataset` (its
 `get_dataset_settings`, `past_feat_dynamic_real_dim`, `get_variate_names`,
 `_max_series_length`, `_avg_series_length`, `sum_series_length`,
 `training_dataset` and `validation_dataset` are left out), changed in four
-places besides the style of leaderboards.vendored:
+places besides the style of diff_gpt.infrastructure.leaderboards.vendored:
 - `itemize_start` and `MultivariateToUnivariate` are imported from the copy
   of gift-eval's data.py: TIME's are the same code.
 - The configuration is the copy's config/datasets.yaml, a byte copy of
@@ -42,24 +44,31 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import datasets
 import pyarrow.compute as pc
 import yaml
 from pandas.tseries.frequencies import to_offset
 
-from leaderboards.vendored.gift_eval.data import (
+import datasets
+from diff_gpt.infrastructure.leaderboards.vendored.gift_eval.data import (
     MultivariateToUnivariate,
     itemize_start,
 )
-from leaderboards.vendored.gluonts.dataset.common import ProcessDataEntry
-from leaderboards.vendored.gluonts.dataset.split import split
-from leaderboards.vendored.gluonts.itertools import Map
-from leaderboards.vendored.gluonts.time_feature._base import norm_freq_str, period_freq
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.common import (
+    ProcessDataEntry,
+)
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import split
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.itertools import Map
+from diff_gpt.infrastructure.leaderboards.vendored.gluonts.time_feature._base import (
+    norm_freq_str,
+    period_freq,
+)
 
 if TYPE_CHECKING:
     import numpy as np
 
-    from leaderboards.vendored.gluonts.dataset.split import TestData
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset.split import (
+        TestData,
+    )
 
 # --- Constants from Gift-Eval---
 # Default prediction length by frequency (used when no config provided)

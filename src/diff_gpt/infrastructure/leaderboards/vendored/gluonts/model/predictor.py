@@ -15,10 +15,10 @@
 The base class of a predictor: a forecast for each entry of a dataset.
 
 This is gluonts 0.15.1's `gluonts/model/predictor.py` (Apache-2.0, a copy of
-the license in leaderboards/LICENSE-gluonts), cut to Predictor's `__init__`
-and `predict`: its class attribute `__version__` (gluonts' version) and its
-serialization are left out. Unchanged but for the style of
-leaderboards.vendored.
+the license in src/diff_gpt/infrastructure/leaderboards/LICENSE-gluonts), cut
+to Predictor's `__init__` and `predict`: its class attribute `__version__`
+(gluonts' version) and its serialization are left out. Unchanged but for the
+style of diff_gpt.infrastructure.leaderboards.vendored.
 """
 
 from __future__ import annotations
@@ -28,8 +28,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from leaderboards.vendored.gluonts.dataset import Dataset
-    from leaderboards.vendored.gluonts.model.forecast import Forecast
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.dataset import Dataset
+    from diff_gpt.infrastructure.leaderboards.vendored.gluonts.model.forecast import (
+        Forecast,
+    )
 
 
 class Predictor:

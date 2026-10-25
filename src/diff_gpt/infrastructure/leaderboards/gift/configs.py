@@ -2,12 +2,13 @@
 The 97 GIFT-Eval configurations, named as the leaderboard names them.
 
 The dataset lists, the terms and the names follow gift-eval's
-notebooks/naive.ipynb at commit 3c7be6d, the code leaderboards.vendored
-copies. A configuration is a gift-eval dataset at one term, and the
-leaderboard calls it "<dataset>/<frequency>/<term>": the dataset part is
-lowercased and renamed by PRETTY_NAMES, and a dataset name without a
-frequency takes it from notebooks/dataset_properties.json, which also gives
-the domain and the number of variates of each row.
+notebooks/naive.ipynb at commit 3c7be6d, the code
+diff_gpt.infrastructure.leaderboards.vendored copies. A configuration is a
+gift-eval dataset at one term, and the leaderboard calls it
+"<dataset>/<frequency>/<term>": the dataset part is lowercased and renamed by
+PRETTY_NAMES, and a dataset name without a frequency takes it from
+notebooks/dataset_properties.json, which also gives the domain and the number
+of variates of each row.
 """
 
 from __future__ import annotations
@@ -15,9 +16,13 @@ from __future__ import annotations
 import csv
 import json
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-ROOT = Path(__file__).resolve().parents[4]
+from diff_gpt.application.paths import ROOT
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 GIFT_REPO = ROOT.parent / "gift-eval"  # The clone at commit 3c7be6d.
 DATA = ROOT / "datasets" / "gift-eval"  # huggingface.co/datasets/Salesforce/GiftEval
 RUNS = ROOT / "runs" / "leaderboards" / "gift-eval"

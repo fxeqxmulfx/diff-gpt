@@ -1,7 +1,7 @@
 """
 Compare two TIME results folders task by task, as gate G1 does.
 
-Run in leaderboards/: ``uv run python -m leaderboards.time.compare A B``. For
+``uv run python -m diff_gpt.interfaces.leaderboards.time.compare A B``. For
 each metric of metrics.npz it prints the median and the largest relative
 difference |A - B| / |B| of the tasks' nanmeans, and where the largest is,
 then each task whose difference exceeds --rtol. Both folders must hold every
@@ -10,17 +10,18 @@ task (or those of --only).
 
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
-from leaderboards.time.configs import select, tasks
+from diff_gpt.infrastructure.leaderboards.time.configs import select, tasks
 
 if TYPE_CHECKING:
-    from leaderboards.time.configs import Task
+    import argparse
+    from pathlib import Path
+
+    from diff_gpt.infrastructure.leaderboards.time.configs import Task
 
 METRICS = ("MSE", "MAE", "RMSE", "MAPE", "sMAPE", "MASE", "ND", "CRPS")
 
@@ -46,16 +47,8 @@ def differences(results: pd.DataFrame, reference: pd.DataFrame) -> pd.DataFrame:
     return (gap / reference.loc[results.index].abs()).where(gap > 0, 0.0)
 
 
-def main() -> None:
-    """Print the relative differences of two results folders."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("results", type=Path)
-    parser.add_argument("reference", type=Path)
-    parser.add_argument("--rtol", type=float, default=1e-6)
-    parser.add_argument("--only", nargs="*", help="keys (default: all 98)")
-    args = parser.parse_args()
+def print_differences(args: argparse.Namespace) -> None:
+    """Print the relative differences of the results folder from the reference."""
     chosen = select(tasks(), args.only)
     relative = differences(means(args.results, chosen), means(args.reference, chosen))
     print(f"{len(relative)} tasks")
@@ -72,7 +65,3 @@ def main() -> None:
             print(above.map(lambda value: f"{value:.1e}" if value else "0"))
     if not np.isfinite(relative.to_numpy()).all():
         print("non-finite differences: a metric is 0 or NaN in the reference")
-
-
-if __name__ == "__main__":
-    main()

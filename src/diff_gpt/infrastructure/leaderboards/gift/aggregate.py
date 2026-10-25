@@ -1,7 +1,7 @@
 """
 Aggregate all_results.csv files into the leaderboard's MASE and CRPS.
 
-Run in leaderboards/: ``uv run python -m leaderboards.gift.aggregate CSV...``.
+``uv run python -m diff_gpt.interfaces.leaderboards.gift.aggregate CSV...``.
 As the GIFT-Eval Space does (src/utils.py: standardize_df, then stats.gmean
 per model), MASE[0.5] and CRPS (mean_weighted_sum_quantile_loss) of each
 configuration are divided by Seasonal_Naive's, and each score is the
@@ -14,14 +14,17 @@ error, as is a missing configuration.
 
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
-from leaderboards.gift.configs import GIFT_REPO, PRETTY_NAMES, SPLITS
-from leaderboards.gift.evaluation import RESULTS, results_path
+from diff_gpt.infrastructure.leaderboards.gift.configs import GIFT_REPO, PRETTY_NAMES
+from diff_gpt.infrastructure.leaderboards.gift.evaluation import RESULTS, results_path
+
+if TYPE_CHECKING:
+    import argparse
+    from pathlib import Path
 
 SCORES = {
     "MASE": "eval_metrics/MASE[0.5]",
@@ -68,21 +71,10 @@ def aggregate(scores: pd.DataFrame, baseline: pd.DataFrame) -> dict[str, float]:
     return {name: float(np.exp(np.log(divided[name]).mean())) for name in SCORES}
 
 
-def main() -> None:
-    """Print the leaderboard's scores of each results CSV."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("results", type=Path, nargs="+", help="all_results.csv")
-    parser.add_argument("--split", choices=SPLITS, default="test")
-    parser.add_argument("--baseline", type=Path, help="default: by --split")
-    args = parser.parse_args()
+def print_aggregates(args: argparse.Namespace) -> None:
+    """Print the MASE and CRPS of each results CSV of `args` over its baseline."""
     baseline = read_scores(args.baseline or baseline_path(args.split))
     for path in args.results:
         scores = aggregate(read_scores(path), baseline)
         model = pd.read_csv(path)["model"].iloc[0]
         print(f"{model}: MASE {scores['MASE']:.4f} CRPS {scores['CRPS']:.4f} ({path})")
-
-
-if __name__ == "__main__":
-    main()
