@@ -10,7 +10,7 @@ import torch
 
 from benchmarks.grokking.recurrence import Config, run, update_learning_rate
 from benchmarks.grokking.recurrence_restart import prepare_fork
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from pathlib import Path

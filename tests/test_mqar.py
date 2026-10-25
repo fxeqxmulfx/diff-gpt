@@ -19,7 +19,7 @@ from benchmarks.mqar import (
     run,
     uniform_draws,
 )
-from diff_gpt.model.rope import rope_tables
+from diff_gpt.domain.model.rope import rope_tables
 
 if TYPE_CHECKING:
     from pathlib import Path

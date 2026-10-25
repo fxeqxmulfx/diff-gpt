@@ -19,7 +19,7 @@ import numpy as np
 from benchmarks.grokking.div97 import write_json
 from benchmarks.grokking.series_data import FORMULAS, WEATHER, _read_weather
 from benchmarks.grokking.series_oracle import conditional_reference
-from diff_gpt.encoder_decoder import TokenClippingWarning, encode
+from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 
 
 def formula_comparators(directory: Path, metadata: dict[str, Any]) -> dict[str, Any]:

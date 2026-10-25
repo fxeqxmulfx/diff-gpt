@@ -1,0 +1,180 @@
+"""Tests for the nucleus sampler."""
+
+import torch
+
+from diff_gpt.domain.sampler.nucleus import NucleusSampler
+from diff_gpt.domain.sampler.sampler import Sampler
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
+
+
+def test_output_shape() -> None:
+    r"""
+    Check that the output has shape (B, 1).
+
+    L \in R^{B \times V} => S(L) \in Z^{B \times 1}
+    where B is batch size, V is vocab size, S is the sampler.
+    """
+    B, V = 4, 50
+    logits = torch.randn(B, V)
+    inner_sampler = TemperatureSampler(temperature=1.0)
+    sampler = NucleusSampler(p=0.9, sampler=inner_sampler)
+
+    result = sampler(logits)
+
+    # This test expects the consistent (B, 1) shape.
+    # It will fail if the original code's .squeeze(-1) is present.
+    assert result.shape == (B, 1), f"Expected shape ({B}, 1), but got {result.shape}"
+
+
+def test_determinism_with_rng() -> None:
+    """
+    Check that equal seeds give equal samples and different seeds do not.
+
+    The composite sampler is deterministic given a seeded generator.
+    Let L be logits, G_s be a generator with seed s.
+    We verify:
+    1. S(L, G_{s1}) == S(L, G_{s1})
+    2. S(L, G_{s1}) != S(L, G_{s2}) for s1 != s2
+    """
+    B, V = 2, 100
+    logits = torch.randn(B, V)
+    # Use a random inner sampler to ensure the whole chain is random
+    inner_sampler = TemperatureSampler(temperature=1.5)
+    sampler = NucleusSampler(p=0.9, sampler=inner_sampler)
+
+    # 1. Check for equality with the same seed
+    rng1 = torch.Generator().manual_seed(42)
+    result1 = sampler(logits, rng=rng1)
+
+    rng2 = torch.Generator().manual_seed(42)
+    result2 = sampler(logits, rng=rng2)
+
+    assert torch.equal(result1, result2)
+
+    # 2. Check for inequality with different seeds
+    rng3 = torch.Generator().manual_seed(99)
+    result3 = sampler(logits, rng=rng3)
+
+    assert not torch.equal(result1, result3)
+
+
+def test_nucleus_selection_logic() -> None:
+    r"""
+    Check that only tokens from the nucleus V^{(p)} are ever sampled.
+
+    Let P = softmax(L).
+    Let V^{(p)} be the smallest set where sum_{i in V^{(p)}} P_i >= p.
+    We verify: For any sample s, s \in V^{(p)}.
+    """
+    # Use direct probabilities for clarity, then convert to logits.
+    # P = [0.6, 0.25, 0.1, 0.05], Indices = [0, 1, 2, 3]
+    probs = torch.tensor([[0.6, 0.25, 0.1, 0.05]])
+    logits = torch.log(probs)
+
+    # Set p=0.9.
+    # cumsum(P) = [0.6, 0.85, 0.95, 1.0]
+    # The nucleus V^{(p)} must contain tokens until cumsum >= 0.9.
+    # This includes tokens with probs 0.6, 0.25, and 0.1.
+    # V^{(0.9)} = {0, 1, 2}
+    nucleus_indices = {0, 1, 2}
+
+    inner_sampler = TemperatureSampler(temperature=1.0)
+    sampler = NucleusSampler(p=0.9, sampler=inner_sampler)
+
+    N = 2000  # Number of samples for statistical verification
+    logits_batch = logits.expand(N, -1)
+
+    samples = sampler(logits_batch, rng=torch.Generator().manual_seed(123))
+
+    # Find all unique tokens that were sampled
+    unique_sampled_indices = set(torch.unique(samples).tolist())
+
+    # The set of sampled tokens must be a subset of the calculated nucleus.
+    assert unique_sampled_indices.issubset(nucleus_indices)
+    # Also assert that it's not empty, i.e., sampling did happen.
+    assert len(unique_sampled_indices) > 0
+
+
+def test_edge_case_p_equals_one() -> None:
+    r"""
+    Check that for p=1, the sampler is equivalent to its inner sampler.
+
+    p=1 => V^{(p)} = V (the entire vocabulary).
+    Therefore, S_{nucleus}(L, p=1) \equiv S_{inner}(L).
+    """
+    B, V = 10, 20
+    logits = torch.randn(B, V)
+    rng_seed = 1337
+
+    inner_sampler = TemperatureSampler(temperature=1.2)
+    nucleus_sampler = NucleusSampler(p=1.0, sampler=inner_sampler)
+
+    # Run inner sampler
+    rng1 = torch.Generator().manual_seed(rng_seed)
+    result_inner = inner_sampler(logits, rng=rng1)
+
+    # Run nucleus sampler
+    rng2 = torch.Generator().manual_seed(rng_seed)
+    result_nucleus = nucleus_sampler(logits, rng=rng2)
+
+    assert torch.equal(result_inner, result_nucleus)
+
+
+def test_edge_case_p_very_small_is_argmax() -> None:
+    """
+    Check that for a very small p, the result is always the most likely token.
+
+    p -> 0 => V^{(p)} = {argmax_i P_i}.
+    Therefore, S_{nucleus}(L, p->0) should be equivalent to argmax(L),
+    regardless of the inner sampler's randomness.
+    """
+    B, V = 4, 30
+    logits = torch.randn(B, V)
+
+    # Use a highly random inner sampler. The nucleus logic must override it.
+    random_inner_sampler = TemperatureSampler(temperature=2.0)
+    # A p small enough to only ever include the top token.
+    sampler = NucleusSampler(p=1e-9, sampler=random_inner_sampler)
+
+    sampled_tokens = sampler(logits)
+    expected_tokens = torch.argmax(logits, dim=-1, keepdim=True)
+
+    assert torch.equal(sampled_tokens, expected_tokens)
+
+
+class _LogitsProbe(Sampler):
+    """Inner sampler that keeps the logits it is given and picks token 0."""
+
+    def __init__(self) -> None:
+        self.seen: torch.Tensor | None = None
+
+    def __call__(
+        self,
+        logits: torch.Tensor,
+        rng: torch.Generator | None = None,
+    ) -> torch.Tensor:
+        del rng
+        self.seen = logits.clone()
+        return torch.zeros((*logits.shape[:-1], 1), dtype=torch.long)
+
+
+def test_p_equals_one_passes_every_logit_through() -> None:
+    """
+    Check that p=1 hands the inner sampler the logits unchanged.
+
+    The float32 cumsum reaches 1 before the last token, so p=1 used to mask
+    the least likely tokens with -inf, dropping up to 4e-7 of the mass.
+    """
+    logits = torch.cat([torch.full((1, 8), 20.0), torch.zeros(1, 2000)], dim=-1)
+    probe = _LogitsProbe()
+    NucleusSampler(p=1.0, sampler=probe)(logits)
+    assert probe.seen is not None
+    assert torch.equal(probe.seen, logits)
+
+
+def test_nucleus_samples_logits_with_several_leading_dims() -> None:
+    """Check that (2, 3, V) logits give (2, 3, 1) samples, as the contract says."""
+    logits = torch.randn(2, 3, 50)
+    sampler = NucleusSampler(p=0.9, sampler=TemperatureSampler(temperature=1.0))
+    ids = sampler(logits, rng=torch.Generator().manual_seed(0))
+    assert ids.shape == (2, 3, 1)

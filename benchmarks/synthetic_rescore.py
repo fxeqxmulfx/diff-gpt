@@ -44,11 +44,11 @@ import numpy as np
 import torch
 
 from benchmarks.synthetic_pretrain import forecast_scores, holdout_windows, load_split
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import prefix_rows
-from diff_gpt.model.gpt import GPT
-from diff_gpt.normalization import predict_samples_normalized
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.normalization import predict_samples_normalized
+from diff_gpt.domain.encoder_decoder import prefix_rows
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -21,8 +21,8 @@ from benchmarks.synthetic_pretrain import (
     holdout_windows,
     main,
 )
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.model.gpt import GPT
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.model.gpt import GPT
 
 if TYPE_CHECKING:
     from pathlib import Path

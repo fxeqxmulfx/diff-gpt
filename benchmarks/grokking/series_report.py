@@ -28,7 +28,7 @@ from benchmarks.grokking.series_oracle import conditional_reference
 from benchmarks.grokking.series_shortcuts import formula_shortcuts
 from benchmarks.grokking.series_suite import FAST_EPOCHS, quality
 from benchmarks.grokking.series_weather_audit import formula_comparators
-from diff_gpt.encoder_decoder import TokenClippingWarning, encode
+from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 
 CONFIRMATION_SEEDS = 3
 FORMULA_OPERANDS = 2

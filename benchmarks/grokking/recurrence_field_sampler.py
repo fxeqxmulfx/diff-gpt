@@ -6,7 +6,7 @@ import math
 
 import torch
 
-from diff_gpt.sampler.sampler import Sampler
+from diff_gpt.domain.sampler.sampler import Sampler
 
 MATRIX_DIMENSIONS = 2
 

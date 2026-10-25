@@ -36,9 +36,10 @@ import numpy as np
 import pandas as pd
 import torch
 
-from diff_gpt.data_loader import DiffDataFrameDataLoader
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import (
+from diff_gpt.application.data_loader import DiffDataFrameDataLoader
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.train import train as train_loop
+from diff_gpt.domain.encoder_decoder import (
     DEFAULT_TOKENIZER,
     Difference,
     TokenClippingWarning,
@@ -46,13 +47,12 @@ from diff_gpt.encoder_decoder import (
     get_domain_of_definition,
     prefix_rows,
 )
-from diff_gpt.model.gpt import GPT
-from diff_gpt.sampler.median import MedianSampler
-from diff_gpt.sampler.temperature import TemperatureSampler
-from diff_gpt.train import train as train_loop
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.sampler.median import MedianSampler
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
-    from diff_gpt.encoder_decoder import Grid
+    from diff_gpt.domain.encoder_decoder import Grid
 
 M4_DIR = Path(__file__).resolve().parents[1] / "datasets" / "short_term_forecast" / "m4"
 

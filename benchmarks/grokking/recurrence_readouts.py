@@ -25,18 +25,18 @@ from benchmarks.grokking.recurrence import (
     tensors,
 )
 from benchmarks.grokking.recurrence_field_sampler import CanonicalFieldSampler
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import encode
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
-from diff_gpt.sampler.median import MedianSampler
-from diff_gpt.sampler.nucleus import NucleusSampler
-from diff_gpt.sampler.sampler import Sampler
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.encoder_decoder import encode
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.sampler.median import MedianSampler
+from diff_gpt.domain.sampler.nucleus import NucleusSampler
+from diff_gpt.domain.sampler.sampler import Sampler
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from diff_gpt.model.gpt import GPT
+    from diff_gpt.domain.model.gpt import GPT
 
 SOURCE_SNAPSHOT = Path(__file__).read_bytes()
 FIELD_SOURCE_SNAPSHOT = (

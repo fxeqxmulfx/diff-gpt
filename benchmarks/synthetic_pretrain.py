@@ -75,41 +75,42 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 import numpy as np
 import torch
 
-from diff_gpt.data_loader import DiffCorpusDataLoader, corpus_domain
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import ENCODER_VERSION, prefix_rows
-from diff_gpt.model.gpt import GPT
-from diff_gpt.normalization import (
+from diff_gpt.application.data_loader import DiffCorpusDataLoader, corpus_domain
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.application.normalization import predict_samples_normalized
+from diff_gpt.application.train import train
+from diff_gpt.domain.encoder_decoder import ENCODER_VERSION, prefix_rows
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.normalization import (
     NORMALIZATIONS,
-    predict_samples_normalized,
     window_scale,
 )
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
-from diff_gpt.sampler.temperature import TemperatureSampler
-from diff_gpt.train import train
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
-    from diff_gpt.train import Evaluation
+    from diff_gpt.application.train import Evaluation
 
 ROOT = Path(__file__).resolve().parents[1]
 # The library files a run executes; config.json records their hashes, since
 # other sessions edit the working tree.
 LIBRARY_SOURCES = (
-    ROOT / "src/diff_gpt/data_loader.py",
-    ROOT / "src/diff_gpt/diff_gpt.py",
-    ROOT / "src/diff_gpt/encoder_decoder.py",
-    ROOT / "src/diff_gpt/normalization.py",
-    ROOT / "src/diff_gpt/train.py",
-    ROOT / "src/diff_gpt/model/gpt.py",
-    ROOT / "src/diff_gpt/model/block.py",
-    ROOT / "src/diff_gpt/model/mha.py",
-    ROOT / "src/diff_gpt/model/feed_forward.py",
-    ROOT / "src/diff_gpt/model/rope.py",
-    ROOT / "src/diff_gpt/model/engine.py",
-    ROOT / "src/diff_gpt/model/kv_cache.py",
-    ROOT / "src/diff_gpt/optimizer/schedule_free.py",
+    ROOT / "src/diff_gpt/application/data_loader.py",
+    ROOT / "src/diff_gpt/application/diff_gpt.py",
+    ROOT / "src/diff_gpt/domain/encoder_decoder.py",
+    ROOT / "src/diff_gpt/domain/normalization.py",
+    ROOT / "src/diff_gpt/application/normalization.py",
+    ROOT / "src/diff_gpt/application/train.py",
+    ROOT / "src/diff_gpt/domain/model/gpt.py",
+    ROOT / "src/diff_gpt/domain/model/block.py",
+    ROOT / "src/diff_gpt/domain/model/mha.py",
+    ROOT / "src/diff_gpt/domain/model/feed_forward.py",
+    ROOT / "src/diff_gpt/domain/model/rope.py",
+    ROOT / "src/diff_gpt/domain/model/engine.py",
+    ROOT / "src/diff_gpt/domain/model/kv_cache.py",
+    ROOT / "src/diff_gpt/domain/optimizer/schedule_free.py",
 )
 # The generator proportions of TempoPFN's configs/example.yaml; a source
 # listed neither here nor in --weights weighs 1.

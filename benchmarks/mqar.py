@@ -32,8 +32,8 @@ from typing import TYPE_CHECKING, Any
 import torch
 from torch.nn import functional as F
 
-from diff_gpt.model.gpt import GPT
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

@@ -24,9 +24,9 @@ import torch
 from benchmarks.grokking.div97 import ROOT, load_checkpoint, write_json
 from benchmarks.grokking.series import build, config_from_dict
 from benchmarks.grokking.series_data import _raw_series
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import TokenClippingWarning, encode
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 HORIZONS = {"weather": 144, "etth1": 24, "m4_hourly": 48}
 
@@ -242,10 +242,10 @@ def rollout(directory: Path, device: str, *, maximum: int = 8) -> dict[str, Any]
         result["scores"][name]["selected_epoch"] = saved["epoch"]
     dependency_paths = [
         Path(__file__),
-        ROOT / "src/diff_gpt/diff_gpt.py",
-        ROOT / "src/diff_gpt/model/engine.py",
-        ROOT / "src/diff_gpt/model/kv_cache.py",
-        ROOT / "src/diff_gpt/sampler/temperature.py",
+        ROOT / "src/diff_gpt/application/diff_gpt.py",
+        ROOT / "src/diff_gpt/domain/model/engine.py",
+        ROOT / "src/diff_gpt/domain/model/kv_cache.py",
+        ROOT / "src/diff_gpt/domain/sampler/temperature.py",
     ]
     result["forecast_source_sha256"] = {
         str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path): _hash(path)

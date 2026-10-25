@@ -15,7 +15,7 @@ import torch
 from benchmarks.grokking import recurrence as experiment
 from benchmarks.grokking.div97 import digest, load_checkpoint, write_json
 from benchmarks.grokking.div97_report import classify, history, replay_browser
-from diff_gpt.encoder_decoder import encode
+from diff_gpt.domain.encoder_decoder import encode
 
 MASKED_LABEL = -100
 

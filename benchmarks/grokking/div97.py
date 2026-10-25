@@ -27,11 +27,11 @@ import pandas as pd
 import torch
 from torch.nn import functional as F
 
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import ENCODER_VERSION, decode, encode
-from diff_gpt.model.gpt import GPT
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.encoder_decoder import ENCODER_VERSION, decode, encode
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -54,13 +54,13 @@ REPLAY_LOSS_TOLERANCE = 2e-5
 ROOT = Path(__file__).resolve().parents[2]
 # The library files a training run executes; metadata records their hashes.
 LIBRARY_SOURCES = (
-    ROOT / "src/diff_gpt/encoder_decoder.py",
-    ROOT / "src/diff_gpt/model/gpt.py",
-    ROOT / "src/diff_gpt/model/block.py",
-    ROOT / "src/diff_gpt/model/mha.py",
-    ROOT / "src/diff_gpt/model/feed_forward.py",
-    ROOT / "src/diff_gpt/model/rope.py",
-    ROOT / "src/diff_gpt/optimizer/schedule_free.py",
+    ROOT / "src/diff_gpt/domain/encoder_decoder.py",
+    ROOT / "src/diff_gpt/domain/model/gpt.py",
+    ROOT / "src/diff_gpt/domain/model/block.py",
+    ROOT / "src/diff_gpt/domain/model/mha.py",
+    ROOT / "src/diff_gpt/domain/model/feed_forward.py",
+    ROOT / "src/diff_gpt/domain/model/rope.py",
+    ROOT / "src/diff_gpt/domain/optimizer/schedule_free.py",
 )
 # Peri-RMSNorm and Q/K RMSNorm have no parameters, so weights of an earlier model
 # load without error and compute another function; saved runs carry this marker.

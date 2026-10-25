@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from benchmarks.m4_bench import nll_x
-from diff_gpt.encoder_decoder import encode
+from diff_gpt.domain.encoder_decoder import encode
 
 
 @pytest.mark.parametrize("bound", [3.0, 0.25])

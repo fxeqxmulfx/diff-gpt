@@ -28,8 +28,8 @@ from benchmarks.grokking.div97 import (
     verify_checkpoint,
     vocabulary,
 )
-from diff_gpt.encoder_decoder import decode, encode
-from diff_gpt.model.gpt import GPT
+from diff_gpt.domain.encoder_decoder import decode, encode
+from diff_gpt.domain.model.gpt import GPT
 
 if TYPE_CHECKING:
     from pathlib import Path

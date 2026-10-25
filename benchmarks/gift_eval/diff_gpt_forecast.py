@@ -63,16 +63,16 @@ from benchmarks.gift_eval.files import (
 )
 from benchmarks.synthetic_pretrain import LIBRARY_SOURCES
 from benchmarks.synthetic_rescore import load_checkpoint
-from diff_gpt.encoder_decoder import prefix_rows
-from diff_gpt.normalization import predict_samples_normalized
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.normalization import predict_samples_normalized
+from diff_gpt.domain.encoder_decoder import prefix_rows
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
     from benchmarks.gift_eval.files import Windows
-    from diff_gpt.diff_gpt import DiffGPT
-    from diff_gpt.sampler.sampler import Sampler
+    from diff_gpt.application.diff_gpt import DiffGPT
+    from diff_gpt.domain.sampler.sampler import Sampler
 
 ROOT = Path(__file__).resolve().parents[2]
 TERMS = ("short", "medium", "long")

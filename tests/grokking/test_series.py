@@ -24,7 +24,7 @@ from benchmarks.grokking.series_data import (
 from benchmarks.grokking.series_numeric_codec import binary_prompts, bits_dataset
 from benchmarks.grokking.series_oracle import conditional_reference
 from benchmarks.grokking.series_weather_audit import formula_comparators
-from diff_gpt.encoder_decoder import TokenClippingWarning, encode
+from diff_gpt.domain.encoder_decoder import TokenClippingWarning, encode
 
 if TYPE_CHECKING:
     from pathlib import Path

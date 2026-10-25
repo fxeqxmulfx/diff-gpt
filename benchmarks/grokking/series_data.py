@@ -21,7 +21,7 @@ import pandas as pd
 from benchmarks.grokking import div97, recurrence
 from benchmarks.grokking import series_gaussian as gaussian
 from benchmarks.grokking.series_oracle import conditional_reference
-from diff_gpt.encoder_decoder import (
+from diff_gpt.domain.encoder_decoder import (
     ENCODER_VERSION,
     TokenClippingWarning,
     decode,
@@ -32,7 +32,7 @@ from diff_gpt.encoder_decoder import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from diff_gpt.encoder_decoder import Grid
+    from diff_gpt.domain.encoder_decoder import Grid
 
 ROOT = Path(__file__).resolve().parents[2]
 WEATHER = ROOT / "datasets/long_term_forecast/weather/weather.csv"

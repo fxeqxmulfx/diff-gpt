@@ -58,12 +58,12 @@ from benchmarks.grokking.div97 import (
     write_json,
 )
 from benchmarks.grokking.mqar_div97_diagnostics import DiagnosticConfig, Diagnostics
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import ENCODER_VERSION, decode, encode
-from diff_gpt.model.gpt import GPT
-from diff_gpt.model.rope import apply_rope
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.encoder_decoder import ENCODER_VERSION, decode, encode
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.rope import apply_rope
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

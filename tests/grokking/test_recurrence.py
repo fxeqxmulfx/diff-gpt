@@ -36,9 +36,9 @@ from benchmarks.grokking.recurrence_readouts import (
     RangeSampler,
     tokenizer_comparison,
 )
-from diff_gpt.encoder_decoder import Grid, decode, encode
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.domain.encoder_decoder import Grid, decode, encode
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
     from pathlib import Path

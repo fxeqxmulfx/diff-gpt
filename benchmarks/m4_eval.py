@@ -21,19 +21,24 @@ import pandas as pd
 import torch
 
 from benchmarks.m4_bench import mase, prepare, smape
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import (
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.encoder_decoder import (
     DEFAULT_TOKENIZER,
     TokenClippingWarning,
     prefix_rows,
 )
-from diff_gpt.metrics import bayes_point, crps_empirical, empirical_coverage, msis
-from diff_gpt.model.gpt import GPT
-from diff_gpt.sampler.median import MedianSampler
-from diff_gpt.sampler.temperature import TemperatureSampler
+from diff_gpt.domain.metrics import (
+    bayes_point,
+    crps_empirical,
+    empirical_coverage,
+    msis,
+)
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.sampler.median import MedianSampler
+from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
 if TYPE_CHECKING:
-    from diff_gpt.sampler.sampler import Sampler
+    from diff_gpt.domain.sampler.sampler import Sampler
 
 # M4 Hourly Naive2 reference values (Makridakis et al. 2020), used for OWA.
 SMAPE_REF, MASE_REF = 18.383, 2.395

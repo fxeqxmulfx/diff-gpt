@@ -19,7 +19,7 @@ import torch
 from torch.nn import functional as F
 
 from benchmarks.grokking.div97 import NORMALIZATION
-from diff_gpt.model.rope import apply_rope
+from diff_gpt.domain.model.rope import apply_rope
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -27,9 +27,9 @@ if TYPE_CHECKING:
     from torch import nn
 
     from benchmarks.grokking.mqar_div97 import Task
-    from diff_gpt.model.gpt import GPT
-    from diff_gpt.model.mha import MultiHeadAttention
-    from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
+    from diff_gpt.domain.model.gpt import GPT
+    from diff_gpt.domain.model.mha import MultiHeadAttention
+    from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 EPS = 1e-12
 TWO_OPERANDS = 2

@@ -43,8 +43,8 @@ from benchmarks.grokking.mqar_div97 import (
     verify_checkpoint,
 )
 from benchmarks.grokking.mqar_div97_copy_audit import VARIANTS, variant
-from diff_gpt.encoder_decoder import encode
-from diff_gpt.model.gpt import GPT
+from diff_gpt.domain.encoder_decoder import encode
+from diff_gpt.domain.model.gpt import GPT
 
 if TYPE_CHECKING:
     from pathlib import Path

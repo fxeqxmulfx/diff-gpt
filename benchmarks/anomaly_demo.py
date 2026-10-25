@@ -25,10 +25,10 @@ import numpy as np
 import pandas as pd
 import torch
 
-from diff_gpt.data_loader import DiffDataFrameDataLoader
-from diff_gpt.diff_gpt import DiffGPT
-from diff_gpt.encoder_decoder import get_domain_of_definition
-from diff_gpt.model.gpt import GPT
+from diff_gpt.application.data_loader import DiffDataFrameDataLoader
+from diff_gpt.application.diff_gpt import DiffGPT
+from diff_gpt.domain.encoder_decoder import get_domain_of_definition
+from diff_gpt.domain.model.gpt import GPT
 
 ETT_CSV = (
     Path(__file__).resolve().parents[1]

@@ -7,7 +7,7 @@ import pytest
 
 from benchmarks.grokking import series_gaussian as gaussian
 from benchmarks.grokking.series_data import DataConfig, dataset
-from diff_gpt.encoder_decoder import encode
+from diff_gpt.domain.encoder_decoder import encode
 
 
 @pytest.mark.parametrize("tokenizer", ["lgt", "mash"])

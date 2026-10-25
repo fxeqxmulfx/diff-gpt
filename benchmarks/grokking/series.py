@@ -37,8 +37,8 @@ from benchmarks.grokking.div97 import (
 from benchmarks.grokking.recurrence import batch_slices, optimizer_progress
 from benchmarks.grokking.recurrence_field_sampler import CanonicalFieldSampler
 from benchmarks.grokking.series_data import DataConfig, dataset
-from diff_gpt.model.gpt import GPT
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

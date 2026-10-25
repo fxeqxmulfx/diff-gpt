@@ -23,7 +23,7 @@ from benchmarks.grokking.mqar_div97 import (
     score,
     stream,
 )
-from diff_gpt.optimizer.schedule_free import ScheduleFreeAdamW
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:
     from benchmarks.grokking.mqar_div97 import RunConfig
