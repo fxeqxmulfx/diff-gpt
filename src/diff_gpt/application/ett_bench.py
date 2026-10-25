@@ -1,4 +1,4 @@
-"""
+r"""
 Long-term forecasting on ETT (multivariate) — iTransformer-style protocol.
 
 Matches arXiv 2310.06625v4 evaluation:

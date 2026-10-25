@@ -3,6 +3,8 @@
 import argparse
 from pathlib import Path
 
+import torch
+
 from diff_gpt.application.grokking import recurrence_restart
 from diff_gpt.application.grokking.recurrence_restart import restart
 
@@ -19,6 +21,8 @@ def main() -> None:
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
+    torch.set_num_threads(args.threads)
+    torch.set_float32_matmul_precision("highest")
     restart(args)
 
 

@@ -168,8 +168,6 @@ def prepare_fork(parent: Path, directory: Path, config: Config) -> dict[str, obj
 
 def restart(args: argparse.Namespace) -> None:
     """Fork the parent as `args` say, then train and verify the fork."""
-    torch.set_num_threads(args.threads)
-    torch.set_float32_matmul_precision("highest")
     saved = load_checkpoint(args.parent, "cpu")
     config = replace(
         Config(**saved["config"]),
