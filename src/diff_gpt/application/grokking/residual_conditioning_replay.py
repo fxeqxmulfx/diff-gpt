@@ -183,6 +183,23 @@ def replay(directory: Path) -> dict:
             record["completed"] and record["source_step"] == source_step,
             "Incomplete case",
         )
+        expected_group = copy.deepcopy(initial["optimizer"]["param_groups"][0])
+        for step in range(source_step + 1, end + 1):
+            ramp = (
+                min(1.0, step / expected_group["warmup"])
+                if expected_group["warmup"]
+                else 1.0
+            )
+            expected_group["maximum"] = max(
+                expected_group["maximum"], expected_group["lr"] * ramp
+            )
+            expected_group["total"] += expected_group["maximum"] ** 2
+            expected_group["step"] = step
+        require(group == expected_group, "Final optimizer clock or recipe changed")
+        require(
+            float(final["model"].get("query_scale", torch.tensor(1.0))) > 0,
+            "Invalid final coordinate scale",
+        )
         require(
             [r["step"] for r in record["curves"]]
             == list(range(source_step, end + 1, protocol["observe_every"])),

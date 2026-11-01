@@ -27,11 +27,13 @@ work can extend the last boundary and is reported. Every outcome, curve, chart
 change, gradient, state and failed/unfinished case is retained. No final checkpoint
 is selected by heldout performance. The previous long cohort is not resumed.
 
-The six independent unit checks cover finite-epsilon equations and all gradients,
+The six CPU unit checks cover finite-epsilon equations and all gradients,
 query/base/average preservation, transformed gradient history, unchanged small
 queries, the actual huge-query gradient, and exact saved-state continuation.
 The compiled no-update comparison uses a separate FP64 execution and retains
-all three repetitions. The companion Lean modules `QueryCoordinates` and
+all three repetitions. A seventh, reproducible CUDA regression separately checks
+physical-query FP64 equations and both query/value gradients without calling
+the model or conditioner for the reference. The companion Lean modules `QueryCoordinates` and
 `QueryConditioning` formalize the real identities and immediate coordinate bound.
 There is no universal convergence or floating-point error theorem.
 
@@ -42,5 +44,83 @@ python -m diff_gpt.interfaces.grokking.residual_conditioning \
   --output runs/residual-conditioning-check-20261101
 ```
 
-Status: protocol and implementation prepared; learning outcomes will be recorded
-only after the complete declared execution and saved-state replay.
+Use the conditioned component with its state adapter:
+
+```python
+model = ConditionedQKAttentionResidual(width)
+optimizer = ScheduleFreeAdamW(model.parameters(), lr=0.01)
+conditioner = DepthQueryConditioner(model, optimizer, compiled=True)
+
+optimizer.train()
+optimizer.zero_grad(set_to_none=True)
+conditioner()
+loss = objective(model(source_states))
+loss.backward()
+optimizer.step()
+```
+
+Save both `model.state_dict()` and `optimizer.state_dict()`: the model contains
+nontrainable coordinate metadata, and the optimizer contains the matching history.
+The adapter must run before each forward/backward, after clearing gradients. Its
+ownership and mode checks reject a stale gradient or evaluation-mode state. The
+verified numerical path uses FP32 (compiled CUDA) and FP64 references. This
+component is not wired into the full GPT residual path by this synthetic repair.
+
+The first attempt completed all six zero-query cases and failed during CUDA
+graph capture when starting the first tiny-query legacy case. `attempt1.json`
+and `attempt1.log` retain its results and verbatim exception; `retry.json`
+declares a complete unchanged retry after the concurrent repository tests finish.
+The concurrency is recorded, but its causal role in the failure is not established.
+
+All30 cases completed in the unchanged retry, in105.05 seconds. The failed
+attempt took27.62 seconds; both attempts together took132.67 seconds of execution.
+Python3.15.2, Torch2.15.0+cu132, RTX3050 Laptop, max-autotune, Schedule-Free AdamW.
+The retry ran after the repository test jobs ended. State-kernel CUDA graph
+capture was skipped for mutated inputs; compilation itself remained enabled.
+These tiny-query timings include compilation/evaluation and are not a full-model
+throughput comparison.
+
+| Query cases | Original success | Conditioned success | Original final heldout MSE | Conditioned final heldout MSE |
+| --- | ---: | ---: | --- | --- |
+| Zero and tiny, 2000 updates | 6/6 | 6/6 | 2.16e-9--2.52e-9 | 2.16e-9--2.52e-9 |
+| Unit, 2000 updates | 3/3 | 3/3 | 6.73e-6--8.69e-6 | 1.81e-9--2.72e-9 |
+| Huge, fresh 2000 updates | 0/3 | 3/3 | 4.216--4.226 | 1.81e-9--2.72e-9 |
+| Huge saved failures, +10000 updates | 0/3 | 3/3 | 4.216--4.226 | 8.52e-15--9.24e-15 |
+
+All six corrected huge-query cases reach100% heldout routing; every matched
+original huge-query case remains at0%, including the longer continuations.
+The initial coordinate gradient grows from7.65e-9--7.94e-9 to.00765--.00794
+without changing the represented function. This factor of about1e6 comes from
+the coordinate chain rule; it is not an increase in the physical-query derivative.
+Unit-scale runs also trigger two later reconditionings, fresh huge runs three,
+and resumed huge runs four. Zero and tiny runs trigger none.
+
+`results.json` retains every curve and the independent FP64 replay of all initial,
+conditioned-initial and final states. Source/checkpoint/data hashes, exact resumed
+initial model/optimizer/sampler states, reconstructed averaging clocks and all
+subsequent sampler draws pass. Routing counts and success classifications agree
+exactly. The largest scalar metric error is6.28e-7, below the declared replay
+tolerances. Gradient-norm errors are retained without silently thresholding near
+zero; the largest absolute error,1.67e-4, occurs at gradient norm1463.36 and has
+relative error1.14e-7. No checkpoint selection or model retuning followed outcomes.
+The original21-case failure report and the failed first attempt remain intact.
+
+Validation:167 affected GPT tests pass, with one existing skip, including the
+compiled physical-equation/all-gradient regression. The companion15 Lean theorems
+pass build/audit/index/forbidden and explicit axiom checks. The full lab suite
+passes452 tests with three skips. Its optimizer stage retains two pre-existing
+ScheduleFreeMuon CUDA allocation failures, reproduced on unchanged source;
+the CPU optimizer suite passes104 tests with14 skips. Schedule-Free AdamW passes.
+
+This repairs the demonstrated query-conditioning failure on the synthetic task.
+It does not show better full-transformer learning than ordinary residual addition,
+or prove convergence for arbitrary data, width, depth or floating-point range.
+That matched full-model experiment remains task #145 in the companion project.
+
+Replay all recorded outcomes without training:
+
+```sh
+python -m diff_gpt.interfaces.grokking.residual_conditioning_replay \
+  --input runs/residual-conditioning-check-20261101-retry1 \
+  --output /tmp/residual-conditioning-replay.json
+```
