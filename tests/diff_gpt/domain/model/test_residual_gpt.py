@@ -91,8 +91,13 @@ def manual(model: ResidualGPT, tokens: torch.Tensor) -> torch.Tensor:
             branch = F.linear(F.silu(gate) * activation, block.ffwd.c_proj.weight)
         branch = norm(branch)
         branch = torch.where(still_constant[..., None], branch[:, :1], branch)
-        if model.mixing in ("add", "scaled"):
-            value = value + model.branch_scale * branch
+        if model.mixing in ("add", "scaled", "gated"):
+            gain = (
+                2 / (1 + (-model.branch_logits[index]).exp())
+                if model.mixing == "gated"
+                else model.branch_scale
+            )
+            value = value + gain * branch
         else:
             sources.append(branch)
     if model.mixing in ("attnres", "qk", "conditioned_qk"):
@@ -115,7 +120,14 @@ def test_common_initialization_and_parameter_counts(mode: str) -> None:
     )
     assert (
         extra
-        == {"add": 0, "scaled": 0, "attnres": 64, "qk": 32, "conditioned_qk": 32}[mode]
+        == {
+            "add": 0,
+            "scaled": 0,
+            "gated": 4,
+            "attnres": 64,
+            "qk": 32,
+            "conditioned_qk": 32,
+        }[mode]
     )
     assert model.lm_head.weight is model.token_embedding_table.weight
     if mode == "attnres":
@@ -131,6 +143,9 @@ def test_common_initialization_and_parameter_counts(mode: str) -> None:
 def test_full_equations_and_every_parameter_gradient(mode: str) -> None:
     """Include constant prefixes, arbitrary suffixes and all depth-query parameters."""
     actual = make(mode)
+    if mode == "gated":
+        with torch.no_grad():
+            actual.branch_logits.copy_(torch.tensor([-1.5, -0.5, 0.5, 1.5]))
     reference = copy.deepcopy(actual)
     tokens = torch.tensor([[1, 2, 3, 4], [2, 2, 2, 5], [3, 3, 3, 3]])
     a = actual(tokens)[0]
@@ -150,6 +165,9 @@ def test_full_equations_and_every_parameter_gradient(mode: str) -> None:
 def test_causality_chunked_cache_and_checkpointing(mode: str) -> None:
     """Depth sources stay local to a token; source K/V cache positions still advance."""
     model = make(mode)
+    if mode == "gated":
+        with torch.no_grad():
+            model.branch_logits.copy_(torch.tensor([-1.5, -0.5, 0.5, 1.5]))
     tokens = torch.tensor([[1, 1, 2, 3], [2, 2, 2, 4]])
     changed = tokens.clone()
     changed[:, -1] = 7

@@ -13,6 +13,10 @@ conditioned_qk modes also normalize depth queries, remove the key gain and
 divide scores by sqrt(width); their queries start at unit RMS. Key-only
 attnres retains its learned key gain and zero queries. scaled uses ordinary
 residual addition with fixed branch coefficient1/sqrt(2*depth).
+The optional gated mode applies 2*sigmoid(s), s initially zero, AFTER each
+Peri output norm. Source: transformer task151 known-solution benchmark and
+Transformer.Residual.gain_derivative_ratio. This preserves an amplitude
+gradient; full-transformer grokking improvement is not established.
 """
 
 import math
@@ -33,7 +37,7 @@ if TYPE_CHECKING:
     from diff_gpt.domain.model.block import Block
     from diff_gpt.domain.model.kv_cache import KVCache
 
-MODES = ("add", "scaled", "attnres", "qk", "conditioned_qk")
+MODES = ("add", "scaled", "gated", "attnres", "qk", "conditioned_qk")
 
 
 class KeyAttentionResidual(QKAttentionResidual):
@@ -119,6 +123,9 @@ class ResidualGPT(GPT):
         )
         self.mixing = mixing
         self.branch_scale = 1 / math.sqrt(2 * n_layer) if mixing == "scaled" else 1.0
+        self.branch_logits = (
+            nn.Parameter(torch.zeros(2 * n_layer)) if mixing == "gated" else None
+        )
         factory = {
             "attnres": KeyAttentionResidual,
             "qk": QKAttentionResidual,
@@ -127,6 +134,15 @@ class ResidualGPT(GPT):
         self.residual_mixers = nn.ModuleList(
             [] if factory is None else [factory(n_embd) for _ in range(2 * n_layer)]
         )
+
+    def scale_branch(self, index: int, normalized_branch: torch.Tensor) -> torch.Tensor:
+        """Apply the branch gain after output RMS, retaining its radial derivative."""
+        gain = (
+            2 * self.branch_logits[index].sigmoid()
+            if self.branch_logits is not None
+            else self.branch_scale
+        )
+        return gain * normalized_branch
 
     def aggregate(self, index: int, sources: list[torch.Tensor]) -> torch.Tensor:
         """Read embedding plus each completed branch once, in causal depth order."""
@@ -143,6 +159,7 @@ class ResidualGPT(GPT):
         """Keep generation/cache support; depth mixing uses only the current tokens."""
         if self.mixing == "add":
             return super().forward(idx, targets, kv_cache)
+        additive = self.mixing in ("scaled", "gated")
         start = 0 if kv_cache is None else kv_cache.get_pos()
         end = start + idx.shape[1]
         if end > self.block_size:
@@ -154,7 +171,7 @@ class ResidualGPT(GPT):
         guarded = self.centered_xsa and kv_cache is None
         constant = (idx != idx[:, :1]).cumsum(dim=1) == 0 if guarded else None
         for index, block in enumerate(self.blocks):
-            if self.mixing != "scaled":
+            if not additive:
                 x = self.aggregate(2 * index, sources)
             if self.training and self.use_checkpoint:
                 result = checkpoint(
@@ -177,8 +194,8 @@ class ResidualGPT(GPT):
                 branch = torch.where(constant[..., None], branch[:, :1], branch)
             else:
                 branch = result
-            if self.mixing == "scaled":
-                x = x + self.branch_scale * branch
+            if additive:
+                x = x + self.scale_branch(2 * index, branch)
             else:
                 sources.append(branch)
                 x = self.aggregate(2 * index + 1, sources)
@@ -189,11 +206,11 @@ class ResidualGPT(GPT):
             )
             if guarded:
                 branch = torch.where(constant[..., None], branch[:, :1], branch)
-            if self.mixing == "scaled":
-                x = x + self.branch_scale * branch
+            if additive:
+                x = x + self.scale_branch(2 * index + 1, branch)
             else:
                 sources.append(branch)
-        if self.mixing != "scaled":
+        if not additive:
             x = self.aggregate(2 * self.n_layer, sources)
         if guarded:
             x = torch.where(constant[..., None], x[:, :1], x)
