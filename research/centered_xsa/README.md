@@ -6,7 +6,7 @@ nonzero vectors. Roundoff then enters Peri-RMSNorm and can amplify over depth.
 The source already zeroed the first position explicitly; repeated values at
 later positions expose the same issue.
 
-The default MHA now centers values before attention, computes the residual
+The optional centered MHA centers values before attention, computes the residual
 relative to the own value, then projects. A separate own-value remainder
 preserves the original clipped normalization below epsilon. The accompanying
 Lean file `SequenceModel/Attention/CenteredXSA.lean` proves exact equivalence
@@ -40,3 +40,11 @@ transforms and temporary storage; a cache-speed improvement is not claimed.
 The CPU source-model suite and four additional centered-XSA checks pass.
 Compiled CUDA checks and the historical div97 learning regression are tracked
 as follow-up validation after the running frozen GPU phase.
+
+A subsequent full-model parameter-gradient audit found an additional failure:
+for three deep checkpoints, centered FP32 gradient directions disagreed strongly
+with FP64 (cosines.0066--.0624), despite accurate forwards. Centering alone is
+therefore opt-in. The original model remains the default while a mathematically
+justified repeated-token output path is checked. This failure is retained in
+`parameter_gradient_audit.json`; no successful forward test is treated as a
+complete backward-accuracy guarantee.

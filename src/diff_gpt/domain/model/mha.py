@@ -79,7 +79,7 @@ class MultiHeadAttention(nn.Module):
         layer_idx: int,
         *,
         use_rope: bool = True,
-        centered_xsa: bool = True,
+        centered_xsa: bool = False,
     ) -> None:
         """
         Create the fused query/key/value and output projections, without biases.
@@ -89,9 +89,9 @@ class MultiHeadAttention(nn.Module):
         selects this layer's slot in the KV cache. Each head's queries and
         keys are RMS-normalized before the standard q·k / sqrt(head_dim).
         `use_rope=False` leaves queries and keys unrotated while retaining
-        the full causal attention mask. Centered XSA is the default numerical
-        evaluation of the same real projection. Set `centered_xsa=False` only
-        when reproducing the earlier floating-point arithmetic.
+        the full causal attention mask. Centered XSA is an optional numerical
+        evaluation of the same real projection. Deep FP32 backward cancellation
+        needs the whole-model repeated-token correction before default use.
         """
         super().__init__()
         if n_embd % n_head != 0:

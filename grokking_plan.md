@@ -432,9 +432,13 @@ at1a9b522e; no optimizer-convergence claim was added.
 ## XSA numerical correction (2026-11-01)
 
 The residual audit found cancellation on repeated input values in the original
-source XSA, amplified by Peri-RMSNorm at depth. The new default centers values
+source XSA, amplified by Peri-RMSNorm at depth. An optional implementation centers values
 before attention while preserving the exact real projection and its clipped
 own-value remainder. [Checkpoint evidence](research/centered_xsa/README.md)
 retains every FP32/FP64 comparison and the independent gradient checks. Legacy
 MHA arithmetic remains selectable with `centered_xsa=False`. The ongoing lab
 cohort is frozen on its original implementation; no trajectory is relabeled.
+
+The deeper parameter-gradient audit rejected promoting centering alone:
+forward accuracy does not guarantee stable FP32 backward cancellation.
+It remains opt-in pending the repeated-token whole-model correction.

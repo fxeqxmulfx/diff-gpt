@@ -53,7 +53,7 @@ class CenteredXSATests(unittest.TestCase):
 
     def test_constant_values_are_exactly_zero(self) -> None:
         """A repeated token leaves exactly zero at every position in FP32."""
-        model = MultiHeadAttention(32, 4, 0)
+        model = MultiHeadAttention(32, 4, 0, centered_xsa=True)
         values = torch.randn(2, 1, 32).expand(-1, 9, -1).clone()
         cos, sin = rope_tables(8, 9)
         output = model(values, cos, sin, None)
@@ -90,7 +90,7 @@ class CenteredXSATests(unittest.TestCase):
 
     def test_full_module_forward_and_parameter_gradients(self) -> None:
         """Centered and source modules agree on nonconstant float64 inputs."""
-        centered = MultiHeadAttention(16, 2, 0).double()
+        centered = MultiHeadAttention(16, 2, 0, centered_xsa=True).double()
         source = copy.deepcopy(centered)
         source.centered_xsa = False
         inputs = torch.randn(2, 5, 16, dtype=torch.float64, requires_grad=True)
