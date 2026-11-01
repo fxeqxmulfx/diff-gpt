@@ -1,0 +1,14 @@
+{
+  "purpose": "Regression validation of the numerical XSA correction after the separate frozen long phase",
+  "model_commit": "5b84da8",
+  "numerical_case": "GPT W128 D4 H4, four length9 rows including repeated prefixes and nonconstant suffixes; fixed seed147; fixed RMS epsilon2^-23",
+  "numerical_reference": "CPU FP64 with identical FP32 parameters and rotary tables",
+  "numerical_checks": {"max_logit_error_less_than": 0.0005, "relative_gradient_rms_error_less_than": 0.0001, "changed_predictions": 0, "repetitions": 3},
+  "learning_cases": ["legacy-11", "guarded-11", "legacy-17", "guarded-17", "legacy-23", "guarded-23"],
+  "learning_recipe": "Unchanged original test_div97 loader and train(): P97 padded vocabulary128, W128 D1 H4, batch512 replacement, half-table split and same generator evaluation draws, answer-only CE, 1000 updates, eval10, eval_iters1, no early stop",
+  "optimizer": {"name": "ScheduleFreeAdamW", "lr": 0.01, "betas": [0.9,0.98], "weight_decay": 1.0, "eps": 1e-8, "warmup": 10},
+  "execution": "Python3.15/Torch2.15 CUDA FP32 highest; forward and backward torch.compile(mode=max-autotune,fullgraph=True,dynamic=False); optimizer uses original foreach implementation",
+  "learning_check": "Each final heldout accuracy >=99%; record all curves and first crossings. Compare paired variants and original historical mean400 crossing; no automatic baseline replacement.",
+  "retention": "Fresh process per case; keep every exception, partial curve, and full model/optimizer/sampler checkpoint; no success-only seed selection",
+  "limits": "Six short regression runs, not a second long grokking phase or a residual-architecture ablation. Unchanged historical eager baseline is context, not a bitwise compiled replication. No learning improvement is assumed."
+}
