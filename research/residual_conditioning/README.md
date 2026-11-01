@@ -47,6 +47,10 @@ python -m diff_gpt.interfaces.grokking.residual_conditioning \
 Use the conditioned component with its state adapter:
 
 ```python
+from diff_gpt.application.residual_conditioning import DepthQueryConditioner
+from diff_gpt.domain.model.conditioned_attention_residual import ConditionedQKAttentionResidual
+from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+
 model = ConditionedQKAttentionResidual(width)
 optimizer = ScheduleFreeAdamW(model.parameters(), lr=0.01)
 conditioner = DepthQueryConditioner(model, optimizer, compiled=True)
@@ -124,3 +128,10 @@ python -m diff_gpt.interfaces.grokking.residual_conditioning_replay \
   --input runs/residual-conditioning-check-20261101-retry1 \
   --output /tmp/residual-conditioning-replay.json
 ```
+
+
+Requested author self-review reran the affected167 tests (one existing skip)
+and all30 checkpoint checks at `24b3b49`. The complete replay JSON reproduces
+byte-for-byte. The companion Lean acceptance checks and15 axiom lists pass again
+at `9ec890da`. The same assistant performed this review; it is not independent
+review. Task#150 is complete, with full-model comparison remaining task#145.
