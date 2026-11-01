@@ -441,4 +441,13 @@ cohort is frozen on its original implementation; no trajectory is relabeled.
 
 The deeper parameter-gradient audit rejected promoting centering alone:
 forward accuracy does not guarantee stable FP32 backward cancellation.
-It remains opt-in pending the repeated-token whole-model correction.
+The completed GPT correction now combines centering with guarded common-prefix
+states (commit `5b84da8`); standalone MHA centering remains opt-in. Seventeen
+companion Lean theorems prove the source equalities, including arbitrary
+finite depth and future suffix tokens. The actual-source CPU parameter-gradient
+audit and compiled CUDA check both pass. The separate compiled legacy/guarded
+three-seed div97 regression finishes all six runs at 100%, within the original
+FLOPs tolerance; all final averaged checkpoints and sampler states replay.
+Full-model residual architecture comparison and matched deep mixed-task
+retraining remain separate planned cohorts, not conclusions of this correction.
+See `research/centered_xsa/validation_results.json` for all outcomes and limits.
