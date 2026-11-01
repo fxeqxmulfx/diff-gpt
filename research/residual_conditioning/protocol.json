@@ -1,0 +1,337 @@
+{
+  "status": "frozen_before_learning",
+  "date": "2026-11-01",
+  "question": "Can exact coordinate conditioning repair the huge-query failure without discarding Schedule-Free history?",
+  "scope": "Query-only synthetic repair; no full-transformer residual replacement or superiority claim.",
+  "cases": [
+    {
+      "label": "legacy-scale0-s11-fresh",
+      "mode": "legacy",
+      "scale": 0.0,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale0-s11-fresh",
+      "mode": "conditioned",
+      "scale": 0.0,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale0-s17-fresh",
+      "mode": "legacy",
+      "scale": 0.0,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale0-s17-fresh",
+      "mode": "conditioned",
+      "scale": 0.0,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale0-s23-fresh",
+      "mode": "legacy",
+      "scale": 0.0,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale0-s23-fresh",
+      "mode": "conditioned",
+      "scale": 0.0,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e-08-s11-fresh",
+      "mode": "legacy",
+      "scale": 1e-08,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1e-08-s11-fresh",
+      "mode": "conditioned",
+      "scale": 1e-08,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e-08-s17-fresh",
+      "mode": "legacy",
+      "scale": 1e-08,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1e-08-s17-fresh",
+      "mode": "conditioned",
+      "scale": 1e-08,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e-08-s23-fresh",
+      "mode": "legacy",
+      "scale": 1e-08,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1e-08-s23-fresh",
+      "mode": "conditioned",
+      "scale": 1e-08,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1-s11-fresh",
+      "mode": "legacy",
+      "scale": 1.0,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1-s11-fresh",
+      "mode": "conditioned",
+      "scale": 1.0,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1-s17-fresh",
+      "mode": "legacy",
+      "scale": 1.0,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1-s17-fresh",
+      "mode": "conditioned",
+      "scale": 1.0,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1-s23-fresh",
+      "mode": "legacy",
+      "scale": 1.0,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1-s23-fresh",
+      "mode": "conditioned",
+      "scale": 1.0,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e+06-s11-fresh",
+      "mode": "legacy",
+      "scale": 1000000.0,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1e+06-s11-fresh",
+      "mode": "conditioned",
+      "scale": 1000000.0,
+      "seed": 11,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e+06-s17-fresh",
+      "mode": "legacy",
+      "scale": 1000000.0,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1e+06-s17-fresh",
+      "mode": "conditioned",
+      "scale": 1000000.0,
+      "seed": 17,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e+06-s23-fresh",
+      "mode": "legacy",
+      "scale": 1000000.0,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "conditioned-scale1e+06-s23-fresh",
+      "mode": "conditioned",
+      "scale": 1000000.0,
+      "seed": 23,
+      "updates": 2000,
+      "resume_source": null,
+      "resume_sha256": null
+    },
+    {
+      "label": "legacy-scale1e+06-s11-resume",
+      "mode": "legacy",
+      "scale": 1000000.0,
+      "seed": 11,
+      "updates": 10000,
+      "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s11.pt",
+      "resume_sha256": "a3bbdd51751b3ef542af7d9050dea65084ac60023bab2cb43412a8c2e69dcfbb"
+    },
+    {
+      "label": "conditioned-scale1e+06-s11-resume",
+      "mode": "conditioned",
+      "scale": 1000000.0,
+      "seed": 11,
+      "updates": 10000,
+      "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s11.pt",
+      "resume_sha256": "a3bbdd51751b3ef542af7d9050dea65084ac60023bab2cb43412a8c2e69dcfbb"
+    },
+    {
+      "label": "legacy-scale1e+06-s17-resume",
+      "mode": "legacy",
+      "scale": 1000000.0,
+      "seed": 17,
+      "updates": 10000,
+      "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s17.pt",
+      "resume_sha256": "3ccfe30b8dcb10cd1279a9d3437f8b69a1f00fd60168740f3c4e1eada5c5d7e4"
+    },
+    {
+      "label": "conditioned-scale1e+06-s17-resume",
+      "mode": "conditioned",
+      "scale": 1000000.0,
+      "seed": 17,
+      "updates": 10000,
+      "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s17.pt",
+      "resume_sha256": "3ccfe30b8dcb10cd1279a9d3437f8b69a1f00fd60168740f3c4e1eada5c5d7e4"
+    },
+    {
+      "label": "legacy-scale1e+06-s23-resume",
+      "mode": "legacy",
+      "scale": 1000000.0,
+      "seed": 23,
+      "updates": 10000,
+      "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s23.pt",
+      "resume_sha256": "62a4045b713fde152196dfb58fb8e45dd66640d01d724249152647a7ffeec441"
+    },
+    {
+      "label": "conditioned-scale1e+06-s23-resume",
+      "mode": "conditioned",
+      "scale": 1000000.0,
+      "seed": 23,
+      "updates": 10000,
+      "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s23.pt",
+      "resume_sha256": "62a4045b713fde152196dfb58fb8e45dd66640d01d724249152647a7ffeec441"
+    }
+  ],
+  "width": 16,
+  "sources_per_example": 8,
+  "train_rows": 512,
+  "heldout_rows": 512,
+  "batch": 64,
+  "eps": 1e-06,
+  "maximum_coordinate_rms": 2.0,
+  "observe_every": 100,
+  "wall_budget_seconds": 900,
+  "optimizer": {
+    "lr": 0.01,
+    "betas": [
+      0.9,
+      0.98
+    ],
+    "weight_decay": 0.0,
+    "eps": 1e-08,
+    "warmup": 10
+  },
+  "runtime": {
+    "python": "3.15",
+    "torch": "2.15",
+    "device": "CUDA",
+    "compilation": "max-autotune/fullgraph/static for model and coordinate-state kernel",
+    "matmul_precision": "highest"
+  },
+  "sources": {
+    "src/diff_gpt/domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+    "src/diff_gpt/domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+    "src/diff_gpt/domain/optimizer/schedule_free.py": "e9946bcc2c94bc2b13b501e3ec8ed8f00ffbbc40b7956cab21fb901bd4129008",
+    "src/diff_gpt/application/residual_conditioning.py": "ad7e3374a2bde24c857521b93da1ceac06b4f47eafe07563a82e5f8bd4c099bd",
+    "src/diff_gpt/application/grokking/residual_attention_probe.py": "b746193160a6d05eb841bf3c49f53a55c7bb5c4236542f2e51c61563173ef562",
+    "src/diff_gpt/application/grokking/residual_conditioning.py": "01b85441187dadaeb152be95f456d116f9c15de249d4b69b164dc1660a5fb96c"
+  },
+  "success": {
+    "heldout_mse_at_most": 0.001,
+    "heldout_routing_at_least": 0.99,
+    "endpoint": "final averaged weights, no early stopping or checkpoint selection"
+  },
+  "predictions": [
+    "The corrected huge-query fresh cases should learn while matched legacy cases remain stuck.",
+    "Zero, tiny and unit controls should remain trainable.",
+    "All three resumed large-query failures should learn after correction with their complete source state retained; matched unchanged continuations test whether extra updates alone explain success."
+  ],
+  "correction": {
+    "physical_query": "q = query_scale * coordinate_query",
+    "query_rms_epsilon": "eps / query_scale**2; key epsilon unchanged",
+    "trigger": "max RMS of query/base/implied average exceeds2",
+    "rescaling": "divide query/base by that maximum, multiply second moment by factor**2 and query_scale by factor; retain all clocks",
+    "backward": "ordinary autodiff in the current frame; no detached normalization or substituted gradient"
+  },
+  "limits": [
+    "Changing coordinates changes subsequent physical learning rates; it is an explicit optimization-geometry correction, not an identical original trajectory.",
+    "The query direction is fixed; seeds vary inputs and minibatches.",
+    "The initial observation and saved-condition checks apply the same extra evaluation roundtrips to both variants.",
+    "The conditioner is compiled, but PyTorch may skip CUDA graph capture for mutated optimizer-state inputs; preserve warnings.",
+    "The wall cap is checked between steps/cases; compilation and final checkpoint overhead can extend the final boundary, and all timing is recorded.",
+    "The earlier two-hour long cohort is complete and is not restarted."
+  ]
+}
