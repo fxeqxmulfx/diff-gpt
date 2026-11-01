@@ -274,6 +274,10 @@ def test_full_transformer_recovers_oversized_query_gradients() -> None:
         f"residual_mixers.{index}.query": factor for index, factor in enumerate(factors)
     }
     minimum_gain = 1e5
+    torch.testing.assert_close(
+        factors[::2], torch.ones_like(factors[::2]), rtol=0, atol=0
+    )
+    assert bool((factors[1::2] > minimum_gain).all())
     for name, gradient in zip(parameters, gradients, strict=True):
         factor = query_factors.get(name, 1.0)
         old = old_gradients[name]
