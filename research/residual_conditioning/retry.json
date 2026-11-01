@@ -1,0 +1,11 @@
+{
+  "declared_utc": "2026-11-01T16:54:10.115299+00:00",
+  "reason": "First attempt completed six cases, then PyTorch CUDA graph capture failed at the first tiny-query legacy case. Required GPU-visible repository tests ran concurrently; causality is not established.",
+  "failed_attempt": "runs/residual-conditioning-check-20261101",
+  "retry_attempt": "runs/residual-conditioning-check-20261101-retry1",
+  "policy": "Repeat the complete unchanged 30-case protocol after repository tests finish. No model, optimizer, seed, endpoint, success threshold or compilation changes. Keep all original outcomes and the exception trace.",
+  "protocol_sha256": "c16b0d53ee91b193df8948db62f4e8f4b94c7e77a03e1c81a2aefce48bbbc642",
+  "failed_report_sha256": "c8b725dcded9c7e74698658a108e826df494419651acdd69513e4bd63218c971",
+  "failed_log_sha256": "07730d7169e8f54293137947feffcd2c1b043b9ecdf36bf005bc130a38d84526",
+  "max_wall_seconds_per_attempt": 900
+}

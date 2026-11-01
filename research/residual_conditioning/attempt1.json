@@ -1,0 +1,4086 @@
+{
+  "protocol": {
+    "status": "frozen_before_learning",
+    "date": "2026-11-01",
+    "question": "Can exact coordinate conditioning repair the huge-query failure without discarding Schedule-Free history?",
+    "scope": "Query-only synthetic repair; no full-transformer residual replacement or superiority claim.",
+    "cases": [
+      {
+        "label": "legacy-scale0-s11-fresh",
+        "mode": "legacy",
+        "scale": 0.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale0-s11-fresh",
+        "mode": "conditioned",
+        "scale": 0.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale0-s17-fresh",
+        "mode": "legacy",
+        "scale": 0.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale0-s17-fresh",
+        "mode": "conditioned",
+        "scale": 0.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale0-s23-fresh",
+        "mode": "legacy",
+        "scale": 0.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale0-s23-fresh",
+        "mode": "conditioned",
+        "scale": 0.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e-08-s11-fresh",
+        "mode": "legacy",
+        "scale": 1e-08,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1e-08-s11-fresh",
+        "mode": "conditioned",
+        "scale": 1e-08,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e-08-s17-fresh",
+        "mode": "legacy",
+        "scale": 1e-08,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1e-08-s17-fresh",
+        "mode": "conditioned",
+        "scale": 1e-08,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e-08-s23-fresh",
+        "mode": "legacy",
+        "scale": 1e-08,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1e-08-s23-fresh",
+        "mode": "conditioned",
+        "scale": 1e-08,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1-s11-fresh",
+        "mode": "legacy",
+        "scale": 1.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1-s11-fresh",
+        "mode": "conditioned",
+        "scale": 1.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1-s17-fresh",
+        "mode": "legacy",
+        "scale": 1.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1-s17-fresh",
+        "mode": "conditioned",
+        "scale": 1.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1-s23-fresh",
+        "mode": "legacy",
+        "scale": 1.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1-s23-fresh",
+        "mode": "conditioned",
+        "scale": 1.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e+06-s11-fresh",
+        "mode": "legacy",
+        "scale": 1000000.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1e+06-s11-fresh",
+        "mode": "conditioned",
+        "scale": 1000000.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e+06-s17-fresh",
+        "mode": "legacy",
+        "scale": 1000000.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1e+06-s17-fresh",
+        "mode": "conditioned",
+        "scale": 1000000.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e+06-s23-fresh",
+        "mode": "legacy",
+        "scale": 1000000.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "conditioned-scale1e+06-s23-fresh",
+        "mode": "conditioned",
+        "scale": 1000000.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      {
+        "label": "legacy-scale1e+06-s11-resume",
+        "mode": "legacy",
+        "scale": 1000000.0,
+        "seed": 11,
+        "updates": 10000,
+        "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s11.pt",
+        "resume_sha256": "a3bbdd51751b3ef542af7d9050dea65084ac60023bab2cb43412a8c2e69dcfbb"
+      },
+      {
+        "label": "conditioned-scale1e+06-s11-resume",
+        "mode": "conditioned",
+        "scale": 1000000.0,
+        "seed": 11,
+        "updates": 10000,
+        "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s11.pt",
+        "resume_sha256": "a3bbdd51751b3ef542af7d9050dea65084ac60023bab2cb43412a8c2e69dcfbb"
+      },
+      {
+        "label": "legacy-scale1e+06-s17-resume",
+        "mode": "legacy",
+        "scale": 1000000.0,
+        "seed": 17,
+        "updates": 10000,
+        "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s17.pt",
+        "resume_sha256": "3ccfe30b8dcb10cd1279a9d3437f8b69a1f00fd60168740f3c4e1eada5c5d7e4"
+      },
+      {
+        "label": "conditioned-scale1e+06-s17-resume",
+        "mode": "conditioned",
+        "scale": 1000000.0,
+        "seed": 17,
+        "updates": 10000,
+        "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s17.pt",
+        "resume_sha256": "3ccfe30b8dcb10cd1279a9d3437f8b69a1f00fd60168740f3c4e1eada5c5d7e4"
+      },
+      {
+        "label": "legacy-scale1e+06-s23-resume",
+        "mode": "legacy",
+        "scale": 1000000.0,
+        "seed": 23,
+        "updates": 10000,
+        "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s23.pt",
+        "resume_sha256": "62a4045b713fde152196dfb58fb8e45dd66640d01d724249152647a7ffeec441"
+      },
+      {
+        "label": "conditioned-scale1e+06-s23-resume",
+        "mode": "conditioned",
+        "scale": 1000000.0,
+        "seed": 23,
+        "updates": 10000,
+        "resume_source": "runs/residual-attention-check-20261101/qk-scale1e+06-s23.pt",
+        "resume_sha256": "62a4045b713fde152196dfb58fb8e45dd66640d01d724249152647a7ffeec441"
+      }
+    ],
+    "width": 16,
+    "sources_per_example": 8,
+    "train_rows": 512,
+    "heldout_rows": 512,
+    "batch": 64,
+    "eps": 1e-06,
+    "maximum_coordinate_rms": 2.0,
+    "observe_every": 100,
+    "wall_budget_seconds": 900,
+    "optimizer": {
+      "lr": 0.01,
+      "betas": [
+        0.9,
+        0.98
+      ],
+      "weight_decay": 0.0,
+      "eps": 1e-08,
+      "warmup": 10
+    },
+    "runtime": {
+      "python": "3.15",
+      "torch": "2.15",
+      "device": "CUDA",
+      "compilation": "max-autotune/fullgraph/static for model and coordinate-state kernel",
+      "matmul_precision": "highest"
+    },
+    "sources": {
+      "src/diff_gpt/domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+      "src/diff_gpt/domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+      "src/diff_gpt/domain/optimizer/schedule_free.py": "e9946bcc2c94bc2b13b501e3ec8ed8f00ffbbc40b7956cab21fb901bd4129008",
+      "src/diff_gpt/application/residual_conditioning.py": "ad7e3374a2bde24c857521b93da1ceac06b4f47eafe07563a82e5f8bd4c099bd",
+      "src/diff_gpt/application/grokking/residual_attention_probe.py": "b746193160a6d05eb841bf3c49f53a55c7bb5c4236542f2e51c61563173ef562",
+      "src/diff_gpt/application/grokking/residual_conditioning.py": "01b85441187dadaeb152be95f456d116f9c15de249d4b69b164dc1660a5fb96c"
+    },
+    "success": {
+      "heldout_mse_at_most": 0.001,
+      "heldout_routing_at_least": 0.99,
+      "endpoint": "final averaged weights, no early stopping or checkpoint selection"
+    },
+    "predictions": [
+      "The corrected huge-query fresh cases should learn while matched legacy cases remain stuck.",
+      "Zero, tiny and unit controls should remain trainable.",
+      "All three resumed large-query failures should learn after correction with their complete source state retained; matched unchanged continuations test whether extra updates alone explain success."
+    ],
+    "correction": {
+      "physical_query": "q = query_scale * coordinate_query",
+      "query_rms_epsilon": "eps / query_scale**2; key epsilon unchanged",
+      "trigger": "max RMS of query/base/implied average exceeds2",
+      "rescaling": "divide query/base by that maximum, multiply second moment by factor**2 and query_scale by factor; retain all clocks",
+      "backward": "ordinary autodiff in the current frame; no detached normalization or substituted gradient"
+    },
+    "limits": [
+      "Changing coordinates changes subsequent physical learning rates; it is an explicit optimization-geometry correction, not an identical original trajectory.",
+      "The query direction is fixed; seeds vary inputs and minibatches.",
+      "The initial observation and saved-condition checks apply the same extra evaluation roundtrips to both variants.",
+      "The conditioner is compiled, but PyTorch may skip CUDA graph capture for mutated optimizer-state inputs; preserve warnings.",
+      "The wall cap is checked between steps/cases; compilation and final checkpoint overhead can extend the final boundary, and all timing is recorded.",
+      "The earlier two-hour long cohort is complete and is not restarted."
+    ]
+  },
+  "protocol_sha256": "c16b0d53ee91b193df8948db62f4e8f4b94c7e77a03e1c81a2aefce48bbbc642",
+  "started_utc": "2026-11-01T16:50:29.078339+00:00",
+  "python": "3.15.2",
+  "torch": "2.15.0+cu132",
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "results": [
+    {
+      "case": {
+        "label": "legacy-scale0-s11-fresh",
+        "mode": "legacy",
+        "scale": 0.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      "before_conditioning": {
+        "step": 0,
+        "splits": {
+          "train": {
+            "mse": 3.229062080383301,
+            "routing_accuracy": 0.1328125,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          },
+          "heldout": {
+            "mse": 3.2341413497924805,
+            "routing_accuracy": 0.125,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          }
+        },
+        "query_rms": 0.0,
+        "query_gradient_l2": 1463.193603515625,
+        "finite_gradient": true,
+        "coordinate_scale": 1.0,
+        "physical_query_rms": 0.0,
+        "physical_query_gradient_l2": 1463.193603515625,
+        "base_coordinate_rms": 0.0,
+        "average_coordinate_rms": 0.0
+      },
+      "curves": [
+        {
+          "step": 0,
+          "splits": {
+            "train": {
+              "mse": 3.229062080383301,
+              "routing_accuracy": 0.1328125,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            },
+            "heldout": {
+              "mse": 3.2341413497924805,
+              "routing_accuracy": 0.125,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            }
+          },
+          "query_rms": 0.0,
+          "query_gradient_l2": 1463.193603515625,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0,
+          "physical_query_gradient_l2": 1463.193603515625,
+          "base_coordinate_rms": 0.0,
+          "average_coordinate_rms": 0.0
+        },
+        {
+          "step": 100,
+          "splits": {
+            "train": {
+              "mse": 0.0004302292945794761,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9848089218139648,
+              "max_abs_score": 3.330789089202881,
+              "entropy": 0.10808047652244568
+            },
+            "heldout": {
+              "mse": 0.0004344987974036485,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847447872161865,
+              "max_abs_score": 3.331434488296509,
+              "entropy": 0.108472540974617
+            }
+          },
+          "query_rms": 0.001648997887969017,
+          "query_gradient_l2": 0.2945253252983093,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0016489977715536952,
+          "physical_query_gradient_l2": 0.2945253252983093,
+          "base_coordinate_rms": 0.001977610634639859,
+          "average_coordinate_rms": 0.001612714258953929
+        },
+        {
+          "step": 200,
+          "splits": {
+            "train": {
+              "mse": 0.0001682936417637393,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9885467290878296,
+              "max_abs_score": 3.485686779022217,
+              "entropy": 0.0847313404083252
+            },
+            "heldout": {
+              "mse": 0.00017009068687912077,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9884958863258362,
+              "max_abs_score": 3.4905624389648438,
+              "entropy": 0.08505687117576599
+            }
+          },
+          "query_rms": 0.0020071568433195353,
+          "query_gradient_l2": 0.0873328149318695,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0020071568433195353,
+          "physical_query_gradient_l2": 0.0873328149318695,
+          "base_coordinate_rms": 0.0025338539853692055,
+          "average_coordinate_rms": 0.0019487448735162616
+        },
+        {
+          "step": 300,
+          "splits": {
+            "train": {
+              "mse": 8.630923548480496e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9903173446655273,
+              "max_abs_score": 3.5787229537963867,
+              "entropy": 0.07326032221317291
+            },
+            "heldout": {
+              "mse": 8.718081517145038e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9902760982513428,
+              "max_abs_score": 3.5820140838623047,
+              "entropy": 0.07353171706199646
+            }
+          },
+          "query_rms": 0.002327932510524988,
+          "query_gradient_l2": 0.03613215684890747,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.002327932510524988,
+          "physical_query_gradient_l2": 0.03613215684890747,
+          "base_coordinate_rms": 0.003100154222920537,
+          "average_coordinate_rms": 0.002242399612441659
+        },
+        {
+          "step": 400,
+          "splits": {
+            "train": {
+              "mse": 4.820225512958132e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914456009864807,
+              "max_abs_score": 3.647413730621338,
+              "entropy": 0.0657844990491867
+            },
+            "heldout": {
+              "mse": 4.8732003051554784e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914078712463379,
+              "max_abs_score": 3.6494483947753906,
+              "entropy": 0.06603723764419556
+            }
+          },
+          "query_rms": 0.0026686997152864933,
+          "query_gradient_l2": 0.016452478244900703,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0026686994824558496,
+          "physical_query_gradient_l2": 0.016452478244900703,
+          "base_coordinate_rms": 0.003787067485973239,
+          "average_coordinate_rms": 0.0025447001680731773
+        },
+        {
+          "step": 500,
+          "splits": {
+            "train": {
+              "mse": 2.7576425054576248e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922584295272827,
+              "max_abs_score": 3.6998977661132812,
+              "entropy": 0.06030701845884323
+            },
+            "heldout": {
+              "mse": 2.7900858185603283e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922236204147339,
+              "max_abs_score": 3.705476999282837,
+              "entropy": 0.060543060302734375
+            }
+          },
+          "query_rms": 0.0030587678775191307,
+          "query_gradient_l2": 0.007652177009731531,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.003058767644688487,
+          "physical_query_gradient_l2": 0.007652177009731531,
+          "base_coordinate_rms": 0.004659019876271486,
+          "average_coordinate_rms": 0.00288137118332088
+        },
+        {
+          "step": 600,
+          "splits": {
+            "train": {
+              "mse": 1.5796338630025275e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928718209266663,
+              "max_abs_score": 3.745055913925171,
+              "entropy": 0.05611665919423103
+            },
+            "heldout": {
+              "mse": 1.5976891518221237e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928407073020935,
+              "max_abs_score": 3.7509095668792725,
+              "entropy": 0.056330855935811996
+            }
+          },
+          "query_rms": 0.0035202763974666595,
+          "query_gradient_l2": 0.003584579797461629,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0035202763974666595,
+          "physical_query_gradient_l2": 0.003584579797461629,
+          "base_coordinate_rms": 0.005774291697889566,
+          "average_coordinate_rms": 0.0032707781065255404
+        },
+        {
+          "step": 700,
+          "splits": {
+            "train": {
+              "mse": 8.974438060249668e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.993341863155365,
+              "max_abs_score": 3.7831268310546875,
+              "entropy": 0.0528702512383461
+            },
+            "heldout": {
+              "mse": 9.099594535655342e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933114051818848,
+              "max_abs_score": 3.7877748012542725,
+              "entropy": 0.05308143049478531
+            }
+          },
+          "query_rms": 0.004072930198162794,
+          "query_gradient_l2": 0.0016498240875080228,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004072930663824081,
+          "physical_query_gradient_l2": 0.0016498240875080228,
+          "base_coordinate_rms": 0.0071809133514761925,
+          "average_coordinate_rms": 0.003728764597326517
+        },
+        {
+          "step": 800,
+          "splits": {
+            "train": {
+              "mse": 5.047989361628424e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.993701696395874,
+              "max_abs_score": 3.814046859741211,
+              "entropy": 0.0503624752163887
+            },
+            "heldout": {
+              "mse": 5.123353275848785e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9936728477478027,
+              "max_abs_score": 3.818328857421875,
+              "entropy": 0.050564490258693695
+            }
+          },
+          "query_rms": 0.0047346665523946285,
+          "query_gradient_l2": 0.000784597301390022,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0047346665523946285,
+          "physical_query_gradient_l2": 0.000784597301390022,
+          "base_coordinate_rms": 0.008937925100326538,
+          "average_coordinate_rms": 0.004269484430551529
+        },
+        {
+          "step": 900,
+          "splits": {
+            "train": {
+              "mse": 2.815940888467594e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939748048782349,
+              "max_abs_score": 3.8385512828826904,
+              "entropy": 0.04844511300325394
+            },
+            "heldout": {
+              "mse": 2.8617787393159233e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939472675323486,
+              "max_abs_score": 3.842808961868286,
+              "entropy": 0.048639461398124695
+            }
+          },
+          "query_rms": 0.0055246795527637005,
+          "query_gradient_l2": 0.0003745612339116633,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.005524679087102413,
+          "physical_query_gradient_l2": 0.0003745612339116633,
+          "base_coordinate_rms": 0.011102951131761074,
+          "average_coordinate_rms": 0.004907168913632631
+        },
+        {
+          "step": 1000,
+          "splits": {
+            "train": {
+              "mse": 1.5569779634461156e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941815137863159,
+              "max_abs_score": 3.858013391494751,
+              "entropy": 0.04698660224676132
+            },
+            "heldout": {
+              "mse": 1.5849876717766165e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941549301147461,
+              "max_abs_score": 3.8614614009857178,
+              "entropy": 0.04717466980218887
+            }
+          },
+          "query_rms": 0.006473899353295565,
+          "query_gradient_l2": 0.0003047787176910788,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.006473899353295565,
+          "physical_query_gradient_l2": 0.0003047787176910788,
+          "base_coordinate_rms": 0.01388422679156065,
+          "average_coordinate_rms": 0.005660399328917265
+        },
+        {
+          "step": 1100,
+          "splits": {
+            "train": {
+              "mse": 8.509882150065096e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943377375602722,
+              "max_abs_score": 3.871697425842285,
+              "entropy": 0.04587884992361069
+            },
+            "heldout": {
+              "mse": 8.687082981850835e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943118691444397,
+              "max_abs_score": 3.876339912414551,
+              "entropy": 0.046062685549259186
+            }
+          },
+          "query_rms": 0.007625690661370754,
+          "query_gradient_l2": 0.0002207308862125501,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.007625690661370754,
+          "physical_query_gradient_l2": 0.0002207308862125501,
+          "base_coordinate_rms": 0.017404358834028244,
+          "average_coordinate_rms": 0.006554891820997
+        },
+        {
+          "step": 1200,
+          "splits": {
+            "train": {
+              "mse": 4.4013091837769025e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994462251663208,
+              "max_abs_score": 3.8839547634124756,
+              "entropy": 0.04499305784702301
+            },
+            "heldout": {
+              "mse": 4.4928057718607306e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944374561309814,
+              "max_abs_score": 3.8888823986053467,
+              "entropy": 0.0451694056391716
+            }
+          },
+          "query_rms": 0.009209574200212955,
+          "query_gradient_l2": 6.647063128184527e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00920957326889038,
+          "physical_query_gradient_l2": 6.647063128184527e-05,
+          "base_coordinate_rms": 0.02281172014772892,
+          "average_coordinate_rms": 0.007702193688601255
+        },
+        {
+          "step": 1300,
+          "splits": {
+            "train": {
+              "mse": 2.2825801693215908e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945513010025024,
+              "max_abs_score": 3.8930280208587646,
+              "entropy": 0.04435748606920242
+            },
+            "heldout": {
+              "mse": 2.3380135871775565e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945270419120789,
+              "max_abs_score": 3.8973448276519775,
+              "entropy": 0.044530659914016724
+            }
+          },
+          "query_rms": 0.010924238711595535,
+          "query_gradient_l2": 6.724816194036976e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01092423964291811,
+          "physical_query_gradient_l2": 6.724816194036976e-05,
+          "base_coordinate_rms": 0.02787609212100506,
+          "average_coordinate_rms": 0.009050815366208553
+        },
+        {
+          "step": 1400,
+          "splits": {
+            "train": {
+              "mse": 1.1871762950477205e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946152567863464,
+              "max_abs_score": 3.899415969848633,
+              "entropy": 0.043900322169065475
+            },
+            "heldout": {
+              "mse": 1.2200077037505253e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994591474533081,
+              "max_abs_score": 3.9035592079162598,
+              "entropy": 0.0440702885389328
+            }
+          },
+          "query_rms": 0.013038749806582928,
+          "query_gradient_l2": 0.00010467863467056304,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.013038747943937778,
+          "physical_query_gradient_l2": 0.00010467863467056304,
+          "base_coordinate_rms": 0.03504103794693947,
+          "average_coordinate_rms": 0.010634918697178364
+        },
+        {
+          "step": 1500,
+          "splits": {
+            "train": {
+              "mse": 5.938341729461172e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946637153625488,
+              "max_abs_score": 3.904263496398926,
+              "entropy": 0.04355326294898987
+            },
+            "heldout": {
+              "mse": 6.133495844551362e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946402907371521,
+              "max_abs_score": 3.908285140991211,
+              "entropy": 0.0437210276722908
+            }
+          },
+          "query_rms": 0.015708180144429207,
+          "query_gradient_l2": 2.026799847953953e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.015708180144429207,
+          "physical_query_gradient_l2": 2.026799847953953e-05,
+          "base_coordinate_rms": 0.043499626219272614,
+          "average_coordinate_rms": 0.012624924071133137
+        },
+        {
+          "step": 1600,
+          "splits": {
+            "train": {
+              "mse": 3.1129719246791865e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946960210800171,
+              "max_abs_score": 3.9073078632354736,
+              "entropy": 0.04332179203629494
+            },
+            "heldout": {
+              "mse": 3.2378455472326095e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946727752685547,
+              "max_abs_score": 3.9114930629730225,
+              "entropy": 0.04348843917250633
+            }
+          },
+          "query_rms": 0.01863757148385048,
+          "query_gradient_l2": 2.023281376750674e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01863757334649563,
+          "physical_query_gradient_l2": 2.023281376750674e-05,
+          "base_coordinate_rms": 0.053061340004205704,
+          "average_coordinate_rms": 0.014820688404142857
+        },
+        {
+          "step": 1700,
+          "splits": {
+            "train": {
+              "mse": 1.617784306517933e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947195053100586,
+              "max_abs_score": 3.9096169471740723,
+              "entropy": 0.04315314069390297
+            },
+            "heldout": {
+              "mse": 1.6812174763458643e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946967959403992,
+              "max_abs_score": 3.9137585163116455,
+              "entropy": 0.043316252529621124
+            }
+          },
+          "query_rms": 0.022295616567134857,
+          "query_gradient_l2": 1.0166214451601263e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.022295616567134857,
+          "physical_query_gradient_l2": 1.0166214451601263e-05,
+          "base_coordinate_rms": 0.06610129028558731,
+          "average_coordinate_rms": 0.017432544380426407
+        },
+        {
+          "step": 1800,
+          "splits": {
+            "train": {
+              "mse": 8.29357205134329e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947367906570435,
+              "max_abs_score": 3.911363124847412,
+              "entropy": 0.043028950691223145
+            },
+            "heldout": {
+              "mse": 8.65879457023766e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947143793106079,
+              "max_abs_score": 3.9156594276428223,
+              "entropy": 0.043190568685531616
+            }
+          },
+          "query_rms": 0.026744119822978973,
+          "query_gradient_l2": 6.293487786024343e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.026744117960333824,
+          "physical_query_gradient_l2": 6.293487786024343e-06,
+          "base_coordinate_rms": 0.08215207606554031,
+          "average_coordinate_rms": 0.02059074677526951
+        },
+        {
+          "step": 1900,
+          "splits": {
+            "train": {
+              "mse": 4.212103998924022e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947492480278015,
+              "max_abs_score": 3.912470579147339,
+              "entropy": 0.042939893901348114
+            },
+            "heldout": {
+              "mse": 4.387313179421426e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947270154953003,
+              "max_abs_score": 3.916692018508911,
+              "entropy": 0.04309927672147751
+            }
+          },
+          "query_rms": 0.03236359730362892,
+          "query_gradient_l2": 1.508255172666395e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03236359730362892,
+          "physical_query_gradient_l2": 1.508255172666395e-05,
+          "base_coordinate_rms": 0.10442858934402466,
+          "average_coordinate_rms": 0.024381207302212715
+        },
+        {
+          "step": 2000,
+          "splits": {
+            "train": {
+              "mse": 2.0732069394568953e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947584867477417,
+              "max_abs_score": 3.913379430770874,
+              "entropy": 0.04287344217300415
+            },
+            "heldout": {
+              "mse": 2.163019097167762e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947364926338196,
+              "max_abs_score": 3.917407751083374,
+              "entropy": 0.04303155839443207
+            }
+          },
+          "query_rms": 0.039388347417116165,
+          "query_gradient_l2": 3.6102862850384554e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03938834369182587,
+          "physical_query_gradient_l2": 3.6102862850384554e-06,
+          "base_coordinate_rms": 0.13210156559944153,
+          "average_coordinate_rms": 0.029090622439980507
+        }
+      ],
+      "source_step": 0,
+      "checkpoint_step": 2000,
+      "completed": true,
+      "success": true,
+      "conditioning_events": 0,
+      "input_sha256": {
+        "train": "536983c74dd12ff277934f7064b1913323da8813ad3d93c7cbd0369f929287b7",
+        "heldout": "dec2748a58395ad3f676ef3e91ffdcc9d0e412b2522a1b821d5eaac23c5ed843"
+      },
+      "wall_seconds": 5.130544035004277,
+      "checkpoint_sha256": "5812c4b4acff6944606d0fbaab4c21a3ce08a747b892590f717046728f0a27df"
+    },
+    {
+      "case": {
+        "label": "conditioned-scale0-s11-fresh",
+        "mode": "conditioned",
+        "scale": 0.0,
+        "seed": 11,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      "before_conditioning": {
+        "step": 0,
+        "splits": {
+          "train": {
+            "mse": 3.229062080383301,
+            "routing_accuracy": 0.1328125,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          },
+          "heldout": {
+            "mse": 3.2341413497924805,
+            "routing_accuracy": 0.125,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          }
+        },
+        "query_rms": 0.0,
+        "query_gradient_l2": 1463.193603515625,
+        "finite_gradient": true,
+        "coordinate_scale": 1.0,
+        "physical_query_rms": 0.0,
+        "physical_query_gradient_l2": 1463.193603515625,
+        "base_coordinate_rms": 0.0,
+        "average_coordinate_rms": 0.0
+      },
+      "curves": [
+        {
+          "step": 0,
+          "splits": {
+            "train": {
+              "mse": 3.229062080383301,
+              "routing_accuracy": 0.1328125,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            },
+            "heldout": {
+              "mse": 3.2341413497924805,
+              "routing_accuracy": 0.125,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            }
+          },
+          "query_rms": 0.0,
+          "query_gradient_l2": 1463.193603515625,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0,
+          "physical_query_gradient_l2": 1463.193603515625,
+          "base_coordinate_rms": 0.0,
+          "average_coordinate_rms": 0.0
+        },
+        {
+          "step": 100,
+          "splits": {
+            "train": {
+              "mse": 0.00043022926547564566,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9848089218139648,
+              "max_abs_score": 3.330789089202881,
+              "entropy": 0.10808047652244568
+            },
+            "heldout": {
+              "mse": 0.0004344987974036485,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847447872161865,
+              "max_abs_score": 3.331434488296509,
+              "entropy": 0.108472540974617
+            }
+          },
+          "query_rms": 0.001648997887969017,
+          "query_gradient_l2": 0.29452526569366455,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0016489977715536952,
+          "physical_query_gradient_l2": 0.29452526569366455,
+          "base_coordinate_rms": 0.001977610634639859,
+          "average_coordinate_rms": 0.001612714258953929
+        },
+        {
+          "step": 200,
+          "splits": {
+            "train": {
+              "mse": 0.0001682936417637393,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9885467290878296,
+              "max_abs_score": 3.485686779022217,
+              "entropy": 0.0847313329577446
+            },
+            "heldout": {
+              "mse": 0.00017009068687912077,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9884958863258362,
+              "max_abs_score": 3.4905624389648438,
+              "entropy": 0.08505687117576599
+            }
+          },
+          "query_rms": 0.0020071568433195353,
+          "query_gradient_l2": 0.08733302354812622,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0020071568433195353,
+          "physical_query_gradient_l2": 0.08733302354812622,
+          "base_coordinate_rms": 0.002533854218199849,
+          "average_coordinate_rms": 0.0019487448735162616
+        },
+        {
+          "step": 300,
+          "splits": {
+            "train": {
+              "mse": 8.630922093288973e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9903173446655273,
+              "max_abs_score": 3.5787229537963867,
+              "entropy": 0.07326032221317291
+            },
+            "heldout": {
+              "mse": 8.718080789549276e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9902760982513428,
+              "max_abs_score": 3.5820140838623047,
+              "entropy": 0.07353170961141586
+            }
+          },
+          "query_rms": 0.002327932743355632,
+          "query_gradient_l2": 0.036132197827100754,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.002327932743355632,
+          "physical_query_gradient_l2": 0.036132197827100754,
+          "base_coordinate_rms": 0.003100154222920537,
+          "average_coordinate_rms": 0.0022423998452723026
+        },
+        {
+          "step": 400,
+          "splits": {
+            "train": {
+              "mse": 4.820215326617472e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914456009864807,
+              "max_abs_score": 3.647413969039917,
+              "entropy": 0.06578447669744492
+            },
+            "heldout": {
+              "mse": 4.8731901188148186e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914078712463379,
+              "max_abs_score": 3.6494486331939697,
+              "entropy": 0.06603721529245377
+            }
+          },
+          "query_rms": 0.002668699948117137,
+          "query_gradient_l2": 0.016452498733997345,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0026686997152864933,
+          "physical_query_gradient_l2": 0.016452498733997345,
+          "base_coordinate_rms": 0.003787066787481308,
+          "average_coordinate_rms": 0.0025447006337344646
+        },
+        {
+          "step": 500,
+          "splits": {
+            "train": {
+              "mse": 2.7576419597608037e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922584295272827,
+              "max_abs_score": 3.6998977661132812,
+              "entropy": 0.06030701845884323
+            },
+            "heldout": {
+              "mse": 2.790086182358209e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922236204147339,
+              "max_abs_score": 3.705476999282837,
+              "entropy": 0.060543060302734375
+            }
+          },
+          "query_rms": 0.003058767644688487,
+          "query_gradient_l2": 0.007652132771909237,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0030587674118578434,
+          "physical_query_gradient_l2": 0.007652132771909237,
+          "base_coordinate_rms": 0.004659019876271486,
+          "average_coordinate_rms": 0.0028813709504902363
+        },
+        {
+          "step": 600,
+          "splits": {
+            "train": {
+              "mse": 1.5796291336300783e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928718209266663,
+              "max_abs_score": 3.74505615234375,
+              "entropy": 0.05611663684248924
+            },
+            "heldout": {
+              "mse": 1.597683694853913e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928407073020935,
+              "max_abs_score": 3.7509098052978516,
+              "entropy": 0.056330837309360504
+            }
+          },
+          "query_rms": 0.003520276630297303,
+          "query_gradient_l2": 0.0035845842212438583,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.003520276630297303,
+          "physical_query_gradient_l2": 0.0035845842212438583,
+          "base_coordinate_rms": 0.005774288903921843,
+          "average_coordinate_rms": 0.0032707785721868277
+        },
+        {
+          "step": 700,
+          "splits": {
+            "train": {
+              "mse": 8.974408046924509e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.993341863155365,
+              "max_abs_score": 3.7831270694732666,
+              "entropy": 0.05287023261189461
+            },
+            "heldout": {
+              "mse": 9.099567250814289e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933114051818848,
+              "max_abs_score": 3.7877750396728516,
+              "entropy": 0.053081411868333817
+            }
+          },
+          "query_rms": 0.004072930198162794,
+          "query_gradient_l2": 0.001649820595048368,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004072930663824081,
+          "physical_query_gradient_l2": 0.001649820595048368,
+          "base_coordinate_rms": 0.007180911023169756,
+          "average_coordinate_rms": 0.0037287648301571608
+        },
+        {
+          "step": 800,
+          "splits": {
+            "train": {
+              "mse": 5.048015282227425e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.993701696395874,
+              "max_abs_score": 3.814046621322632,
+              "entropy": 0.050362490117549896
+            },
+            "heldout": {
+              "mse": 5.1233728299848735e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9936728477478027,
+              "max_abs_score": 3.818328857421875,
+              "entropy": 0.050564512610435486
+            }
+          },
+          "query_rms": 0.0047346665523946285,
+          "query_gradient_l2": 0.000784598640166223,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0047346665523946285,
+          "physical_query_gradient_l2": 0.000784598640166223,
+          "base_coordinate_rms": 0.008937923237681389,
+          "average_coordinate_rms": 0.004269484896212816
+        },
+        {
+          "step": 900,
+          "splits": {
+            "train": {
+              "mse": 2.815922471199883e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939748644828796,
+              "max_abs_score": 3.8385515213012695,
+              "entropy": 0.048445094376802444
+            },
+            "heldout": {
+              "mse": 2.8617623684112914e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939472675323486,
+              "max_abs_score": 3.8428092002868652,
+              "entropy": 0.048639439046382904
+            }
+          },
+          "query_rms": 0.0055246795527637005,
+          "query_gradient_l2": 0.0003745588182937354,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.005524679087102413,
+          "physical_query_gradient_l2": 0.0003745588182937354,
+          "base_coordinate_rms": 0.0111029502004385,
+          "average_coordinate_rms": 0.004907168913632631
+        },
+        {
+          "step": 1000,
+          "splits": {
+            "train": {
+              "mse": 1.5569999050057959e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941815137863159,
+              "max_abs_score": 3.8580129146575928,
+              "entropy": 0.04698663577437401
+            },
+            "heldout": {
+              "mse": 1.585014842930832e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941549301147461,
+              "max_abs_score": 3.8614609241485596,
+              "entropy": 0.04717470705509186
+            }
+          },
+          "query_rms": 0.006473899353295565,
+          "query_gradient_l2": 0.000304776564007625,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.006473899353295565,
+          "physical_query_gradient_l2": 0.000304776564007625,
+          "base_coordinate_rms": 0.013884223997592926,
+          "average_coordinate_rms": 0.005660399794578552
+        },
+        {
+          "step": 1100,
+          "splits": {
+            "train": {
+              "mse": 8.509949225299351e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943377375602722,
+              "max_abs_score": 3.871697187423706,
+              "entropy": 0.04587886482477188
+            },
+            "heldout": {
+              "mse": 8.687201784596255e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943118691444397,
+              "max_abs_score": 3.8763396739959717,
+              "entropy": 0.04606270045042038
+            }
+          },
+          "query_rms": 0.007625690661370754,
+          "query_gradient_l2": 0.00022073004220146686,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.007625690661370754,
+          "physical_query_gradient_l2": 0.00022073004220146686,
+          "base_coordinate_rms": 0.017404355108737946,
+          "average_coordinate_rms": 0.006554892286658287
+        },
+        {
+          "step": 1200,
+          "splits": {
+            "train": {
+              "mse": 4.4015411049258546e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944621920585632,
+              "max_abs_score": 3.8839540481567383,
+              "entropy": 0.044993117451667786
+            },
+            "heldout": {
+              "mse": 4.493004439609649e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944374561309814,
+              "max_abs_score": 3.8888816833496094,
+              "entropy": 0.04516945779323578
+            }
+          },
+          "query_rms": 0.009209448471665382,
+          "query_gradient_l2": 6.649435090366751e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.009209448471665382,
+          "physical_query_gradient_l2": 6.649435090366751e-05,
+          "base_coordinate_rms": 0.022810857743024826,
+          "average_coordinate_rms": 0.00770215317606926
+        },
+        {
+          "step": 1300,
+          "splits": {
+            "train": {
+              "mse": 2.2827201462405355e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945512413978577,
+              "max_abs_score": 3.8930273056030273,
+              "entropy": 0.0443575382232666
+            },
+            "heldout": {
+              "mse": 2.3381535640965012e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945270419120789,
+              "max_abs_score": 3.8973441123962402,
+              "entropy": 0.0445307120680809
+            }
+          },
+          "query_rms": 0.010924194008111954,
+          "query_gradient_l2": 6.7242028308101e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.010924194939434528,
+          "physical_query_gradient_l2": 6.7242028308101e-05,
+          "base_coordinate_rms": 0.02787625603377819,
+          "average_coordinate_rms": 0.009050744585692883
+        },
+        {
+          "step": 1400,
+          "splits": {
+            "train": {
+              "mse": 1.1872064931139903e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946152567863464,
+              "max_abs_score": 3.8994157314300537,
+              "entropy": 0.04390034079551697
+            },
+            "heldout": {
+              "mse": 1.2200379728710686e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994591474533081,
+              "max_abs_score": 3.9035589694976807,
+              "entropy": 0.044070303440093994
+            }
+          },
+          "query_rms": 0.01303876657038927,
+          "query_gradient_l2": 0.00010470564302522689,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.013038765639066696,
+          "physical_query_gradient_l2": 0.00010470564302522689,
+          "base_coordinate_rms": 0.03504167124629021,
+          "average_coordinate_rms": 0.010634882375597954
+        },
+        {
+          "step": 1500,
+          "splits": {
+            "train": {
+              "mse": 5.9381051187301637e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946637153625488,
+              "max_abs_score": 3.904263973236084,
+              "entropy": 0.043553248047828674
+            },
+            "heldout": {
+              "mse": 6.133286944987049e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946402907371521,
+              "max_abs_score": 3.90828537940979,
+              "entropy": 0.04372101277112961
+            }
+          },
+          "query_rms": 0.015708135440945625,
+          "query_gradient_l2": 2.027226219070144e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.015708133578300476,
+          "physical_query_gradient_l2": 2.027226219070144e-05,
+          "base_coordinate_rms": 0.04349959269165993,
+          "average_coordinate_rms": 0.012624879367649555
+        },
+        {
+          "step": 1600,
+          "splits": {
+            "train": {
+              "mse": 3.1127850519396816e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946960210800171,
+              "max_abs_score": 3.907308578491211,
+              "entropy": 0.043321773409843445
+            },
+            "heldout": {
+              "mse": 3.23773150512352e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946727752685547,
+              "max_abs_score": 3.9114935398101807,
+              "entropy": 0.04348842427134514
+            }
+          },
+          "query_rms": 0.01863762177526951,
+          "query_gradient_l2": 2.0244600818841718e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.018637623637914658,
+          "physical_query_gradient_l2": 2.0244600818841718e-05,
+          "base_coordinate_rms": 0.05306241288781166,
+          "average_coordinate_rms": 0.014820633456110954
+        },
+        {
+          "step": 1700,
+          "splits": {
+            "train": {
+              "mse": 1.618086820087683e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947195053100586,
+              "max_abs_score": 3.909616708755493,
+              "entropy": 0.043153174221515656
+            },
+            "heldout": {
+              "mse": 1.681431527345012e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946967959403992,
+              "max_abs_score": 3.9137580394744873,
+              "entropy": 0.04331628978252411
+            }
+          },
+          "query_rms": 0.0222956333309412,
+          "query_gradient_l2": 1.0163953447772656e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0222956333309412,
+          "physical_query_gradient_l2": 1.0163953447772656e-05,
+          "base_coordinate_rms": 0.06610159575939178,
+          "average_coordinate_rms": 0.017432525753974915
+        },
+        {
+          "step": 1800,
+          "splits": {
+            "train": {
+              "mse": 8.293805642267671e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947367906570435,
+              "max_abs_score": 3.911363124847412,
+              "entropy": 0.043028950691223145
+            },
+            "heldout": {
+              "mse": 8.659140959821343e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947143793106079,
+              "max_abs_score": 3.9156596660614014,
+              "entropy": 0.043190568685531616
+            }
+          },
+          "query_rms": 0.026744263246655464,
+          "query_gradient_l2": 6.313340691121994e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.026744259521365166,
+          "physical_query_gradient_l2": 6.313340691121994e-06,
+          "base_coordinate_rms": 0.08215382695198059,
+          "average_coordinate_rms": 0.020590728148818016
+        },
+        {
+          "step": 1900,
+          "splits": {
+            "train": {
+              "mse": 4.211717197222242e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947492480278015,
+              "max_abs_score": 3.912470817565918,
+              "entropy": 0.04293987900018692
+            },
+            "heldout": {
+              "mse": 4.3866927867952654e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947270154953003,
+              "max_abs_score": 3.9166924953460693,
+              "entropy": 0.04309925436973572
+            }
+          },
+          "query_rms": 0.03236421197652817,
+          "query_gradient_l2": 1.5093435649760067e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03236421197652817,
+          "physical_query_gradient_l2": 1.5093435649760067e-05,
+          "base_coordinate_rms": 0.1044338047504425,
+          "average_coordinate_rms": 0.02438134327530861
+        },
+        {
+          "step": 2000,
+          "splits": {
+            "train": {
+              "mse": 2.0735142491901115e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947584867477417,
+              "max_abs_score": 3.9133787155151367,
+              "entropy": 0.042873457074165344
+            },
+            "heldout": {
+              "mse": 2.163371704000383e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947364926338196,
+              "max_abs_score": 3.917407274246216,
+              "entropy": 0.04303157329559326
+            }
+          },
+          "query_rms": 0.039388470351696014,
+          "query_gradient_l2": 3.604562607506523e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.039388470351696014,
+          "physical_query_gradient_l2": 3.604562607506523e-06,
+          "base_coordinate_rms": 0.1320999413728714,
+          "average_coordinate_rms": 0.02909092791378498
+        }
+      ],
+      "source_step": 0,
+      "checkpoint_step": 2000,
+      "completed": true,
+      "success": true,
+      "conditioning_events": 0,
+      "input_sha256": {
+        "train": "536983c74dd12ff277934f7064b1913323da8813ad3d93c7cbd0369f929287b7",
+        "heldout": "dec2748a58395ad3f676ef3e91ffdcc9d0e412b2522a1b821d5eaac23c5ed843"
+      },
+      "wall_seconds": 5.245964344998356,
+      "checkpoint_sha256": "fe1c6cf55c0dbd329626504c836c5e2d27ab5c7194d6a66749efa00077a102de"
+    },
+    {
+      "case": {
+        "label": "legacy-scale0-s17-fresh",
+        "mode": "legacy",
+        "scale": 0.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      "before_conditioning": {
+        "step": 0,
+        "splits": {
+          "train": {
+            "mse": 3.227346897125244,
+            "routing_accuracy": 0.146484375,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          },
+          "heldout": {
+            "mse": 3.2299766540527344,
+            "routing_accuracy": 0.1015625,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          }
+        },
+        "query_rms": 0.0,
+        "query_gradient_l2": 1463.1690673828125,
+        "finite_gradient": true,
+        "coordinate_scale": 1.0,
+        "physical_query_rms": 0.0,
+        "physical_query_gradient_l2": 1463.1690673828125,
+        "base_coordinate_rms": 0.0,
+        "average_coordinate_rms": 0.0
+      },
+      "curves": [
+        {
+          "step": 0,
+          "splits": {
+            "train": {
+              "mse": 3.227346897125244,
+              "routing_accuracy": 0.146484375,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            },
+            "heldout": {
+              "mse": 3.2299766540527344,
+              "routing_accuracy": 0.1015625,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            }
+          },
+          "query_rms": 0.0,
+          "query_gradient_l2": 1463.1690673828125,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0,
+          "physical_query_gradient_l2": 1463.1690673828125,
+          "base_coordinate_rms": 0.0,
+          "average_coordinate_rms": 0.0
+        },
+        {
+          "step": 100,
+          "splits": {
+            "train": {
+              "mse": 0.0004342971369624138,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847774505615234,
+              "max_abs_score": 3.3273653984069824,
+              "entropy": 0.10828085243701935
+            },
+            "heldout": {
+              "mse": 0.00044047142728231847,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847059845924377,
+              "max_abs_score": 3.32625675201416,
+              "entropy": 0.10869814455509186
+            }
+          },
+          "query_rms": 0.0016415519639849663,
+          "query_gradient_l2": 0.30086883902549744,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0016415519639849663,
+          "physical_query_gradient_l2": 0.30086883902549744,
+          "base_coordinate_rms": 0.0019552784506231546,
+          "average_coordinate_rms": 0.0016069430857896805
+        },
+        {
+          "step": 200,
+          "splits": {
+            "train": {
+              "mse": 0.00017128034960478544,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.988510012626648,
+              "max_abs_score": 3.4838733673095703,
+              "entropy": 0.0849723294377327
+            },
+            "heldout": {
+              "mse": 0.0001738023420330137,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9884563684463501,
+              "max_abs_score": 3.482999563217163,
+              "entropy": 0.08530040830373764
+            }
+          },
+          "query_rms": 0.0019961935468018055,
+          "query_gradient_l2": 0.08945232629776001,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0019961935468018055,
+          "physical_query_gradient_l2": 0.08945232629776001,
+          "base_coordinate_rms": 0.002525175455957651,
+          "average_coordinate_rms": 0.0019376205746084452
+        },
+        {
+          "step": 300,
+          "splits": {
+            "train": {
+              "mse": 8.720429468667135e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9903140068054199,
+              "max_abs_score": 3.57812762260437,
+              "entropy": 0.07328841090202332
+            },
+            "heldout": {
+              "mse": 8.869288285495713e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9902656078338623,
+              "max_abs_score": 3.577970266342163,
+              "entropy": 0.0735924243927002
+            }
+          },
+          "query_rms": 0.0023193173110485077,
+          "query_gradient_l2": 0.036725789308547974,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.002319317078217864,
+          "physical_query_gradient_l2": 0.036725789308547974,
+          "base_coordinate_rms": 0.0031014608684927225,
+          "average_coordinate_rms": 0.002232992323115468
+        },
+        {
+          "step": 400,
+          "splits": {
+            "train": {
+              "mse": 4.838672612095252e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914596676826477,
+              "max_abs_score": 3.6458144187927246,
+              "entropy": 0.06569606065750122
+            },
+            "heldout": {
+              "mse": 4.930657451041043e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914159178733826,
+              "max_abs_score": 3.6464898586273193,
+              "entropy": 0.06597594171762466
+            }
+          },
+          "query_rms": 0.0026614018715918064,
+          "query_gradient_l2": 0.016544725745916367,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0026614016387611628,
+          "physical_query_gradient_l2": 0.016544725745916367,
+          "base_coordinate_rms": 0.0037860118318349123,
+          "average_coordinate_rms": 0.002536774380132556
+        },
+        {
+          "step": 500,
+          "splits": {
+            "train": {
+              "mse": 2.7600775865721516e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.992278516292572,
+              "max_abs_score": 3.7012217044830322,
+              "entropy": 0.060175325721502304
+            },
+            "heldout": {
+              "mse": 2.813306127791293e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.992240309715271,
+              "max_abs_score": 3.702562093734741,
+              "entropy": 0.06042325124144554
+            }
+          },
+          "query_rms": 0.003051123581826687,
+          "query_gradient_l2": 0.007705962751060724,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0030511238146573305,
+          "physical_query_gradient_l2": 0.007705962751060724,
+          "base_coordinate_rms": 0.004654181655496359,
+          "average_coordinate_rms": 0.002873785560950637
+        },
+        {
+          "step": 600,
+          "splits": {
+            "train": {
+              "mse": 1.579400668560993e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928936958312988,
+              "max_abs_score": 3.7473857402801514,
+              "entropy": 0.05597071349620819
+            },
+            "heldout": {
+              "mse": 1.613350832485594e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928581714630127,
+              "max_abs_score": 3.7490768432617188,
+              "entropy": 0.05620434135198593
+            }
+          },
+          "query_rms": 0.003510897047817707,
+          "query_gradient_l2": 0.0035624827723950148,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0035108972806483507,
+          "physical_query_gradient_l2": 0.0035624827723950148,
+          "base_coordinate_rms": 0.005753733683377504,
+          "average_coordinate_rms": 0.0032622774597257376
+        },
+        {
+          "step": 700,
+          "splits": {
+            "train": {
+              "mse": 8.974680895335041e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933640956878662,
+              "max_abs_score": 3.7843189239501953,
+              "entropy": 0.05272020399570465
+            },
+            "heldout": {
+              "mse": 9.187564501189627e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933310747146606,
+              "max_abs_score": 3.785337209701538,
+              "entropy": 0.052938830107450485
+            }
+          },
+          "query_rms": 0.004060496110469103,
+          "query_gradient_l2": 0.0016841395990923047,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004060496110469103,
+          "physical_query_gradient_l2": 0.0016841395990923047,
+          "base_coordinate_rms": 0.007158924359828234,
+          "average_coordinate_rms": 0.003718119580298662
+        },
+        {
+          "step": 800,
+          "splits": {
+            "train": {
+              "mse": 5.050878826295957e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9937238693237305,
+              "max_abs_score": 3.8154754638671875,
+              "entropy": 0.050211552530527115
+            },
+            "heldout": {
+              "mse": 5.181347660254687e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9936932325363159,
+              "max_abs_score": 3.8162941932678223,
+              "entropy": 0.05041634291410446
+            }
+          },
+          "query_rms": 0.004718902986496687,
+          "query_gradient_l2": 0.0007873453432694077,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004718902986496687,
+          "physical_query_gradient_l2": 0.0007873453432694077,
+          "base_coordinate_rms": 0.0089032631367445,
+          "average_coordinate_rms": 0.004255874548107386
+        },
+        {
+          "step": 900,
+          "splits": {
+            "train": {
+              "mse": 2.817639369823155e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.99399733543396,
+              "max_abs_score": 3.839313268661499,
+              "entropy": 0.04829058051109314
+            },
+            "heldout": {
+              "mse": 2.8995996217417996e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939683079719543,
+              "max_abs_score": 3.8408713340759277,
+              "entropy": 0.04848562926054001
+            }
+          },
+          "query_rms": 0.0055055380798876286,
+          "query_gradient_l2": 0.00038766750367358327,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.005505538545548916,
+          "physical_query_gradient_l2": 0.00038766750367358327,
+          "base_coordinate_rms": 0.011065316386520863,
+          "average_coordinate_rms": 0.004890222568064928
+        },
+        {
+          "step": 1000,
+          "splits": {
+            "train": {
+              "mse": 1.556525717205659e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9942046403884888,
+              "max_abs_score": 3.8585753440856934,
+              "entropy": 0.04682660475373268
+            },
+            "heldout": {
+              "mse": 1.612443725207413e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941762089729309,
+              "max_abs_score": 3.859657049179077,
+              "entropy": 0.047018516808748245
+            }
+          },
+          "query_rms": 0.006449877750128508,
+          "query_gradient_l2": 0.00020118727115914226,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00644987728446722,
+          "physical_query_gradient_l2": 0.00020118727115914226,
+          "base_coordinate_rms": 0.013767074793577194,
+          "average_coordinate_rms": 0.005640355404466391
+        },
+        {
+          "step": 1100,
+          "splits": {
+            "train": {
+              "mse": 8.498815873281274e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943612813949585,
+              "max_abs_score": 3.8742728233337402,
+              "entropy": 0.04571520537137985
+            },
+            "heldout": {
+              "mse": 8.861389915182372e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943337440490723,
+              "max_abs_score": 3.8747854232788086,
+              "entropy": 0.04590223729610443
+            }
+          },
+          "query_rms": 0.007597802206873894,
+          "query_gradient_l2": 0.0002612360694911331,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.007597803138196468,
+          "physical_query_gradient_l2": 0.0002612360694911331,
+          "base_coordinate_rms": 0.01738416589796543,
+          "average_coordinate_rms": 0.0065308865159749985
+        },
+        {
+          "step": 1200,
+          "splits": {
+            "train": {
+              "mse": 4.4738396809407277e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944829940795898,
+              "max_abs_score": 3.885950803756714,
+              "entropy": 0.04484859108924866
+            },
+            "heldout": {
+              "mse": 4.7075792508621817e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944561719894409,
+              "max_abs_score": 3.886871099472046,
+              "entropy": 0.0450308658182621
+            }
+          },
+          "query_rms": 0.009189690463244915,
+          "query_gradient_l2": 6.362327985698357e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00918968953192234,
+          "physical_query_gradient_l2": 6.362327985698357e-05,
+          "base_coordinate_rms": 0.023194726556539536,
+          "average_coordinate_rms": 0.007637153845280409
+        },
+        {
+          "step": 1300,
+          "splits": {
+            "train": {
+              "mse": 2.289917517828144e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945744276046753,
+              "max_abs_score": 3.8946216106414795,
+              "entropy": 0.04419567435979843
+            },
+            "heldout": {
+              "mse": 2.4218036287493305e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945492148399353,
+              "max_abs_score": 3.895888328552246,
+              "entropy": 0.044367529451847076
+            }
+          },
+          "query_rms": 0.01087250281125307,
+          "query_gradient_l2": 0.00012202432844787836,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01087250281125307,
+          "physical_query_gradient_l2": 0.00012202432844787836,
+          "base_coordinate_rms": 0.027964912354946136,
+          "average_coordinate_rms": 0.008998716250061989
+        },
+        {
+          "step": 1400,
+          "splits": {
+            "train": {
+              "mse": 1.190111120763504e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946387410163879,
+              "max_abs_score": 3.9013476371765137,
+              "entropy": 0.04373587667942047
+            },
+            "heldout": {
+              "mse": 1.270628757765735e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946142435073853,
+              "max_abs_score": 3.9025464057922363,
+              "entropy": 0.043902479112148285
+            }
+          },
+          "query_rms": 0.012947463430464268,
+          "query_gradient_l2": 4.7505243855994195e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.012947464361786842,
+          "physical_query_gradient_l2": 4.7505243855994195e-05,
+          "base_coordinate_rms": 0.03443639725446701,
+          "average_coordinate_rms": 0.010569670237600803
+        },
+        {
+          "step": 1500,
+          "splits": {
+            "train": {
+              "mse": 6.138674280009582e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946855902671814,
+              "max_abs_score": 3.905693531036377,
+              "entropy": 0.043400295078754425
+            },
+            "heldout": {
+              "mse": 6.647007211313394e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946616888046265,
+              "max_abs_score": 3.9071245193481445,
+              "entropy": 0.04356319457292557
+            }
+          },
+          "query_rms": 0.015436619520187378,
+          "query_gradient_l2": 2.7535841581993736e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.015436619520187378,
+          "physical_query_gradient_l2": 2.7535841581993736e-05,
+          "base_coordinate_rms": 0.04243224114179611,
+          "average_coordinate_rms": 0.012444179505109787
+        },
+        {
+          "step": 1600,
+          "splits": {
+            "train": {
+              "mse": 3.011235349958952e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947211742401123,
+              "max_abs_score": 3.909669876098633,
+              "entropy": 0.04314479976892471
+            },
+            "heldout": {
+              "mse": 3.279712856851802e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946982860565186,
+              "max_abs_score": 3.911074161529541,
+              "entropy": 0.04330088198184967
+            }
+          },
+          "query_rms": 0.018845373764634132,
+          "query_gradient_l2": 7.93621893535601e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.018845373764634132,
+          "physical_query_gradient_l2": 7.93621893535601e-06,
+          "base_coordinate_rms": 0.05490407347679138,
+          "average_coordinate_rms": 0.014840245246887207
+        },
+        {
+          "step": 1700,
+          "splits": {
+            "train": {
+              "mse": 1.566219687276771e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947444796562195,
+              "max_abs_score": 3.9120032787323,
+              "entropy": 0.04297752305865288
+            },
+            "heldout": {
+              "mse": 1.727482157320992e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947220683097839,
+              "max_abs_score": 3.9134645462036133,
+              "entropy": 0.04313025623559952
+            }
+          },
+          "query_rms": 0.02216240204870701,
+          "query_gradient_l2": 1.5761321265017614e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.022162403911352158,
+          "physical_query_gradient_l2": 1.5761321265017614e-05,
+          "base_coordinate_rms": 0.06462407857179642,
+          "average_coordinate_rms": 0.017452962696552277
+        },
+        {
+          "step": 1800,
+          "splits": {
+            "train": {
+              "mse": 8.123781647384476e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947612285614014,
+              "max_abs_score": 3.9136228561401367,
+              "entropy": 0.04285717010498047
+            },
+            "heldout": {
+              "mse": 8.998148892658264e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947395324707031,
+              "max_abs_score": 3.915313243865967,
+              "entropy": 0.04300512745976448
+            }
+          },
+          "query_rms": 0.02665451169013977,
+          "query_gradient_l2": 1.0300704161636531e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.02665451169013977,
+          "physical_query_gradient_l2": 1.0300704161636531e-05,
+          "base_coordinate_rms": 0.08166331797838211,
+          "average_coordinate_rms": 0.020548997446894646
+        },
+        {
+          "step": 1900,
+          "splits": {
+            "train": {
+              "mse": 4.1258205740746234e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947734475135803,
+              "max_abs_score": 3.9146289825439453,
+              "entropy": 0.042769141495227814
+            },
+            "heldout": {
+              "mse": 4.589395974363697e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947522878646851,
+              "max_abs_score": 3.9169564247131348,
+              "entropy": 0.04291318356990814
+            }
+          },
+          "query_rms": 0.03197333589196205,
+          "query_gradient_l2": 8.307935786433518e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03197333216667175,
+          "physical_query_gradient_l2": 8.307935786433518e-06,
+          "base_coordinate_rms": 0.10099272429943085,
+          "average_coordinate_rms": 0.024313973262906075
+        },
+        {
+          "step": 2000,
+          "splits": {
+            "train": {
+              "mse": 2.070871030213084e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947823882102966,
+              "max_abs_score": 3.9153926372528076,
+              "entropy": 0.042705293744802475
+            },
+            "heldout": {
+              "mse": 2.3356223621817662e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947614669799805,
+              "max_abs_score": 3.9180967807769775,
+              "entropy": 0.04284719377756119
+            }
+          },
+          "query_rms": 0.03877841308712959,
+          "query_gradient_l2": 2.4226937966886908e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03877841308712959,
+          "physical_query_gradient_l2": 2.4226937966886908e-06,
+          "base_coordinate_rms": 0.12807931005954742,
+          "average_coordinate_rms": 0.02885766327381134
+        }
+      ],
+      "source_step": 0,
+      "checkpoint_step": 2000,
+      "completed": true,
+      "success": true,
+      "conditioning_events": 0,
+      "input_sha256": {
+        "train": "da6a7c4bcb3e5145bba6d57b3fb56bf630ab5665537f63213fba1c27c332f9d1",
+        "heldout": "f090f4846e40ec3f3e06588c20c1693ad93d6d7951bf38a0a7b4dd4ffd76e978"
+      },
+      "wall_seconds": 3.865368753002258,
+      "checkpoint_sha256": "417f463a8f2e2485f59c234572961fa4ad8ddc077d82eedb6b2454b8b806e09a"
+    },
+    {
+      "case": {
+        "label": "conditioned-scale0-s17-fresh",
+        "mode": "conditioned",
+        "scale": 0.0,
+        "seed": 17,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      "before_conditioning": {
+        "step": 0,
+        "splits": {
+          "train": {
+            "mse": 3.227346897125244,
+            "routing_accuracy": 0.146484375,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          },
+          "heldout": {
+            "mse": 3.2299766540527344,
+            "routing_accuracy": 0.1015625,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          }
+        },
+        "query_rms": 0.0,
+        "query_gradient_l2": 1463.1690673828125,
+        "finite_gradient": true,
+        "coordinate_scale": 1.0,
+        "physical_query_rms": 0.0,
+        "physical_query_gradient_l2": 1463.1690673828125,
+        "base_coordinate_rms": 0.0,
+        "average_coordinate_rms": 0.0
+      },
+      "curves": [
+        {
+          "step": 0,
+          "splits": {
+            "train": {
+              "mse": 3.227346897125244,
+              "routing_accuracy": 0.146484375,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            },
+            "heldout": {
+              "mse": 3.2299766540527344,
+              "routing_accuracy": 0.1015625,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            }
+          },
+          "query_rms": 0.0,
+          "query_gradient_l2": 1463.1690673828125,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0,
+          "physical_query_gradient_l2": 1463.1690673828125,
+          "base_coordinate_rms": 0.0,
+          "average_coordinate_rms": 0.0
+        },
+        {
+          "step": 100,
+          "splits": {
+            "train": {
+              "mse": 0.0004342967295087874,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847774505615234,
+              "max_abs_score": 3.3273656368255615,
+              "entropy": 0.10828082263469696
+            },
+            "heldout": {
+              "mse": 0.0004404708161018789,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847059845924377,
+              "max_abs_score": 3.3262569904327393,
+              "entropy": 0.10869809985160828
+            }
+          },
+          "query_rms": 0.0016415523132309318,
+          "query_gradient_l2": 0.30086877942085266,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00164155219681561,
+          "physical_query_gradient_l2": 0.30086877942085266,
+          "base_coordinate_rms": 0.0019552779849618673,
+          "average_coordinate_rms": 0.001606943435035646
+        },
+        {
+          "step": 200,
+          "splits": {
+            "train": {
+              "mse": 0.00017128036415670067,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.988510012626648,
+              "max_abs_score": 3.4838733673095703,
+              "entropy": 0.0849723294377327
+            },
+            "heldout": {
+              "mse": 0.0001738023420330137,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9884563684463501,
+              "max_abs_score": 3.482999563217163,
+              "entropy": 0.08530040830373764
+            }
+          },
+          "query_rms": 0.001996193313971162,
+          "query_gradient_l2": 0.08945251256227493,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.001996193313971162,
+          "physical_query_gradient_l2": 0.08945251256227493,
+          "base_coordinate_rms": 0.0025251752231270075,
+          "average_coordinate_rms": 0.0019376203417778015
+        },
+        {
+          "step": 300,
+          "splits": {
+            "train": {
+              "mse": 8.720430196262896e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9903140068054199,
+              "max_abs_score": 3.57812762260437,
+              "entropy": 0.07328841090202332
+            },
+            "heldout": {
+              "mse": 8.869288285495713e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9902656078338623,
+              "max_abs_score": 3.577970266342163,
+              "entropy": 0.0735924243927002
+            }
+          },
+          "query_rms": 0.002319317078217864,
+          "query_gradient_l2": 0.0367257334291935,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0023193168453872204,
+          "physical_query_gradient_l2": 0.0367257334291935,
+          "base_coordinate_rms": 0.003101461101323366,
+          "average_coordinate_rms": 0.0022329918574541807
+        },
+        {
+          "step": 400,
+          "splits": {
+            "train": {
+              "mse": 4.838672248297371e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914596676826477,
+              "max_abs_score": 3.6458144187927246,
+              "entropy": 0.06569606065750122
+            },
+            "heldout": {
+              "mse": 4.930658178636804e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914159178733826,
+              "max_abs_score": 3.6464898586273193,
+              "entropy": 0.06597593426704407
+            }
+          },
+          "query_rms": 0.00266140210442245,
+          "query_gradient_l2": 0.0165447648614645,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0026614018715918064,
+          "physical_query_gradient_l2": 0.0165447648614645,
+          "base_coordinate_rms": 0.0037860118318349123,
+          "average_coordinate_rms": 0.0025367746129631996
+        },
+        {
+          "step": 500,
+          "splits": {
+            "train": {
+              "mse": 2.760077222774271e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.992278516292572,
+              "max_abs_score": 3.7012217044830322,
+              "entropy": 0.060175325721502304
+            },
+            "heldout": {
+              "mse": 2.8133057639934123e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.992240309715271,
+              "max_abs_score": 3.702562093734741,
+              "entropy": 0.06042325124144554
+            }
+          },
+          "query_rms": 0.003051123581826687,
+          "query_gradient_l2": 0.007705956697463989,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0030511238146573305,
+          "physical_query_gradient_l2": 0.007705956697463989,
+          "base_coordinate_rms": 0.004654181655496359,
+          "average_coordinate_rms": 0.0028737857937812805
+        },
+        {
+          "step": 600,
+          "splits": {
+            "train": {
+              "mse": 1.5794090359122492e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928936958312988,
+              "max_abs_score": 3.747385263442993,
+              "entropy": 0.055970750749111176
+            },
+            "heldout": {
+              "mse": 1.6133613826241344e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928581714630127,
+              "max_abs_score": 3.7490763664245605,
+              "entropy": 0.05620438605546951
+            }
+          },
+          "query_rms": 0.0035108961164951324,
+          "query_gradient_l2": 0.0035624862648546696,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.003510896349325776,
+          "physical_query_gradient_l2": 0.0035624862648546696,
+          "base_coordinate_rms": 0.005753731820732355,
+          "average_coordinate_rms": 0.0032622767612338066
+        },
+        {
+          "step": 700,
+          "splits": {
+            "train": {
+              "mse": 8.974704542197287e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933640956878662,
+              "max_abs_score": 3.784318685531616,
+              "entropy": 0.05272022262215614
+            },
+            "heldout": {
+              "mse": 9.187598152493592e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933310747146606,
+              "max_abs_score": 3.785336971282959,
+              "entropy": 0.05293884873390198
+            }
+          },
+          "query_rms": 0.004060495179146528,
+          "query_gradient_l2": 0.0016841493779793382,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004060495179146528,
+          "physical_query_gradient_l2": 0.0016841493779793382,
+          "base_coordinate_rms": 0.007158923894166946,
+          "average_coordinate_rms": 0.003718118416145444
+        },
+        {
+          "step": 800,
+          "splits": {
+            "train": {
+              "mse": 5.050907475379063e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9937238693237305,
+              "max_abs_score": 3.8154752254486084,
+              "entropy": 0.05021157115697861
+            },
+            "heldout": {
+              "mse": 5.181384494790109e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9936932325363159,
+              "max_abs_score": 3.816293954849243,
+              "entropy": 0.050416361540555954
+            }
+          },
+          "query_rms": 0.004718902055174112,
+          "query_gradient_l2": 0.0007873495342209935,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004718902055174112,
+          "physical_query_gradient_l2": 0.0007873495342209935,
+          "base_coordinate_rms": 0.008903262205421925,
+          "average_coordinate_rms": 0.004255873616784811
+        },
+        {
+          "step": 900,
+          "splits": {
+            "train": {
+              "mse": 2.8176154955872335e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.99399733543396,
+              "max_abs_score": 3.839313507080078,
+              "entropy": 0.04829056188464165
+            },
+            "heldout": {
+              "mse": 2.899579840232036e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939683079719543,
+              "max_abs_score": 3.840871572494507,
+              "entropy": 0.048485610634088516
+            }
+          },
+          "query_rms": 0.005505537614226341,
+          "query_gradient_l2": 0.00038766738725826144,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.005505537614226341,
+          "physical_query_gradient_l2": 0.00038766738725826144,
+          "base_coordinate_rms": 0.011065310798585415,
+          "average_coordinate_rms": 0.004890222102403641
+        },
+        {
+          "step": 1000,
+          "splits": {
+            "train": {
+              "mse": 1.5565109379167552e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9942046403884888,
+              "max_abs_score": 3.8585753440856934,
+              "entropy": 0.04682658612728119
+            },
+            "heldout": {
+              "mse": 1.612430651221075e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941762089729309,
+              "max_abs_score": 3.8596572875976562,
+              "entropy": 0.04701849818229675
+            }
+          },
+          "query_rms": 0.006449876353144646,
+          "query_gradient_l2": 0.00020118471002206206,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.006449875887483358,
+          "physical_query_gradient_l2": 0.00020118471002206206,
+          "base_coordinate_rms": 0.013767071068286896,
+          "average_coordinate_rms": 0.005640354473143816
+        },
+        {
+          "step": 1100,
+          "splits": {
+            "train": {
+              "mse": 8.498827241965046e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943612813949585,
+              "max_abs_score": 3.8742728233337402,
+              "entropy": 0.04571520537137985
+            },
+            "heldout": {
+              "mse": 8.861389346748183e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943337440490723,
+              "max_abs_score": 3.8747854232788086,
+              "entropy": 0.04590223729610443
+            }
+          },
+          "query_rms": 0.0075978003442287445,
+          "query_gradient_l2": 0.00026124774012714624,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.007597800809890032,
+          "physical_query_gradient_l2": 0.00026124774012714624,
+          "base_coordinate_rms": 0.017384186387062073,
+          "average_coordinate_rms": 0.006530883722007275
+        },
+        {
+          "step": 1200,
+          "splits": {
+            "train": {
+              "mse": 4.4738442284142366e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944829940795898,
+              "max_abs_score": 3.885950803756714,
+              "entropy": 0.04484859108924866
+            },
+            "heldout": {
+              "mse": 4.7075809561647475e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944561719894409,
+              "max_abs_score": 3.886871099472046,
+              "entropy": 0.0450308658182621
+            }
+          },
+          "query_rms": 0.009189664386212826,
+          "query_gradient_l2": 6.363082502502948e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.009189663454890251,
+          "physical_query_gradient_l2": 6.363082502502948e-05,
+          "base_coordinate_rms": 0.023194558918476105,
+          "average_coordinate_rms": 0.00763714499771595
+        },
+        {
+          "step": 1300,
+          "splits": {
+            "train": {
+              "mse": 2.289865363991339e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945744276046753,
+              "max_abs_score": 3.8946218490600586,
+              "entropy": 0.04419565200805664
+            },
+            "heldout": {
+              "mse": 2.4217541749749216e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945492148399353,
+              "max_abs_score": 3.895888566970825,
+              "entropy": 0.04436751455068588
+            }
+          },
+          "query_rms": 0.010872491635382175,
+          "query_gradient_l2": 0.00012206284736748785,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01087249256670475,
+          "physical_query_gradient_l2": 0.00012206284736748785,
+          "base_coordinate_rms": 0.027965057641267776,
+          "average_coordinate_rms": 0.00899870041757822
+        },
+        {
+          "step": 1400,
+          "splits": {
+            "train": {
+              "mse": 1.1901842356110137e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946387410163879,
+              "max_abs_score": 3.9013471603393555,
+              "entropy": 0.04373590648174286
+            },
+            "heldout": {
+              "mse": 1.2706874485957087e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946142435073853,
+              "max_abs_score": 3.902545928955078,
+              "entropy": 0.04390251263976097
+            }
+          },
+          "query_rms": 0.012947456911206245,
+          "query_gradient_l2": 4.7502377128694206e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01294745784252882,
+          "physical_query_gradient_l2": 4.7502377128694206e-05,
+          "base_coordinate_rms": 0.034436434507369995,
+          "average_coordinate_rms": 0.010569657199084759
+        },
+        {
+          "step": 1500,
+          "splits": {
+            "train": {
+              "mse": 6.138506591923942e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946855902671814,
+              "max_abs_score": 3.905694007873535,
+              "entropy": 0.04340028017759323
+            },
+            "heldout": {
+              "mse": 6.646799732834552e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946616888046265,
+              "max_abs_score": 3.9071245193481445,
+              "entropy": 0.043563179671764374
+            }
+          },
+          "query_rms": 0.015436649322509766,
+          "query_gradient_l2": 2.7538391805137508e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.015436648391187191,
+          "physical_query_gradient_l2": 2.7538391805137508e-05,
+          "base_coordinate_rms": 0.04243246093392372,
+          "average_coordinate_rms": 0.012444189749658108
+        },
+        {
+          "step": 1600,
+          "splits": {
+            "train": {
+              "mse": 3.011704663435921e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947211742401123,
+              "max_abs_score": 3.9096693992614746,
+              "entropy": 0.043144844472408295
+            },
+            "heldout": {
+              "mse": 3.2801963811834867e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946982860565186,
+              "max_abs_score": 3.9110732078552246,
+              "entropy": 0.04330093041062355
+            }
+          },
+          "query_rms": 0.018844760954380035,
+          "query_gradient_l2": 7.943660421005916e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.018844760954380035,
+          "physical_query_gradient_l2": 7.943660421005916e-06,
+          "base_coordinate_rms": 0.054900240153074265,
+          "average_coordinate_rms": 0.01483999378979206
+        },
+        {
+          "step": 1700,
+          "splits": {
+            "train": {
+              "mse": 1.5663182750813576e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947444796562195,
+              "max_abs_score": 3.9120030403137207,
+              "entropy": 0.04297754168510437
+            },
+            "heldout": {
+              "mse": 1.7276221342399367e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947220683097839,
+              "max_abs_score": 3.913464307785034,
+              "entropy": 0.04313027113676071
+            }
+          },
+          "query_rms": 0.02216235175728798,
+          "query_gradient_l2": 1.5750754755572416e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.02216235175728798,
+          "physical_query_gradient_l2": 1.5750754755572416e-05,
+          "base_coordinate_rms": 0.06462610512971878,
+          "average_coordinate_rms": 0.017452668398618698
+        },
+        {
+          "step": 1800,
+          "splits": {
+            "train": {
+              "mse": 8.124381167817774e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947612285614014,
+              "max_abs_score": 3.913623094558716,
+              "entropy": 0.04285718500614166
+            },
+            "heldout": {
+              "mse": 8.998983780372782e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947395324707031,
+              "max_abs_score": 3.9153130054473877,
+              "entropy": 0.043005138635635376
+            }
+          },
+          "query_rms": 0.02665400132536888,
+          "query_gradient_l2": 1.0301833754056133e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.026653999462723732,
+          "physical_query_gradient_l2": 1.0301833754056133e-05,
+          "base_coordinate_rms": 0.08165986835956573,
+          "average_coordinate_rms": 0.020548809319734573
+        },
+        {
+          "step": 1900,
+          "splits": {
+            "train": {
+              "mse": 4.125410679733932e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947734475135803,
+              "max_abs_score": 3.9146294593811035,
+              "entropy": 0.04276912286877632
+            },
+            "heldout": {
+              "mse": 4.588603275124115e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947522878646851,
+              "max_abs_score": 3.9169564247131348,
+              "entropy": 0.04291316866874695
+            }
+          },
+          "query_rms": 0.03197380155324936,
+          "query_gradient_l2": 8.332571269420441e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03197379782795906,
+          "physical_query_gradient_l2": 8.332571269420441e-06,
+          "base_coordinate_rms": 0.10099910944700241,
+          "average_coordinate_rms": 0.024313829839229584
+        },
+        {
+          "step": 2000,
+          "splits": {
+            "train": {
+              "mse": 2.0712542792011845e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947823882102966,
+              "max_abs_score": 3.9153928756713867,
+              "entropy": 0.04270530864596367
+            },
+            "heldout": {
+              "mse": 2.3359327805394514e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947614669799805,
+              "max_abs_score": 3.9180960655212402,
+              "entropy": 0.04284720867872238
+            }
+          },
+          "query_rms": 0.038778264075517654,
+          "query_gradient_l2": 2.4117434804793447e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.038778264075517654,
+          "physical_query_gradient_l2": 2.4117434804793447e-06,
+          "base_coordinate_rms": 0.12807513773441315,
+          "average_coordinate_rms": 0.028857948258519173
+        }
+      ],
+      "source_step": 0,
+      "checkpoint_step": 2000,
+      "completed": true,
+      "success": true,
+      "conditioning_events": 0,
+      "input_sha256": {
+        "train": "da6a7c4bcb3e5145bba6d57b3fb56bf630ab5665537f63213fba1c27c332f9d1",
+        "heldout": "f090f4846e40ec3f3e06588c20c1693ad93d6d7951bf38a0a7b4dd4ffd76e978"
+      },
+      "wall_seconds": 5.1520098140026676,
+      "checkpoint_sha256": "a501e79215f45eb618b4a46389eb20d9d16336126da9c179ea0abb3ad4aa16fc"
+    },
+    {
+      "case": {
+        "label": "legacy-scale0-s23-fresh",
+        "mode": "legacy",
+        "scale": 0.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      "before_conditioning": {
+        "step": 0,
+        "splits": {
+          "train": {
+            "mse": 3.2309885025024414,
+            "routing_accuracy": 0.142578125,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          },
+          "heldout": {
+            "mse": 3.228468179702759,
+            "routing_accuracy": 0.115234375,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          }
+        },
+        "query_rms": 0.0,
+        "query_gradient_l2": 1463.355224609375,
+        "finite_gradient": true,
+        "coordinate_scale": 1.0,
+        "physical_query_rms": 0.0,
+        "physical_query_gradient_l2": 1463.355224609375,
+        "base_coordinate_rms": 0.0,
+        "average_coordinate_rms": 0.0
+      },
+      "curves": [
+        {
+          "step": 0,
+          "splits": {
+            "train": {
+              "mse": 3.2309885025024414,
+              "routing_accuracy": 0.142578125,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            },
+            "heldout": {
+              "mse": 3.228468179702759,
+              "routing_accuracy": 0.115234375,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            }
+          },
+          "query_rms": 0.0,
+          "query_gradient_l2": 1463.355224609375,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0,
+          "physical_query_gradient_l2": 1463.355224609375,
+          "base_coordinate_rms": 0.0,
+          "average_coordinate_rms": 0.0
+        },
+        {
+          "step": 100,
+          "splits": {
+            "train": {
+              "mse": 0.00043480616295710206,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847458004951477,
+              "max_abs_score": 3.336554527282715,
+              "entropy": 0.10847029089927673
+            },
+            "heldout": {
+              "mse": 0.00043076594010926783,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.984825849533081,
+              "max_abs_score": 3.326418161392212,
+              "entropy": 0.1079767644405365
+            }
+          },
+          "query_rms": 0.0016466586384922266,
+          "query_gradient_l2": 0.2987029254436493,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.001646658405661583,
+          "physical_query_gradient_l2": 0.2987029254436493,
+          "base_coordinate_rms": 0.001968571450561285,
+          "average_coordinate_rms": 0.0016110078431665897
+        },
+        {
+          "step": 200,
+          "splits": {
+            "train": {
+              "mse": 0.0001707903720671311,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.988489031791687,
+              "max_abs_score": 3.4928414821624756,
+              "entropy": 0.08510327339172363
+            },
+            "heldout": {
+              "mse": 0.00016917432367336005,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9885542988777161,
+              "max_abs_score": 3.4844844341278076,
+              "entropy": 0.08468261361122131
+            }
+          },
+          "query_rms": 0.002003211760893464,
+          "query_gradient_l2": 0.08882580697536469,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.002003211760893464,
+          "physical_query_gradient_l2": 0.08882580697536469,
+          "base_coordinate_rms": 0.002531222766265273,
+          "average_coordinate_rms": 0.0019447323866188526
+        },
+        {
+          "step": 300,
+          "splits": {
+            "train": {
+              "mse": 8.722160418983549e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9902815818786621,
+              "max_abs_score": 3.584543466567993,
+              "entropy": 0.07349874079227448
+            },
+            "heldout": {
+              "mse": 8.644079935038462e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9903384447097778,
+              "max_abs_score": 3.575962781906128,
+              "entropy": 0.07312148809432983
+            }
+          },
+          "query_rms": 0.0023262957111001015,
+          "query_gradient_l2": 0.036517202854156494,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.002326295478269458,
+          "physical_query_gradient_l2": 0.036517202854156494,
+          "base_coordinate_rms": 0.003105152165517211,
+          "average_coordinate_rms": 0.002240000991150737
+        },
+        {
+          "step": 400,
+          "splits": {
+            "train": {
+              "mse": 4.8511843488086015e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.991422176361084,
+              "max_abs_score": 3.6537749767303467,
+              "entropy": 0.06594399362802505
+            },
+            "heldout": {
+              "mse": 4.808812809642404e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914742112159729,
+              "max_abs_score": 3.6452951431274414,
+              "entropy": 0.06559319794178009
+            }
+          },
+          "query_rms": 0.00266869249753654,
+          "query_gradient_l2": 0.016542596742510796,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00266869249753654,
+          "physical_query_gradient_l2": 0.016542596742510796,
+          "base_coordinate_rms": 0.0037948242388665676,
+          "average_coordinate_rms": 0.002543938811868429
+        },
+        {
+          "step": 500,
+          "splits": {
+            "train": {
+              "mse": 2.7715825126506388e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922388792037964,
+              "max_abs_score": 3.7075071334838867,
+              "entropy": 0.060442205518484116
+            },
+            "heldout": {
+              "mse": 2.7455094823380932e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922888278961182,
+              "max_abs_score": 3.698932409286499,
+              "entropy": 0.0601004920899868
+            }
+          },
+          "query_rms": 0.0030591937247663736,
+          "query_gradient_l2": 0.00769311236217618,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00305919349193573,
+          "physical_query_gradient_l2": 0.00769311236217618,
+          "base_coordinate_rms": 0.004662863444536924,
+          "average_coordinate_rms": 0.0028815739788115025
+        },
+        {
+          "step": 600,
+          "splits": {
+            "train": {
+              "mse": 1.5868550690356642e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928540587425232,
+              "max_abs_score": 3.752671480178833,
+              "entropy": 0.056241363286972046
+            },
+            "heldout": {
+              "mse": 1.5719888324383646e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9929014444351196,
+              "max_abs_score": 3.744077444076538,
+              "entropy": 0.055913232266902924
+            }
+          },
+          "query_rms": 0.003520714119076729,
+          "query_gradient_l2": 0.003555141156539321,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.003520713886246085,
+          "physical_query_gradient_l2": 0.003555141156539321,
+          "base_coordinate_rms": 0.005769635085016489,
+          "average_coordinate_rms": 0.0032712772954255342
+        },
+        {
+          "step": 700,
+          "splits": {
+            "train": {
+              "mse": 9.018923265102785e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933248162269592,
+              "max_abs_score": 3.791663885116577,
+              "entropy": 0.05299092084169388
+            },
+            "heldout": {
+              "mse": 8.966391760623083e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933677315711975,
+              "max_abs_score": 3.7826740741729736,
+              "entropy": 0.052690520882606506
+            }
+          },
+          "query_rms": 0.004073565825819969,
+          "query_gradient_l2": 0.001694236765615642,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004073565825819969,
+          "physical_query_gradient_l2": 0.001694236765615642,
+          "base_coordinate_rms": 0.007192018907517195,
+          "average_coordinate_rms": 0.003728969022631645
+        },
+        {
+          "step": 800,
+          "splits": {
+            "train": {
+              "mse": 5.0784856284735724e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9936847686767578,
+              "max_abs_score": 3.821776866912842,
+              "entropy": 0.05048307031393051
+            },
+            "heldout": {
+              "mse": 5.057831913291011e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9937259554862976,
+              "max_abs_score": 3.8118953704833984,
+              "entropy": 0.05019286647439003
+            }
+          },
+          "query_rms": 0.0047340611927211285,
+          "query_gradient_l2": 0.0008186979102902114,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0047340611927211285,
+          "physical_query_gradient_l2": 0.0008186979102902114,
+          "base_coordinate_rms": 0.00893649086356163,
+          "average_coordinate_rms": 0.004269199911504984
+        },
+        {
+          "step": 900,
+          "splits": {
+            "train": {
+              "mse": 2.8309973458817694e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939588308334351,
+              "max_abs_score": 3.845960855484009,
+              "entropy": 0.04856003820896149
+            },
+            "heldout": {
+              "mse": 2.8198264772072434e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939994812011719,
+              "max_abs_score": 3.8366923332214355,
+              "entropy": 0.04827186465263367
+            }
+          },
+          "query_rms": 0.005525191314518452,
+          "query_gradient_l2": 0.0003919283044524491,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.005525190848857164,
+          "physical_query_gradient_l2": 0.0003919283044524491,
+          "base_coordinate_rms": 0.011110236868262291,
+          "average_coordinate_rms": 0.004907054360955954
+        },
+        {
+          "step": 1000,
+          "splits": {
+            "train": {
+              "mse": 1.563238697599445e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941662549972534,
+              "max_abs_score": 3.8650014400482178,
+              "entropy": 0.04709625616669655
+            },
+            "heldout": {
+              "mse": 1.560674036227283e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9942059516906738,
+              "max_abs_score": 3.8550634384155273,
+              "entropy": 0.046813420951366425
+            }
+          },
+          "query_rms": 0.006477877497673035,
+          "query_gradient_l2": 0.00025460668257437646,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.006477877963334322,
+          "physical_query_gradient_l2": 0.00025460668257437646,
+          "base_coordinate_rms": 0.013885227963328362,
+          "average_coordinate_rms": 0.005661580245941877
+        },
+        {
+          "step": 1100,
+          "splits": {
+            "train": {
+              "mse": 8.549441190552898e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943225979804993,
+              "max_abs_score": 3.87967848777771,
+              "entropy": 0.045988328754901886
+            },
+            "heldout": {
+              "mse": 8.556895636502304e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943617582321167,
+              "max_abs_score": 3.869586944580078,
+              "entropy": 0.04570813477039337
+            }
+          },
+          "query_rms": 0.0076265595853328705,
+          "query_gradient_l2": 0.000235322120715864,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0076265595853328705,
+          "physical_query_gradient_l2": 0.000235322120715864,
+          "base_coordinate_rms": 0.01740783266723156,
+          "average_coordinate_rms": 0.006555660627782345
+        },
+        {
+          "step": 1200,
+          "splits": {
+            "train": {
+              "mse": 4.584473742852424e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944415092468262,
+              "max_abs_score": 3.892025947570801,
+              "entropy": 0.04514265060424805
+            },
+            "heldout": {
+              "mse": 4.6078892523837567e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944800734519958,
+              "max_abs_score": 3.8816030025482178,
+              "entropy": 0.044865693897008896
+            }
+          },
+          "query_rms": 0.009953935630619526,
+          "query_gradient_l2": 0.021640677005052567,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.009953935630619526,
+          "physical_query_gradient_l2": 0.021640677005052567,
+          "base_coordinate_rms": 0.042783256620168686,
+          "average_coordinate_rms": 0.007636625319719315
+        },
+        {
+          "step": 1300,
+          "splits": {
+            "train": {
+              "mse": 1.4759100963601668e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945823550224304,
+              "max_abs_score": 3.904688596725464,
+              "entropy": 0.04413769766688347
+            },
+            "heldout": {
+              "mse": 1.499971205021211e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946203231811523,
+              "max_abs_score": 3.8960859775543213,
+              "entropy": 0.04386395961046219
+            }
+          },
+          "query_rms": 0.013095886446535587,
+          "query_gradient_l2": 7.4211602623108774e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.013095886446535587,
+          "physical_query_gradient_l2": 7.4211602623108774e-06,
+          "base_coordinate_rms": 0.04011521488428116,
+          "average_coordinate_rms": 0.010094057768583298
+        },
+        {
+          "step": 1400,
+          "splits": {
+            "train": {
+              "mse": 6.626985538105146e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994642972946167,
+              "max_abs_score": 3.910679817199707,
+              "entropy": 0.04370373860001564
+            },
+            "heldout": {
+              "mse": 6.76337208460609e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946812391281128,
+              "max_abs_score": 3.901195526123047,
+              "entropy": 0.04342781752347946
+            }
+          },
+          "query_rms": 0.01522881630808115,
+          "query_gradient_l2": 5.638610673486255e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01522881630808115,
+          "physical_query_gradient_l2": 5.638610673486255e-06,
+          "base_coordinate_rms": 0.041598692536354065,
+          "average_coordinate_rms": 0.012299157679080963
+        },
+        {
+          "step": 1500,
+          "splits": {
+            "train": {
+              "mse": 3.5797064867892914e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946756362915039,
+              "max_abs_score": 3.9139533042907715,
+              "entropy": 0.04346998408436775
+            },
+            "heldout": {
+              "mse": 3.6626524035909824e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947141408920288,
+              "max_abs_score": 3.903883218765259,
+              "entropy": 0.043192267417907715
+            }
+          },
+          "query_rms": 0.017259258776903152,
+          "query_gradient_l2": 6.370879418682307e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.017259258776903152,
+          "physical_query_gradient_l2": 6.370879418682307e-06,
+          "base_coordinate_rms": 0.04367179796099663,
+          "average_coordinate_rms": 0.014325248077511787
+        },
+        {
+          "step": 1600,
+          "splits": {
+            "train": {
+              "mse": 2.14732178704935e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946960806846619,
+              "max_abs_score": 3.9159579277038574,
+              "entropy": 0.04332359880208969
+            },
+            "heldout": {
+              "mse": 2.20072937651139e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947347044944763,
+              "max_abs_score": 3.905611038208008,
+              "entropy": 0.0430445522069931
+            }
+          },
+          "query_rms": 0.01933072693645954,
+          "query_gradient_l2": 5.89646788284881e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01933072693645954,
+          "physical_query_gradient_l2": 5.89646788284881e-06,
+          "base_coordinate_rms": 0.04696522653102875,
+          "average_coordinate_rms": 0.016261320561170578
+        },
+        {
+          "step": 1700,
+          "splits": {
+            "train": {
+              "mse": 1.3493642647688375e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947106242179871,
+              "max_abs_score": 3.917351245880127,
+              "entropy": 0.043219178915023804
+            },
+            "heldout": {
+              "mse": 1.3884879024317343e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947493076324463,
+              "max_abs_score": 3.907052516937256,
+              "entropy": 0.04293949156999588
+            }
+          },
+          "query_rms": 0.021854864433407784,
+          "query_gradient_l2": 9.460515684622806e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.021854864433407784,
+          "physical_query_gradient_l2": 9.460515684622806e-06,
+          "base_coordinate_rms": 0.05431143566966057,
+          "average_coordinate_rms": 0.018252955749630928
+        },
+        {
+          "step": 1800,
+          "splits": {
+            "train": {
+              "mse": 8.11725175964284e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947232007980347,
+              "max_abs_score": 3.9187495708465576,
+              "entropy": 0.043128930032253265
+            },
+            "heldout": {
+              "mse": 8.43698355623701e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947618246078491,
+              "max_abs_score": 3.9082822799682617,
+              "entropy": 0.04284953325986862
+            }
+          },
+          "query_rms": 0.026079311966896057,
+          "query_gradient_l2": 8.518250979250297e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.026079310104250908,
+          "physical_query_gradient_l2": 8.518250979250297e-06,
+          "base_coordinate_rms": 0.07439187169075012,
+          "average_coordinate_rms": 0.020715681836009026
+        },
+        {
+          "step": 1900,
+          "splits": {
+            "train": {
+              "mse": 4.539256970303995e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947341084480286,
+              "max_abs_score": 3.9197936058044434,
+              "entropy": 0.04305073618888855
+            },
+            "heldout": {
+              "mse": 4.73765648933977e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947729110717773,
+              "max_abs_score": 3.9091455936431885,
+              "entropy": 0.042770422995090485
+            }
+          },
+          "query_rms": 0.03077707812190056,
+          "query_gradient_l2": 1.3124733413860667e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03077707812190056,
+          "physical_query_gradient_l2": 1.3124733413860667e-05,
+          "base_coordinate_rms": 0.09241986274719238,
+          "average_coordinate_rms": 0.023946112021803856
+        },
+        {
+          "step": 2000,
+          "splits": {
+            "train": {
+              "mse": 2.4098092410440586e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994742751121521,
+              "max_abs_score": 3.9205400943756104,
+              "entropy": 0.042988359928131104
+            },
+            "heldout": {
+              "mse": 2.5187660845915616e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947817325592041,
+              "max_abs_score": 3.909860372543335,
+              "entropy": 0.04270660877227783
+            }
+          },
+          "query_rms": 0.037261731922626495,
+          "query_gradient_l2": 5.3494891290029045e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.037261731922626495,
+          "physical_query_gradient_l2": 5.3494891290029045e-06,
+          "base_coordinate_rms": 0.12028022855520248,
+          "average_coordinate_rms": 0.02804291434586048
+        }
+      ],
+      "source_step": 0,
+      "checkpoint_step": 2000,
+      "completed": true,
+      "success": true,
+      "conditioning_events": 0,
+      "input_sha256": {
+        "train": "233d389cb273cd4c89daa3c6b39ffb7f09a8bc12c434cd73c582e52c8a70287f",
+        "heldout": "f7835d54662674c78228d84cc7c98739e8a49a5f20fe1303e8a01670c31fb08e"
+      },
+      "wall_seconds": 2.6603594479965977,
+      "checkpoint_sha256": "d5489ec721d648c50ad054f8fe3181373bdf2adafa65806b4bd0173b04f74bad"
+    },
+    {
+      "case": {
+        "label": "conditioned-scale0-s23-fresh",
+        "mode": "conditioned",
+        "scale": 0.0,
+        "seed": 23,
+        "updates": 2000,
+        "resume_source": null,
+        "resume_sha256": null
+      },
+      "before_conditioning": {
+        "step": 0,
+        "splits": {
+          "train": {
+            "mse": 3.2309885025024414,
+            "routing_accuracy": 0.142578125,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          },
+          "heldout": {
+            "mse": 3.228468179702759,
+            "routing_accuracy": 0.115234375,
+            "useful_mass": 0.125,
+            "max_abs_score": 0.0,
+            "entropy": 2.079441547393799
+          }
+        },
+        "query_rms": 0.0,
+        "query_gradient_l2": 1463.355224609375,
+        "finite_gradient": true,
+        "coordinate_scale": 1.0,
+        "physical_query_rms": 0.0,
+        "physical_query_gradient_l2": 1463.355224609375,
+        "base_coordinate_rms": 0.0,
+        "average_coordinate_rms": 0.0
+      },
+      "curves": [
+        {
+          "step": 0,
+          "splits": {
+            "train": {
+              "mse": 3.2309885025024414,
+              "routing_accuracy": 0.142578125,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            },
+            "heldout": {
+              "mse": 3.228468179702759,
+              "routing_accuracy": 0.115234375,
+              "useful_mass": 0.125,
+              "max_abs_score": 0.0,
+              "entropy": 2.079441547393799
+            }
+          },
+          "query_rms": 0.0,
+          "query_gradient_l2": 1463.355224609375,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0,
+          "physical_query_gradient_l2": 1463.355224609375,
+          "base_coordinate_rms": 0.0,
+          "average_coordinate_rms": 0.0
+        },
+        {
+          "step": 100,
+          "splits": {
+            "train": {
+              "mse": 0.00043480610474944115,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9847458004951477,
+              "max_abs_score": 3.336554527282715,
+              "entropy": 0.10847029089927673
+            },
+            "heldout": {
+              "mse": 0.0004307659110054374,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.984825849533081,
+              "max_abs_score": 3.326418161392212,
+              "entropy": 0.1079767644405365
+            }
+          },
+          "query_rms": 0.0016466586384922266,
+          "query_gradient_l2": 0.29870298504829407,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.001646658405661583,
+          "physical_query_gradient_l2": 0.29870298504829407,
+          "base_coordinate_rms": 0.0019685712177306414,
+          "average_coordinate_rms": 0.0016110078431665897
+        },
+        {
+          "step": 200,
+          "splits": {
+            "train": {
+              "mse": 0.00017079034296330065,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.988489031791687,
+              "max_abs_score": 3.4928414821624756,
+              "entropy": 0.08510327339172363
+            },
+            "heldout": {
+              "mse": 0.00016917432367336005,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9885542988777161,
+              "max_abs_score": 3.4844844341278076,
+              "entropy": 0.08468261361122131
+            }
+          },
+          "query_rms": 0.0020032115280628204,
+          "query_gradient_l2": 0.08882591128349304,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0020032115280628204,
+          "physical_query_gradient_l2": 0.08882591128349304,
+          "base_coordinate_rms": 0.0025312232319265604,
+          "average_coordinate_rms": 0.0019447320373728871
+        },
+        {
+          "step": 300,
+          "splits": {
+            "train": {
+              "mse": 8.722175698494539e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9902815818786621,
+              "max_abs_score": 3.584543228149414,
+              "entropy": 0.07349876314401627
+            },
+            "heldout": {
+              "mse": 8.644095214549452e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9903384447097778,
+              "max_abs_score": 3.575962543487549,
+              "entropy": 0.07312151789665222
+            }
+          },
+          "query_rms": 0.002326295478269458,
+          "query_gradient_l2": 0.0365171916782856,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.002326295245438814,
+          "physical_query_gradient_l2": 0.0365171916782856,
+          "base_coordinate_rms": 0.0031051530968397856,
+          "average_coordinate_rms": 0.0022400005254894495
+        },
+        {
+          "step": 400,
+          "splits": {
+            "train": {
+              "mse": 4.851194898947142e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.991422176361084,
+              "max_abs_score": 3.6537747383117676,
+              "entropy": 0.06594402343034744
+            },
+            "heldout": {
+              "mse": 4.808824451174587e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9914741516113281,
+              "max_abs_score": 3.6452949047088623,
+              "entropy": 0.06559322029352188
+            }
+          },
+          "query_rms": 0.0026686922647058964,
+          "query_gradient_l2": 0.016542602330446243,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0026686922647058964,
+          "physical_query_gradient_l2": 0.016542602330446243,
+          "base_coordinate_rms": 0.0037948256358504295,
+          "average_coordinate_rms": 0.002543938346207142
+        },
+        {
+          "step": 500,
+          "splits": {
+            "train": {
+              "mse": 2.7715894248103723e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922388792037964,
+              "max_abs_score": 3.7075068950653076,
+              "entropy": 0.060442227870225906
+            },
+            "heldout": {
+              "mse": 2.74551803158829e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9922888278961182,
+              "max_abs_score": 3.69893217086792,
+              "entropy": 0.06010051816701889
+            }
+          },
+          "query_rms": 0.0030591939575970173,
+          "query_gradient_l2": 0.0076931193470954895,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0030591937247663736,
+          "physical_query_gradient_l2": 0.0076931193470954895,
+          "base_coordinate_rms": 0.004662863910198212,
+          "average_coordinate_rms": 0.002881574211642146
+        },
+        {
+          "step": 600,
+          "splits": {
+            "train": {
+              "mse": 1.5868557966314256e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9928540587425232,
+              "max_abs_score": 3.752671480178833,
+              "entropy": 0.056241363286972046
+            },
+            "heldout": {
+              "mse": 1.5719888324383646e-05,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9929014444351196,
+              "max_abs_score": 3.744077444076538,
+              "entropy": 0.055913232266902924
+            }
+          },
+          "query_rms": 0.003520714119076729,
+          "query_gradient_l2": 0.0035551455803215504,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.003520713886246085,
+          "physical_query_gradient_l2": 0.0035551455803215504,
+          "base_coordinate_rms": 0.005769634619355202,
+          "average_coordinate_rms": 0.0032712772954255342
+        },
+        {
+          "step": 700,
+          "splits": {
+            "train": {
+              "mse": 9.018890523293521e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.993324875831604,
+              "max_abs_score": 3.7916641235351562,
+              "entropy": 0.05299089848995209
+            },
+            "heldout": {
+              "mse": 8.96634446689859e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9933677315711975,
+              "max_abs_score": 3.7826743125915527,
+              "entropy": 0.052690502256155014
+            }
+          },
+          "query_rms": 0.0040735662914812565,
+          "query_gradient_l2": 0.0016942434012889862,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0040735662914812565,
+          "physical_query_gradient_l2": 0.0016942434012889862,
+          "base_coordinate_rms": 0.00719201797619462,
+          "average_coordinate_rms": 0.003728969721123576
+        },
+        {
+          "step": 800,
+          "splits": {
+            "train": {
+              "mse": 5.078506546851713e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9936847686767578,
+              "max_abs_score": 3.8217766284942627,
+              "entropy": 0.050483085215091705
+            },
+            "heldout": {
+              "mse": 5.057858743384713e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9937259554862976,
+              "max_abs_score": 3.8118951320648193,
+              "entropy": 0.05019288510084152
+            }
+          },
+          "query_rms": 0.004734060727059841,
+          "query_gradient_l2": 0.0008186994818970561,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.004734060727059841,
+          "physical_query_gradient_l2": 0.0008186994818970561,
+          "base_coordinate_rms": 0.008936489932239056,
+          "average_coordinate_rms": 0.004269199445843697
+        },
+        {
+          "step": 900,
+          "splits": {
+            "train": {
+              "mse": 2.8310341804171912e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939588308334351,
+              "max_abs_score": 3.8459603786468506,
+              "entropy": 0.04856007546186447
+            },
+            "heldout": {
+              "mse": 2.819863766490016e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9939994812011719,
+              "max_abs_score": 3.8366918563842773,
+              "entropy": 0.04827190190553665
+            }
+          },
+          "query_rms": 0.005525190848857164,
+          "query_gradient_l2": 0.00039192906115204096,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.005525190383195877,
+          "physical_query_gradient_l2": 0.00039192906115204096,
+          "base_coordinate_rms": 0.011110236868262291,
+          "average_coordinate_rms": 0.004907053895294666
+        },
+        {
+          "step": 1000,
+          "splits": {
+            "train": {
+              "mse": 1.5632492704753531e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9941662549972534,
+              "max_abs_score": 3.8650012016296387,
+              "entropy": 0.04709627479314804
+            },
+            "heldout": {
+              "mse": 1.560683017487463e-06,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9942059516906738,
+              "max_abs_score": 3.8550631999969482,
+              "entropy": 0.04681343585252762
+            }
+          },
+          "query_rms": 0.006477877497673035,
+          "query_gradient_l2": 0.0002546095347497612,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.006477877963334322,
+          "physical_query_gradient_l2": 0.0002546095347497612,
+          "base_coordinate_rms": 0.01388523168861866,
+          "average_coordinate_rms": 0.00566157978028059
+        },
+        {
+          "step": 1100,
+          "splits": {
+            "train": {
+              "mse": 8.549433800908446e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943225979804993,
+              "max_abs_score": 3.87967848777771,
+              "entropy": 0.045988328754901886
+            },
+            "heldout": {
+              "mse": 8.556889952160418e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9943617582321167,
+              "max_abs_score": 3.869586944580078,
+              "entropy": 0.04570813477039337
+            }
+          },
+          "query_rms": 0.007626562379300594,
+          "query_gradient_l2": 0.00023532850900664926,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.007626562379300594,
+          "physical_query_gradient_l2": 0.00023532850900664926,
+          "base_coordinate_rms": 0.017407843843102455,
+          "average_coordinate_rms": 0.006555662956088781
+        },
+        {
+          "step": 1200,
+          "splits": {
+            "train": {
+              "mse": 4.5844444684917107e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944415092468262,
+              "max_abs_score": 3.892025947570801,
+              "entropy": 0.04514265060424805
+            },
+            "heldout": {
+              "mse": 4.6078855575615307e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9944800734519958,
+              "max_abs_score": 3.881603240966797,
+              "entropy": 0.044865693897008896
+            }
+          },
+          "query_rms": 0.00995388813316822,
+          "query_gradient_l2": 0.02164069190621376,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.00995388813316822,
+          "physical_query_gradient_l2": 0.02164069190621376,
+          "base_coordinate_rms": 0.04278282821178436,
+          "average_coordinate_rms": 0.007636623457074165
+        },
+        {
+          "step": 1300,
+          "splits": {
+            "train": {
+              "mse": 1.475908391057601e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9945823550224304,
+              "max_abs_score": 3.904688596725464,
+              "entropy": 0.04413770139217377
+            },
+            "heldout": {
+              "mse": 1.49997575249472e-07,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946203231811523,
+              "max_abs_score": 3.896085739135742,
+              "entropy": 0.04386395588517189
+            }
+          },
+          "query_rms": 0.013095848262310028,
+          "query_gradient_l2": 7.42145903132041e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.013095848262310028,
+          "physical_query_gradient_l2": 7.42145903132041e-06,
+          "base_coordinate_rms": 0.04011499881744385,
+          "average_coordinate_rms": 0.01009403821080923
+        },
+        {
+          "step": 1400,
+          "splits": {
+            "train": {
+              "mse": 6.6267283216348e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994642972946167,
+              "max_abs_score": 3.910680055618286,
+              "entropy": 0.04370371997356415
+            },
+            "heldout": {
+              "mse": 6.763156790157154e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946812391281128,
+              "max_abs_score": 3.901195764541626,
+              "entropy": 0.04342780262231827
+            }
+          },
+          "query_rms": 0.015228771604597569,
+          "query_gradient_l2": 5.638744369207416e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.015228771604597569,
+          "physical_query_gradient_l2": 5.638744369207416e-06,
+          "base_coordinate_rms": 0.041598495095968246,
+          "average_coordinate_rms": 0.012299129739403725
+        },
+        {
+          "step": 1500,
+          "splits": {
+            "train": {
+              "mse": 3.5795672204130824e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946756362915039,
+              "max_abs_score": 3.9139535427093506,
+              "entropy": 0.04346996545791626
+            },
+            "heldout": {
+              "mse": 3.662485070776711e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947141408920288,
+              "max_abs_score": 3.903883457183838,
+              "entropy": 0.04319225251674652
+            }
+          },
+          "query_rms": 0.01725921407341957,
+          "query_gradient_l2": 6.369971742969938e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.01725921593606472,
+          "physical_query_gradient_l2": 6.369971742969938e-06,
+          "base_coordinate_rms": 0.04367164894938469,
+          "average_coordinate_rms": 0.014325217343866825
+        },
+        {
+          "step": 1600,
+          "splits": {
+            "train": {
+              "mse": 2.147313082900837e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9946960806846619,
+              "max_abs_score": 3.9159579277038574,
+              "entropy": 0.04332359880208969
+            },
+            "heldout": {
+              "mse": 2.2007192512774054e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947347044944763,
+              "max_abs_score": 3.905611038208008,
+              "entropy": 0.0430445522069931
+            }
+          },
+          "query_rms": 0.019330685958266258,
+          "query_gradient_l2": 5.8974328567273915e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.019330685958266258,
+          "physical_query_gradient_l2": 5.8974328567273915e-06,
+          "base_coordinate_rms": 0.04696515202522278,
+          "average_coordinate_rms": 0.016261285170912743
+        },
+        {
+          "step": 1700,
+          "splits": {
+            "train": {
+              "mse": 1.349229350466885e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947106838226318,
+              "max_abs_score": 3.917351484298706,
+              "entropy": 0.04321916401386261
+            },
+            "heldout": {
+              "mse": 1.3883717286944375e-08,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947493076324463,
+              "max_abs_score": 3.907052516937256,
+              "entropy": 0.042939476668834686
+            }
+          },
+          "query_rms": 0.021854866296052933,
+          "query_gradient_l2": 9.463208698434755e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.021854866296052933,
+          "physical_query_gradient_l2": 9.463208698434755e-06,
+          "base_coordinate_rms": 0.05431174859404564,
+          "average_coordinate_rms": 0.01825292594730854
+        },
+        {
+          "step": 1800,
+          "splits": {
+            "train": {
+              "mse": 8.11745959339305e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947232007980347,
+              "max_abs_score": 3.9187493324279785,
+              "entropy": 0.043128930032253265
+            },
+            "heldout": {
+              "mse": 8.43689651475188e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947618246078491,
+              "max_abs_score": 3.908282518386841,
+              "entropy": 0.04284953325986862
+            }
+          },
+          "query_rms": 0.02607688680291176,
+          "query_gradient_l2": 8.549517588107847e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.02607688680291176,
+          "physical_query_gradient_l2": 8.549517588107847e-06,
+          "base_coordinate_rms": 0.074370376765728,
+          "average_coordinate_rms": 0.02071540802717209
+        },
+        {
+          "step": 1900,
+          "splits": {
+            "train": {
+              "mse": 4.538549980281914e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947341084480286,
+              "max_abs_score": 3.9197940826416016,
+              "entropy": 0.04305071756243706
+            },
+            "heldout": {
+              "mse": 4.737036540802819e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947729110717773,
+              "max_abs_score": 3.909146547317505,
+              "entropy": 0.04277040809392929
+            }
+          },
+          "query_rms": 0.03077697940170765,
+          "query_gradient_l2": 1.3145092452759854e-05,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.0307769775390625,
+          "physical_query_gradient_l2": 1.3145092452759854e-05,
+          "base_coordinate_rms": 0.09242355823516846,
+          "average_coordinate_rms": 0.0239456407725811
+        },
+        {
+          "step": 2000,
+          "splits": {
+            "train": {
+              "mse": 2.4101711737500864e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.994742751121521,
+              "max_abs_score": 3.9205400943756104,
+              "entropy": 0.0429883748292923
+            },
+            "heldout": {
+              "mse": 2.5191666530588464e-09,
+              "routing_accuracy": 1.0,
+              "useful_mass": 0.9947817325592041,
+              "max_abs_score": 3.909860372543335,
+              "entropy": 0.042706623673439026
+            }
+          },
+          "query_rms": 0.03726150467991829,
+          "query_gradient_l2": 5.330886779120192e-06,
+          "finite_gradient": true,
+          "coordinate_scale": 1.0,
+          "physical_query_rms": 0.03726150467991829,
+          "physical_query_gradient_l2": 5.330886779120192e-06,
+          "base_coordinate_rms": 0.1202796995639801,
+          "average_coordinate_rms": 0.028042681515216827
+        }
+      ],
+      "source_step": 0,
+      "checkpoint_step": 2000,
+      "completed": true,
+      "success": true,
+      "conditioning_events": 0,
+      "input_sha256": {
+        "train": "233d389cb273cd4c89daa3c6b39ffb7f09a8bc12c434cd73c582e52c8a70287f",
+        "heldout": "f7835d54662674c78228d84cc7c98739e8a49a5f20fe1303e8a01670c31fb08e"
+      },
+      "wall_seconds": 5.157882190003875,
+      "checkpoint_sha256": "19689dbdd7c7e4307556d7eb07f1e40bca4406b89f8ee7b82a656be440ed9569"
+    }
+  ],
+  "failure": {
+    "case": "legacy-scale1e-08-s11-fresh",
+    "kind": "AcceleratorError",
+    "message": "CUDA error: operation failed due to a previous error during capture\nSearch for `cudaErrorStreamCaptureInvalidated' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\n"
+  },
+  "ended_utc": "2026-11-01T16:50:56.702135+00:00",
+  "wall_seconds": 27.623828962998232,
+  "not_started": [
+    "conditioned-scale1e-08-s11-fresh",
+    "legacy-scale1e-08-s17-fresh",
+    "conditioned-scale1e-08-s17-fresh",
+    "legacy-scale1e-08-s23-fresh",
+    "conditioned-scale1e-08-s23-fresh",
+    "legacy-scale1-s11-fresh",
+    "conditioned-scale1-s11-fresh",
+    "legacy-scale1-s17-fresh",
+    "conditioned-scale1-s17-fresh",
+    "legacy-scale1-s23-fresh",
+    "conditioned-scale1-s23-fresh",
+    "legacy-scale1e+06-s11-fresh",
+    "conditioned-scale1e+06-s11-fresh",
+    "legacy-scale1e+06-s17-fresh",
+    "conditioned-scale1e+06-s17-fresh",
+    "legacy-scale1e+06-s23-fresh",
+    "conditioned-scale1e+06-s23-fresh",
+    "legacy-scale1e+06-s11-resume",
+    "conditioned-scale1e+06-s11-resume",
+    "legacy-scale1e+06-s17-resume",
+    "conditioned-scale1e+06-s17-resume",
+    "legacy-scale1e+06-s23-resume",
+    "conditioned-scale1e+06-s23-resume"
+  ]
+}

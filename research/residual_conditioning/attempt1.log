@@ -1,0 +1,156 @@
+/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/triton/knobs.py:504: UserWarning: TRITON_DEFAULT_FP_FUSION is unset: defaulting to FP fusion ENABLED for backward compatibility in Triton 3.9. The default will change to DISABLED in Triton 3.10; set TRITON_DEFAULT_FP_FUSION=1 to keep fusion enabled or =0 to adopt the new default early and silence this warning.
+  warn_once(FP_FUSION_DEFAULT_WARNING)
+{"label": "legacy-scale0-s11-fresh", "completed": true, "success": true, "heldout": {"mse": 2.163019097167762e-09, "routing_accuracy": 1.0, "useful_mass": 0.9947364926338196, "max_abs_score": 3.917407751083374, "entropy": 0.04303155839443207}, "conditioning_events": 0}
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs] skipping cudagraphs due to mutated inputs (3 instances). Found from : 
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]    File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/utils/_contextlib.py", line 158, in no_grad
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     return func(*args, **kwargs)
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]   File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/application/residual_conditioning.py", line 51, in recondition_state
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     base.div_(factor)
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     ~~~~~~~~~^^^^^^^^
+W1101 21:50:34.401000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs] 
+{"label": "conditioned-scale0-s11-fresh", "completed": true, "success": true, "heldout": {"mse": 2.163371704000383e-09, "routing_accuracy": 1.0, "useful_mass": 0.9947364926338196, "max_abs_score": 3.917407274246216, "entropy": 0.04303157329559326}, "conditioning_events": 0}
+{"label": "legacy-scale0-s17-fresh", "completed": true, "success": true, "heldout": {"mse": 2.3356223621817662e-09, "routing_accuracy": 1.0, "useful_mass": 0.9947614669799805, "max_abs_score": 3.9180967807769775, "entropy": 0.04284719377756119}, "conditioning_events": 0}
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs] skipping cudagraphs due to mutated inputs (3 instances). Found from : 
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]    File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/utils/_contextlib.py", line 158, in no_grad
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     return func(*args, **kwargs)
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]   File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/application/residual_conditioning.py", line 51, in recondition_state
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     base.div_(factor)
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     ~~~~~~~~~^^^^^^^^
+W1101 21:50:43.496000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs] 
+{"label": "conditioned-scale0-s17-fresh", "completed": true, "success": true, "heldout": {"mse": 2.3359327805394514e-09, "routing_accuracy": 1.0, "useful_mass": 0.9947614669799805, "max_abs_score": 3.9180960655212402, "entropy": 0.04284720867872238}, "conditioning_events": 0}
+{"label": "legacy-scale0-s23-fresh", "completed": true, "success": true, "heldout": {"mse": 2.5187660845915616e-09, "routing_accuracy": 1.0, "useful_mass": 0.9947817325592041, "max_abs_score": 3.909860372543335, "entropy": 0.04270660877227783}, "conditioning_events": 0}
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs] skipping cudagraphs due to mutated inputs (3 instances). Found from : 
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]    File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/utils/_contextlib.py", line 158, in no_grad
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     return func(*args, **kwargs)
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]   File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/application/residual_conditioning.py", line 51, in recondition_state
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     base.div_(factor)
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs]     ~~~~~~~~~^^^^^^^^
+W1101 21:50:51.309000 241582 /home/misha/lean_projects/transformer/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_utils.py:405] [__cudagraphs] 
+{"label": "conditioned-scale0-s23-fresh", "completed": true, "success": true, "heldout": {"mse": 2.5191666530588464e-09, "routing_accuracy": 1.0, "useful_mass": 0.9947817325592041, "max_abs_score": 3.909860372543335, "entropy": 0.042706623673439026}, "conditioning_events": 0}
+Traceback (most recent call last):
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 1581, in _record
+    static_outputs = model(inputs)
+  File "/tmp/torchinductor_misha/pw/cpwmy5ts7eqyn2gylsfgu3qfq2mbgv4ri7fquwrfhmp4qlvno2if.py", line 391, in partition_0
+    buf0 = empty_strided_cuda((64, 8, 1), (8, 1, 1), torch.float32)
+RuntimeError: info.status != cudaStreamCaptureStatusInvalidated INTERNAL ASSERT FAILED at "/__w/pytorch/pytorch/c10/cuda/CUDACachingAllocator.cpp":2362, please report a bug to PyTorch. Invalid stream capture status
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 201, in _run_module_as_main
+  File "<frozen runpy>", line 87, in _run_code
+  File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/interfaces/grokking/residual_conditioning.py", line 18, in <module>
+    main()
+    ~~~~^^
+  File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/interfaces/grokking/residual_conditioning.py", line 14, in main
+    run(args.output)
+    ~~~^^^^^^^^^^^^^
+  File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/application/grokking/residual_conditioning.py", line 251, in run
+    row = run_case(
+        case, output, protocol, started + protocol["wall_budget_seconds"]
+    )
+  File "/home/misha/python_projects/gpt/.claude/worktrees/residual_conditioning/src/diff_gpt/application/grokking/residual_conditioning.py", line 194, in run_case
+    loss.backward()
+    ~~~~~~~~~~~~~^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_tensor.py", line 623, in backward
+    torch.autograd.backward(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        self, gradient, retain_graph, create_graph, inputs=inputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/autograd/__init__.py", line 395, in backward
+    _engine_run_backward(
+    ~~~~~~~~~~~~~~~~~~~~^
+        tensors,
+        ^^^^^^^^
+    ...<5 lines>...
+        accumulate_grad=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/autograd/graph.py", line 1113, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        t_outputs, *args, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # Calls into the C++ engine to run the backward pass
+    ^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/autograd/function.py", line 460, in apply_boxed
+    return self._get_user_fn()(self, *args)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 3552, in backward
+    return CompiledFunction._bwd_fn(
+           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        flat_args,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        CompiledFunction._double_backward,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward)", line 16, in _compiled_backward
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward)", line 10, in impl_fn
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 3633, in _backward_impl
+    return call_func_at_runtime_with_args(
+        compiled_bw,
+    ...<2 lines>...
+        disable_amp=disable_amp,
+    )
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_functorch/_aot_autograd/utils.py", line 151, in call_func_at_runtime_with_args
+    out = normalize_as_list(f(args))
+                            ~^^^^^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_dynamo/eval_frame.py", line 1552, in _fn
+    return fn(*args, **kwargs)
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/output_code.py", line 830, in __call__
+    return self.current_callable(inputs)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/tmp/torchinductor_misha/pw/cpwmy5ts7eqyn2gylsfgu3qfq2mbgv4ri7fquwrfhmp4qlvno2if.py", line 441, in call
+    (buf5,) = self.partitions[0](partition0_args)
+              ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/compile_fx.py", line 2294, in run
+    return compiled_fn(new_inputs)  # type: ignore[arg-type]
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 484, in deferred_cudagraphify
+    return fn(inputs)
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/utils.py", line 4637, in run
+    out = model(new_inputs)
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 2570, in run
+    out = self._run(new_inputs, function_id)
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 2862, in _run
+    return self.record_function(new_inputs, function_id)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 2903, in record_function
+    node = CUDAGraphNode(
+        self.ids_to_funcs[function_id],
+    ...<10 lines>...
+        self._get_demoted_cudagraph_managed_idxs(function_id),
+    )
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 1249, in __init__
+    self.recording_outputs: OutputType | None = self._record(
+                                                ~~~~~~~~~~~~^
+        wrapped_function.model, recording_inputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/_inductor/cudagraph_trees.py", line 1570, in _record
+    torch.cuda.graph(
+    ~~~~~~~~~~~~~~~~^
+        self.graph,
+        ^^^^^^^^^^^
+    ...<2 lines>...
+        capture_error_mode="thread_local",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/cuda/graphs.py", line 1480, in __exit__
+    self.cuda_graph.capture_end()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/cuda/graphs.py", line 666, in capture_end
+    self.capture_end_pre()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/misha/lean_projects/transformer/.claude/worktrees/residual_conditioning/python/.venv/lib/python3.15/site-packages/torch/cuda/graphs.py", line 647, in capture_end_pre
+    super().capture_end_pre()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+torch.AcceleratorError: CUDA error: operation failed due to a previous error during capture
+Search for `cudaErrorStreamCaptureInvalidated' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+
