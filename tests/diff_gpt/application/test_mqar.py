@@ -231,9 +231,6 @@ def test_task_rejects_invalid_controls(controls: dict[str, Any]) -> None:
         {"ood": (16, 16)},
         {"steps": 0},
         {"test": 0},
-        {"rope": ""},
-        {"rope": "10"},
-        {"rope": "2"},
         {"rope_base": 0.0},
     ],
 )
@@ -246,14 +243,13 @@ def test_run_rejects_invalid_settings(settings: dict[str, Any]) -> None:
 
 
 def test_rope_settings_build_their_gpt_and_name_their_run() -> None:
-    """The RoPE layers and base reach the GPT; only other values change the name."""
-    config = RunConfig(**{**TINY, "layers": 2, "rope": "10", "rope_base": 500.0})
+    """The RoPE base reaches every GPT layer and names the run."""
+    config = RunConfig(**{**TINY, "layers": 2, "rope_base": 500.0})
     model = config.model(config.length)
-    assert [block.sa.use_rope for block in model.blocks] == [True, False]
     cos, sin = rope_tables(model.blocks[0].sa.head_dim, config.length, 500.0)
     assert torch.equal(model.rope_cos, cos)
     assert torch.equal(model.rope_sin, sin)
-    assert "-l2-rope10-base500-" in config.name
+    assert "-l2-base500-" in config.name
     assert "rope" not in RunConfig(**TINY).name
     assert "base" not in RunConfig(**TINY).name
 
@@ -316,7 +312,7 @@ def test_a_run_saved_before_new_settings_is_rescored(tmp_path: Path) -> None:
     first = run(config, tmp_path, "cpu", log=False)
     result_path = tmp_path / config.name / "result.json"
     saved = json.loads(result_path.read_text())
-    for key in ("rope", "rope_base"):
+    for key in ("rope_base",):
         del saved["training"][key]
     result_path.write_text(json.dumps(saved))
     assert run(config, tmp_path, "cpu", log=False)["test"] == first["test"]

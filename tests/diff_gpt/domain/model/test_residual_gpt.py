@@ -1,61 +1,39 @@
-"""Audit full depth mixing against explicit equations and complete saved states."""
+"""Audit the canonical scaled residual model and complete saved states."""
 
 import copy
-import math
 
 import pytest
 import torch
 from torch.nn import functional as F
 
-from diff_gpt.application.transformer_conditioning import TransformerQueryConditioner
 from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.model.kv_cache import KVCache
-from diff_gpt.domain.model.residual_gpt import MODES, ResidualGPT
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 XSA_CLIP = 1e-12
 
 
-def make(mode: str, *, checkpointing: bool = False) -> ResidualGPT:
+def make(*, checkpointing: bool = False) -> GPT:
     """Construct identical common parameters for every tested variant."""
     torch.manual_seed(145)
     torch.set_num_threads(1)
-    return ResidualGPT(
-        11, 8, 8, 2, 2, mixing=mode, use_checkpoint=checkpointing, pad_vocab_size_to=1
+    return GPT(
+        11, 8, 8, 2, 2, use_checkpoint=checkpointing, pad_vocab_size_to=1
     ).double()
 
 
-def manual(model: ResidualGPT, tokens: torch.Tensor) -> torch.Tensor:
-    """Evaluate paper depth mixing and dense causal XSA from parameter matrices."""
-    width = model.n_embd
+def manual(model: GPT, tokens: torch.Tensor) -> torch.Tensor:
+    """Evaluate scaled residuals and dense causal XSA from parameter matrices."""
     eps = torch.finfo(model.token_embedding_table.weight.dtype).eps
 
     def norm(value: torch.Tensor, epsilon: float = eps) -> torch.Tensor:
         return value / (value.square().mean(-1, keepdim=True) + epsilon).sqrt()
 
-    def mix(sources: list[torch.Tensor], index: int) -> torch.Tensor:
-        if index == 0:
-            return sources[0]
-        mixer = model.residual_mixers[index - 1]
-        query = mixer.query
-        values = torch.stack(sources, -2)
-        keys = norm(values, mixer.eps)
-        if model.mixing == "attnres":
-            scores = (keys * mixer.key_gain * query).sum(-1)
-        else:
-            scale = getattr(mixer, "query_scale", 1.0)
-            physical = query * scale
-            scores = (keys * norm(physical, mixer.eps)).sum(-1) / math.sqrt(width)
-        return (scores.softmax(-1)[..., None] * values).sum(-2)
-
     value = norm(F.embedding(tokens, model.token_embedding_table.weight))
-    sources = [value]
     still_constant = (tokens != tokens[:, :1]).cumsum(1) == 0
     length = tokens.shape[1]
     for index in range(2 * model.n_layer):
         block = model.blocks[index // 2]
-        if model.mixing in ("attnres", "qk", "conditioned_qk"):
-            value = mix(sources, index)
         if index % 2 == 0:
             q, k, v = F.linear(norm(value), block.sa.c_attn.weight).chunk(3, -1)
             q, k, v = (
@@ -91,61 +69,13 @@ def manual(model: ResidualGPT, tokens: torch.Tensor) -> torch.Tensor:
             branch = F.linear(F.silu(gate) * activation, block.ffwd.c_proj.weight)
         branch = norm(branch)
         branch = torch.where(still_constant[..., None], branch[:, :1], branch)
-        if model.mixing in ("add", "scaled", "gated"):
-            gain = (
-                2 / (1 + (-model.branch_logits[index]).exp())
-                if model.mixing == "gated"
-                else model.branch_scale
-            )
-            value = value + gain * branch
-        else:
-            sources.append(branch)
-    if model.mixing in ("attnres", "qk", "conditioned_qk"):
-        value = mix(sources, 2 * model.n_layer)
+        value = value + model.branch_scale * branch
     return F.linear(norm(value), model.lm_head.weight)
 
 
-@pytest.mark.parametrize("mode", MODES)
-def test_common_initialization_and_parameter_counts(mode: str) -> None:
-    """Query draws never change the paired source branches or tied readout."""
-    model = make(mode)
-    torch.manual_seed(145)
-    source = GPT(11, 8, 8, 2, 2, use_checkpoint=False, pad_vocab_size_to=1).double()
-    for name, parameter in source.named_parameters():
-        torch.testing.assert_close(
-            dict(model.named_parameters())[name], parameter, rtol=0, atol=0
-        )
-    extra = sum(p.numel() for p in model.parameters()) - sum(
-        p.numel() for p in source.parameters()
-    )
-    assert (
-        extra
-        == {
-            "add": 0,
-            "scaled": 0,
-            "gated": 4,
-            "attnres": 64,
-            "qk": 32,
-            "conditioned_qk": 32,
-        }[mode]
-    )
-    assert model.lm_head.weight is model.token_embedding_table.weight
-    if mode == "attnres":
-        for mixer in model.residual_mixers:
-            assert torch.equal(mixer.query, torch.zeros_like(mixer.query))
-            assert torch.equal(mixer.key_gain, torch.ones_like(mixer.key_gain))
-    if mode == "add":
-        tokens = torch.tensor([[1, 2, 3], [4, 4, 4]])
-        torch.testing.assert_close(model(tokens)[0], source(tokens)[0], rtol=0, atol=0)
-
-
-@pytest.mark.parametrize("mode", MODES)
-def test_full_equations_and_every_parameter_gradient(mode: str) -> None:
+def test_full_equations_and_every_parameter_gradient() -> None:
     """Include constant prefixes, arbitrary suffixes and all depth-query parameters."""
-    actual = make(mode)
-    if mode == "gated":
-        with torch.no_grad():
-            actual.branch_logits.copy_(torch.tensor([-1.5, -0.5, 0.5, 1.5]))
+    actual = make()
     reference = copy.deepcopy(actual)
     tokens = torch.tensor([[1, 2, 3, 4], [2, 2, 2, 5], [3, 3, 3, 3]])
     a = actual(tokens)[0]
@@ -161,13 +91,9 @@ def test_full_equations_and_every_parameter_gradient(mode: str) -> None:
         torch.testing.assert_close(p.grad, q.grad, rtol=2e-6, atol=2e-8, msg=name)
 
 
-@pytest.mark.parametrize("mode", MODES)
-def test_causality_chunked_cache_and_checkpointing(mode: str) -> None:
+def test_causality_chunked_cache_and_checkpointing() -> None:
     """Depth sources stay local to a token; source K/V cache positions still advance."""
-    model = make(mode)
-    if mode == "gated":
-        with torch.no_grad():
-            model.branch_logits.copy_(torch.tensor([-1.5, -0.5, 0.5, 1.5]))
+    model = make()
     tokens = torch.tensor([[1, 1, 2, 3], [2, 2, 2, 4]])
     changed = tokens.clone()
     changed[:, -1] = 7
@@ -201,50 +127,27 @@ def test_causality_chunked_cache_and_checkpointing(mode: str) -> None:
         torch.testing.assert_close(p.grad, q.grad, rtol=0, atol=0)
 
 
-def test_conditioner_preserves_complete_model_and_saved_continuation() -> None:
-    """Rechart several queries and restore state after the adapter already exists."""
-    model = make("conditioned_qk")
-    with torch.no_grad():
-        for index, mixer in enumerate(model.residual_mixers):
-            mixer.query.mul_(1e6 if index % 2 else 1.0)
+def test_complete_schedule_free_state_resume() -> None:
+    """Restoring all optimizer state gives the same subsequent model and moments."""
+    model = make()
     optimizer = ScheduleFreeAdamW(model.parameters(), lr=0.003, betas=(0.9, 0.98))
-    conditioner = TransformerQueryConditioner(model, optimizer)
     tokens = torch.tensor([[1, 2], [2, 3], [4, 4]])
     labels = torch.tensor([5, 7, 9])
-    before = model(tokens)[0].detach()
-    branches = {
-        n: p.detach().clone()
-        for n, p in model.named_parameters()
-        if not n.startswith("residual_mixers")
-    }
-    conditioner()
-    torch.testing.assert_close(model(tokens)[0], before, rtol=2e-8, atol=2e-10)
-    for name, value in branches.items():
-        torch.testing.assert_close(
-            dict(model.named_parameters())[name], value, rtol=0, atol=0
-        )
 
-    def steps(
-        net: ResidualGPT,
-        opt: ScheduleFreeAdamW,
-        change: TransformerQueryConditioner,
-        count: int,
-    ) -> None:
+    def steps(net: GPT, opt: ScheduleFreeAdamW, count: int) -> None:
         for _ in range(count):
             opt.zero_grad(set_to_none=True)
-            change()
             F.cross_entropy(net(tokens)[0][:, -1], labels).backward()
             opt.step()
 
-    steps(model, optimizer, conditioner, 5)
+    steps(model, optimizer, 5)
     saved = copy.deepcopy((model.state_dict(), optimizer.state_dict()))
-    restored = make("conditioned_qk")
+    restored = make()
     resumed = ScheduleFreeAdamW(restored.parameters())
-    adapter = TransformerQueryConditioner(restored, resumed)
     restored.load_state_dict(saved[0])
     resumed.load_state_dict(saved[1])
-    steps(model, optimizer, conditioner, 7)
-    steps(restored, resumed, adapter, 7)
+    steps(model, optimizer, 7)
+    steps(restored, resumed, 7)
     torch.testing.assert_close(
         model.state_dict(), restored.state_dict(), rtol=0, atol=0
     )
@@ -253,53 +156,28 @@ def test_conditioner_preserves_complete_model_and_saved_continuation() -> None:
     )
 
 
-def test_invalid_mode_and_conditioner_owner_are_rejected() -> None:
-    """Do not silently train a requested architecture with another configuration."""
-    with pytest.raises(ValueError, match="Unknown residual mixing"):
-        make("invalid")
-    a, b = make("conditioned_qk"), make("conditioned_qk")
-    with pytest.raises(ValueError, match="own every"):
-        TransformerQueryConditioner(a, ScheduleFreeAdamW(b.parameters()))
+@pytest.mark.parametrize("option", ["mixing", "centered_xsa", "rope_layers"])
+def test_removed_architecture_options_are_rejected(option: str) -> None:
+    """Historical options must fail explicitly, never silently select another model."""
+    with pytest.raises(TypeError, match="unexpected keyword"):
+        GPT(64, **{option: None})
 
 
-def test_full_transformer_recovers_oversized_query_gradients() -> None:
-    """Repair actual transformer CE derivatives, without claiming generalization."""
-    model = make("conditioned_qk")
-    with torch.no_grad():
-        for index, mixer in enumerate(model.residual_mixers):
-            mixer.query.mul_(1e6 if index % 2 else 1.0)
-    optimizer = ScheduleFreeAdamW(model.parameters(), lr=0.003, betas=(0.9, 0.98))
-    tokens = torch.tensor([[1, 2], [2, 3], [4, 4]])
-    labels = torch.tensor([6, 8, 1])  # Modular division at prime 11.
-    parameters = dict(model.named_parameters())
-    before = model(tokens)[0]
-    old_gradients = dict(
-        zip(
-            parameters,
-            torch.autograd.grad(
-                F.cross_entropy(before[:, -1], labels), tuple(parameters.values())
-            ),
-            strict=True,
-        )
-    )
-    factors = TransformerQueryConditioner(model, optimizer)()
-    after = model(tokens)[0]
-    gradients = torch.autograd.grad(
-        F.cross_entropy(after[:, -1], labels), tuple(parameters.values())
-    )
-    torch.testing.assert_close(after, before, rtol=2e-8, atol=2e-10)
-    query_factors = {
-        f"residual_mixers.{index}.query": factor for index, factor in enumerate(factors)
-    }
-    minimum_gain = 1e5
-    torch.testing.assert_close(
-        factors[::2], torch.ones_like(factors[::2]), rtol=0, atol=0
-    )
-    assert bool((factors[1::2] > minimum_gain).all())
-    for name, gradient in zip(parameters, gradients, strict=True):
-        factor = query_factors.get(name, 1.0)
-        old = old_gradients[name]
-        torch.testing.assert_close(gradient, old * factor, rtol=2e-8, atol=2e-10)
-        if float(factor) > 1:
-            assert float(old.norm()) > 0
-            assert float(gradient.norm()) > minimum_gain * float(old.norm())
+@pytest.mark.parametrize("device", ["cpu", "cuda"])
+def test_compiled_canonical_model_matches_values_and_gradients(device: str) -> None:
+    """The current model compiles as one graph, including its guarded backward."""
+    if device == "cuda" and not torch.cuda.is_available():
+        pytest.skip("CUDA unavailable")
+    model = make(checkpointing=True).float().to(device)
+    reference = copy.deepcopy(model)
+    compiled = torch.compile(model, mode="max-autotune", fullgraph=True, dynamic=False)
+    tokens = torch.tensor([[1, 1, 2], [3, 3, 3]], device=device)
+    actual, expected = compiled(tokens)[0], reference(tokens)[0]
+    torch.testing.assert_close(actual, expected, rtol=2e-5, atol=2e-6)
+    actual.square().mean().backward()
+    expected.square().mean().backward()
+    for parameter, other in zip(
+        model.parameters(), reference.parameters(), strict=True
+    ):
+        assert torch.isfinite(parameter.grad).all()
+        torch.testing.assert_close(parameter.grad, other.grad, rtol=2e-4, atol=2e-6)

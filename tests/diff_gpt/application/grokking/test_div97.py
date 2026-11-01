@@ -185,7 +185,7 @@ def test_a_checkpoint_of_an_earlier_model_is_rejected(tmp_path: Path) -> None:
         RunConfig(width=8, heads=1, epochs=1), directory, git_head=provenance.git_head
     )
     checkpoint = torch.load(directory / "checkpoint.pt", weights_only=True)
-    assert checkpoint.pop("normalization") == "peri_rms_qk_rms"
+    assert checkpoint.pop("normalization") == "scaled_peri_rms_qk_rms_centered_xsa"
     torch.save(checkpoint, directory / "checkpoint.pt")
     with pytest.raises(ValueError, match="Peri/QK-RMSNorm"):
         verify_checkpoint(directory)

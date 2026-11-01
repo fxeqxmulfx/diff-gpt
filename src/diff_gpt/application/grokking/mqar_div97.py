@@ -14,7 +14,7 @@ controls instead draw memory first, query its keys independently (including
 i == j), and split by the canonical key/value memory, never by the query.
 
 For the two-layer N=2 copying control with RoPE only in the first layer,
-use ``--loads 2 --labels dividend --layers 2 --rope 10``.
+use ``--loads 2 --labels dividend --layers 2``.
 Add ``--diagnostics-every 1 --snapshot-every 10`` to record both optimizer
 weight states, per-head routing, norms, gradients and paired weight snapshots.
 """
@@ -103,7 +103,6 @@ class RunConfig:
     turns the compute rows into a register machine. `fixed` is the layout of
     div97: keys 1 and 2, written in that order and always queried.
     `contexts` "fresh" draws new loads around the equations every epoch.
-    `rope` is "all" or one 0/1 per layer: "10" applies RoPE only in layer 0.
     `rope_base` is the base of the RoPE frequencies, GPT's `rope_base`.
     The model always uses parameter-free Peri-RMSNorm and per-head QK-RMSNorm
     with standard 1/sqrt(head_dim) attention scaling.
@@ -112,7 +111,6 @@ class RunConfig:
     width: int = 128
     layers: int = 2
     heads: int = 4
-    rope: str = "all"
     rope_base: float = 10_000.0
     seed: int = 11
     learning_rate: float = 0.01
@@ -138,12 +136,6 @@ class RunConfig:
             problems.append(f"labels must be one of {LABELS}")
         if self.contexts not in CONTEXTS:
             problems.append(f"contexts must be one of {CONTEXTS}")
-        if self.rope != "all" and (
-            not self.rope
-            or len(self.rope) != self.layers
-            or set(self.rope) - {"0", "1"}
-        ):
-            problems.append('rope must be "all" or one 0/1 per layer')
         if not 0 < self.rope_base < math.inf:
             problems.append("rope_base must be positive and finite")
         if self.operands not in {1, 2}:
@@ -207,7 +199,7 @@ class RunConfig:
             parts.append(f"m{self.computed}")
         if self.contexts != "fresh":
             parts.append(f"{self.contexts}-contexts")
-        rope = f"-rope{self.rope}" if self.rope != "all" else ""
+        rope = ""
         if self.rope_base != RunConfig.rope_base:  # The default keeps old names.
             rope += f"-base{self.rope_base:g}"
         parts.append(
@@ -719,9 +711,6 @@ def build(config: RunConfig, device: str) -> GPT:
         n_layer=config.layers,
         use_checkpoint=False,
         rope_base=config.rope_base,
-        rope_layers=None
-        if config.rope == "all"
-        else tuple(bit == "1" for bit in config.rope),
     ).to(device)
 
 
@@ -802,8 +791,7 @@ def attention(model: GPT, inputs: torch.Tensor) -> list[torch.Tensor]:
             for t in (q, k)
         )
         q, k = F.rms_norm(q, (sa.head_dim,)), F.rms_norm(k, (sa.head_dim,))
-        if sa.use_rope:
-            q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
+        q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
         scale = 1 / math.sqrt(sa.head_dim)
         scores = q @ k.transpose(-1, -2) * scale
         probabilities.append(scores.masked_fill(~causal, -math.inf).softmax(-1))

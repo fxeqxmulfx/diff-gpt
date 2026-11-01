@@ -94,8 +94,7 @@ def _head_stats(
         for part in sa.c_attn(normalized).split(sa.n_embd, dim=-1)
     )
     q, k = F.rms_norm(q_raw, (sa.head_dim,)), F.rms_norm(k_raw, (sa.head_dim,))
-    if sa.use_rope:
-        q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
+    q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
     scale = 1 / math.sqrt(sa.head_dim)
     scores = (q @ k.transpose(-1, -2)) * scale
     mask = torch.ones(T, T, dtype=torch.bool, device=q.device).tril()
@@ -417,7 +416,10 @@ class Diagnostics:
                 args: tuple[torch.Tensor, ...],
                 output: torch.Tensor,
             ) -> None:
-                captured[name] = (args, output)
+                captured[name] = (
+                    args,
+                    output[0] if isinstance(output, tuple) else output,
+                )
 
             return capture
 
@@ -438,6 +440,8 @@ class Diagnostics:
             (after_attention,), _ = captured[f"{i}.ln_2"]
             _, attn = captured[f"{i}.attn_out_norm"]
             _, ffwd = captured[f"{i}.ffn_out_norm"]
+            attn = block.residual_scale * attn
+            ffwd = block.residual_scale * ffwd
             heads, mean_attention, reconstructed = _head_stats(
                 block.sa,
                 normalized,

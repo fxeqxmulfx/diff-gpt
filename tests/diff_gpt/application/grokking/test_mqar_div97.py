@@ -386,8 +386,6 @@ def test_error_classes_name_the_recognizable_mistakes() -> None:
     "settings",
     [
         {},
-        {"rope_layers": (True, False)},
-        {"rope_layers": (False, False)},
         {"rope_base": 500.0},
     ],
 )
@@ -404,7 +402,9 @@ def test_attention_probabilities_rebuild_each_attention_output(
     outputs: list[tuple[torch.Tensor, torch.Tensor]] = []
     hooks = [
         block.sa.register_forward_hook(
-            lambda _, args, out: outputs.append((args[0], out))
+            lambda _, args, out: outputs.append(
+                (args[0], out[0] if isinstance(out, tuple) else out)
+            )
         )
         for block in model.blocks
     ]
@@ -436,7 +436,6 @@ def test_attention_probabilities_rebuild_each_attention_output(
         RunConfig(keys=8, loads=4, overwrites=2, **TINY),
         RunConfig(keys=8, loads=4, operands=1, labels="random", **TINY),
         RunConfig(keys=8, loads=4, computed=3, **TINY),
-        RunConfig(loads=2, layers=2, labels="dividend", rope="10", **TINY),
         RunConfig(loads=2, layers=2, labels="dividend", rope_base=500.0, **TINY),
         RunConfig(loads=2, layers=2, labels="dividend", **TINY),
     ],
@@ -480,9 +479,6 @@ def test_full_public_predict_scores_every_test_frame(tmp_path: Path) -> None:
         {"computed": 2, "operands": 1},
         {"fixed": True, "loads": 3},
         {"labels": "sum"},
-        {"rope": ""},
-        {"rope": "1"},
-        {"rope": "12"},
         {"rope_base": 0.0},
     ],
 )
@@ -497,7 +493,7 @@ def test_current_records_replay_the_same_config() -> None:
     config = RunConfig(loads=2, labels="dividend", **TINY)
     current = {
         "config": asdict(config),
-        "normalization": "peri_rms_qk_rms",
+        "normalization": "scaled_peri_rms_qk_rms_centered_xsa",
         "data_protocol": config.data_protocol,
     }
     assert config_from_record(current) == config
@@ -508,7 +504,10 @@ def test_old_copy_data_cannot_silently_replay_as_independent_queries() -> None:
     config = RunConfig(loads=2, labels="dividend", **TINY)
     with pytest.raises(ValueError, match="frozen source"):
         config_from_record(
-            {"config": asdict(config), "normalization": "peri_rms_qk_rms"}
+            {
+                "config": asdict(config),
+                "normalization": "scaled_peri_rms_qk_rms_centered_xsa",
+            }
         )
 
 

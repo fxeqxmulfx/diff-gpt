@@ -29,7 +29,7 @@ ATTENTION_TOLERANCE = 1e-6
 
 @pytest.mark.parametrize(
     "settings",
-    [{}, {"rope": "10"}, {"labels": "dividend"}],
+    [{}, {"rope_base": 500.0}, {"labels": "dividend"}],
 )
 def test_probe_reconstructs_real_attention_without_side_effects(
     tmp_path: Path, settings: dict[str, object]

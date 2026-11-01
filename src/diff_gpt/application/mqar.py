@@ -13,7 +13,7 @@ order, so each split is the lab's split and has its fingerprint.
 The GPT trains at `length` tokens and is tested at that length and at each
 longer `ood` length: a longer test loads the same weights into a GPT whose
 block_size is that length, so RoPE turns the queries and keys by angles never
-trained on. `rope` and `rope_base` set the GPT's RoPE layers and base.
+trained on. `rope_base` sets the GPT's RoPE frequencies in every layer.
 """
 
 from __future__ import annotations
@@ -336,8 +336,7 @@ class RunConfig:
     Every split is drawn with `data_seed`; `seed` sets the initialization
     and the order of the training examples. Training takes `steps` batches
     of `batch` examples of `length` tokens, in shuffled epochs. `test`
-    examples are scored at `length` and at every `ood` length. `rope` is
-    "all" or one 0/1 per layer: "10" applies RoPE only in layer 0.
+    examples are scored at `length` and at every `ood` length.
     `rope_base` is the base of the RoPE frequencies, GPT's `rope_base`.
     """
 
@@ -355,7 +354,6 @@ class RunConfig:
     width: int = 128
     heads: int = 4
     layers: int = 2
-    rope: str = "all"
     rope_base: float = 10_000.0
     learning_rate: float = 3e-3
     beta1: float = 0.9
@@ -379,13 +377,6 @@ class RunConfig:
             raise ValueError(msg)
         if min(self.train, self.test, self.steps, self.batch, self.evaluate_every) < 1:
             msg = "train, test, steps, batch and evaluate_every must be positive"
-            raise ValueError(msg)
-        if self.rope != "all" and (
-            not self.rope
-            or len(self.rope) != self.layers
-            or set(self.rope) - {"0", "1"}
-        ):
-            msg = 'rope must be "all" or one 0/1 per layer'
             raise ValueError(msg)
         if not 0 < self.rope_base < math.inf:
             msg = "rope_base must be positive and finite"
@@ -413,7 +404,7 @@ class RunConfig:
         """Return the run directory name: the settings that shape training."""
         overwrites = f"-o{self.overwrites}" if self.overwrites else ""
         gap = f"-gap{self.query_gap}" if self.query_gap else ""
-        rope = f"-rope{self.rope}" if self.rope != "all" else ""
+        rope = ""
         if self.rope_base != RunConfig.rope_base:  # The default keeps old names.
             rope += f"-base{self.rope_base:g}"
         return (
@@ -443,9 +434,6 @@ class RunConfig:
             n_layer=self.layers,
             use_checkpoint=False,
             rope_base=self.rope_base,
-            rope_layers=None
-            if self.rope == "all"
-            else tuple(bit == "1" for bit in self.rope),
         )
 
 

@@ -101,25 +101,6 @@ def test_xsa_first_position_outputs_zero(dtype: torch.dtype) -> None:
     assert torch.count_nonzero(y[:, 0]) == 0
 
 
-def test_without_rope_matches_identity_rotation_and_ignores_positions() -> None:
-    """Disabling RoPE equals identity rotations, regardless of supplied positions."""
-    torch.manual_seed(0)
-    B, T, C, H = 2, 7, 16, 2
-    positional = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0)
-    content = MultiHeadAttention(n_embd=C, n_head=H, layer_idx=0, use_rope=False)
-    content.load_state_dict(positional.state_dict())
-    x = torch.randn(B, T, C)
-    cos, sin = rope_tables(C // H, T + 3)
-    identity_cos = torch.ones_like(cos[:T])
-    identity_sin = torch.zeros_like(sin[:T])
-    with torch.no_grad():
-        expected = positional(x, identity_cos, identity_sin, kv_cache=None)
-        actual = content(x, cos[:T], sin[:T], kv_cache=None)
-        shifted = content(x, cos[3:], sin[3:], kv_cache=None)
-    assert_close(actual, expected, atol=0, rtol=0)
-    assert_close(shifted, expected, atol=0, rtol=0)
-
-
 def test_rejects_odd_head_size() -> None:
     """RoPE rotates channel pairs, so a head of odd size is rejected."""
     with pytest.raises(ValueError, match="must be even"):

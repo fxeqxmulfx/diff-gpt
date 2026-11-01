@@ -66,7 +66,7 @@ LIBRARY_SOURCES = (
 )
 # Peri-RMSNorm and Q/K RMSNorm have no parameters, so weights of an earlier model
 # load without error and compute another function; saved runs carry this marker.
-NORMALIZATION = "peri_rms_qk_rms"
+NORMALIZATION = "scaled_peri_rms_qk_rms_centered_xsa"
 
 
 class SplitMix64:

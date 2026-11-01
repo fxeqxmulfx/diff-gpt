@@ -114,10 +114,7 @@ def test_estimate_flops_matches_flop_counter() -> None:
     assert counter.get_total_flops() == model.estimate_flops() * B * T
 
 
-@pytest.mark.parametrize("rope_layers", [None, (True, False)])
-def test_gpt_kv_cache_consistency(
-    rope_layers: tuple[bool, ...] | None,
-) -> None:
+def test_gpt_kv_cache_consistency() -> None:
     r"""
     Verify equivalence between Parallel (Batch) and Serial (Step-by-step) inference.
 
@@ -139,7 +136,6 @@ def test_gpt_kv_cache_consistency(
         n_layer=L,
         n_head=H,
         use_checkpoint=False,
-        rope_layers=rope_layers,
     )
     model.eval()
     idx = torch.randint(0, V, (B, T))
@@ -240,8 +236,7 @@ def test_every_parameter_receives_gradient() -> None:
         assert torch.norm(p.grad) > 0, name
 
 
-@pytest.mark.parametrize("rope_layers", [None, (True, False)])
-def test_gradient_checkpointing_flow(rope_layers: tuple[bool, ...] | None) -> None:
+def test_gradient_checkpointing_flow() -> None:
     r"""
     Verify backward pass with Activation Checkpointing.
 
@@ -255,7 +250,6 @@ def test_gradient_checkpointing_flow(rope_layers: tuple[bool, ...] | None) -> No
         n_embd=32,
         n_layer=2,
         use_checkpoint=True,
-        rope_layers=rope_layers,
     )
     model.train()
 
@@ -386,32 +380,6 @@ def test_gpt_rejects_n_layer_below_one() -> None:
     """
     with pytest.raises(ValueError, match="n_layer must be >= 1"):
         GPT(vocab_size=64, n_embd=16, block_size=16, n_head=2, n_layer=0)
-
-
-@pytest.mark.parametrize("rope_layers", [(), (True,), (True, False, True), (1, 0)])
-def test_gpt_rejects_invalid_rope_layers(rope_layers: tuple[object, ...]) -> None:
-    """The positional layout must explicitly describe every layer with booleans."""
-    with pytest.raises(ValueError, match="one boolean per layer"):
-        GPT(vocab_size=64, n_embd=16, n_head=2, n_layer=2, rope_layers=rope_layers)
-
-
-def test_explicit_rope_layers_preserve_initialization_and_default_outputs() -> None:
-    """The hybrid has identical initial weights; all-RoPE keeps the default output."""
-    settings = {"vocab_size": 64, "n_embd": 16, "n_head": 2, "n_layer": 2}
-    models = []
-    for layout in (None, (True, True), (True, False)):
-        torch.manual_seed(0)
-        models.append(GPT(**settings, rope_layers=layout).eval())
-    baseline, explicit, hybrid = models
-    for model in (explicit, hybrid):
-        assert_close(model.state_dict(), baseline.state_dict(), atol=0, rtol=0)
-    inputs = torch.randint(0, settings["vocab_size"], (2, 8))
-    with torch.no_grad():
-        expected, _ = baseline(inputs)
-        actual, _ = explicit(inputs)
-        mixed, _ = hybrid(inputs)
-    assert_close(actual, expected, atol=0, rtol=0)
-    assert not torch.equal(mixed, expected)
 
 
 @pytest.mark.parametrize("rope_base", [0.0, -10_000.0, math.inf, math.nan])

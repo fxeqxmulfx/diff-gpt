@@ -14,13 +14,13 @@ import numpy as np
 import pytest
 import torch
 
-from diff_gpt.domain.model.residual_gpt import ResidualGPT
+from diff_gpt.domain.model.gpt import GPT
 
 FIXTURES = Path(__file__).resolve().parents[3] / "fixtures/residual_generalization"
 
 
 @torch.no_grad()
-def correct_count(model: ResidualGPT, rows: torch.Tensor) -> int:
+def correct_count(model: GPT, rows: torch.Tensor) -> int:
     """Exhaust the held-out split in fixed CPU batches."""
     return sum(
         int((model(part[:, :-1])[0][:, -1].argmax(-1) == part[:, -1]).sum())
@@ -38,7 +38,12 @@ def test_scaled_residual_preserves_learned_unseen_division(seed: int) -> None:
     )
     path = FIXTURES / case["file"]
     assert hashlib.sha256(path.read_bytes()).hexdigest() == case["sha256"]
-    model = ResidualGPT(**case["configuration"]).float().eval()
+    configuration = dict(case["configuration"])
+    assert configuration.pop("mixing") == "scaled"
+    # Frozen fixtures describe their historical constructor, not today's API.
+    for historical in ("centered_xsa", "rope_layers"):
+        configuration.pop(historical, None)
+    model = GPT(**configuration).float().eval()
     with np.load(path, allow_pickle=False) as archive:
         rows = torch.from_numpy(archive["test_rows"]).long()
         training = torch.from_numpy(archive["train_inputs"]).long()
@@ -62,5 +67,6 @@ def test_scaled_residual_preserves_learned_unseen_division(seed: int) -> None:
     # Permit one rounded argmax to differ across supported CPU kernels.
     assert correct >= case["test_correct"] - 1
     assert correct / len(rows) >= case["minimum_accuracy"]
-    model.branch_scale = 1.0
+    for block in model.blocks:
+        block.residual_scale = 1.0
     assert correct_count(model, rows) / len(rows) < case["minimum_accuracy"]

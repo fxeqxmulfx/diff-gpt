@@ -199,7 +199,8 @@ $hi - lo$ takes the place of $2D$.
   Peri-RMSNorm blocks with causal exclusive self-attention (XSA: each head's
   output is orthogonal to the token's own value) and a SwiGLU MLP.
   Parameter-free RMSNorm normalizes the embedding stream and each branch's
-  input and output before residual addition. No biases, an output head tied
+  input and output; each output branch is scaled by $1/\sqrt{2L}$ before
+  residual addition. No biases, an output head tied
   to the token embedding, cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization
   with residual projections scaled by $1/\sqrt{2L}$ — nothing
   series-specific. Queries and keys use per-head RMSNorm before RoPE and
@@ -1000,3 +1001,22 @@ fixes a numerical gradient failure, not all optimizer conditioning, and does not
 establish faster full-transformer grokking. Tests cover native forward equality,
 CPU/CUDA dtypes, an independent FP64 derivative, compiled gradients, known-solution
 held-out recovery and the existing trained modular-division fixtures.
+
+### One PyTorch architecture
+
+`diff_gpt.domain.model.gpt.GPT` always uses RoPE in every layer, QK RMS
+normalization, centered XSA, parameter-free Peri-RMSNorm, SwiGLU, tied embeddings
+and fixed post-normalization residual coefficient `1/sqrt(2*n_layer)`. Model
+sizes, RoPE base and execution settings remain constructor arguments. The former
+`ResidualGPT`, `mixing`, `centered_xsa`, `rope_layers` and `use_rope` architecture
+options are removed; old configurations fail explicitly. Use the corresponding
+Git revision to reproduce an old architecture or hybrid-RoPE recipe. The separate
+Rust port is not changed by this PyTorch architecture selection.
+
+Two P97 seeds first reached 99% validation at 24,000 updates with fixed scaling,
+compared with 32,000 and 37,000 for ordinary addition. Their final test scores
+were 99.227% and 98.711%; this is earlier generalization onset, not a demonstrated
+improvement in eventual accuracy. These training curves predate the RMS backward
+repair. Frozen learned-division predictions are retained by regression tests.
+Checkpoint verifiers use a new architecture marker; parameter-only old ordinary
+checkpoints must be interpreted with their original model revision.

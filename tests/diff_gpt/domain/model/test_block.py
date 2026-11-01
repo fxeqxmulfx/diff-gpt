@@ -16,7 +16,7 @@ def test_block_forward_and_gradients() -> None:
     MLP; the norms have no parameters.
     """
     B, T, C, H = 2, 8, 32, 4
-    model = Block(n_embd=C, n_head=H, layer_idx=0)
+    model = Block(n_embd=C, n_head=H, layer_idx=0, n_layer=1)
     cos, sin = rope_tables(C // H, T)
 
     x = torch.randn(B, T, C, requires_grad=True)
@@ -41,7 +41,7 @@ def test_block_is_identity_when_residual_branches_are_zeroed() -> None:
     output projections leaves only the identity path.
     """
     B, T, C, H = 2, 5, 16, 2
-    model = Block(n_embd=C, n_head=H, layer_idx=0)
+    model = Block(n_embd=C, n_head=H, layer_idx=0, n_layer=1)
     with torch.no_grad():
         for proj in (model.sa.c_proj, model.ffwd.c_proj):
             proj.weight.zero_()
@@ -57,7 +57,7 @@ def test_block_is_identity_when_residual_branches_are_zeroed() -> None:
 def test_block_causality_preservation() -> None:
     """Perturbing the last token must leave every earlier output unchanged."""
     B, T, C, H = 1, 5, 16, 2
-    model = Block(n_embd=C, n_head=H, layer_idx=0)
+    model = Block(n_embd=C, n_head=H, layer_idx=0, n_layer=1)
     model.eval()
     cos, sin = rope_tables(C // H, T)
 
@@ -80,7 +80,7 @@ def test_block_kv_cache_step_consistency() -> None:
     torch.manual_seed(0)
     B, T, C, H = 1, 6, 16, 2
     head_dim = C // H
-    model = Block(n_embd=C, n_head=H, layer_idx=0)
+    model = Block(n_embd=C, n_head=H, layer_idx=0, n_layer=1)
     model.eval()
     cos, sin = rope_tables(head_dim, T)
 

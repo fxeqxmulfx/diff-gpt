@@ -9,6 +9,7 @@ from torch.nn import functional as F
 from diff_gpt.domain.model.centered_xsa import centered_projection
 from diff_gpt.domain.model.mha import MultiHeadAttention
 from diff_gpt.domain.model.rope import rope_tables
+from tests.diff_gpt.domain.model.source_equations import source_attention
 
 
 class CenteredXSATests(unittest.TestCase):
@@ -53,14 +54,15 @@ class CenteredXSATests(unittest.TestCase):
 
     def test_constant_values_are_exactly_zero(self) -> None:
         """A repeated token leaves exactly zero at every position in FP32."""
-        model = MultiHeadAttention(32, 4, 0, centered_xsa=True)
+        model = MultiHeadAttention(32, 4, 0)
         values = torch.randn(2, 1, 32).expand(-1, 9, -1).clone()
         cos, sin = rope_tables(8, 9)
         output = model(values, cos, sin, None)
         assert torch.count_nonzero(output) == 0
         legacy = copy.deepcopy(model)
-        legacy.centered_xsa = False
-        assert torch.count_nonzero(legacy(values, cos, sin, None)[:, 1:]) > 0
+        assert (
+            torch.count_nonzero(source_attention(legacy, values, cos, sin)[:, 1:]) > 0
+        )
         # Shared-token derivatives vanish too: the exact branch is identically zero.
         model = model.double()
         token = torch.randn(2, 1, 32, dtype=torch.float64, requires_grad=True)
@@ -90,13 +92,12 @@ class CenteredXSATests(unittest.TestCase):
 
     def test_full_module_forward_and_parameter_gradients(self) -> None:
         """Centered and source modules agree on nonconstant float64 inputs."""
-        centered = MultiHeadAttention(16, 2, 0, centered_xsa=True).double()
+        centered = MultiHeadAttention(16, 2, 0).double()
         source = copy.deepcopy(centered)
-        source.centered_xsa = False
         inputs = torch.randn(2, 5, 16, dtype=torch.float64, requires_grad=True)
         cos, sin = (x.double() for x in rope_tables(8, 5))
         got = centered(inputs, cos, sin, None)
-        want = source(inputs, cos, sin, None)
+        want = source_attention(source, inputs, cos, sin)
         torch.testing.assert_close(got, want, rtol=1e-11, atol=1e-12)
         direction = torch.randn_like(got)
         got_grad = torch.autograd.grad(

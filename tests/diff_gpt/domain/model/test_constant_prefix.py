@@ -7,6 +7,7 @@ import torch
 from torch.nn import functional as F
 
 from diff_gpt.domain.model.gpt import GPT
+from tests.diff_gpt.domain.model.source_equations import source_gpt
 
 
 class ConstantPrefixTests(unittest.TestCase):
@@ -33,7 +34,9 @@ class ConstantPrefixTests(unittest.TestCase):
         logits, _ = model(tokens)
         state = model.embedding_norm(model.token_embedding_table(tokens[:, :1]))
         for block in model.blocks:
-            state = state + block.ffn_out_norm(block.ffwd(block.ln_2(state)))
+            state = state + model.branch_scale * block.ffn_out_norm(
+                block.ffwd(block.ln_2(state))
+            )
         expected = model.lm_head(model.ln_f(state)).expand(-1, tokens.shape[1], -1)
         torch.testing.assert_close(logits, expected, rtol=1e-6, atol=1e-7)
         direction = torch.randn_like(logits)
@@ -61,12 +64,9 @@ class ConstantPrefixTests(unittest.TestCase):
         """A repeated causal prefix may be followed by arbitrary other tokens."""
         stable = self.model().double()
         source = copy.deepcopy(stable)
-        source.centered_xsa = False
-        for block in source.blocks:
-            block.sa.centered_xsa = False
         tokens = torch.tensor([[2, 2, 5, 6], [3, 3, 3, 1], [1, 1, 1, 1], [2, 4, 2, 4]])
         got, _ = stable(tokens)
-        want, _ = source(tokens)
+        want = source_gpt(source, tokens)
         torch.testing.assert_close(got, want, rtol=1e-8, atol=1e-9)
         labels = torch.tensor([2, 5, 7, 11])
         actual = torch.autograd.grad(
@@ -89,11 +89,9 @@ class ConstantPrefixTests(unittest.TestCase):
             block.sa.c_proj.weight.copy_(torch.eye(8, dtype=torch.float64))
             block.ffwd.c_proj.weight.zero_()
         source = copy.deepcopy(stable)
-        source.centered_xsa = False
-        source.blocks[0].sa.centered_xsa = False
         tokens = torch.tensor([[3, 3, 3]])
         got, _ = stable(tokens)
-        want, _ = source(tokens)
+        want = source_gpt(source, tokens)
         torch.testing.assert_close(got, want, rtol=1e-12, atol=1e-12)
         distinct_threshold = 1e-14
         assert (

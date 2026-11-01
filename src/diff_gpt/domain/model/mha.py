@@ -78,9 +78,6 @@ class MultiHeadAttention(nn.Module):
         n_embd: int,
         n_head: int,
         layer_idx: int,
-        *,
-        use_rope: bool = True,
-        centered_xsa: bool = False,
     ) -> None:
         """
         Create the fused query/key/value and output projections, without biases.
@@ -89,10 +86,8 @@ class MultiHeadAttention(nn.Module):
         rotates channel pairs. `layer_idx` is the index of the owning block; it
         selects this layer's slot in the KV cache. Each head's queries and
         keys are RMS-normalized before the standard q·k / sqrt(head_dim).
-        `use_rope=False` leaves queries and keys unrotated while retaining
-        the full causal attention mask. Centered XSA is an optional numerical
-        evaluation of the same real projection. Deep FP32 backward cancellation
-        needs the whole-model repeated-token correction before default use.
+        Centered XSA evaluates the same real projection while avoiding
+        constant-value cancellation. Every layer applies RoPE.
         """
         super().__init__()
         if n_embd % n_head != 0:
@@ -101,8 +96,6 @@ class MultiHeadAttention(nn.Module):
         self.n_embd = n_embd
         self.n_head = n_head
         self.layer_idx = layer_idx
-        self.use_rope = use_rope
-        self.centered_xsa = centered_xsa
         self.head_dim = self.n_embd // self.n_head
         if self.head_dim % 2 != 0:
             msg = f"head size {self.head_dim} must be even: RoPE rotates pairs"
@@ -124,8 +117,8 @@ class MultiHeadAttention(nn.Module):
         Apply causal exclusive self-attention to `x` of shape (B, T, C).
 
         `cos` and `sin` are the RoPE tables of the T positions of `x`, shape
-        (T, head_dim / 2); they rotate the queries and keys when `use_rope`
-        is True. With `kv_cache`, the new keys/values are appended to this
+        (T, head_dim / 2); they rotate the queries and keys. With `kv_cache`,
+        the new keys/values are appended to this
         layer's slot and the queries also attend to all cached positions
         before them, a shared prefix among them (one_query_attention): rows
         that share one take one position (T = 1) per call. Each head's output
@@ -144,13 +137,10 @@ class MultiHeadAttention(nn.Module):
         # RoPE keeps the norms, and the cache stores normalized keys.
         q = rms_norm(q)
         k = rms_norm(k)
-        # Positional layers cache rotated keys; content layers cache raw keys.
-        if self.use_rope:
-            q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
+        q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
         # XSA removes the direction of each token's own value, so keep these
         # values: the cache returns those of every position so far
         own_value = v
-        v_unit = F.normalize(v, dim=-1) if not self.centered_xsa else None
         # Keys/values that groups of rows share before their own, or None
         prefix = None if kv_cache is None else kv_cache.prefix_kv(self.layer_idx)
         if prefix is not None and T != 1:
@@ -159,16 +149,15 @@ class MultiHeadAttention(nn.Module):
         # Apply KV cache: insert current k,v into cache, get the full view so far
         if kv_cache is not None:
             k, v = kv_cache.insert_kv(self.layer_idx, k, v)
-        if self.centered_xsa:
-            if prefix is None:
-                anchor = v[:, :, :1]
-            else:
-                prefix_k, prefix_v = prefix
-                prefix_anchor = prefix_v[:, :, :1]
-                anchor = prefix_anchor.repeat_interleave(B // prefix_v.size(0), dim=0)
-                prefix = (prefix_k, prefix_v - prefix_anchor)
-            # Cache storage retains raw values; only this attention call is centered.
-            v = v - anchor
+        if prefix is None:
+            anchor = v[:, :, :1]
+        else:
+            prefix_k, prefix_v = prefix
+            prefix_anchor = prefix_v[:, :, :1]
+            anchor = prefix_anchor.repeat_interleave(B // prefix_v.size(0), dim=0)
+            prefix = (prefix_k, prefix_v - prefix_anchor)
+        # Cache storage retains raw values; only this attention call is centered.
+        v = v - anchor
         Tq = q.size(2)  # number of queries in this forward pass
         # number of keys/values in total (shared prefix + cache + this pass)
         Tk = k.size(2) + (0 if prefix is None else prefix[0].size(2))
@@ -197,10 +186,7 @@ class MultiHeadAttention(nn.Module):
             )
             y = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
         # XSA: drop each head's component along the token's own value
-        if self.centered_xsa:
-            y = centered_projection(y, own_value - anchor, own_value)
-        else:
-            y = y - (y * v_unit).sum(dim=-1, keepdim=True) * v_unit
+        y = centered_projection(y, own_value - anchor, own_value)
         if Tq == Tk:
             # Position 0 has no context: its XSA output is exactly zero.
             # Avoid amplifying cancellation roundoff in the branch's RMSNorm.

@@ -78,7 +78,6 @@ class Config:
     epochs: int = 1000
     after99: int = 25
     rope_base: float = 10000.0
-    rope_layers: tuple[bool, ...] | None = None
     restart_step: int = 0
     restart_warmup: int = 0
     checkpoint_every: int = 100
@@ -98,8 +97,6 @@ def config_from_dict(value: Mapping[str, Any]) -> Config:
     """Restore nested dataclasses and JSON lists without implicit defaults."""
     values = dict(value)
     values["data"] = DataConfig(**values.get("data", {}))
-    if values.get("rope_layers") is not None:
-        values["rope_layers"] = tuple(values["rope_layers"])
     return Config(**values)
 
 
@@ -146,7 +143,6 @@ def build(config: Config, context: int, device: str) -> GPT:
         block_size=context + 1,
         use_checkpoint=False,
         rope_base=config.rope_base,
-        rope_layers=config.rope_layers,
     ).to(device)
 
 

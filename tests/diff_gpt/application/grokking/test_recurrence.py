@@ -244,7 +244,7 @@ def test_a_checkpoint_of_an_earlier_model_cannot_resume_or_verify(
     directory = tmp_path / "run"
     run(config, directory, "cpu")
     checkpoint = torch.load(directory / "checkpoint.pt", weights_only=True)
-    assert checkpoint.pop("normalization") == "peri_rms_qk_rms"
+    assert checkpoint.pop("normalization") == "scaled_peri_rms_qk_rms_centered_xsa"
     torch.save(checkpoint, directory / "checkpoint.pt")
     files = contents(directory)
     with pytest.raises(ValueError, match="Peri/QK-RMSNorm"):
