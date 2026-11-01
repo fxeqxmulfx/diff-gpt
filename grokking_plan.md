@@ -420,3 +420,11 @@ The source div97 regression test remains the reference for later full-model
 comparisons. Preserve token-attention Q/K normalization, Peri-RMSNorm, RoPE,
 XSA and SwiGLU. A residual change needs a separate declared experiment and
 sufficient training duration, with the original residual model as its control.
+
+The frozen probe is complete and all21 checkpoints independently replayed.
+[Results and limitations](research/residual_attention/README.md) retain every
+case. Oversized key-only queries saturate to zero gradients; Q/K bounds the
+scores but does not fix oversized-query conditioning. Unit-RMS Q/K queries
+solve the task on all three data/minibatch seeds. Do not infer a full-model
+residual improvement from this mechanism check. Companion Lean proofs landed
+at1a9b522e; no optimizer-convergence claim was added.
