@@ -6,6 +6,7 @@ from torch import nn
 
 from diff_gpt.domain.model.feed_forward import FeedForward
 from diff_gpt.domain.model.mha import MultiHeadAttention
+from diff_gpt.domain.model.rms_norm import RMSNorm
 
 if TYPE_CHECKING:
     import torch
@@ -36,7 +37,7 @@ class Block(nn.Module):
         arXiv:2510.22026v2, Table 1, adapted to parameter-free RMSNorm.
         """
         super().__init__()
-        self.ln_1 = nn.RMSNorm(n_embd, elementwise_affine=False)
+        self.ln_1 = RMSNorm(n_embd)
         self.sa = MultiHeadAttention(
             n_embd=n_embd,
             n_head=n_head,
@@ -44,10 +45,10 @@ class Block(nn.Module):
             use_rope=use_rope,
             centered_xsa=centered_xsa,
         )
-        self.ln_2 = nn.RMSNorm(n_embd, elementwise_affine=False)
+        self.ln_2 = RMSNorm(n_embd)
         self.ffwd = FeedForward(n_embd=n_embd)
-        self.attn_out_norm = nn.RMSNorm(n_embd, elementwise_affine=False)
-        self.ffn_out_norm = nn.RMSNorm(n_embd, elementwise_affine=False)
+        self.attn_out_norm = RMSNorm(n_embd)
+        self.ffn_out_norm = RMSNorm(n_embd)
 
     def forward(
         self,

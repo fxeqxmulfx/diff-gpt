@@ -987,3 +987,16 @@ read the gift-eval clone and `datasets/time-output` (see their README).
 - [arxiv.org: The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)
 - [arxiv.org: Grokking: Generalization Beyond Overfitting on Small Algorithmic Datasets](https://arxiv.org/abs/2201.02177)
 - [arxiv.org: iTransformer: Inverted Transformers are Effective for Time Series Forecasting](https://arxiv.org/abs/2310.06625)
+
+### RMS gradient accuracy
+
+All model RMS normalizations use the native forward with a separated radial
+and tangent backward. FP64 projection prevents the FP32 backward from erasing
+small finite-epsilon radial derivatives. Norms remain parameter-free and have
+no bias. The transformer lab task155 compared 48 matched synthetic cases:
+unit-scale pre-normalization amplitudes recovered in all four corrected cases
+and none of the four native controls; at scale 1000 both still failed. This
+fixes a numerical gradient failure, not all optimizer conditioning, and does not
+establish faster full-transformer grokking. Tests cover native forward equality,
+CPU/CUDA dtypes, an independent FP64 derivative, compiled gradients, known-solution
+held-out recovery and the existing trained modular-division fixtures.

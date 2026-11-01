@@ -58,6 +58,8 @@ LIBRARY_SOURCES = (
     ROOT / "src/diff_gpt/domain/model/gpt.py",
     ROOT / "src/diff_gpt/domain/model/block.py",
     ROOT / "src/diff_gpt/domain/model/mha.py",
+    ROOT / "src/diff_gpt/domain/model/rms_norm.py",
+    ROOT / "src/diff_gpt/domain/model/centered_xsa.py",
     ROOT / "src/diff_gpt/domain/model/feed_forward.py",
     ROOT / "src/diff_gpt/domain/model/rope.py",
     ROOT / "src/diff_gpt/domain/optimizer/schedule_free.py",

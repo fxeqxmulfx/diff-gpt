@@ -7,6 +7,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from diff_gpt.domain.model.centered_xsa import XSA_EPS, centered_projection
+from diff_gpt.domain.model.rms_norm import rms_norm
 from diff_gpt.domain.model.rope import apply_rope
 
 if TYPE_CHECKING:
@@ -141,8 +142,8 @@ class MultiHeadAttention(nn.Module):
             v.view(B, T, self.n_head, self.head_dim).transpose(1, 2),
         )  # make head be batch dim, i.e. (B, T, H, D) -> (B, H, T, D)
         # RoPE keeps the norms, and the cache stores normalized keys.
-        q = F.rms_norm(q, (self.head_dim,))
-        k = F.rms_norm(k, (self.head_dim,))
+        q = rms_norm(q)
+        k = rms_norm(k)
         # Positional layers cache rotated keys; content layers cache raw keys.
         if self.use_rope:
             q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)

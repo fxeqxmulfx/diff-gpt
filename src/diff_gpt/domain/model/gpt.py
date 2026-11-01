@@ -10,6 +10,7 @@ from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
 from diff_gpt.domain.model.block import Block
+from diff_gpt.domain.model.rms_norm import RMSNorm
 from diff_gpt.domain.model.rope import rope_tables
 
 if TYPE_CHECKING:
@@ -176,8 +177,8 @@ class GPT(BaseGPT):
             )
             for i in range(n_layer)
         )
-        self.ln_f = nn.RMSNorm(n_embd, elementwise_affine=False)
-        self.embedding_norm = nn.RMSNorm(n_embd, elementwise_affine=False)
+        self.ln_f = RMSNorm(n_embd)
+        self.embedding_norm = RMSNorm(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size, bias=False)
         self.lm_head.weight = self.token_embedding_table.weight
         # Keep the N(0, 0.02) initialization and 1/sqrt(2·n_layer) scaling of
