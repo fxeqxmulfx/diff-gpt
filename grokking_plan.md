@@ -392,3 +392,31 @@ metric difference is below 1.5e-7. Evidence is in
 `runs/grokking-series/evaluation-batch-audit.json` and
 `runs/grokking-series/evaluation-batch-training-audit.json`. New formula runs
 are under `formula-batched`; earlier runs remain available.
+
+
+## Residual-attention verification (2026-11-01)
+
+The user requested mathematical and synthetic-gradient checks before replacing
+ordinary residuals. The companion Lean repository now proves score caps,
+finite-epsilon sensitivity and convex-value bounds for parameter-free Q/K
+normalized depth attention. The original AttnRes key-only formula permits
+unbounded scores through its pseudo-query or post-normalization gain.
+`domain/model/attention_residual.py` adds the corrected primitive, with unit-RMS
+query initialization, fixed 1/sqrt(width) scaling and raw values.
+
+Before full-transformer changes, run the fixed known-solution synthetic probe
+in `application/grokking/residual_attention_probe.py`. It has eight shuffled
+source vectors of width16, one positive marker, and independent payloads. An
+explicit unit-RMS query reproduces the independently calculated teacher mixture.
+The 21 cases compare key-only and Q/K scoring at zero, unit and oversized query
+scales, plus a tiny-query Q/K control, on seeds11/17/23. Every case uses2000
+Schedule-Free AdamW updates, lr.01, betas.9/.98, decay0, warmup10 and batch64.
+The final target is heldout MSE<=.001 and routing accuracy>=99%. All cases,
+including saturation or poor conditioning, must be retained. Gradient norms
+refer to the training query; accuracy and mixture error use averaged weights.
+This query-only task is not evidence of full-transformer generalization.
+
+The source div97 regression test remains the reference for later full-model
+comparisons. Preserve token-attention Q/K normalization, Peri-RMSNorm, RoPE,
+XSA and SwiGLU. A residual change needs a separate declared experiment and
+sufficient training duration, with the original residual model as its control.
