@@ -242,3 +242,42 @@ def test_invalid_mode_and_conditioner_owner_are_rejected() -> None:
     a, b = make("conditioned_qk"), make("conditioned_qk")
     with pytest.raises(ValueError, match="own every"):
         TransformerQueryConditioner(a, ScheduleFreeAdamW(b.parameters()))
+
+
+def test_full_transformer_recovers_oversized_query_gradients() -> None:
+    """Repair actual transformer CE derivatives, without claiming generalization."""
+    model = make("conditioned_qk")
+    with torch.no_grad():
+        for index, mixer in enumerate(model.residual_mixers):
+            mixer.query.mul_(1e6 if index % 2 else 1.0)
+    optimizer = ScheduleFreeAdamW(model.parameters(), lr=0.003, betas=(0.9, 0.98))
+    tokens = torch.tensor([[1, 2], [2, 3], [4, 4]])
+    labels = torch.tensor([6, 8, 1])  # Modular division at prime 11.
+    parameters = dict(model.named_parameters())
+    before = model(tokens)[0]
+    old_gradients = dict(
+        zip(
+            parameters,
+            torch.autograd.grad(
+                F.cross_entropy(before[:, -1], labels), tuple(parameters.values())
+            ),
+            strict=True,
+        )
+    )
+    factors = TransformerQueryConditioner(model, optimizer)()
+    after = model(tokens)[0]
+    gradients = torch.autograd.grad(
+        F.cross_entropy(after[:, -1], labels), tuple(parameters.values())
+    )
+    torch.testing.assert_close(after, before, rtol=2e-8, atol=2e-10)
+    query_factors = {
+        f"residual_mixers.{index}.query": factor for index, factor in enumerate(factors)
+    }
+    minimum_gain = 1e5
+    for name, gradient in zip(parameters, gradients, strict=True):
+        factor = query_factors.get(name, 1.0)
+        old = old_gradients[name]
+        torch.testing.assert_close(gradient, old * factor, rtol=2e-8, atol=2e-10)
+        if float(factor) > 1:
+            assert float(old.norm()) > 0
+            assert float(gradient.norm()) > minimum_gain * float(old.norm())
