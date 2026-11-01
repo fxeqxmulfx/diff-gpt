@@ -1,0 +1,55 @@
+{
+  "training_commit": "e4edb9f5",
+  "gpt_model_commit": "ad76812514ef5f7573bcf71b1e44f391dcdcc33e",
+  "protocol_sha256": "36fb6160d24161231ed1fadbe9ca00f3f42c3d7a9c4bb5e74619fe3b6dcc17dd",
+  "torch": "2.15.0+cu132",
+  "scope": "Export both frozen scaled-residual endpoints for actual diff_gpt regressions.\n\nThe weights come from the closed lab cohort, and labels come from modular\ndivision. Expected scores come from its unchanged CPU scorer, not from the GPT\nimplementation under test. This preserves learned held-out behavior; it does\nnot turn one frozen trajectory into a guarantee about future training speed.\n",
+  "cases": [
+    {
+      "label": "mechanism-s11-scaled",
+      "file": "scaled_seed11.npz",
+      "sha256": "e8f4d403aee79845a5bf175b81f89bc5d2db32bda6b0ae0b33e1e73f6e82a97a",
+      "configuration": {
+        "vocab_size": 97,
+        "n_embd": 128,
+        "block_size": 33,
+        "n_head": 4,
+        "n_layer": 4,
+        "mixing": "scaled",
+        "use_checkpoint": false,
+        "pad_vocab_size_to": 1,
+        "rope_base": 10000.0
+      },
+      "updates": 23000,
+      "source_checkpoint_sha256": "7f1a1235c86ae519fb0669317168bd690ce8b66a680adca6317e61b4accd8cd1",
+      "test_examples": 2328,
+      "test_correct": 2276,
+      "disabled_scale_correct": 843,
+      "minimum_accuracy": 0.95,
+      "prediction_sha256": "907ca2995c42629ca3ebb8b4251cdfd39a833d9d915b158e03b9313573bbbf2d"
+    },
+    {
+      "label": "mechanism-s17-scaled",
+      "file": "scaled_seed17.npz",
+      "sha256": "4f52d8abafd55ce7f3fccfc838d5bf6c2717bf9a595404a58a86210c97799c66",
+      "configuration": {
+        "vocab_size": 97,
+        "n_embd": 128,
+        "block_size": 33,
+        "n_head": 4,
+        "n_layer": 4,
+        "mixing": "scaled",
+        "use_checkpoint": false,
+        "pad_vocab_size_to": 1,
+        "rope_base": 10000.0
+      },
+      "updates": 23000,
+      "source_checkpoint_sha256": "a31262975d7be18225781610ce3f51ec1c81cd1f2b7f3742dd3996c49160a3d1",
+      "test_examples": 2328,
+      "test_correct": 2290,
+      "disabled_scale_correct": 1019,
+      "minimum_accuracy": 0.95,
+      "prediction_sha256": "74120fd16bf4ddfd9b380dea0c426169e39a62d711939b627af621e9ccb94576"
+    }
+  ]
+}
