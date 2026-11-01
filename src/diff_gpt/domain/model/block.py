@@ -23,6 +23,7 @@ class Block(nn.Module):
         layer_idx: int,
         *,
         use_rope: bool = True,
+        centered_xsa: bool = False,
     ) -> None:
         """
         Normalize the input and output of each attention and MLP branch.
@@ -41,6 +42,7 @@ class Block(nn.Module):
             n_head=n_head,
             layer_idx=layer_idx,
             use_rope=use_rope,
+            centered_xsa=centered_xsa,
         )
         self.ln_2 = nn.RMSNorm(n_embd, elementwise_affine=False)
         self.ffwd = FeedForward(n_embd=n_embd)
@@ -53,11 +55,22 @@ class Block(nn.Module):
         cos: torch.Tensor,
         sin: torch.Tensor,
         kv_cache: KVCache | None,
-    ) -> torch.Tensor:
+        *,
+        return_guard: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """
         Apply attention, then the MLP, normalizing each branch before addition.
 
         `cos` and `sin` are the RoPE tables of the positions of `x`.
         """
-        x = x + self.attn_out_norm(self.sa(self.ln_1(x), cos, sin, kv_cache=kv_cache))
-        return x + self.ffn_out_norm(self.ffwd(self.ln_2(x)))
+        if return_guard:
+            branch, valid = self.sa(
+                self.ln_1(x), cos, sin, kv_cache=kv_cache, return_guard=True
+            )
+        else:
+            branch = self.sa(self.ln_1(x), cos, sin, kv_cache=kv_cache)
+        x = x + self.attn_out_norm(branch)
+        output = x + self.ffn_out_norm(self.ffwd(self.ln_2(x)))
+        if return_guard:
+            return output, valid
+        return output

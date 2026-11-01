@@ -108,6 +108,7 @@ class GPT(BaseGPT):
         pad_vocab_size_to: int = 64,
         rope_base: float = 10_000.0,
         rope_layers: tuple[bool, ...] | None = None,
+        centered_xsa: bool = True,
     ) -> None:
         """
         Build the layers and initialize the weights.
@@ -124,6 +125,10 @@ class GPT(BaseGPT):
         Parameter-free Peri-RMSNorm normalizes the embedding stream and both
         the input and output of every attention and MLP branch.
         Q/K use per-head RMSNorm followed by standard 1/sqrt(head_dim) scaling.
+        `centered_xsa` uses the equivalent centered projection and a guarded
+        common state for repeated-token prefixes. This avoids
+        cancellation in both their forward and parameter gradients. False
+        retains the legacy numerical path for historical replay.
         """
         if n_layer < 1:
             msg = f"n_layer must be >= 1, got {n_layer}"
@@ -167,6 +172,7 @@ class GPT(BaseGPT):
                 n_head=n_head,
                 layer_idx=i,
                 use_rope=True if rope_layers is None else rope_layers[i],
+                centered_xsa=centered_xsa,
             )
             for i in range(n_layer)
         )
@@ -181,6 +187,7 @@ class GPT(BaseGPT):
             if name.endswith("c_proj.weight"):
                 nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * n_layer))
         self.use_checkpoint = use_checkpoint
+        self.centered_xsa = centered_xsa
 
     @staticmethod
     def _init_weights(module: nn.Module) -> None:
@@ -223,13 +230,30 @@ class GPT(BaseGPT):
         sin = self.rope_sin[T_start:T_end]
         x = self.token_embedding_table(idx)  # (B, T, C)
         x = self.embedding_norm(x)
+        guarded = self.centered_xsa and kv_cache is None
+        if guarded:
+            constant = (idx != idx[:, :1]).cumsum(dim=1) == 0
         for block in self.blocks:
             if self.training and self.use_checkpoint:
-                x = checkpoint(
-                    block, x, cos, sin, kv_cache=kv_cache, use_reentrant=False
+                result = checkpoint(
+                    block,
+                    x,
+                    cos,
+                    sin,
+                    kv_cache=kv_cache,
+                    return_guard=guarded,
+                    use_reentrant=False,
                 )
             else:
-                x = block(x, cos, sin, kv_cache=kv_cache)
+                result = block(x, cos, sin, kv_cache=kv_cache, return_guard=guarded)
+            if guarded:
+                x, valid = result
+                constant = constant & valid[:, None]
+                # Source-equal prefix states share the first position's parameter
+                # path, avoiding cancellation of large independent-position terms.
+                x = torch.where(constant[:, :, None], x[:, :1], x)
+            else:
+                x = result
         x = self.ln_f(x)
         logits = self.lm_head(x)  # (B, T, vocab_size)
         loss = None

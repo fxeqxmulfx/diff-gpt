@@ -1,0 +1,592 @@
+{
+  "scope": "CPU first512 heldout rows; no training or checkpoint modifications",
+  "python": "3.15.2 (main, Oct 26 2026, 14:06:56) [Clang 23.1.3 ]",
+  "torch": "2.15.0+cu132",
+  "rms_epsilon_all_variants": 1.1920928955078125e-07,
+  "fp64_conversion": "Exact FP32 averaged weights and rotary tables; explicit RMS epsilon",
+  "source_sha256": {
+    "gpt.py": "cf68dfcef84abe7779d11ca54e3ce07c5eab116b9667d2afc8af1ee200e3a73f",
+    "block.py": "cd95a8fb4aed0e4ae416eccd244e2aaafc5aaefcf716785690e6e8aa285a714f",
+    "mha.py": "41e787ae6303043cf2cb15c3f10ea940a65521ef8c4441f36111ffce84207631",
+    "centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d"
+  },
+  "script_sha256": "f03b8c6887fa01dd3c80f284983432dce38702c61a4ae8d5e9c6f0d4d47fa038",
+  "cases": [
+    {
+      "label": "pairs-division-p97-w256d1",
+      "checkpoint_sha256": "b3bc378f98151191722298d367ace038af1822f17f3bbf4eb94dedfbf020612c",
+      "rows": 512,
+      "repeated_rows": 8,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 7.056765079498291,
+          "gradient_rms": 0.01685010948780509,
+          "gradient_error_rms": 5.121528984292036e-07,
+          "gradient_error_max": 1.4699197767163719e-05,
+          "gradient_cosine": 0.9999999995386586,
+          "max_logit_error": 0.004601875069699002,
+          "changed_predictions": 0
+        },
+        "legacy64": {
+          "loss": 7.056786826982271,
+          "gradient_rms": 0.016850128160216186,
+          "gradient_error_rms": 7.148547248574874e-16,
+          "gradient_error_max": 2.0431573100054834e-14,
+          "gradient_cosine": 1.000000000000003,
+          "max_logit_error": 8.716527499785798e-12,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 7.05678653717041,
+          "gradient_rms": 0.016850128281567314,
+          "gradient_error_rms": 3.330853750163575e-08,
+          "gradient_error_max": 2.0544406403935622e-06,
+          "gradient_cosine": 0.9999999999980094,
+          "max_logit_error": 1.3843799725243855e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 7.056786826982257,
+          "gradient_rms": 0.01685012816021617,
+          "gradient_error_rms": 6.324191816779119e-17,
+          "gradient_error_max": 3.975986206938842e-15,
+          "gradient_cosine": 1.0000000000000036,
+          "max_logit_error": 7.105427357601002e-15,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 7.05678653717041,
+          "gradient_rms": 0.016850128385297106,
+          "gradient_error_rms": 1.597889486021658e-08,
+          "gradient_error_max": 2.46251727391289e-07,
+          "gradient_cosine": 0.9999999999995134,
+          "max_logit_error": 1.3843799725243855e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 7.056786826982257,
+          "gradient_rms": 0.01685012816021617,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 1.0000000000000036,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 7.05678653717041,
+        "gradient_rms": 0.01685012838825803,
+        "gradient_error_rms": 1.2781015498967303e-09,
+        "gradient_error_max": 2.9802322387695312e-08,
+        "gradient_cosine": 0.9999999999999192,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-division-p97-w128d4",
+      "checkpoint_sha256": "cab2073fd2d658ab49583523c8c8a14a44f9fdac91c9a0b5cb1748009831d430",
+      "rows": 512,
+      "repeated_rows": 8,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 9.363033294677734,
+          "gradient_rms": 0.010826192284774272,
+          "gradient_error_rms": 0.0013774557800607368,
+          "gradient_error_max": 0.0682997275080373,
+          "gradient_cosine": 0.9918731277424142,
+          "max_logit_error": 8.088493524894025,
+          "changed_predictions": 3
+        },
+        "legacy64": {
+          "loss": 9.346303779963293,
+          "gradient_rms": 0.01074726120278139,
+          "gradient_error_rms": 5.428466727022382e-08,
+          "gradient_error_max": 2.14173128887038e-06,
+          "gradient_cosine": 0.9999999999872525,
+          "max_logit_error": 0.0009422019728538844,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 9.346303939819336,
+          "gradient_rms": 1.4517554183028658,
+          "gradient_error_rms": 1.451711640911796,
+          "gradient_error_max": 319.9720217154469,
+          "gradient_cosine": 0.007774762844847078,
+          "max_logit_error": 1.6417992650730184e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 9.34630457033763,
+          "gradient_rms": 0.01074726058938237,
+          "gradient_error_rms": 2.8286129110808055e-09,
+          "gradient_error_max": 4.638652988109282e-07,
+          "gradient_cosine": 0.9999999999999553,
+          "max_logit_error": 3.860907509256606e-07,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 9.346303939819336,
+          "gradient_rms": 0.010747261695218216,
+          "gradient_error_rms": 2.5676588310405954e-08,
+          "gradient_error_max": 3.7042689011654306e-07,
+          "gradient_cosine": 0.9999999999970945,
+          "max_logit_error": 1.6417992650730184e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 9.346304570181681,
+          "gradient_rms": 0.010747260577598939,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 1.000000000000008,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 9.346303939819336,
+        "gradient_rms": 0.010747261656009206,
+        "gradient_error_rms": 4.000343226197205e-09,
+        "gradient_error_max": 6.705522537231445e-08,
+        "gradient_cosine": 0.9999999999998155,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-mixed-p97-w256d1",
+      "checkpoint_sha256": "99ca9e511113cdfd21548a70eb40798a595ac6e467d0a15705fcb9aa520a40e1",
+      "rows": 512,
+      "repeated_rows": 4,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 11.115762710571289,
+          "gradient_rms": 0.014796569484964736,
+          "gradient_error_rms": 3.7663759897908696e-07,
+          "gradient_error_max": 1.0353071456804287e-05,
+          "gradient_cosine": 0.9999999996760114,
+          "max_logit_error": 0.0031220153785254112,
+          "changed_predictions": 0
+        },
+        "legacy64": {
+          "loss": 11.115756637922797,
+          "gradient_rms": 0.014796572661662816,
+          "gradient_error_rms": 6.505022251901234e-16,
+          "gradient_error_max": 2.0608514894604468e-14,
+          "gradient_cosine": 1.0000000000000089,
+          "max_logit_error": 6.151384956964989e-12,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 11.11575698852539,
+          "gradient_rms": 0.014796572835222432,
+          "gradient_error_rms": 3.265460552324323e-08,
+          "gradient_error_max": 2.0581245434511675e-06,
+          "gradient_cosine": 0.9999999999975255,
+          "max_logit_error": 1.1348991054926927e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 11.115756637922797,
+          "gradient_rms": 0.014796572661662816,
+          "gradient_error_rms": 5.674695164068289e-17,
+          "gradient_error_max": 4.427014310692812e-15,
+          "gradient_cosine": 1.0000000000000087,
+          "max_logit_error": 1.7763568394002505e-15,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 11.11575698852539,
+          "gradient_rms": 0.014796572878077821,
+          "gradient_error_rms": 1.318339284781823e-08,
+          "gradient_error_max": 1.2799040559059553e-07,
+          "gradient_cosine": 0.9999999999995639,
+          "max_logit_error": 1.1348991054926927e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 11.115756637922797,
+          "gradient_rms": 0.014796572661662816,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 1.0000000000000087,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 11.11575698852539,
+        "gradient_rms": 0.014796572875354994,
+        "gradient_error_rms": 1.2004331493130769e-09,
+        "gradient_error_max": 2.60770320892334e-08,
+        "gradient_cosine": 0.9999999999999093,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-mixed-p97-w128d4",
+      "checkpoint_sha256": "3a349dc098b70235f0f737c1e65b5762b08a6ccebf9e5ba3315fecc1987098d7",
+      "rows": 512,
+      "repeated_rows": 4,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 9.344614028930664,
+          "gradient_rms": 0.00949163289854183,
+          "gradient_error_rms": 0.0008303031383609105,
+          "gradient_error_max": 0.029822172787189925,
+          "gradient_cosine": 0.9961731099083462,
+          "max_logit_error": 6.215867995292902,
+          "changed_predictions": 3
+        },
+        "legacy64": {
+          "loss": 9.354112020968238,
+          "gradient_rms": 0.009489734923084922,
+          "gradient_error_rms": 9.635119973788626e-08,
+          "gradient_error_max": 4.923429186814987e-06,
+          "gradient_cosine": 0.9999999999484793,
+          "max_logit_error": 0.0009088864542836639,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 9.35411262512207,
+          "gradient_rms": 2.2836406953752677,
+          "gradient_error_rms": 2.283667788586518,
+          "gradient_error_max": 256.00444804478013,
+          "gradient_cosine": -0.0007772533041286497,
+          "max_logit_error": 1.3954036938823577e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 9.35411180345706,
+          "gradient_rms": 0.009489736967678235,
+          "gradient_error_rms": 4.757493210559067e-09,
+          "gradient_error_max": 5.181197043121338e-07,
+          "gradient_cosine": 0.9999999999998672,
+          "max_logit_error": 4.354850702270596e-07,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 9.35411262512207,
+          "gradient_rms": 0.009489737063824753,
+          "gradient_error_rms": 2.0268943694105966e-08,
+          "gradient_error_max": 2.8724550926728654e-07,
+          "gradient_cosine": 0.9999999999976643,
+          "max_logit_error": 1.3954036938823577e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 9.354111803224404,
+          "gradient_rms": 0.009489737000407198,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 1.0000000000000016,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 9.35411262512207,
+        "gradient_rms": 0.009489737116398233,
+        "gradient_error_rms": 3.840106509167216e-09,
+        "gradient_error_max": 6.332993507385254e-08,
+        "gradient_cosine": 0.999999999999815,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-division-p193-w256d1",
+      "checkpoint_sha256": "c91258e735e761a5dbe8739e0e0840861483eead964f0a66acf412afa6761e63",
+      "rows": 512,
+      "repeated_rows": 2,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 3.609196937759407e-05,
+          "gradient_rms": 1.1608377548481268e-06,
+          "gradient_error_rms": 1.7580552787120895e-10,
+          "gradient_error_max": 2.8016069370954204e-09,
+          "gradient_cosine": 0.9999999886492377,
+          "max_logit_error": 0.01817869892255697,
+          "changed_predictions": 0
+        },
+        "legacy64": {
+          "loss": 3.610219075488685e-05,
+          "gradient_rms": 1.1608555262920652e-06,
+          "gradient_error_rms": 3.1101486576979166e-20,
+          "gradient_error_max": 1.9583401740519424e-18,
+          "gradient_cosine": 1.0000000000000318,
+          "max_logit_error": 2.4988011659843323e-11,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 3.609174018492922e-05,
+          "gradient_rms": 1.1608257971604724e-06,
+          "gradient_error_rms": 1.7784998921584115e-10,
+          "gradient_error_max": 2.8024595883783326e-09,
+          "gradient_cosine": 0.9999999885915918,
+          "max_logit_error": 1.523285590820933e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 3.6102190754886416e-05,
+          "gradient_rms": 1.1608555262920404e-06,
+          "gradient_error_rms": 1.6268379919508372e-22,
+          "gradient_error_max": 2.9010878443459787e-20,
+          "gradient_cosine": 1.0000000000000315,
+          "max_logit_error": 8.881784197001252e-16,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 3.609174018492922e-05,
+          "gradient_rms": 1.1608257970567657e-06,
+          "gradient_error_rms": 1.7784990052779588e-10,
+          "gradient_error_max": 2.8024595883783326e-09,
+          "gradient_cosine": 0.9999999885916067,
+          "max_logit_error": 1.523285590820933e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 3.6102190754886416e-05,
+          "gradient_rms": 1.1608555262920404e-06,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 1.0000000000000315,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 3.609174018492922e-05,
+        "gradient_rms": 1.1608257965884263e-06,
+        "gradient_error_rms": 9.200301985305353e-14,
+        "gradient_error_max": 1.4551915228366852e-11,
+        "gradient_cosine": 0.9999999999999446,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-division-p193-w128d4",
+      "checkpoint_sha256": "bdb2a7f38d151a64941fe1944af6acee32cd0b2c4b01ead383ebf14e9c41fcb4",
+      "rows": 512,
+      "repeated_rows": 2,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 8.755099296569824,
+          "gradient_rms": 0.011378719358096994,
+          "gradient_error_rms": 8.957946791918563e-05,
+          "gradient_error_max": 0.0044110652857806635,
+          "gradient_cosine": 0.9999690110690731,
+          "max_logit_error": 5.329665750076238,
+          "changed_predictions": 0
+        },
+        "legacy64": {
+          "loss": 8.754874184138034,
+          "gradient_rms": 0.011378444234197564,
+          "gradient_error_rms": 5.8952769380465965e-12,
+          "gradient_error_max": 3.718057576228284e-10,
+          "gradient_cosine": 0.9999999999999956,
+          "max_logit_error": 8.094564632599166e-05,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 8.754874229431152,
+          "gradient_rms": 0.011379706125602409,
+          "gradient_error_rms": 0.0001625910294771228,
+          "gradient_error_max": 0.019179664114296,
+          "gradient_cosine": 0.9998979241338917,
+          "max_logit_error": 1.878916797881658e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 8.75487418406472,
+          "gradient_rms": 0.011378444234177748,
+          "gradient_error_rms": 3.6094526830195395e-13,
+          "gradient_error_max": 7.996999590309528e-11,
+          "gradient_cosine": 0.9999999999999933,
+          "max_logit_error": 9.210085138988688e-09,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 8.754874229431152,
+          "gradient_rms": 0.011378444955714363,
+          "gradient_error_rms": 2.2278542877278763e-08,
+          "gradient_error_max": 3.0252223871124473e-07,
+          "gradient_cosine": 0.9999999999980274,
+          "max_logit_error": 1.878916797881658e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 8.754874184064715,
+          "gradient_rms": 0.011378444234176764,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 0.9999999999999942,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 8.754874229431152,
+        "gradient_rms": 0.011378444949731713,
+        "gradient_error_rms": 4.797896629110763e-09,
+        "gradient_error_max": 7.450580596923828e-08,
+        "gradient_cosine": 0.9999999999997977,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-mixed-p193-w256d1",
+      "checkpoint_sha256": "e383989ed9bb63a71b91deb279b24f3427d7a99101583241ff5db49d593e6471",
+      "rows": 512,
+      "repeated_rows": 2,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 12.276206970214844,
+          "gradient_rms": 0.00981965194655207,
+          "gradient_error_rms": 5.147703511830558e-07,
+          "gradient_error_max": 1.8971218931344846e-05,
+          "gradient_cosine": 0.9999999986259007,
+          "max_logit_error": 0.01066866057848459,
+          "changed_predictions": 0
+        },
+        "legacy64": {
+          "loss": 12.276214322183906,
+          "gradient_rms": 0.00981964989090551,
+          "gradient_error_rms": 1.0379485221544561e-15,
+          "gradient_error_max": 4.73978495341143e-14,
+          "gradient_cosine": 0.9999999999999839,
+          "max_logit_error": 1.262145943314863e-11,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 12.276213645935059,
+          "gradient_rms": 0.009819649580024181,
+          "gradient_error_rms": 7.495447056664598e-08,
+          "gradient_error_max": 7.504119998433256e-06,
+          "gradient_cosine": 0.9999999999708035,
+          "max_logit_error": 1.4794146110830297e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 12.276214322183913,
+          "gradient_rms": 0.009819649890905537,
+          "gradient_error_rms": 1.5300430393362644e-16,
+          "gradient_error_max": 1.647293412787576e-14,
+          "gradient_cosine": 0.999999999999983,
+          "max_logit_error": 1.7763568394002505e-15,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 12.276213645935059,
+          "gradient_rms": 0.009819649880573468,
+          "gradient_error_rms": 8.129867584107721e-09,
+          "gradient_error_max": 7.813021560276745e-08,
+          "gradient_cosine": 0.9999999999995922,
+          "max_logit_error": 1.4794146110830297e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 12.276214322183913,
+          "gradient_rms": 0.009819649890905537,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 0.999999999999983,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 12.276213645935059,
+        "gradient_rms": 0.009819649881239354,
+        "gradient_error_rms": 8.685067593098382e-10,
+        "gradient_error_max": 1.4901161193847656e-08,
+        "gradient_cosine": 0.9999999999998834,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    },
+    {
+      "label": "pairs-mixed-p193-w128d4",
+      "checkpoint_sha256": "4b337464af09d28d625882f03e2ce3a21ddb9bad3f781f7720df75f38770ca28",
+      "rows": 512,
+      "repeated_rows": 2,
+      "reference": "actual diff_gpt guarded FP64, fixed FP32 RMS epsilon",
+      "comparisons": {
+        "legacy32": {
+          "loss": 10.491998672485352,
+          "gradient_rms": 0.01096359072712202,
+          "gradient_error_rms": 0.0004909021499387332,
+          "gradient_error_max": 0.019269302721819606,
+          "gradient_cosine": 0.9989971196069989,
+          "max_logit_error": 6.655583128866167,
+          "changed_predictions": 1
+        },
+        "legacy64": {
+          "loss": 10.498351083955873,
+          "gradient_rms": 0.01095616242275531,
+          "gradient_error_rms": 1.334376832215181e-08,
+          "gradient_error_max": 5.328180810570265e-07,
+          "gradient_cosine": 0.9999999999992578,
+          "max_logit_error": 0.00021334538058770391,
+          "changed_predictions": 0
+        },
+        "centered32": {
+          "loss": 10.498350143432617,
+          "gradient_rms": 0.500642320617637,
+          "gradient_error_rms": 0.500542237423091,
+          "gradient_error_max": 64.00131130078228,
+          "gradient_cosine": 0.020076069534649826,
+          "max_logit_error": 1.7988836592319757e-05,
+          "changed_predictions": 0
+        },
+        "centered64": {
+          "loss": 10.498351063866965,
+          "gradient_rms": 0.010956162491636164,
+          "gradient_error_rms": 8.400771744880999e-10,
+          "gradient_error_max": 1.1376384940336992e-07,
+          "gradient_cosine": 0.9999999999999969,
+          "max_logit_error": 1.284713599947196e-07,
+          "changed_predictions": 0
+        },
+        "guarded32": {
+          "loss": 10.498350143432617,
+          "gradient_rms": 0.01095616169679065,
+          "gradient_error_rms": 2.078409242860428e-08,
+          "gradient_error_max": 2.5556270281945626e-07,
+          "gradient_cosine": 0.9999999999981519,
+          "max_logit_error": 1.7988836592319757e-05,
+          "changed_predictions": 0
+        },
+        "guarded64": {
+          "loss": 10.498351063868753,
+          "gradient_rms": 0.010956162488473763,
+          "gradient_error_rms": 0.0,
+          "gradient_error_max": 0.0,
+          "gradient_cosine": 1.000000000000002,
+          "max_logit_error": 0.0,
+          "changed_predictions": 0
+        }
+      },
+      "lab_guarded32_vs_source_guarded32": {
+        "loss": 10.498350143432617,
+        "gradient_rms": 0.0109561616601525,
+        "gradient_error_rms": 4.820881028484688e-09,
+        "gradient_error_max": 7.078051567077637e-08,
+        "gradient_cosine": 0.999999999999789,
+        "max_logit_error": 0.0,
+        "changed_predictions": 0
+      }
+    }
+  ]
+}

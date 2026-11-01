@@ -14,12 +14,14 @@ import torch
 if TYPE_CHECKING:
     from torch import Tensor
 
+XSA_EPS = 1e-12
+
 
 def centered_projection(
     centered_average: Tensor,
     own_delta: Tensor,
     own: Tensor,
-    eps: float = 1e-12,
+    eps: float = XSA_EPS,
 ) -> Tensor:
     """
     Remove the own direction after averaging values relative to an anchor.

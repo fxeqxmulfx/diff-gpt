@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from diff_gpt.domain.model.centered_xsa import centered_projection
+from diff_gpt.domain.model.centered_xsa import XSA_EPS, centered_projection
 from diff_gpt.domain.model.rope import apply_rope
 
 if TYPE_CHECKING:
@@ -116,7 +116,9 @@ class MultiHeadAttention(nn.Module):
         cos: torch.Tensor,
         sin: torch.Tensor,
         kv_cache: KVCache | None,
-    ) -> torch.Tensor:
+        *,
+        return_guard: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """
         Apply causal exclusive self-attention to `x` of shape (B, T, C).
 
@@ -127,7 +129,9 @@ class MultiHeadAttention(nn.Module):
         before them, a shared prefix among them (one_query_attention): rows
         that share one take one position (T = 1) per call. Each head's output
         is then made orthogonal to the token's own value; the first position
-        attends only to itself, so its output is zero.
+        attends only to itself, so its output is zero. `return_guard` also
+        returns whether all first-position value heads are above clipping;
+        the full model uses that predicate to stabilize repeated prefixes.
         """
         B, T, _ = x.size()
         q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
@@ -202,4 +206,9 @@ class MultiHeadAttention(nn.Module):
             y[:, :, 0, :] = 0
         # Re-assemble the heads side by side and project back to residual stream
         y = y.transpose(1, 2).contiguous().view(B, T, -1)
-        return self.c_proj(y)
+        output = self.c_proj(y)
+        if return_guard:
+            # Reuse the values from the actual fused projection: no extra matmul.
+            valid = (own_value[:, :, 0].norm(dim=-1) > XSA_EPS).all(dim=1)
+            return output, valid
+        return output

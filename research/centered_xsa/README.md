@@ -6,14 +6,16 @@ nonzero vectors. Roundoff then enters Peri-RMSNorm and can amplify over depth.
 The source already zeroed the first position explicitly; repeated values at
 later positions expose the same issue.
 
-The optional centered MHA centers values before attention, computes the residual
+Centered MHA centers values before attention, computes the residual
 relative to the own value, then projects. A separate own-value remainder
 preserves the original clipped normalization below epsilon. The accompanying
 Lean file `SequenceModel/Attention/CenteredXSA.lean` proves exact equivalence
 for arbitrary normalized weights and for the actual normalized RoPE head.
 Q/K normalization, attention weights, RoPE, residual addition and trainable
-parameter counts retain their mathematical meaning. `centered_xsa=False`
-selects legacy arithmetic in `MultiHeadAttention` for historical replay.
+parameter counts retain their mathematical meaning. `GPT(centered_xsa=False)`
+selects the complete legacy path for historical replay. Direct MHA/Block
+construction retains its legacy default: centering alone is insufficient for
+deep backward accuracy.
 
 Independent float64 equations and all score/value/own gradients agree,
 including zero, below-epsilon, boundary and above-epsilon cases. Finite
@@ -43,8 +45,31 @@ as follow-up validation after the running frozen GPU phase.
 
 A subsequent full-model parameter-gradient audit found an additional failure:
 for three deep checkpoints, centered FP32 gradient directions disagreed strongly
-with FP64 (cosines.0066--.0624), despite accurate forwards. Centering alone is
-therefore opt-in. The original model remains the default while a mathematically
-justified repeated-token output path is checked. This failure is retained in
+with FP64 (cosines.0066--.0624), despite accurate forwards. Centering alone was therefore restored to opt-in before the common-path
+correction was implemented. This failure is retained in
 `parameter_gradient_audit.json`; no successful forward test is treated as a
 complete backward-accuracy guarantee.
+
+The full GPT now defaults to centered XSA **plus guarded common-prefix states**.
+After each block, still-constant token prefixes share the already computed
+first-position result. Every first-position value head must be strictly above
+1e-12; clipping permanently disables sharing for that row. The guard reuses
+the actual projection values, with no extra matrix multiplication. Future
+nonconstant tokens are allowed. Lean's `ConstantTokens` and `ConstantPrefixes`
+prove the required source-state equalities for arbitrary RoPE and finite depth.
+They do not claim arbitrary independent-position gradient equivalence or a
+floating-point error bound. Cached forwards use centering without prefix-state
+sharing, so cache backward stability is outside this diagnostic claim.
+
+`guarded_parameter_replay.json` is the reproducible audit of the **actual GPT**,
+not just the lab prototype. All eight frozen checkpoints retain all six
+legacy/centered/guarded FP32/FP64 comparisons. Centering-only parameter-gradient
+RMS error reaches2.284; guarded errors are1.78e-10--2.57e-8. Guarded all-row
+logit errors are below1.88e-5 and predictions agree across precisions. The
+companion script is `experiments/modular_composition/parameter_precision.py`
+in the transformer repository; source and checkpoint hashes are in the JSON.
+The final affected CPU suite passes123 tests with14 skips. Three new tests
+check a separate FFN-only common-path oracle and all shared-parameter gradients,
+arbitrary suffixes, and the clipped case that must disable sharing. No result
+here establishes a learning improvement; the compiled regression records that
+question separately.
