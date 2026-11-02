@@ -71,9 +71,9 @@ def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
         assert torch.count_nonzero(parameter.grad), name
 
 
-def test_public_gpt_is_the_passing_fixed_temperature_candidate() -> None:
+def test_public_gpt_is_the_passing_dtype_epsilon_candidate() -> None:
     """Promotion preserves the exact architecture and tested initialization."""
-    candidate, _ = build_model("fixed-temperature", 1)
+    candidate, _ = build_model("rms-epsilon", 1)
     torch.manual_seed(1)
     model = GPT(
         548,
@@ -91,6 +91,7 @@ def test_public_gpt_is_the_passing_fixed_temperature_candidate() -> None:
         module for module in model.modules() if isinstance(module, RepairedRMSNorm)
     ]
     assert len(norms) == 4 * model.n_layer + 1
+    assert all(norm.eps is None for norm in norms)
 
 
 def test_scaled_initialization_changes_only_residual_projection_magnitudes() -> None:

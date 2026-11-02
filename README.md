@@ -1017,11 +1017,11 @@ held-out recovery and the existing trained modular-division fixtures.
 ### Restored GPTMini baseline
 
 `diff_gpt.domain.model.gpt.GPT` uses the passing GPTMini + SwiGLU architecture
-with repaired RMS backward and per-head Q/K RMS normalization. Attention
-uses fixed `1/sqrt(head_dim)` score scaling. The learned-temperature Q/K RMS
-candidate first reaches 99% hard-recall exact sequences at 2,050 updates;
-fixing that temperature passes at 2,500 (repaired L2-Q/K control: 2,400),
-within the matched seed-1 3,000-update screen. Embeddings and branch outputs stay unnormalized and residual
+with repaired RMS backward, native dtype RMS epsilon and per-head Q/K RMS
+normalization. Attention uses fixed `1/sqrt(head_dim)` score scaling. This
+model first reaches 99% hard-recall exact sequences at 1,850 updates in the
+matched seed-1 screen; its explicit-epsilon control takes 2,500. Embeddings
+and branch outputs stay unnormalized and residual
 coefficients stay 1. Dense attention stays explicit: fused SDPA missed the
 CPU FP32 screen, ending at 97.46% exact sequences (best 98.83%) by 3,000 updates.
 See `research/recall_ablation/README.md` for the matched protocol and evidence.

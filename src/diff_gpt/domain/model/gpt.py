@@ -16,6 +16,7 @@ from diff_gpt.domain.model.mini_block import (
     fix_qk_temperature,
     initialize_swiglu,
     repair_rms_backward,
+    use_native_rms_epsilon,
 )
 from diff_gpt.domain.model.rope import rope_tables
 
@@ -275,7 +276,7 @@ class GPTMini(BaseGPT):
 
 
 class GPT(GPTMini):
-    """Passing GPTMini with SwiGLU, repaired RMS and fixed-temperature Q/K RMS."""
+    """Passing SwiGLU GPTMini with repaired dtype-epsilon RMS and fixed Q/K gain."""
 
     def __init__(
         self,
@@ -305,3 +306,4 @@ class GPT(GPTMini):
         for block in self.blocks:
             block.sa = RMSQKAttention(block.sa)
             fix_qk_temperature(block.sa)
+        use_native_rms_epsilon(self)

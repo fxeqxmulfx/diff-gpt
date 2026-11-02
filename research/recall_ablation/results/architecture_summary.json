@@ -2,17 +2,18 @@
   "accepted_features": [
     "SwiGLU",
     "repaired FP64 radial/tangent RMS backward",
-    "per-head QK RMS normalization with fixed temperature"
+    "per-head QK RMS normalization with fixed temperature",
+    "native dtype epsilon at input/final RMS sites"
   ],
   "accepted_model_commit": "f6dae84",
-  "active_stage": "rms-epsilon",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Continue from fixed-temperature with ordinary AdamW and explicit attention. Change only the thirteen input/final RMS epsilons to native dtype epsilon; retain repaired backward. Stop at the next fast-screen miss.",
+  "decision": "Retain native dtype RMS epsilon after its 1850-update pass. Keep repaired backward, Q/K RMS, fixed attention gain, SwiGLU, ordinary AdamW and explicit attention; next isolate the XSA clipping threshold.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -36,6 +37,9 @@
     "residual_scale_seed1.json": "c5de7ee27766a498842c9ca3cfd86a2b739dd20c1d40b4e6501f1f2afbf95bcb",
     "residual_scale_seed1_audit.json": "a0fb8d90928af8fd919c946d427f24df1359090c72cb18530cb85a96e14e94d2",
     "residual_scale_seed1_history.jsonl": "75288d54ad43c7cd8a711a7208222ff7fcf773760fbbfb6180edfbd553659a14",
+    "rms_epsilon_seed1.json": "34ffddbbc789fbb9abb427a8c5812df345052b9f71466e8e334774e308a3c0b2",
+    "rms_epsilon_seed1_audit.json": "8d919d091baa72397caede95f203b84edde0a71bd6eb88fb906f3a701c6a1830",
+    "rms_epsilon_seed1_history.jsonl": "746341b772ba07f8610ce7574e865d67ac8ff2bd5cf44d65ba8f5f37c261e0a1",
     "rms_repaired_seed1.json": "401deda72c413ea8954a771889d017457a6aaa17c377402bbee6c635106ee41c",
     "rms_repaired_seed1_audit.json": "db6f377836232f5840f172a6dbf335e875c93fabd5b10cf3d302f7a428f56f71",
     "rms_repaired_seed1_history.jsonl": "0e5644bf1580aa279f081d98f7fee6f0b9f0eaed92feab3263a65f0182371ad3",
@@ -72,10 +76,9 @@
   ],
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
-  "next_feature": "native dtype epsilon at existing input/final RMS sites",
+  "next_feature": "XSA clipping threshold",
   "next_feature_if_resumed": "XSA clipping threshold",
   "not_tested_after_stop": [
-    "native dtype epsilon at input/final RMS sites (active)",
     "XSA clipping threshold",
     "centered XSA",
     "exact zero attention output at first position",
@@ -382,15 +385,51 @@
       "sequences": 512,
       "stage": "sdpa",
       "status": "censored at fast-screen budget"
+    },
+    {
+      "audit_file": "rms_epsilon_seed1_audit.json",
+      "completed": 1850,
+      "correct_queries": 4090,
+      "dense_attention": "explicit causal softmax",
+      "epsilon_changed_sites": [
+        "blocks.0.ln_1",
+        "blocks.0.ln_2",
+        "blocks.1.ln_1",
+        "blocks.1.ln_2",
+        "blocks.2.ln_1",
+        "blocks.2.ln_2",
+        "blocks.3.ln_1",
+        "blocks.3.ln_2",
+        "blocks.4.ln_1",
+        "blocks.4.ln_2",
+        "blocks.5.ln_1",
+        "blocks.5.ln_2",
+        "ln_f"
+      ],
+      "exact": 507,
+      "first99": 1850,
+      "history_file": "rms_epsilon_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "input_and_final_epsilon": "native dtype epsilon",
+      "learned_attention_temperature": false,
+      "parameters": 1249024,
+      "parent": "fixed-temperature",
+      "parent_initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "rms_epsilon_seed1.json",
+      "sequences": 512,
+      "stage": "rms-epsilon",
+      "status": "passed"
     }
   ],
-  "status": "resumed at user request: native dtype RMS epsilon",
+  "status": "native dtype RMS epsilon passed; preparing XSA clipping screen",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
-    "archived_evidence_hashes_verified": 34,
+    "archived_evidence_hashes_verified": 37,
     "compiled_repaired_gradient_probe_file": "peri_norm_repaired_compiled_gradient_probe.json",
     "eager_endpoint_replay": "exact counts; sources and sampler state verified",
     "embedding_norm_endpoint_audit": {
@@ -464,9 +503,15 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 852,
+    "full_domain_application_tests_passed": 855,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
+    "full_suite_validation_commit": null,
+    "full_suite_validation_source_sha256": {
+      "research/recall_ablation/features.py": "1840d7c6b44bc708c8318d7bff50b663d34bfa43cf13bd3add83f7e7e75c5066",
+      "src/diff_gpt/domain/model/gpt.py": "00a5abef324b6181a60331c9fca99a3bb851239a73cd4032ddd8b46d20e889d7",
+      "src/diff_gpt/domain/model/mini_block.py": "1da2534e48bfee8093c89ad0474c30ab524d6d880b3ade1b558ba82bcf932810",
+      "tests/diff_gpt/application/test_recall_features.py": "c9ef7310f711f5ee3331308c894b9f2b83a7459a2703455bb87c971e6c3b2a84"
+    },
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",
       "eager_replay": {
@@ -529,6 +574,29 @@
         "rewritten_queries": 2714,
         "superseded_value_predictions": 0,
         "unchanged_correct": 1378,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
+    "rms_epsilon_endpoint_audit": {
+      "checkpoint_sha256": "0d70bbb08f6d137af1828580a829245cc60a529f591ffb30332b7ee209d6ba54",
+      "eager_replay": {
+        "exact": 507,
+        "queries": 4096,
+        "queries_correct": 4090,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2711,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 0,
+        "unchanged_correct": 1379,
         "unchanged_queries": 1382
       },
       "optimizer_steps_match": true,
