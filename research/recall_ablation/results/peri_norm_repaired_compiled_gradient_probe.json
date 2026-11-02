@@ -1,0 +1,31 @@
+{
+  "repaired_rms_sites": 25,
+  "compiled_actual_model_sites": [
+    {
+      "site": "blocks.0.ln_1",
+      "effective_epsilon": 1e-05,
+      "compiled_radial_gradient": 7.499827916035429e-06,
+      "independent_expected_gradient": 7.4998375025312155e-06,
+      "passed": true
+    },
+    {
+      "site": "blocks.0.sa.c_proj.norm",
+      "effective_epsilon": 1.1920928955078125e-07,
+      "compiled_radial_gradient": 8.940696005765858e-08,
+      "independent_expected_gradient": 8.940694407045131e-08,
+      "passed": true
+    }
+  ],
+  "master_weight_dtypes": [
+    "torch.float32"
+  ],
+  "model_updates_performed": 0,
+  "probe_definition": {
+    "logit": 0.0,
+    "input": "2 * sigmoid(logit) * ones(2,128)",
+    "objective": "mean((norm(input) - 0.25) ** 2)",
+    "expected_gradient": "(1/sqrt(1+eps) - 0.25) * eps / (1+eps)**1.5",
+    "relative_tolerance": 2e-06,
+    "absolute_tolerance": 1e-12
+  }
+}

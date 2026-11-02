@@ -25,6 +25,7 @@ ARCHITECTURE_STAGES = (
     "embedding-norm",
     "peri-norm",
     "peri-norm-repaired",
+    "rms-repaired",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -33,6 +34,7 @@ PREDECESSOR = {
     "embedding-norm": "swiglu",
     "peri-norm": "swiglu",
     "peri-norm-repaired": "swiglu",
+    "rms-repaired": "swiglu",
 }
 
 
@@ -125,7 +127,7 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             msg = "Peri-RMSNorm changed parameter values or order"
             raise RuntimeError(msg)
     repaired_sites = 0
-    if stage == "peri-norm-repaired":
+    if stage in {"peri-norm-repaired", "rms-repaired"}:
         repaired_sites = repair_rms_backward(model)
         features.append("repaired FP64 radial/tangent RMS backward")
         if raw_parameter_digest(model) != parent_initial:

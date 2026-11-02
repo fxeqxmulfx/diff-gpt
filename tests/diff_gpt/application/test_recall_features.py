@@ -14,6 +14,7 @@ from research.recall_ablation.features import build_model, raw_parameter_digest
 HISTORICAL_INITIAL = "64c8ceab8de24ad993b068c1cf7f13c632f71b09c6dc623eecba00502a74959a"
 BASELINE_PARAMETERS = 1_249_816
 SWIGLU_PARAMETERS = 1_249_048
+HISTORICAL_RMS_EPS = 1e-5
 
 
 def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
@@ -41,7 +42,8 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
 
 
 @pytest.mark.parametrize(
-    "stage", ["swiglu", "embedding-norm", "peri-norm", "peri-norm-repaired"]
+    "stage",
+    ["swiglu", "embedding-norm", "peri-norm", "peri-norm-repaired", "rms-repaired"],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
     """Exercise the full residual stack and the optimized query readout."""
@@ -153,5 +155,23 @@ def test_repaired_peri_preserves_forward_epsilons_and_all_initial_parameters() -
         gradient = torch.autograd.grad(norm(value).sum(), value)[0]
         expected = torch.full_like(value, epsilon / (1 + epsilon) ** 1.5)
         assert_close(gradient, expected, rtol=2e-6, atol=1e-12)
+    tokens = torch.randint(548, (2, 8))
+    assert_close(repaired(tokens)[0], native(tokens)[0], rtol=0, atol=0)
+
+
+def test_repaired_swiglu_control_excludes_peri_and_preserves_forward() -> None:
+    """Isolate the requested RMS backward before testing further architecture."""
+    native, _ = build_model("swiglu", 1)
+    native_rng = torch.get_rng_state()
+    repaired, metadata = build_model("rms-repaired", 1)
+    assert torch.equal(torch.get_rng_state(), native_rng)
+    assert_close(repaired.state_dict(), native.state_dict(), rtol=0, atol=0)
+    assert metadata["repaired_rms_sites"] == 2 * repaired.n_layer + 1
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["embedding_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    for module in repaired.modules():
+        if isinstance(module, RepairedRMSNorm):
+            assert module.eps == HISTORICAL_RMS_EPS
     tokens = torch.randint(548, (2, 8))
     assert_close(repaired(tokens)[0], native(tokens)[0], rtol=0, atol=0)

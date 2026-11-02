@@ -2,13 +2,14 @@
   "accepted_features": [
     "SwiGLU"
   ],
+  "active_stage": "rms-repaired",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Keep public unscaled SwiGLU + ordinary AdamW and raw embeddings; test Peri-RMSNorm with the repaired backward at all RMS sites.",
+  "decision": "Skip Peri branch norms, embedding RMS, scaled initialization and Schedule-Free. Keep ordinary AdamW; verify repaired RMS on the passing SwiGLU architecture, then test forward residual scaling.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -19,6 +20,10 @@
     "peri_norm_native_seed1_history.jsonl": "a32dfb68c159ffdc4dd5125ca6351919eec90d0a3f255877ce40bd24109b09d9",
     "peri_norm_native_seed1_interruption.json": "5fba70edf41c3c1f80d3ef84d854f1955c5f42bab8085256002aed7f4a2aa96e",
     "peri_norm_native_seed1_protocol.json": "219e33c34663e1434d59deb29b7bda73a147f7b1f3634e4bbb8ccbef3453d70a",
+    "peri_norm_repaired_compiled_gradient_probe.json": "8562958d9c7f000e29db92bb1a5bf3e217ba424670b422ccfa7dbbe73cbce9ab",
+    "peri_norm_repaired_seed1.json": "1e1ac25eecf3ee109af2a7587c1d6cfdc8f5d4351771f972746cdfb0ad1c33d3",
+    "peri_norm_repaired_seed1_audit.json": "83d1a9e7f8c86296977de4fb76849c0c29f43b3e93466f701582449776e3526b",
+    "peri_norm_repaired_seed1_history.jsonl": "c7e4b50a401d551e352c301670c4dff70eaad89ef9e28637c0ca50805b79c976",
     "scaled_init_seed1.json": "289595bdd044f81fb11a3a03d1219bd3ddfc00005fe16b127d371a3a9640999e",
     "scaled_init_seed1_audit.json": "69ad33188e42f8e1e62a8b3032e2696444cdcfa72908f3dfb36a47f913d505a6",
     "scaled_init_seed1_history.jsonl": "e530ba7a7d0e82940c79c6d1a3e7883ff0be5d0dee6a631ff15245836cc48b9b",
@@ -47,18 +52,16 @@
       "stage": "peri-norm"
     }
   ],
-  "latest_failing_feature": "embedding RMS normalization, native dtype epsilon and native backward",
-  "next_feature": "Peri-RMSNorm with repaired radial/tangent RMS backward",
+  "latest_failing_feature": "Peri-RMSNorm branch outputs with repaired backward, raw embeddings and residual coefficient 1",
+  "next_feature": "fixed forward residual scaling, after repaired-only control passes",
   "not_tested_after_stop": [
-    "branch-output normalization",
     "fixed forward residual scaling",
     "QK normalization",
     "removal of learned temperatures",
     "centered XSA and clipping threshold",
     "fused SDPA",
     "first-position and repeated-prefix stabilization",
-    "native dtype epsilon",
-    "separated radial RMS backward"
+    "native dtype epsilon"
   ],
   "optimizer": "ordinary torch.optim.AdamW throughout",
   "previous_stop_decision": "Retain public GPTMini + SwiGLU, ordinary AdamW, raw embeddings and unscaled Normal(0,.02) initialization. Stop at the embedding-normalization miss.",
@@ -66,26 +69,24 @@
   "rejected_features": [
     "Schedule-Free AdamW",
     "depth-scaled projection initialization",
-    "embedding RMS normalization"
+    "embedding RMS normalization",
+    "Peri-RMSNorm branch outputs under repaired RMS"
   ],
   "resume_protocol": {
+    "all_epsilons": 1e-05,
+    "branch_output_normalization": false,
     "embedding_normalization": false,
-    "forward_matches_native": true,
     "forward_residual_scale": 1.0,
+    "forward_unchanged": true,
+    "initial_projection_scale": 1.0,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
     "parameters_changed": false,
     "parent": "swiglu",
-    "post_epsilon": "native dtype epsilon, unchanged",
-    "pre_and_final_epsilon": 1e-05,
-    "random_draws_added": false,
-    "repaired_rms_sites": 25,
-    "request": "go now to repaired rms",
-    "rms_backward": "FP64 separated radial/tangent at every RMS site",
-    "scaled_initialization": false,
-    "scope": "explicitly requested Peri-plus-repair combination; native interrupted run is not a passed parent",
+    "rationale": "Hold the user-requested repaired RMS constant before isolating the next architectural feature.",
+    "repaired_rms_sites": 13,
     "seed": 1,
-    "stage": "peri-norm-repaired"
+    "stage": "rms-repaired"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -179,14 +180,48 @@
       "sequences": 512,
       "stage": "embedding-norm",
       "status": "censored at fast-screen budget"
+    },
+    {
+      "audit_file": "peri_norm_repaired_seed1_audit.json",
+      "best_exact_accuracy": 0.0,
+      "best_token_observation": {
+        "loss": 4.585367321968079,
+        "seconds": 598.4473238729988,
+        "sequence_accuracy": 0.0,
+        "step": 2200,
+        "token_accuracy": 0.076416015625
+      },
+      "completed": 3000,
+      "correct_queries": 286,
+      "embedding_normalization": false,
+      "exact": 0,
+      "features": [
+        "SwiGLU",
+        "Peri-RMSNorm branch outputs",
+        "repaired FP64 radial/tangent RMS backward"
+      ],
+      "first99": null,
+      "forward_residual_scale": 1.0,
+      "history_file": "peri_norm_repaired_seed1_history.jsonl",
+      "initial_parameters_sha256": "4a5e339c3ad654fbe434dcb0bac6150360b0c341f5fe52acb250171df827bbf2",
+      "initial_projection_scale": 1.0,
+      "parameters": 1249048,
+      "parent": "swiglu",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "peri_norm_repaired_seed1.json",
+      "sequences": 512,
+      "stage": "peri-norm-repaired",
+      "status": "censored at fast-screen budget"
     }
   ],
-  "status": "running requested repaired Peri-RMSNorm; native run interrupted by user",
+  "status": "resumed after Peri miss: verifying repaired SwiGLU control before forward scaling",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
+    "compiled_repaired_gradient_probe_file": "peri_norm_repaired_compiled_gradient_probe.json",
     "eager_endpoint_replay": "exact counts; sources and sampler state verified",
     "embedding_norm_endpoint_audit": {
       "checkpoint_sha256": "2623578a23d78384d9b55b46ebe089ab57ed421af1486d1548c2bdd826b0e96e",
@@ -212,9 +247,32 @@
       "test_loaded": false
     },
     "embedding_norm_preserves_all_parent_parameter_bytes_and_weight_tying": true,
-    "focused_feature_tests_passed": 10,
+    "focused_feature_tests_passed": 12,
     "full_domain_application_tests_passed": 830,
     "full_domain_application_tests_skipped": 40,
+    "peri_repaired_endpoint_audit": {
+      "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",
+      "eager_replay": {
+        "exact": 0,
+        "queries": 4096,
+        "queries_correct": 286,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 206,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 209,
+        "unchanged_correct": 80,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
     "repaired_peri_forward_and_epsilons_match_native": true,
     "ruff": "passed",
     "scaled_init_endpoint_audit": {
