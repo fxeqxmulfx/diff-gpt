@@ -7,6 +7,8 @@ from torch.testing import assert_close
 
 from diff_gpt.domain.model.feed_forward import FeedForward
 from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.mini_block import MiniRMSNorm
+from diff_gpt.domain.model.rms_norm import RMSNorm as RepairedRMSNorm
 from research.recall_ablation.features import build_model, raw_parameter_digest
 
 HISTORICAL_INITIAL = "64c8ceab8de24ad993b068c1cf7f13c632f71b09c6dc623eecba00502a74959a"
@@ -38,7 +40,9 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
     assert treatment["initialization_from_trained_weights"] is False
 
 
-@pytest.mark.parametrize("stage", ["swiglu", "embedding-norm", "peri-norm"])
+@pytest.mark.parametrize(
+    "stage", ["swiglu", "embedding-norm", "peri-norm", "peri-norm-repaired"]
+)
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
     """Exercise the full residual stack and the optimized query readout."""
     model, _ = build_model(stage, 1)
@@ -122,3 +126,32 @@ def test_peri_rms_changes_only_branch_outputs_and_preserves_every_parameter() ->
         ):
             expected = F.rms_norm(old_projection(inputs), (parent.n_embd,))
             assert_close(new_projection(inputs), expected, rtol=0, atol=0)
+
+
+def test_repaired_peri_preserves_forward_epsilons_and_all_initial_parameters() -> None:
+    """Change RMS backward only, including pre-branch, post-branch and final sites."""
+    native, _ = build_model("peri-norm", 1)
+    native_rng = torch.get_rng_state()
+    repaired, metadata = build_model("peri-norm-repaired", 1)
+    assert torch.equal(torch.get_rng_state(), native_rng)
+    assert_close(repaired.state_dict(), native.state_dict(), rtol=0, atol=0)
+    assert metadata["repaired_rms_sites"] == 4 * repaired.n_layer + 1
+    native_modules = dict(native.named_modules())
+    corrected = {
+        name: module
+        for name, module in repaired.named_modules()
+        if isinstance(module, RepairedRMSNorm)
+    }
+    assert len(corrected) == 4 * repaired.n_layer + 1
+    for name, norm in corrected.items():
+        old = native_modules[name]
+        expected_eps = 1e-5 if isinstance(old, MiniRMSNorm) else old.eps
+        assert norm.eps == expected_eps
+        assert not list(norm.parameters())
+        epsilon = torch.finfo(torch.float32).eps if norm.eps is None else norm.eps
+        value = torch.ones(2, repaired.n_embd, requires_grad=True)
+        gradient = torch.autograd.grad(norm(value).sum(), value)[0]
+        expected = torch.full_like(value, epsilon / (1 + epsilon) ** 1.5)
+        assert_close(gradient, expected, rtol=2e-6, atol=1e-12)
+    tokens = torch.randint(548, (2, 8))
+    assert_close(repaired(tokens)[0], native(tokens)[0], rtol=0, atol=0)

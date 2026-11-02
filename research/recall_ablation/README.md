@@ -108,11 +108,39 @@ independent post-projection RMS equations and finite full-stack gradients.
 The fixed ordinary-AdamW recipe, seed 1 and 3,000-update 99% exact-sequence
 criterion apply again; another miss stops the sequence.
 
+## Requested switch to repaired RMS backward
+
+The active screen is now `peri-norm-repaired`, using the existing FP64
+radial/tangent backward from `domain/model/rms_norm.py` at **all 25 RMS
+sites**: twelve branch inputs, twelve branch outputs and the final norm.
+Every existing epsilon is preserved: 1e-5 at branch inputs/final readout,
+and native dtype epsilon at the new outputs. Forward outputs, all initial
+parameter bytes and construction RNG state match native Peri-RMSNorm exactly.
+The complete compiled validation metrics at initialization match too.
+Ten focused tests include all-site radial derivatives and native/repaired
+forward equality.
+
+The native-backward `peri-norm` run was interrupted at the user's request
+to switch immediately. Its last completed observation was update 2,050:
+0/512 exact sequences and 7.28% token accuracy. This is **not a completed
+failure** at the declared 3,000-update horizon. Its full observed history,
+protocol and interruption record are retained in `results/`; no endpoint
+weights or optimizer state were saved. It is not used as a passed parent.
+
+The repaired case starts fresh from the passing SwiGLU initialization under
+the same ordinary AdamW recipe. Raw embeddings, unscaled initialization and
+forward residual coefficient 1 remain fixed. This is the explicitly requested
+Peri-plus-backward-repair combination; no conclusions about the numerical
+repair follow from the interrupted native run. The remaining stability,
+attention and epsilon changes remain separate. The 3,000-update screen and
+first-99% stopping rule are unchanged.
+
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage scaled-init --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage embedding-norm --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage peri-norm --seeds 1 --max-updates 3000
+.venv/bin/python -m research.recall_ablation.run --stage peri-norm-repaired --seeds 1 --max-updates 3000
 ```
 
 After the Peri-RMSNorm screen, the untested remaining sequence is

@@ -34,6 +34,7 @@ SOURCES = (
     "src/diff_gpt/domain/model/mini_block.py",
     "src/diff_gpt/domain/model/rope.py",
     "src/diff_gpt/domain/model/feed_forward.py",
+    "src/diff_gpt/domain/model/rms_norm.py",
     "src/diff_gpt/domain/optimizer/schedule_free.py",
     "src/diff_gpt/application/mqar.py",
     "research/recall_ablation/run.py",

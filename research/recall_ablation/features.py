@@ -9,21 +9,50 @@ import torch
 
 from diff_gpt.domain.model.gpt import GPTMini
 from diff_gpt.domain.model.mini_block import (
+    MiniRMSNorm,
     RMSNormEmbedding,
     RMSNormProjection,
     initialize_swiglu,
 )
+from diff_gpt.domain.model.rms_norm import RMSNorm as RepairedRMSNorm
 
 if TYPE_CHECKING:
     from torch import nn
 
-ARCHITECTURE_STAGES = ("swiglu", "scaled-init", "embedding-norm", "peri-norm")
+ARCHITECTURE_STAGES = (
+    "swiglu",
+    "scaled-init",
+    "embedding-norm",
+    "peri-norm",
+    "peri-norm-repaired",
+)
+PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
     "swiglu": "baseline",
     "scaled-init": "swiglu",
     "embedding-norm": "swiglu",
     "peri-norm": "swiglu",
+    "peri-norm-repaired": "swiglu",
 }
+
+
+def repair_rms_backward(model: GPTMini) -> int:
+    """Use the existing FP64 repair at every RMS site, preserving each epsilon."""
+    count = 0
+    for name, module in list(model.named_modules()):
+        if isinstance(module, MiniRMSNorm):
+            epsilon = 1e-5
+        elif isinstance(module, torch.nn.RMSNorm):
+            epsilon = module.eps
+        else:
+            continue
+        replacement = RepairedRMSNorm(model.n_embd)
+        replacement.eps = epsilon
+        parent_path, _, attribute = name.rpartition(".")
+        parent = model.get_submodule(parent_path) if parent_path else model
+        setattr(parent, attribute, replacement)
+        count += 1
+    return count
 
 
 def raw_parameter_digest(model: nn.Module) -> str:
@@ -87,13 +116,20 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         if raw_parameter_digest(model) != parent_initial:
             msg = "embedding normalization changed parameter values or order"
             raise RuntimeError(msg)
-    if stage == "peri-norm":
+    if stage in PERI_STAGES:
         for block in model.blocks:
             block.sa.c_proj = RMSNormProjection(block.sa.c_proj)
             block.ffwd.c_proj = RMSNormProjection(block.ffwd.c_proj)
         features.append("Peri-RMSNorm branch outputs")
         if raw_parameter_digest(model) != parent_initial:
             msg = "Peri-RMSNorm changed parameter values or order"
+            raise RuntimeError(msg)
+    repaired_sites = 0
+    if stage == "peri-norm-repaired":
+        repaired_sites = repair_rms_backward(model)
+        features.append("repaired FP64 radial/tangent RMS backward")
+        if raw_parameter_digest(model) != parent_initial:
+            msg = "RMS backward repair changed the initial parameters"
             raise RuntimeError(msg)
     if model.token_embedding_table.weight is not model.lm_head.weight:
         msg = "the architectural candidate broke embedding/readout weight tying"
@@ -112,9 +148,16 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         ),
         "branch_output_normalization": (
             "native parameter-free RMSNorm after attention and MLP output projections"
-            if stage == "peri-norm"
+            if stage in PERI_STAGES
             else None
         ),
+        "rms_backward": (
+            "FP64 separated radial/tangent backward at all RMS sites, "
+            "existing epsilons preserved"
+            if repaired_sites
+            else "native"
+        ),
+        "repaired_rms_sites": repaired_sites,
         "forward_residual_scale": 1.0,
         "mlp_initialization": (
             "construct replacement MLPs after historical initialization; "
