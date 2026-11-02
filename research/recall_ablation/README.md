@@ -5,6 +5,10 @@ then add one feature at a time. Stop at the first feature that loses the
 baseline's fast 99% validation crossing. A finite-budget miss is a speed
 regression, not a proof that the model can never generalize.
 
+Current accepted model: **SwiGLU + repaired RMS backward + ordinary AdamW**,
+with raw embeddings, unscaled projection initialization and no Peri branch
+norms. The current candidate tests fixed forward residual scaling only.
+
 ## Continuation: ordinary AdamW, architectural features
 
 The next cohort keeps ordinary AdamW throughout and resumes the architectural
@@ -64,7 +68,7 @@ latest-value oracle, source hashes, optimizer steps and complete sampler
 state all verify. All parameter bytes at initialization match the passed
 SwiGLU parent; the failed initialization change is absent.
 
-**Current decision:** stop again and retain public GPTMini + SwiGLU with
+**Decision for the embedding screen:** stop again and retain public GPTMini + SwiGLU with
 ordinary AdamW, raw embeddings and unscaled initialization (`b91fdf8`).
 Embedding normalization is clearly learning by the endpoint; the result is
 a regression under the declared fast criterion on one fresh seed, not a
@@ -158,6 +162,22 @@ unchanged. This is a distinct parameterization and AdamW update geometry from
 the earlier scaled-initialization test. The repaired-only control must pass
 before that feature is implemented and trained.
 
+**The repaired-only control passed:** first 99% at 2,400 updates, with
+507/512 exact sequences and 4,091/4,096 correct queries. Eager replay,
+optimizer/sampler state and all source hashes verify. The public `GPT`
+now uses this passing repaired-SwiGLU architecture. All thirteen input/final
+norm epsilons remain 1e-5; numerical repair adds no parameters and changes no
+forward function. The broad domain/application suite passes 842 tests,
+with 40 skipped; fourteen focused isolation/gradient tests pass.
+
+The active `residual-scale` candidate multiplies every attention and MLP
+output by `1/sqrt(12)` before residual addition. It reuses every initial
+parameter and the parent's RNG state, keeps all thirteen repaired RMS sites,
+and adds no normalization. Both the initializer scale and embedding/Peri
+norm settings remain unchanged. The raw parameter digest therefore equals
+the repaired parent, unlike the earlier scaled-initialization candidate.
+The ordinary-AdamW recipe and 3,000-update screen remain fixed.
+
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage scaled-init --seeds 1 --max-updates 3000
@@ -165,6 +185,7 @@ before that feature is implemented and trained.
 .venv/bin/python -m research.recall_ablation.run --stage peri-norm --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage peri-norm-repaired --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage rms-repaired --seeds 1 --max-updates 3000
+.venv/bin/python -m research.recall_ablation.run --stage residual-scale --seeds 1 --max-updates 3000
 ```
 
 After the Peri-RMSNorm screen, the untested remaining sequence is

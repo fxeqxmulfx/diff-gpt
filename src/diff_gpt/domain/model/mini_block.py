@@ -14,6 +14,7 @@ from torch.nn import functional as F
 
 from diff_gpt.domain.model.feed_forward import FeedForward
 from diff_gpt.domain.model.mha import one_query_attention
+from diff_gpt.domain.model.rms_norm import RMSNorm as RepairedRMSNorm
 from diff_gpt.domain.model.rope import apply_rope
 
 if TYPE_CHECKING:
@@ -174,3 +175,39 @@ class RMSNormProjection(nn.Linear):
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         """Apply the original projection, then native RMSNorm before addition."""
         return self.norm(super().forward(value))
+
+
+def repair_rms_backward(model: nn.Module, n_embd: int) -> int:
+    """Install the passing RMS backward repair without changing site epsilons."""
+    count = 0
+    for name, module in list(model.named_modules()):
+        if isinstance(module, MiniRMSNorm):
+            epsilon, width = 1e-5, n_embd
+        elif isinstance(module, nn.RMSNorm):
+            epsilon, width = module.eps, module.normalized_shape[-1]
+        else:
+            continue
+        replacement = RepairedRMSNorm(width)
+        replacement.eps = epsilon
+        parent_path, _, attribute = name.rpartition(".")
+        parent = model.get_submodule(parent_path) if parent_path else model
+        setattr(parent, attribute, replacement)
+        count += 1
+    return count
+
+
+class ResidualScaledProjection(nn.Linear):
+    """Scale a residual branch's output while keeping its initial matrix intact."""
+
+    def __init__(self, projection: nn.Linear, scale: float) -> None:
+        """Reuse the exact parameters and draw no random numbers."""
+        nn.Module.__init__(self)
+        self.in_features = projection.in_features
+        self.out_features = projection.out_features
+        self.weight = projection.weight
+        self.bias = projection.bias
+        self.residual_scale = scale
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        """Multiply after projection, before residual addition."""
+        return super().forward(value) * self.residual_scale

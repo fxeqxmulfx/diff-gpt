@@ -43,7 +43,14 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
 
 @pytest.mark.parametrize(
     "stage",
-    ["swiglu", "embedding-norm", "peri-norm", "peri-norm-repaired", "rms-repaired"],
+    [
+        "swiglu",
+        "embedding-norm",
+        "peri-norm",
+        "peri-norm-repaired",
+        "rms-repaired",
+        "residual-scale",
+    ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
     """Exercise the full residual stack and the optimized query readout."""
@@ -59,9 +66,9 @@ def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
         assert torch.count_nonzero(parameter.grad), name
 
 
-def test_public_gpt_is_the_passing_swiglu_candidate() -> None:
+def test_public_gpt_is_the_passing_repaired_swiglu_candidate() -> None:
     """Promotion preserves the exact architecture and tested initialization."""
-    candidate, _ = build_model("swiglu", 1)
+    candidate, _ = build_model("rms-repaired", 1)
     torch.manual_seed(1)
     model = GPT(
         548,
@@ -75,6 +82,10 @@ def test_public_gpt_is_the_passing_swiglu_candidate() -> None:
     assert_close(model.state_dict(), candidate.state_dict(), rtol=0, atol=0)
     tokens = torch.randint(548, (2, 8))
     assert_close(model(tokens)[0], candidate(tokens)[0], rtol=0, atol=0)
+    norms = [
+        module for module in model.modules() if isinstance(module, RepairedRMSNorm)
+    ]
+    assert len(norms) == 2 * model.n_layer + 1
 
 
 def test_scaled_initialization_changes_only_residual_projection_magnitudes() -> None:
@@ -175,3 +186,26 @@ def test_repaired_swiglu_control_excludes_peri_and_preserves_forward() -> None:
             assert module.eps == HISTORICAL_RMS_EPS
     tokens = torch.randint(548, (2, 8))
     assert_close(repaired(tokens)[0], native(tokens)[0], rtol=0, atol=0)
+
+
+def test_forward_residual_scaling_keeps_repaired_parent_and_initial_weights() -> None:
+    """Scale only projected branch outputs, with the repaired RMS held constant."""
+    parent, _ = build_model("rms-repaired", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("residual-scale", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    scale = (2 * candidate.n_layer) ** -0.5
+    assert metadata["parent_stage"] == "rms-repaired"
+    assert metadata["forward_residual_scale"] == scale
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["repaired_rms_sites"] == 2 * candidate.n_layer + 1
+    for old, new in zip(parent.blocks, candidate.blocks, strict=True):
+        for original, changed in (
+            (old.sa.c_proj, new.sa.c_proj),
+            (old.ffwd.c_proj, new.ffwd.c_proj),
+        ):
+            inputs = torch.randn(2, 4, original.in_features)
+            assert_close(changed(inputs), original(inputs) * scale, rtol=0, atol=0)

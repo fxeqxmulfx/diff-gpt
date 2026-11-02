@@ -9,7 +9,12 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from diff_gpt.domain.model.mini_block import MiniBlock, MiniRMSNorm, initialize_swiglu
+from diff_gpt.domain.model.mini_block import (
+    MiniBlock,
+    MiniRMSNorm,
+    initialize_swiglu,
+    repair_rms_backward,
+)
 from diff_gpt.domain.model.rope import rope_tables
 
 if TYPE_CHECKING:
@@ -268,7 +273,7 @@ class GPTMini(BaseGPT):
 
 
 class GPT(GPTMini):
-    """The passing ordinary-AdamW GPTMini architecture with a SwiGLU MLP."""
+    """Passing ordinary-AdamW GPTMini with SwiGLU and repaired RMS backward."""
 
     def __init__(
         self,
@@ -282,7 +287,7 @@ class GPT(GPTMini):
         pad_vocab_size_to: int = 64,
         rope_base: float = 10_000.0,
     ) -> None:
-        """Preserve historical shared initialization, then install tested SwiGLU."""
+        """Keep historical weights and install the passing SwiGLU and RMS repair."""
         super().__init__(
             vocab_size=vocab_size,
             n_embd=n_embd,
@@ -294,3 +299,4 @@ class GPT(GPTMini):
             rope_base=rope_base,
         )
         initialize_swiglu(self.blocks, n_embd)
+        repair_rms_backward(self, n_embd)
