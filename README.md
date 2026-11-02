@@ -216,6 +216,8 @@ $hi - lo$ takes the place of $2D$.
   3,000), so the passing model keeps raw embeddings.
   The repaired-only SwiGLU control passed at 2,400 updates (99.02% exact);
   its thirteen RMS sites retain the same epsilons and forward outputs.
+  Fixed forward residual scaling also missed its screen (93.36% exact at
+  3,000; best 93.95%), so the accepted model keeps coefficient 1.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates).

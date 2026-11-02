@@ -7,7 +7,9 @@ regression, not a proof that the model can never generalize.
 
 Current accepted model: **SwiGLU + repaired RMS backward + ordinary AdamW**,
 with raw embeddings, unscaled projection initialization and no Peri branch
-norms. The current candidate tests fixed forward residual scaling only.
+norms. Fixed forward residual scaling missed its screen and remains off.
+The next untested feature is Q/K RMS normalization with learned temperature
+retained.
 
 ## Continuation: ordinary AdamW, architectural features
 
@@ -177,6 +179,24 @@ and adds no normalization. Both the initializer scale and embedding/Peri
 norm settings remain unchanged. The raw parameter digest therefore equals
 the repaired parent, unlike the earlier scaled-initialization candidate.
 The ordinary-AdamW recipe and 3,000-update screen remain fixed.
+
+**Forward residual scaling missed the screen:** 478/512 exact sequences
+(93.36%) and 4,062/4,096 correct queries (99.17%) after 3,000 updates.
+Its best exact accuracy was 481/512 (93.95%) at update 2,650; it never
+reached 99%. At the repaired parent's 2,400-update crossing it scored
+451/512 exact sequences (88.09%). Initial weights, data, optimizer settings
+and all thirteen repaired RMS sites match the parent. Only the forward
+branch coefficient changes, from 1 to `1/sqrt(12)`. Eager replay matches
+every endpoint count; complete sampler/optimizer state and source hashes
+verify.
+
+**Current decision:** stop here and retain ordinary AdamW + SwiGLU + repaired
+RMS, raw embeddings, unscaled initialization and forward coefficient 1
+(`21ed2f6`). Fourteen focused tests and the 842-test domain/application
+suite pass; 40 tests are skipped. This is a single-seed finite speed
+regression, not a claim that scaling cannot eventually learn. The next
+untested feature is Q/K RMS normalization, retaining learned temperatures;
+no later feature has been trained after this miss.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
