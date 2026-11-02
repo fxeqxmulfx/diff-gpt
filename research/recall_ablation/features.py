@@ -8,16 +8,21 @@ from typing import TYPE_CHECKING
 import torch
 
 from diff_gpt.domain.model.gpt import GPTMini
-from diff_gpt.domain.model.mini_block import RMSNormEmbedding, initialize_swiglu
+from diff_gpt.domain.model.mini_block import (
+    RMSNormEmbedding,
+    RMSNormProjection,
+    initialize_swiglu,
+)
 
 if TYPE_CHECKING:
     from torch import nn
 
-ARCHITECTURE_STAGES = ("swiglu", "scaled-init", "embedding-norm")
+ARCHITECTURE_STAGES = ("swiglu", "scaled-init", "embedding-norm", "peri-norm")
 PREDECESSOR = {
     "swiglu": "baseline",
     "scaled-init": "swiglu",
     "embedding-norm": "swiglu",
+    "peri-norm": "swiglu",
 }
 
 
@@ -82,9 +87,17 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         if raw_parameter_digest(model) != parent_initial:
             msg = "embedding normalization changed parameter values or order"
             raise RuntimeError(msg)
-        if model.token_embedding_table.weight is not model.lm_head.weight:
-            msg = "embedding normalization broke output-head weight tying"
+    if stage == "peri-norm":
+        for block in model.blocks:
+            block.sa.c_proj = RMSNormProjection(block.sa.c_proj)
+            block.ffwd.c_proj = RMSNormProjection(block.ffwd.c_proj)
+        features.append("Peri-RMSNorm branch outputs")
+        if raw_parameter_digest(model) != parent_initial:
+            msg = "Peri-RMSNorm changed parameter values or order"
             raise RuntimeError(msg)
+    if model.token_embedding_table.weight is not model.lm_head.weight:
+        msg = "the architectural candidate broke embedding/readout weight tying"
+        raise RuntimeError(msg)
     return model, {
         "features": features,
         "parent_stage": PREDECESSOR.get(stage),
@@ -97,6 +110,12 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             if stage == "embedding-norm"
             else None
         ),
+        "branch_output_normalization": (
+            "native parameter-free RMSNorm after attention and MLP output projections"
+            if stage == "peri-norm"
+            else None
+        ),
+        "forward_residual_scale": 1.0,
         "mlp_initialization": (
             "construct replacement MLPs after historical initialization; "
             "then Normal(0,.02) once per replacement matrix"

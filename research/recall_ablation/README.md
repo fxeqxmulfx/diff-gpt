@@ -80,13 +80,42 @@ with 40 skipped. Ruff passes for the changed Python files.
 | SwiGLU + scaled projection initialization | Miss by 3,000 | 88.48% (best 93.95%) |
 | SwiGLU + embedding RMS, unscaled initialization | Miss by 3,000 | 73.24% |
 
+## Requested continuation: Peri-RMSNorm with raw embeddings
+
+The next requested test skips the failed embedding normalization and again
+starts from the passed unscaled SwiGLU parent. `peri-norm` keeps each existing
+branch-input RMSNorm and adds a parameter-free native RMSNorm after each
+attention and MLP output projection, before residual addition:
+
+```text
+x <- x + RMS(attention(RMS(x)))
+x <- x + RMS(MLP(RMS(x)))
+```
+
+This tests Peri-RMSNorm in the transformer branches. Embeddings stay raw;
+projection initialization and forward residual coefficients stay unscaled.
+Existing norm sites and all parameter values remain byte-identical to the
+parent; added norms use native dtype epsilon and native backward. Learned
+temperatures, ordinary XSA and the rest of the passing architecture remain
+unchanged. The separate RMS backward repair and first-position/prefix
+stabilization are not included. Interactions with skipped or later features
+are outside this single-feature screen.
+
+Every added norm wraps an existing projection and retains its exact parameter
+objects. Construction draws no random numbers, and the initial parameter
+digest and RNG state match the parent. Eight focused tests verify isolation,
+independent post-projection RMS equations and finite full-stack gradients.
+The fixed ordinary-AdamW recipe, seed 1 and 3,000-update 99% exact-sequence
+criterion apply again; another miss stops the sequence.
+
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage scaled-init --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage embedding-norm --seeds 1 --max-updates 3000
+.venv/bin/python -m research.recall_ablation.run --stage peri-norm --seeds 1 --max-updates 3000
 ```
 
-The untested remaining sequence is branch-output normalization,
+After the Peri-RMSNorm screen, the untested remaining sequence is
 residual scaling, Q/K normalization, removal of learned temperatures,
 centered XSA and its clipping threshold, fused SDPA, first-position and
 repeated-prefix stabilization, native dtype epsilon, and the separated RMS

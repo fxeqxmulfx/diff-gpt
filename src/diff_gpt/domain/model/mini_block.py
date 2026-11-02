@@ -156,3 +156,21 @@ class RMSNormEmbedding(nn.Embedding):
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         """Normalize the embedding with native dtype epsilon and native backward."""
         return self.norm(super().forward(tokens))
+
+
+class RMSNormProjection(nn.Linear):
+    """Normalize an existing branch output without redrawing its projection."""
+
+    def __init__(self, projection: nn.Linear) -> None:
+        """Reuse weight and bias objects and add a parameter-free output norm."""
+        # Linear.__init__ would draw unused weights and change the RNG state.
+        nn.Module.__init__(self)
+        self.in_features = projection.in_features
+        self.out_features = projection.out_features
+        self.weight = projection.weight
+        self.bias = projection.bias
+        self.norm = nn.RMSNorm(projection.out_features, elementwise_affine=False)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        """Apply the original projection, then native RMSNorm before addition."""
+        return self.norm(super().forward(value))
