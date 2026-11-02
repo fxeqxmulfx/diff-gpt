@@ -9,7 +9,16 @@ Current accepted model: **SwiGLU + repaired RMS backward + Q/K RMS + ordinary Ad
 with raw embeddings, unscaled projection initialization and no Peri branch
 norms. Fixed forward residual scaling missed its screen and remains off.
 Head temperatures are fixed at their initial values. The next untested
-feature is fused SDPA attention.
+feature is native dtype epsilon at existing input/final RMS sites.
+**The sequence has stopped again:** fused SDPA missed its fast screen;
+public GPT retains explicit dense attention.
+
+| Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
+| --- | --- | --- |
+| Repaired SwiGLU control, unit L2 Q/K | 2,400 | 99.02% |
+| Add repaired per-head Q/K RMS, keep learned temperature | 2,050 | 99.02% |
+| Fix head temperature at its initial value | 2,500 | 99.22% |
+| Replace explicit attention with fused SDPA | Miss by 3,000 | 97.46% (best 98.83%) |
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 
@@ -81,7 +90,7 @@ parameters (24 fewer temperature scalars). Results, history and audit are
 retained as `results/fixed_temperature_seed1*`. This remains a single-seed
 screen; no final-test data were accessed.
 
-## Next screen: fused SDPA
+## Stopped screen: fused SDPA
 
 The `sdpa` candidate branches from the passing `fixed-temperature` parent.
 It replaces only explicit dense score/softmax/value evaluation with
@@ -102,6 +111,21 @@ attention during the matched seed-1, 3,000-update screen.
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage sdpa --seeds 1 --max-updates 3000
 ```
+
+**Fused SDPA missed the fast screen.** It never reaches 99% by 3,000 updates:
+the endpoint is 499/512 exact sequences (97.46%), with 4,083/4,096 correct
+queries (99.68%). Its best is 506/512 exact (98.83%) at 2,350; at its parent's
+2,500-update crossing it has 497/512 exact (97.07%). These are CPU FP32,
+single-seed observations under the fixed budget. The independent FP64 math
+and gradient tests pass; the missed threshold concerns the trained numerical
+trajectory, not a changed real attention function or eventual impossibility
+of generalization. No further feature was started.
+
+The public default retains explicit attention, fixed head temperature, Q/K
+RMS, repaired RMS backward, SwiGLU and ordinary AdamW. Full history, source
+snapshot, optimizer and sampler state are retained, with portable result,
+history and audit in `results/sdpa_seed1*`. The broader suite passes 852
+tests, with 40 skipped; no final-test data were loaded.
 
 ## Continuation: ordinary AdamW, architectural features
 

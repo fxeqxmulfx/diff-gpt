@@ -4,14 +4,15 @@
     "repaired FP64 radial/tangent RMS backward",
     "per-head QK RMS normalization with fixed temperature"
   ],
-  "active_stage": "sdpa",
+  "accepted_model_commit": "f6dae84",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain fixed-temperature Q/K RMS, SwiGLU, repaired RMS and ordinary AdamW; isolate fused dense attention. Stop at the next fast-screen miss.",
+  "decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -41,13 +42,16 @@
     "scaled_init_seed1.json": "289595bdd044f81fb11a3a03d1219bd3ddfc00005fe16b127d371a3a9640999e",
     "scaled_init_seed1_audit.json": "69ad33188e42f8e1e62a8b3032e2696444cdcfa72908f3dfb36a47f913d505a6",
     "scaled_init_seed1_history.jsonl": "e530ba7a7d0e82940c79c6d1a3e7883ff0be5d0dee6a631ff15245836cc48b9b",
+    "sdpa_seed1.json": "0fda1c2b5c5eb230bc85b5dd36707db30903b98275f89e7214e31284ac075215",
+    "sdpa_seed1_audit.json": "63daae425a503a60f3ea7688965a26da4d3c1ae66739824a06a8118a1dfa69ba",
+    "sdpa_seed1_history.jsonl": "ba1932524eae4189db9ae6b94a9d37010faa0edff7e62f3a601b4ab878ed4d88",
     "swiglu_seed1.json": "db01b965de183cfd12e0617cd2f24a0223524098776ca66e44013dc4b0fc780f",
     "swiglu_seed1_audit.json": "40fd67fb47e98528201fc360cd68f3d3482ae40424a10c16e345044ad7386dd2",
     "swiglu_seed1_history.jsonl": "f04d970db31b6c0d6268f05edac586c4807c07ef1b2e3b9a49a69ac111aa587b"
   },
   "first_failing_feature": "depth-scaled projection initialization (multiply attention/MLP output matrices by 1/sqrt(2L))",
   "implementation_commit": "fbf4b0a",
-  "interpretation": "Single-seed finite speed screens in the documented order. The RMS repair passes on SwiGLU alone; repaired Peri, embedding RMS, scaled initialization and forward scaling miss their declared horizons. This does not establish eventual inability to learn or rule out joint compensating changes.",
+  "interpretation": "Single-seed CPU FP32 finite speed screens in the documented order. Q/K RMS and fixed temperature pass; fused SDPA misses 99% exact by 3000 despite passing independent FP64 forward/gradient equations. This does not establish eventual inability to generalize, a GPU-kernel result, or rule out interactions with skipped features.",
   "interrupted_runs": [
     {
       "complete_state_retained": false,
@@ -66,7 +70,8 @@
       "stage": "peri-norm"
     }
   ],
-  "latest_failing_feature": "fixed forward residual scaling by 1/sqrt(2L), with repaired RMS held constant",
+  "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
+  "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
   "next_feature": "Q/K RMS normalization with learned temperature retained",
   "next_feature_if_resumed": "native dtype epsilon at existing input/final RMS sites",
   "not_tested_after_stop": [
@@ -85,7 +90,8 @@
     "depth-scaled projection initialization",
     "embedding RMS normalization",
     "Peri-RMSNorm branch outputs under repaired RMS",
-    "fixed forward residual scaling"
+    "fixed forward residual scaling",
+    "fused SDPA dense attention under fixed-temperature repaired Q/K RMS"
   ],
   "resume_protocol": {
     "branch_output_normalization": false,
@@ -342,14 +348,49 @@
       "sequences": 512,
       "stage": "fixed-temperature",
       "status": "passed"
+    },
+    {
+      "at_parent_first99": {
+        "loss": 0.01832675375044346,
+        "seconds": 748.5004097929996,
+        "sequence_accuracy": 0.970703125,
+        "step": 2500,
+        "token_accuracy": 0.996337890625
+      },
+      "audit_file": "sdpa_seed1_audit.json",
+      "best_validation_observation": {
+        "loss": 0.013412403175607324,
+        "seconds": 705.7731514539992,
+        "sequence_accuracy": 0.98828125,
+        "step": 2350,
+        "token_accuracy": 0.998291015625
+      },
+      "completed": 3000,
+      "correct_queries": 4083,
+      "dense_attention": "fused SDPA",
+      "exact": 499,
+      "first99": null,
+      "history_file": "sdpa_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "learned_attention_temperature": false,
+      "parameters": 1249024,
+      "parent": "fixed-temperature",
+      "parent_initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "sdpa_seed1.json",
+      "sequences": 512,
+      "stage": "sdpa",
+      "status": "censored at fast-screen budget"
     }
   ],
-  "status": "Fixed temperature passed; screening fused SDPA",
+  "status": "stopped at first miss after continuation: fused SDPA",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
+    "archived_evidence_hashes_verified": 34,
     "compiled_repaired_gradient_probe_file": "peri_norm_repaired_compiled_gradient_probe.json",
     "eager_endpoint_replay": "exact counts; sources and sampler state verified",
     "embedding_norm_endpoint_audit": {
@@ -423,8 +464,9 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 845,
+    "full_domain_application_tests_passed": 852,
     "full_domain_application_tests_skipped": 40,
+    "full_suite_validation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",
       "eager_replay": {
@@ -520,6 +562,29 @@
       "test_loaded": false
     },
     "scaled_init_matches_parent_except_projection_magnitudes": true,
+    "sdpa_endpoint_audit": {
+      "checkpoint_sha256": "8fcef24ec30ad8b707a50b7b014d4e9d629bcc734e63f6c2f7fc751e5158a67a",
+      "eager_replay": {
+        "exact": 499,
+        "queries": 4096,
+        "queries_correct": 4083,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2709,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 4,
+        "unchanged_correct": 1374,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
     "test_loaded": false
   }
 }

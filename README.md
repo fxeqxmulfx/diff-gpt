@@ -1022,7 +1022,10 @@ uses fixed `1/sqrt(head_dim)` score scaling. The learned-temperature Q/K RMS
 candidate first reaches 99% hard-recall exact sequences at 2,050 updates;
 fixing that temperature passes at 2,500 (repaired L2-Q/K control: 2,400),
 within the matched seed-1 3,000-update screen. Embeddings and branch outputs stay unnormalized and residual
-coefficients stay 1. `GPTMini` in the same module retains the original ReLU-squared
+coefficients stay 1. Dense attention stays explicit: fused SDPA missed the
+CPU FP32 screen, ending at 97.46% exact sequences (best 98.83%) by 3,000 updates.
+See `research/recall_ablation/README.md` for the matched protocol and evidence.
+`GPTMini` in the same module retains the original ReLU-squared
 baseline for historical replay. The previous df1e9f7 architecture is retained explicitly as
 `diff_gpt.domain.model.normalized_gpt.NormalizedGPT` for replay of the existing
 scaled-residual fixtures and numerical regressions. Its state dictionaries
