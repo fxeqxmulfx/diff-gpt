@@ -36,19 +36,39 @@ remain byte-identical. This isolates depth-scaled projection initialization
 from residual scaling during the forward pass. It requires a passed SwiGLU
 parent and verifies the parent's initial-parameter digest before training.
 
+**Scaled initialization missed the fast screen.** It never reached 99% by
+3,000 updates: its best exact accuracy was 481/512 (93.95%) at 2,800, and
+its endpoint was 453/512 (88.48%). At its parent's 2,300-update crossing it
+scored 89.26%. Eager replay exactly reproduces 4,036/4,096 correct endpoint
+queries and 453 exact sequences. This is a finite speed regression in the
+tested order; it does not establish inability to grok later, and interactions
+with later normalization were not tested. Public GPT retains unscaled
+initialization. Full results and audits are in `results/architecture_summary.json`.
+
+The user then requested the next test while leaving scaled initialization out.
+`embedding-norm` therefore branches from the passed **unscaled SwiGLU** parent,
+not from the failed `scaled-init` model. Every parameter is byte-identical to
+that parent, including the tied embedding/readout object. Only the embedding
+output gains parameter-free native RMSNorm, using native dtype epsilon and
+native backward. Other norm sites, attention, branch scaling, initialization,
+optimizer and data remain unchanged. The separated radial RMS backward is
+a later feature and is not included in this candidate. The same seed 1 and
+3,000-update screen apply; another miss stops the sequence again.
+
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage scaled-init --seeds 1 --max-updates 3000
+.venv/bin/python -m research.recall_ablation.run --stage embedding-norm --seeds 1 --max-updates 3000
 ```
 
-If it passes, the remaining intended sequence is depth-scaled projection
-initialization, embedding normalization, branch-output normalization,
+If embedding normalization passes, the remaining intended sequence is branch-output normalization,
 residual scaling, Q/K normalization, removal of learned temperatures,
 centered XSA and its clipping threshold, fused SDPA, first-position and
 repeated-prefix stabilization, native dtype epsilon, and the separated RMS
 backward. Normalization and temperature removal remain separate changes.
 Later features are implemented and trained only after their predecessor passes.
-The original optimizer-only evidence below remains unchanged.
+The original optimizer-only evidence below remains unchanged. Its stop decision
+is historical; the requested continuations above explicitly skip failed features.
 
 ## Completed result: stop at Schedule-Free AdamW
 
@@ -69,7 +89,7 @@ no superseded values. Eager checkpoint replay reproduces the compiled
 endpoint prediction counts. Optimizer steps, epoch tails, sampler RNG state,
 first-crossing observations and source snapshot hashes are verified.
 
-**Decision:** retain GPTMini + AdamW and stop adding features. SwiGLU,
+**Original decision at `5bec856`:** retain GPTMini + AdamW and stop adding features. SwiGLU,
 normalization changes, residual scaling, temperature removal and the remaining
 numerical changes have not been tested in this ablation. The result is one
 fresh matched seed and a finite speed screen; it does not establish permanent

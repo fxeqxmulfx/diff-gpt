@@ -133,3 +133,26 @@ def initialize_swiglu(blocks: nn.ModuleList, n_embd: int) -> None:
         for parameter in replacement.parameters():
             nn.init.normal_(parameter, mean=0.0, std=0.02)
         block.ffwd = replacement
+
+
+class RMSNormEmbedding(nn.Embedding):
+    """Native parameter-free RMS normalization after an existing embedding."""
+
+    def __init__(self, embedding: nn.Embedding) -> None:
+        """Reuse the exact weight object, retaining the tied output-head gradient."""
+        super().__init__(
+            embedding.num_embeddings,
+            embedding.embedding_dim,
+            padding_idx=embedding.padding_idx,
+            max_norm=embedding.max_norm,
+            norm_type=embedding.norm_type,
+            scale_grad_by_freq=embedding.scale_grad_by_freq,
+            sparse=embedding.sparse,
+            _weight=embedding.weight,
+        )
+        self.weight = embedding.weight
+        self.norm = nn.RMSNorm(embedding.embedding_dim, elementwise_affine=False)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        """Normalize the embedding with native dtype epsilon and native backward."""
+        return self.norm(super().forward(tokens))

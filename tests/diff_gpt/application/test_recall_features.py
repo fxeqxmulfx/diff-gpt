@@ -1,6 +1,8 @@
 """Keep architectural recall screens isolated from the passing AdamW control."""
 
+import pytest
 import torch
+from torch.nn import functional as F
 from torch.testing import assert_close
 
 from diff_gpt.domain.model.feed_forward import FeedForward
@@ -36,9 +38,10 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
     assert treatment["initialization_from_trained_weights"] is False
 
 
-def test_swiglu_candidate_keeps_finite_gradients_to_all_parameters() -> None:
+@pytest.mark.parametrize("stage", ["swiglu", "embedding-norm"])
+def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
     """Exercise the full residual stack and the optimized query readout."""
-    model, _ = build_model("swiglu", 1)
+    model, _ = build_model(stage, 1)
     tokens = torch.randint(548, (2, 8))
     positions = torch.tensor([[4, 7], [5, 7]])
     targets = torch.randint(548, (2, 2))
@@ -76,3 +79,17 @@ def test_scaled_initialization_changes_only_residual_projection_magnitudes() -> 
     for name, parameter in parent.named_parameters():
         expected = parameter * scale if name.endswith("c_proj.weight") else parameter
         assert_close(dict(candidate.named_parameters())[name], expected, rtol=0, atol=0)
+
+
+def test_embedding_normalization_reuses_every_parameter_and_keeps_head_tied() -> None:
+    """Add exactly native RMS after lookup without reinitialization or scaling."""
+    parent, _ = build_model("swiglu", 1)
+    candidate, metadata = build_model("embedding-norm", 1)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert candidate.token_embedding_table.weight is candidate.lm_head.weight
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert metadata["parent_stage"] == "swiglu"
+    assert metadata["initial_projection_scale"] == 1.0
+    tokens = torch.tensor([[1, 36, 292, 37, 293]])
+    expected = F.rms_norm(parent.token_embedding_table(tokens), (parent.n_embd,))
+    assert_close(candidate.token_embedding_table(tokens), expected, rtol=0, atol=0)

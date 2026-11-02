@@ -207,6 +207,9 @@ $hi - lo$ takes the place of $2D$.
   With ordinary AdamW, the isolated SwiGLU change reached 99.22% exact
   hard-recall validation at 2,300 updates, compared with 2,900 for the
   ReLU-squared control on the same fresh seed.
+  Depth-scaled projection initialization missed the subsequent 3,000-update
+  screen (best exact accuracy 93.95%), so the passing model retains unscaled
+  initialization.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates).
