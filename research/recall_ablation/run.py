@@ -21,17 +21,19 @@ import torch
 from torch.nn import functional as F
 
 from diff_gpt.application.mqar import IGNORE, MQAR, build_split, fingerprint
-from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
+from research.recall_ablation.features import ARCHITECTURE_STAGES, build_model
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
     "src/diff_gpt/domain/model/gpt.py",
     "src/diff_gpt/domain/model/mini_block.py",
     "src/diff_gpt/domain/model/rope.py",
+    "src/diff_gpt/domain/model/feed_forward.py",
     "src/diff_gpt/domain/optimizer/schedule_free.py",
     "src/diff_gpt/application/mqar.py",
     "research/recall_ablation/run.py",
+    "research/recall_ablation/features.py",
 )
 TASK = MQAR(symbols=256, pairs=16, overwrites=8, queries=8)
 RATE = 3e-4
@@ -68,23 +70,14 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
     """Run one fresh, matched seed; save full state at its endpoint."""
     directory = args.output / args.stage / f"seed{seed}"
     directory.mkdir(parents=True, exist_ok=False)
-    torch.manual_seed(seed)
-    model = GPT(
-        vocab_size=548,
-        n_embd=128,
-        n_layer=6,
-        n_head=4,
-        block_size=64,
-        pad_vocab_size_to=1,
-        use_checkpoint=False,
-    )
+    model, feature_metadata = build_model(args.stage, seed)
     initial = hashlib.sha256()
     for parameter in model.parameters():
         initial.update(parameter.detach().numpy().tobytes())
     settings = {"lr": RATE, "betas": (0.9, 0.98), "weight_decay": 0.1}
     optimizer = (
         torch.optim.AdamW(model.parameters(), **settings)
-        if args.stage == "baseline"
+        if args.stage != "schedule-free"
         else ScheduleFreeAdamW(model.parameters(), **settings, warmup=0)
     )
 
@@ -117,6 +110,7 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
         "seed": seed,
         "max_updates": args.max_updates,
         "model": "historical GPTMini, 128x6, 4 heads",
+        **feature_metadata,
         "parameters": sum(p.numel() for p in model.parameters()),
         "initial_parameters_sha256": initial.hexdigest(),
         "optimizer": type(optimizer).__name__,
@@ -151,15 +145,22 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
         baseline = json.loads(
             (args.output / "baseline" / f"seed{seed}" / "result.json").read_text()
         )
-        for field in (
-            "initial_parameters_sha256",
-            "parameters",
+        if (
+            metadata["historical_initial_parameters_sha256"]
+            != baseline["initial_parameters_sha256"]
+        ):
+            msg = "the historical initial weights differ from the recorded control"
+            raise RuntimeError(msg)
+        matched_fields = [
             "learning_rate",
             "betas",
             "weight_decay",
             "batch_seed",
             "split_fingerprints",
-        ):
+        ]
+        if args.stage not in ARCHITECTURE_STAGES:
+            matched_fields.extend(("initial_parameters_sha256", "parameters"))
+        for field in matched_fields:
             if metadata[field] != baseline[field]:
                 msg = f"feature changes the matched baseline's {field}"
                 raise RuntimeError(msg)
@@ -204,6 +205,8 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
             print(json.dumps({"stage": args.stage, "seed": seed, **row}), flush=True)
             if row["sequence_accuracy"] >= TARGET:
                 first99 = completed
+                break
+            if completed == args.max_updates:
                 break
             model.train()
             if isinstance(optimizer, ScheduleFreeAdamW):
@@ -252,11 +255,13 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
 
 
 def main() -> None:
-    """Run the baseline or the first feature, refusing an unvalidated baseline."""
+    """Run one feature, refusing a failed or incompletely covered control."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "runs/recall-ablation")
     parser.add_argument(
-        "--stage", choices=("baseline", "schedule-free"), default="baseline"
+        "--stage",
+        choices=("baseline", "schedule-free", *ARCHITECTURE_STAGES),
+        default="baseline",
     )
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--max-updates", type=int, default=4800)

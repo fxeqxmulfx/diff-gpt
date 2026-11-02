@@ -5,6 +5,36 @@ then add one feature at a time. Stop at the first feature that loses the
 baseline's fast 99% validation crossing. A finite-budget miss is a speed
 regression, not a proof that the model can never generalize.
 
+## Continuation: ordinary AdamW, architectural features
+
+The next cohort keeps ordinary AdamW throughout and resumes the architectural
+sequence after the failed optimizer screen. Each fresh candidate adds one
+feature to the last passing model. The same seed 1, historical data streams,
+50-update observations and 3,000-update 99% exact-sequence screen apply.
+The passing control remains the recorded 2,900-update AdamW run. A missed
+screen stops this sequence; it does not establish permanent inability to learn.
+
+The first candidate replaces only the ReLU-squared MLP with the existing
+SwiGLU implementation. It keeps every non-MLP parameter byte-identical to
+the recorded historical initialization. The new MLP matrices receive fresh
+Normal(0, 0.02) initialization after constructing the historical model; there
+is no initialization from trained weights. Its parameter count is 1,249,048,
+compared with 1,249,816 for the control. Shape changes therefore do not shift
+the random initialization of unrelated embedding and attention matrices.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
+```
+
+If it passes, the remaining intended sequence is depth-scaled projection
+initialization, embedding normalization, branch-output normalization,
+residual scaling, Q/K normalization, removal of learned temperatures,
+centered XSA and its clipping threshold, fused SDPA, first-position and
+repeated-prefix stabilization, native dtype epsilon, and the separated RMS
+backward. Normalization and temperature removal remain separate changes.
+Later features are implemented and trained only after their predecessor passes.
+The original optimizer-only evidence below remains unchanged.
+
 ## Completed result: stop at Schedule-Free AdamW
 
 The restored baseline is committed as `b7b8e89`. In the fresh CPU comparison,
