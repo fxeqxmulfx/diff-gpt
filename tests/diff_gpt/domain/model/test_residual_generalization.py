@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 import torch
 
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 
 FIXTURES = Path(__file__).resolve().parents[3] / "fixtures/residual_generalization"
 

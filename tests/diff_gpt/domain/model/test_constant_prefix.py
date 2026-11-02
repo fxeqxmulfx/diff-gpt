@@ -6,7 +6,7 @@ import unittest
 import torch
 from torch.nn import functional as F
 
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 from tests.diff_gpt.domain.model.source_equations import source_gpt
 
 

@@ -1,4 +1,4 @@
-"""Preserve finite-epsilon gradients in the actual GPT normalization paths."""
+"""Preserve finite-epsilon gradients in the archived normalized GPT paths."""
 
 import math
 
@@ -7,7 +7,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 from diff_gpt.domain.model.rms_norm import RMSNorm, rms_norm
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 

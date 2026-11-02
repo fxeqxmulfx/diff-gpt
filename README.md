@@ -194,18 +194,16 @@ $hi - lo$ takes the place of $2D$.
   $(1 - B)(1 - B^{24})$. `order_of_derivative` can be an array of shape $(F,)$
   giving each channel its own; mix $k = 0$ (raw) with $k = 1, 2, \ldots$ and
   seasonal operators in a single model.
-- **Plain GPT model** (as in nanoGPT with `bias=False`): a learned token
-  embedding, rotary position embeddings (RoPE) on queries and keys,
-  Peri-RMSNorm blocks with causal exclusive self-attention (XSA: each head's
-  output is orthogonal to the token's own value) and a SwiGLU MLP.
-  Parameter-free RMSNorm normalizes the embedding stream and each branch's
-  input and output; each output branch is scaled by $1/\sqrt{2L}$ before
-  residual addition. No biases, an output head tied
-  to the token embedding, cross-entropy loss and $\mathcal{N}(0, 0.02)$ initialization
-  with residual projections scaled by $1/\sqrt{2L}$ — nothing
-  series-specific. Queries and keys use per-head RMSNorm before RoPE and
-  standard $1/\sqrt{d_{\mathrm{head}}}$ attention scaling, with no temperature
-  parameter. Trained with Schedule-Free AdamW.
+- **Historical GPTMini model**: a learned token embedding, RoPE in every
+  layer, PreNorm residual blocks, exclusive self-attention (XSA), and a
+  ReLU-squared MLP of hidden width $4d$. Parameter-free native RMSNorm
+  uses epsilon $10^{-5}$ before each branch and at the readout. Queries and
+  keys are unit vectors with a learned per-head inverse temperature, initially
+  $\sqrt{d_{\mathrm{head}}}$. Branch outputs are added directly. Every distinct
+  matrix receives one $\mathcal{N}(0, 0.02)$ initialization; there are no
+  biases and the readout is tied to the embedding. The default trainer uses
+  AdamW with the historical 50-update linear warmup. The hard-recall feature
+  ablation is recorded in [`research/recall_ablation`](research/recall_ablation).
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates).
@@ -991,7 +989,7 @@ read the gift-eval clone and `datasets/time-output` (see their README).
 
 ### RMS gradient accuracy
 
-All model RMS normalizations use the native forward with a separated radial
+The archived normalized GPT's RMS normalizations use the native forward with a separated radial
 and tangent backward. FP64 projection prevents the FP32 backward from erasing
 small finite-epsilon radial derivatives. Norms remain parameter-free and have
 no bias. The transformer lab task155 compared 48 matched synthetic cases:
@@ -1002,16 +1000,17 @@ establish faster full-transformer grokking. Tests cover native forward equality,
 CPU/CUDA dtypes, an independent FP64 derivative, compiled gradients, known-solution
 held-out recovery and the existing trained modular-division fixtures.
 
-### One PyTorch architecture
+### Restored GPTMini baseline
 
-`diff_gpt.domain.model.gpt.GPT` always uses RoPE in every layer, QK RMS
-normalization, centered XSA, parameter-free Peri-RMSNorm, SwiGLU, tied embeddings
-and fixed post-normalization residual coefficient `1/sqrt(2*n_layer)`. Model
-sizes, RoPE base and execution settings remain constructor arguments. The former
-`ResidualGPT`, `mixing`, `centered_xsa`, `rope_layers` and `use_rope` architecture
-options are removed; old configurations fail explicitly. Use the corresponding
-Git revision to reproduce an old architecture or hybrid-RoPE recipe. The separate
-Rust port is not changed by this PyTorch architecture selection.
+`diff_gpt.domain.model.gpt.GPT` uses the historical GPTMini architecture
+described above. The previous df1e9f7 architecture is retained explicitly as
+`diff_gpt.domain.model.normalized_gpt.NormalizedGPT` for replay of the existing
+scaled-residual fixtures and numerical regressions. Its state dictionaries
+require that class. Model sizes, RoPE base, checkpointing and KV caching remain
+available; the canonical GPT has no architecture switches. The separate Rust
+port is unchanged. `DiffGPT.train` now defaults to AdamW at rate 0.0003,
+betas (0.9, 0.98), decay 0.1 and 50 warmup updates. Schedule-Free remains
+available when explicitly supplied to the low-level trainer or experiment code.
 
 Two P97 seeds first reached 99% validation at 24,000 updates with fixed scaling,
 compared with 32,000 and 37,000 for ordinary addition. Their final test scores

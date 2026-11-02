@@ -16,6 +16,18 @@ from tqdm.autonotebook import tqdm
 
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
+TrainOptimizer = torch.optim.AdamW | ScheduleFreeAdamW
+
+
+def _optimizer_mode(optimizer: TrainOptimizer, *, training: bool) -> None:
+    """Switch Schedule-Free weights when explicitly requested by the caller."""
+    if isinstance(optimizer, ScheduleFreeAdamW):
+        if training:
+            optimizer.train()
+        else:
+            optimizer.eval()
+
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -161,7 +173,7 @@ class _Evaluations:
 def _check_start(
     start_step: int,
     max_iters: int,
-    optimizer: ScheduleFreeAdamW | None,
+    optimizer: TrainOptimizer | None,
     *,
     resumable: bool,
 ) -> None:
@@ -187,20 +199,20 @@ def _check_start(
 def train(
     mut_model: BaseGPT,
     loader: DataLoader,
-    learning_rate: float = 1e-2,
-    betas: tuple[float, float] = (0.9, 0.95),
-    weight_decay: float = 0.03,
+    learning_rate: float = 3e-4,
+    betas: tuple[float, float] = (0.9, 0.98),
+    weight_decay: float = 0.1,
     max_iters: int = 5_000,
     eval_interval: int = 5_000,
     eval_iters: int = 200,
     *,
-    warmup: int = 1_000,
+    warmup: int = 50,
     use_tqdm: bool = True,
     use_early_stopping: bool = False,
     grad_accum_steps: int = 1,
     grad_clip_norm: float | None = None,
     save_best: bool = False,
-    optimizer: ScheduleFreeAdamW | None = None,
+    optimizer: TrainOptimizer | None = None,
     on_eval: Callable[[Evaluation], None] | None = None,
     autocast: torch.dtype | None = None,
     start_step: int = 0,
@@ -237,12 +249,13 @@ def train(
     the best val loss is returned. Either way the returned loss is that of
     the returned weights.
 
-    `optimizer`: a ScheduleFreeAdamW over the parameters of `mut_model`;
-    by default one is built from `learning_rate`, `betas`, `weight_decay`
-    and `warmup` (steps of linear lr warmup), which are ignored when
-    `optimizer` is given. The weight decay applies to every parameter: the
-    GPT has only matrices and embeddings. The optimizer is left in eval
-    mode, with its average x in the parameters. A best-snapshot restore
+    `optimizer`: an AdamW or explicit ScheduleFreeAdamW over `mut_model`.
+    By default native AdamW is built from `learning_rate`, `betas`,
+    `weight_decay` and `warmup`; the historical schedule starts at zero,
+    then holds the rate after warmup. These settings are ignored when an
+    optimizer is supplied. Weight decay applies to every parameter.
+    An explicit Schedule-Free optimizer is left in eval mode, with its
+    average x in the parameters. A best-snapshot restore
     overwrites them while the optimizer keeps the z and v of the last step,
     so its train() would then start y from the snapshot and that z: train
     on from the returned weights with a new optimizer.
@@ -288,13 +301,17 @@ def train(
         )
         raise ValueError(msg)
     if optimizer is None:
-        optimizer = ScheduleFreeAdamW(
+        if type(warmup) is not int or warmup < 0:
+            msg = "warmup must be an int >= 0"
+            raise ValueError(msg)
+        optimizer = torch.optim.AdamW(
             mut_model.parameters(),
             lr=learning_rate,
             betas=betas,
             weight_decay=weight_decay,
-            warmup=warmup,
         )
+        for group in optimizer.param_groups:
+            group.update(initial_lr=learning_rate, warmup=warmup, step=0)
     has_val = _agree_on_val(has_val=loader.has_val())
     start = datetime.now(tz=UTC)
     is_main = _is_main_rank()
@@ -326,12 +343,12 @@ def train(
     previous_loss = float("inf")
     stopped_early = False
     mut_model.train()
-    optimizer.train()
+    _optimizer_mode(optimizer, training=True)
     for step in pbar:
         # A resumed run made the evaluation of its first step before saving.
         if step % eval_interval == 0 and not (start_step and step == start_step):
             mut_model.eval()
-            optimizer.eval()
+            _optimizer_mode(optimizer, training=False)
             evaluate(step)
             # Stop while still in eval mode, holding the scored weights.
             if has_val and use_early_stopping and previous_loss < evaluations.loss:
@@ -339,7 +356,7 @@ def train(
                 break
             previous_loss = evaluations.loss
             mut_model.train()
-            optimizer.train()
+            _optimizer_mode(optimizer, training=True)
         optimizer.zero_grad(set_to_none=True)
         for _ in range(grad_accum_steps):
             xb, yb = loader.get_batch("train")
@@ -354,12 +371,19 @@ def train(
             loss.backward()
         if grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(mut_model.parameters(), grad_clip_norm)
+        if isinstance(optimizer, torch.optim.AdamW):
+            for group in optimizer.param_groups:
+                if group.get("warmup", 0):
+                    group["lr"] = group["initial_lr"] * min(1, step / group["warmup"])
         optimizer.step()
+        if isinstance(optimizer, torch.optim.AdamW):
+            for group in optimizer.param_groups:
+                group["step"] = step + 1
     # Schedule-free: the parameters hold the query y while training; move
     # them to the average x before handing the model back. Without this the
     # returned weights are y whenever no best-snapshot is restored (no val
     # split, or save_best=False).
-    optimizer.eval()
+    _optimizer_mode(optimizer, training=False)
     mut_model.eval()
     if not stopped_early:
         # Score the last update too; the in-loop evaluations precede it.

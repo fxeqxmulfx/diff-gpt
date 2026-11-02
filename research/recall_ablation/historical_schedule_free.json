@@ -1,0 +1,43 @@
+{
+  "scope": "Historical recorded controls, not new training; final test metrics excluded.",
+  "source_repository_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "model": "unchanged historical GPTMini width128 depth6 heads4",
+  "optimizer": "Schedule-Free AdamW; lr0.0003, betas(0.9,0.98), decay0.1, warmup50",
+  "source_hashes": {
+    "experiments/basis_control/results.json": "5da4ab774b07bba0f2c796a8eb69721256caeed6b5108d52572d29f1bd239581",
+    "experiments/basis_control/protocol.json": "e04dd220f6d894256a04f53f4ef606937908b87cb3bcac4c5c68a59002f39513",
+    "experiments/basis_control/README.md": "1cd6f1bc9afcb4bb0eab04a408ababfca7295acc04e5d1b817aadea9c51ad745"
+  },
+  "cases": [
+    {
+      "label": "gptmini-hard-recall-s0",
+      "completed": 12200,
+      "first99": 12200,
+      "validation": {
+        "loss": 0.004564694987493567,
+        "token_accuracy": 0.998779296875,
+        "sequence_accuracy": 0.990234375,
+        "correct": 4091,
+        "exact": 507,
+        "target_count": 4096,
+        "example_count": 512
+      },
+      "all_gradients_finite_nonzero": true
+    },
+    {
+      "label": "gptmini-hard-recall-s1",
+      "completed": 100000,
+      "first99": null,
+      "validation": {
+        "loss": 7.397990107536316,
+        "token_accuracy": 0.112548828125,
+        "sequence_accuracy": 0.0,
+        "correct": 461,
+        "exact": 0,
+        "target_count": 4096,
+        "example_count": 512
+      },
+      "all_gradients_finite_nonzero": true
+    }
+  ]
+}

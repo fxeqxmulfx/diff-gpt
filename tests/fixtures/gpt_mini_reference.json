@@ -1,0 +1,30 @@
+{
+  "source": "/home/misha/lean_projects/transformer/experiments/archive/gpt_mini/gpt_mini.py",
+  "source_sha256": "7df779bcdc019a6054ed7a6b93469b821b8dec9fc96d84a1420ec387d28f5ee4",
+  "fixture_sha256": "c0a20bb47bdc666a6802ac1ffb8422064b857de0c06f5d8a8ca2daa32d49abf8",
+  "seed": 17,
+  "configuration": {
+    "vocab_size": 64,
+    "n_embd": 16,
+    "n_layer": 2,
+    "n_head": 2,
+    "block_size": 16
+  },
+  "initialization": "native constructors, then Normal(0,0.02) once per distinct matrix in parameter order",
+  "loss": "mean(logits ** 2)",
+  "torch": "2.14.1+cu126",
+  "parameters": [
+    "embed.weight",
+    "blocks.0.attn.log_alpha",
+    "blocks.0.attn.qkv.weight",
+    "blocks.0.attn.proj.weight",
+    "blocks.0.ffn.w_in.weight",
+    "blocks.0.ffn.w_out.weight",
+    "blocks.1.attn.log_alpha",
+    "blocks.1.attn.qkv.weight",
+    "blocks.1.attn.proj.weight",
+    "blocks.1.ffn.w_in.weight",
+    "blocks.1.ffn.w_out.weight"
+  ],
+  "source_repository_commit": "8890a98585ecc9e54792f7580883f97e5a63d755"
+}

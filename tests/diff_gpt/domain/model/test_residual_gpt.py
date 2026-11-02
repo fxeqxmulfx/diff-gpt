@@ -1,4 +1,4 @@
-"""Audit the canonical scaled residual model and complete saved states."""
+"""Audit the archived normalized model and its complete saved states."""
 
 import copy
 
@@ -6,8 +6,8 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.model.kv_cache import KVCache
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 XSA_CLIP = 1e-12

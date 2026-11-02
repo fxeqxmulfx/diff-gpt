@@ -36,7 +36,7 @@ from diff_gpt.application.grokking.div97 import (
 from diff_gpt.application.grokking.recurrence import batch_slices, optimizer_progress
 from diff_gpt.application.grokking.recurrence_field_sampler import CanonicalFieldSampler
 from diff_gpt.application.grokking.series_data import DataConfig, dataset
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 if TYPE_CHECKING:

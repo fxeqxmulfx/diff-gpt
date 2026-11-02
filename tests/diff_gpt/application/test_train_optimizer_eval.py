@@ -171,6 +171,7 @@ def test_train_one_step_keeps_the_update_when_it_lowers_val_loss() -> None:
         model,
         loader,
         max_iters=1,
+        warmup=0,
         eval_interval=1,
         eval_iters=1,
         use_tqdm=False,

@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     from torch import nn
 
     from diff_gpt.application.grokking.mqar_div97 import Task
-    from diff_gpt.domain.model.gpt import GPT
     from diff_gpt.domain.model.mha import MultiHeadAttention
+    from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
     from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 
 EPS = 1e-12

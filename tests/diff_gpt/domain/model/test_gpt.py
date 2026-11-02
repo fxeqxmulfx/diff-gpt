@@ -51,32 +51,22 @@ def test_gpt_init() -> None:
     r"""
     Check the initialization of every parameter.
 
-    Init: weights $\sim \mathcal{N}(0, 0.02)$; the two projections that write
-    into the residual stream use $\sigma = 0.02 / \sqrt{2 n_{layer}}$.
+    Every distinct matrix uses Normal(0, 0.02); head temperatures start
+    at log(sqrt(head_dim)) and remain trainable.
     """
     torch.manual_seed(0)
     n_layer = 4
     model = GPT(vocab_size=64, n_embd=64, block_size=32, n_head=4, n_layer=n_layer)
-    residual_std = 0.02 / math.sqrt(2 * n_layer)
-
-    residual = {
-        f"blocks.{i}.{branch}.c_proj.weight"
-        for i in range(n_layer)
-        for branch in ("sa", "ffwd")
-    }
-    assert residual <= dict(model.named_parameters()).keys()
-
     for name, p in model.named_parameters():
-        std = residual_std if name in residual else 0.02
-        assert p.std().item() == pytest.approx(std, rel=0.1), name
+        if p.ndim > 1:
+            assert p.std().item() == pytest.approx(0.02, rel=0.1), name
+        else:
+            assert name.endswith("log_alpha"), name
+            assert_close(p, torch.full_like(p, 0.5 * math.log(64 // 4)))
 
 
-def test_model_has_no_biases_or_norm_gains() -> None:
-    """
-    Every parameter is a weight: no biases, no norm gains.
-
-    The weights are those of the Linear and Embedding layers.
-    """
+def test_model_has_only_matrices_and_head_temperatures() -> None:
+    """No biases or norm gains; head log-temperatures are the only vectors."""
     model = GPT(vocab_size=64, n_embd=16, block_size=8, n_head=2, n_layer=2)
     weights = {
         id(module.weight)
@@ -85,7 +75,10 @@ def test_model_has_no_biases_or_norm_gains() -> None:
     }
     params = list(model.parameters())
     assert params
-    assert all(id(p) in weights for p in params)
+    assert all(
+        id(p) in weights or name.endswith("log_alpha")
+        for name, p in model.named_parameters()
+    )
 
 
 def test_estimate_flops_matches_flop_counter() -> None:
@@ -94,7 +87,7 @@ def test_estimate_flops_matches_flop_counter() -> None:
 
     The count covers one forward and backward pass. The math SDPA backend runs
     attention as plain matmuls the counter can see. With no norm gains, every
-    parameter the estimate counts is a matmul weight, so the counts are equal.
+    matrix parameter counts once; learned scalar temperatures add no matmul.
     """
     torch.manual_seed(0)
     B, V, T = 2, 64, 16

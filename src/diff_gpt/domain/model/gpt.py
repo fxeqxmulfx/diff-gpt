@@ -9,8 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from diff_gpt.domain.model.block import Block
-from diff_gpt.domain.model.rms_norm import RMSNorm
+from diff_gpt.domain.model.mini_block import MiniBlock, MiniRMSNorm
 from diff_gpt.domain.model.rope import rope_tables
 
 if TYPE_CHECKING:
@@ -79,19 +78,11 @@ class BaseGPT(nn.Module, ABC):
 
 class GPT(BaseGPT):
     """
-    Canonical GPT with parameter-free Peri-RMSNorm, QK-norm, RoPE, XSA and SwiGLU.
+    Historical GPTMini with the forecasting and KV-cache interfaces.
 
-    A normalized learned token embedding, Peri-norm blocks on a residual
-    stream, a final norm and an lm_head tied to the token embedding.
-    Each block normalizes both branch inputs and outputs before residual
-    addition, with coefficient 1/sqrt(2*n_layer) after the output norm.
-    Positions enter only as rotations of the attention queries and
-    keys (RoPE). The attention is
-    exclusive (XSA): each head's output is orthogonal to the token's own
-    value. The MLP is a SwiGLU with the parameter count of a 4x MLP. Every
-    norm is an RMSNorm without learnable parameters, and no Linear layer has
-    a bias. The model reads the token stream as ordinary text; everything
-    series-specific lives in the encoder/decoder.
+    PreNorm with native RMSNorm (epsilon 1e-5), unit Q/K and a learned
+    per-head temperature, RoPE, ordinary XSA, ReLU squared with width 4d,
+    tied token/readout weights and one Normal(0.02) draw per matrix.
     """
 
     # RoPE tables of positions 0..block_size-1, registered in __init__
@@ -111,20 +102,12 @@ class GPT(BaseGPT):
         rope_base: float = 10_000.0,
     ) -> None:
         """
-        Build the layers and initialize the weights.
+        Build GPTMini, preserving historical parameter and random-draw order.
 
-        `vocab_size` must be a multiple of `pad_vocab_size_to`: the encoder owns
-        the vocabulary and pads it. `use_checkpoint` turns on gradient
-        checkpointing of the blocks in training mode. `n_layer` must be at
-        least 1: the KV cache advances its position in the last block.
-        `rope_base`, positive and finite, sets the RoPE frequencies: channel
-        pair i turns by rope_base^(-2i / head_dim) radians per position.
-        Parameter-free Peri-RMSNorm normalizes the embedding stream and both
-        the input and output of every attention and MLP branch.
-        Q/K use per-head RMSNorm followed by standard 1/sqrt(head_dim) scaling.
-        Centered XSA and shared states for repeated-token prefixes avoid
-        cancellation in forward and parameter gradients. Both branches use
-        coefficient 1/sqrt(2*n_layer), after their output RMS normalization.
+        Vocabulary alignment is caller-owned; use pad_vocab_size_to=1 for
+        the unpadded historical Basis vocabulary. Checkpointing and KV caching
+        preserve the same model equations. The archived normalized GPT remains
+        available explicitly in normalized_gpt for replay of earlier research.
         """
         if n_layer < 1:
             msg = f"n_layer must be >= 1, got {n_layer}"
@@ -157,31 +140,22 @@ class GPT(BaseGPT):
         self.register_buffer("rope_cos", cos, persistent=False)
         self.register_buffer("rope_sin", sin, persistent=False)
         self.blocks = nn.ModuleList(
-            Block(
+            MiniBlock(
                 n_embd=n_embd,
                 n_head=n_head,
                 layer_idx=i,
-                n_layer=n_layer,
             )
             for i in range(n_layer)
         )
-        self.ln_f = RMSNorm(n_embd)
-        self.embedding_norm = RMSNorm(n_embd)
+        self.ln_f = MiniRMSNorm()
         self.lm_head = nn.Linear(n_embd, vocab_size, bias=False)
         self.lm_head.weight = self.token_embedding_table.weight
-        # Keep the N(0, 0.02) initialization and 1/sqrt(2·n_layer) scaling of
-        # c_proj weights. Peri-RMSNorm controls the scale of their outputs.
-        self.apply(self._init_weights)
-        for name, p in self.named_parameters():
-            if name.endswith("c_proj.weight"):
-                nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * n_layer))
+        # Initialize each distinct matrix once, in parameter order. Applying
+        # an initializer to modules would redraw the tied embedding/readout.
+        for parameter in self.parameters():
+            if parameter.ndim > 1:
+                nn.init.normal_(parameter, mean=0.0, std=0.02)
         self.use_checkpoint = use_checkpoint
-        self.branch_scale = 1 / math.sqrt(2 * n_layer)
-
-    @staticmethod
-    def _init_weights(module: nn.Module) -> None:
-        if isinstance(module, (nn.Linear, nn.Embedding)):
-            nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def estimate_flops(self) -> int:
         """
@@ -190,10 +164,10 @@ class GPT(BaseGPT):
         6 per parameter plus 12·n_layer·n_embd·block_size for attention over
         the full block (PaLM appendix B, as in nanoGPT and nanochat). The tied
         token embedding counts once, as the lm_head matmul. Elementwise work
-        such as RoPE, the norms, the XSA projection and the SwiGLU gate is not
+        such as RoPE, the norms, the XSA projection and ReLU squared is not
         counted, nor is the recompute under gradient checkpointing.
         """
-        n_params = sum(p.numel() for p in self.parameters())
+        n_params = sum(p.numel() for p in self.parameters() if p.ndim > 1)
         return 6 * n_params + 12 * self.n_layer * self.n_embd * self.block_size
 
     def forward(
@@ -201,37 +175,32 @@ class GPT(BaseGPT):
         idx: torch.Tensor,
         targets: torch.Tensor | None = None,
         kv_cache: KVCache | None = None,
+        *,
+        positions: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        """Apply fixed post-RMS residual scaling, with causal cache support."""
+        """
+        Apply historical PreNorm updates, with causal caching.
+
+        Optional (batch, count) positions select readout rows after the final
+        norm, as in the original Basis trainer; targets must then have that
+        same shape. Otherwise every input position receives logits.
+        """
         start = 0 if kv_cache is None else kv_cache.get_pos()
         end = start + idx.shape[1]
         if end > self.block_size:
             msg = f"positions up to {end} exceed block_size {self.block_size}"
             raise ValueError(msg)
         cos, sin = self.rope_cos[start:end], self.rope_sin[start:end]
-        x = self.embedding_norm(self.token_embedding_table(idx))
-        guarded = kv_cache is None
-        constant = (idx != idx[:, :1]).cumsum(dim=1) == 0 if guarded else None
+        x = self.token_embedding_table(idx)
         for block in self.blocks:
             if self.training and self.use_checkpoint:
-                result = checkpoint(
-                    block,
-                    x,
-                    cos,
-                    sin,
-                    kv_cache,
-                    constant=constant,
-                    use_reentrant=False,
-                )
+                x = checkpoint(block, x, cos, sin, kv_cache, use_reentrant=False)
             else:
-                result = block(x, cos, sin, kv_cache, constant=constant)
-            if constant is None:
-                x = result
-            else:
-                x, constant = result
-        if constant is not None:
-            x = torch.where(constant[..., None], x[:, :1], x)
-        logits = self.lm_head(self.ln_f(x))
+                x = block(x, cos, sin, kv_cache)
+        x = self.ln_f(x)
+        if positions is not None:
+            x = x.gather(1, positions[..., None].expand(-1, -1, self.n_embd))
+        logits = self.lm_head(x)
         loss = (
             None
             if targets is None

@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     import argparse
     from collections.abc import Callable
 
-    from diff_gpt.domain.model.gpt import GPT
+    from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 
 SOURCE_SNAPSHOT = Path(__file__).read_bytes()
 FIELD_SOURCE_SNAPSHOT = (

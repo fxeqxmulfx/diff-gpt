@@ -1,0 +1,60 @@
+{
+  "scope": "Historical committed records; no new training or final-test evaluation. Original ignored experiments/basis/runs is absent in this checkout.",
+  "original": {
+    "training_commit": "bd63e509",
+    "record_commit": "18888e2a",
+    "model": "GPTMini width128 depth6 heads4, QKNorm with learned per-head temperature, pre-RMS, ReLU squared FFN, RoPE and tied readout",
+    "optimizer": "AdamW betas(.9,.98), weight_decay .1; warmup50; original task rates and batches",
+    "rows": [
+      {
+        "seed": 0,
+        "depth_first99": 800,
+        "recall_first99": 3350,
+        "parity_first99": 5000
+      },
+      {
+        "seed": 1,
+        "depth_first99": 1400,
+        "recall_first99": 2850,
+        "parity_first99": 8400
+      },
+      {
+        "seed": 2,
+        "depth_first99": 5800,
+        "recall_first99": 2600,
+        "parity_first99": 8800
+      }
+    ]
+  },
+  "repeat": {
+    "training_commit": "b7d6e673b557fdb6d613a9eb34ca590fa6d6f824",
+    "collected_utc": "2026-10-05T16:29:10.577976+00:00",
+    "softmax_hard_recall": [
+      {
+        "label": "hard-large-recall-seed0",
+        "first99": 2950,
+        "sequence_accuracy": 0.9921875,
+        "learned_temperature_min": 5.040407180786133,
+        "learned_temperature_max": 7.625164031982422
+      },
+      {
+        "label": "hard-large-recall-seed1",
+        "first99": 2150,
+        "sequence_accuracy": 0.9921875,
+        "learned_temperature_min": 5.006199359893799,
+        "learned_temperature_max": 6.6199188232421875
+      },
+      {
+        "label": "hard-large-recall-seed2",
+        "first99": 2750,
+        "sequence_accuracy": 0.990234375,
+        "learned_temperature_min": 5.049716949462891,
+        "learned_temperature_max": 7.079453468322754
+      }
+    ]
+  },
+  "sources": {
+    "experiments/basis/README.md": "3da6f4133537419412f0fc4905046e5741bb9c221436a7d0e68df378d81da4aa",
+    "experiments/basis_qknorm/results.json": "969e063f85429dac27da2495c8d43718d59899c59673daef0c29031ff6f9aea8"
+  }
+}

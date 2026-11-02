@@ -44,7 +44,7 @@ from diff_gpt.application.grokking.mqar_div97 import (
 )
 from diff_gpt.application.grokking.mqar_div97_copy_audit import VARIANTS, variant
 from diff_gpt.domain.encoder_decoder import encode
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 from diff_gpt.infrastructure import provenance
 
 if TYPE_CHECKING:

@@ -28,7 +28,7 @@ from torch.nn import functional as F
 from diff_gpt.application.diff_gpt import DiffGPT
 from diff_gpt.application.paths import ROOT
 from diff_gpt.domain.encoder_decoder import ENCODER_VERSION, decode, encode
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.normalized_gpt import NormalizedGPT as GPT
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
 from diff_gpt.domain.sampler.temperature import TemperatureSampler
 
@@ -56,6 +56,8 @@ REPLAY_LOSS_TOLERANCE = 2e-5
 LIBRARY_SOURCES = (
     ROOT / "src/diff_gpt/domain/encoder_decoder.py",
     ROOT / "src/diff_gpt/domain/model/gpt.py",
+    ROOT / "src/diff_gpt/domain/model/normalized_gpt.py",
+    ROOT / "src/diff_gpt/domain/model/mini_block.py",
     ROOT / "src/diff_gpt/domain/model/block.py",
     ROOT / "src/diff_gpt/domain/model/mha.py",
     ROOT / "src/diff_gpt/domain/model/rms_norm.py",
