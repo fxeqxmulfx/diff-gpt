@@ -9,6 +9,7 @@ import torch
 
 from diff_gpt.domain.model.gpt import GPTMini
 from diff_gpt.domain.model.mini_block import (
+    LowEpsilonQKAttention,
     ResidualScaledProjection,
     RMSNormEmbedding,
     RMSNormProjection,
@@ -35,6 +36,7 @@ ARCHITECTURE_STAGES = (
     "fixed-temperature",
     "sdpa",
     "rms-epsilon",
+    "xsa-epsilon",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -49,9 +51,11 @@ PREDECESSOR = {
     "fixed-temperature": "qk-rms",
     "sdpa": "fixed-temperature",
     "rms-epsilon": "fixed-temperature",
+    "xsa-epsilon": "rms-epsilon",
 }
-QK_RMS_STAGES = {"qk-rms", "fixed-temperature", "sdpa", "rms-epsilon"}
-FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa", "rms-epsilon"}
+QK_RMS_STAGES = {"qk-rms", "fixed-temperature", "sdpa", "rms-epsilon", "xsa-epsilon"}
+FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa", "rms-epsilon", "xsa-epsilon"}
+NATIVE_EPSILON_STAGES = {"rms-epsilon", "xsa-epsilon"}
 
 
 def raw_parameter_digest(model: nn.Module) -> str:
@@ -138,6 +142,8 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
     if stage in QK_RMS_STAGES:
         for block in model.blocks:
             attention = SDPAQKAttention if stage == "sdpa" else RMSQKAttention
+            if stage == "xsa-epsilon":
+                attention = LowEpsilonQKAttention
             block.sa = attention(block.sa)
         repaired_sites += 2 * model.n_layer
         features.append("per-head QK RMS normalization with learned temperature")
@@ -150,12 +156,12 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             fix_qk_temperature(block.sa)
             removed_parameters.append(f"blocks.{index}.sa.log_alpha")
         features[-1] = "per-head QK RMS normalization with fixed temperature"
-    if stage in {"sdpa", "rms-epsilon"}:
+    if stage in {"sdpa", *NATIVE_EPSILON_STAGES}:
         parent_initial = raw_parameter_digest(model)
     if stage == "sdpa":
         features.append("fused SDPA dense attention")
     epsilon_changed_sites = []
-    if stage == "rms-epsilon":
+    if stage in NATIVE_EPSILON_STAGES:
         epsilon_changed_sites = use_native_rms_epsilon(model)
         if len(epsilon_changed_sites) != 2 * model.n_layer + 1:
             msg = "dtype epsilon did not change exactly the input and final RMS sites"
@@ -164,6 +170,8 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         if raw_parameter_digest(model) != parent_initial:
             msg = "RMS epsilon changed the initial parameters"
             raise RuntimeError(msg)
+    if stage == "xsa-epsilon":
+        features.append("XSA clipping epsilon 1e-12")
     residual_scale = 1.0
     if stage == "residual-scale":
         residual_scale = (2 * model.n_layer) ** -0.5
@@ -211,6 +219,7 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         if epsilon_changed_sites
         else 1e-5,
         "repaired_rms_sites": repaired_sites,
+        "xsa_epsilon": model.blocks[0].sa.xsa_epsilon,
         "qk_normalization": (
             "repaired per-head RMS" if stage in QK_RMS_STAGES else "unit L2"
         ),

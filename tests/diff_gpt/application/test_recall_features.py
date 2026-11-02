@@ -16,6 +16,7 @@ HISTORICAL_INITIAL = "64c8ceab8de24ad993b068c1cf7f13c632f71b09c6dc623eecba00502a
 BASELINE_PARAMETERS = 1_249_816
 SWIGLU_PARAMETERS = 1_249_048
 HISTORICAL_RMS_EPS = 1e-5
+MODERN_XSA_EPS = 1e-12
 
 
 def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
@@ -55,6 +56,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "fixed-temperature",
         "sdpa",
         "rms-epsilon",
+        "xsa-epsilon",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -426,3 +428,55 @@ def test_dtype_epsilon_forward_and_radial_gradient_match_independent_equations()
             gradient = torch.autograd.grad(actual.sum(), value)[0]
             expected = epsilon / (value.detach().double().square() + epsilon) ** 1.5
             assert_close(gradient, expected.float(), rtol=2e-6, atol=1e-12)
+
+
+def test_xsa_epsilon_keeps_all_passing_features_and_initial_weights() -> None:
+    """Change only the own-value clipping threshold, keeping ordinary projection."""
+    parent, _ = build_model("rms-epsilon", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("xsa-epsilon", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert_close(
+        dict(candidate.named_buffers()), dict(parent.named_buffers()), rtol=0, atol=0
+    )
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert metadata["parent_stage"] == "rms-epsilon"
+    assert metadata["xsa_epsilon"] == MODERN_XSA_EPS
+    assert metadata["dense_attention"] == "explicit causal softmax"
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["forward_residual_scale"] == 1.0
+    for block in candidate.blocks:
+        assert block.sa.xsa_epsilon == MODERN_XSA_EPS
+    for norm in candidate.modules():
+        if isinstance(norm, RepairedRMSNorm):
+            assert norm.eps is None
+    tokens = torch.randint(548, (2, 8))
+    assert_close(candidate(tokens)[0], parent(tokens)[0], rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("magnitude", [0.0, 1e-13, 1e-9, 2e-6])
+def test_xsa_clipping_preserves_perpendicular_and_clips_parallel(
+    magnitude: float,
+) -> None:
+    """A clipped parallel component scales by 1-(norm/epsilon)^2; others survive."""
+    parent, _ = build_model("rms-epsilon", 1)
+    candidate, _ = build_model("xsa-epsilon", 1)
+    for attention in (parent.blocks[0].sa, candidate.blocks[0].sa):
+        own = torch.zeros(1, 1, 1, 32, dtype=torch.float64)
+        own[..., 0] = magnitude
+        own.requires_grad_()
+        attended = torch.zeros_like(own)
+        attended[..., 0], attended[..., 1] = 3.0, 5.0
+        attended.requires_grad_()
+        expected = torch.zeros_like(own)
+        expected[..., 0] = 3 * (1 - min(1, magnitude / attention.xsa_epsilon) ** 2)
+        expected[..., 1] = 5.0
+        actual = attention.project_exclusive(attended, own)
+        assert_close(actual, expected, rtol=1e-12, atol=1e-12)
+        gradients = torch.autograd.grad(actual.sum(), (attended, own))
+        assert all(torch.isfinite(gradient).all() for gradient in gradients)

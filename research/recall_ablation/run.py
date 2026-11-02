@@ -32,6 +32,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
     "src/diff_gpt/domain/model/gpt.py",
     "src/diff_gpt/domain/model/mini_block.py",
+    "src/diff_gpt/domain/model/centered_xsa.py",
+    "src/diff_gpt/domain/model/mha.py",
     "src/diff_gpt/domain/model/rope.py",
     "src/diff_gpt/domain/model/feed_forward.py",
     "src/diff_gpt/domain/model/rms_norm.py",

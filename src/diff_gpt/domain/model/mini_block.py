@@ -12,6 +12,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from diff_gpt.domain.model.centered_xsa import XSA_EPS
 from diff_gpt.domain.model.feed_forward import FeedForward
 from diff_gpt.domain.model.mha import one_query_attention
 from diff_gpt.domain.model.rms_norm import RMSNorm as RepairedRMSNorm
@@ -31,6 +32,8 @@ class MiniRMSNorm(nn.Module):
 
 class MiniAttention(nn.Module):
     """Unit Q/K, learned per-head temperature, ordinary XSA and RoPE."""
+
+    xsa_epsilon = 1e-6
 
     def __init__(self, n_embd: int, n_head: int, layer_idx: int) -> None:
         """Construct the bias-free fused QKV and output matrices."""
@@ -60,6 +63,13 @@ class MiniAttention(nn.Module):
     def attention_gain(self) -> torch.Tensor:
         """Return each head's learned inverse temperature."""
         return self.log_alpha.exp().view(1, self.n_head, 1, 1)
+
+    def project_exclusive(
+        self, attended: torch.Tensor, own_value: torch.Tensor
+    ) -> torch.Tensor:
+        """Remove the own-value component using this attention's clipping epsilon."""
+        unit = F.normalize(own_value, dim=-1, eps=self.xsa_epsilon)
+        return attended - (attended * unit).sum(dim=-1, keepdim=True) * unit
 
     @staticmethod
     def attend_dense(
@@ -101,8 +111,7 @@ class MiniAttention(nn.Module):
             attended = one_query_attention(q * alpha * self.head_dim**0.5, k, v, prefix)
         else:
             attended = self.attend_dense(q, k, v, alpha)
-        unit = F.normalize(own_value, dim=-1, eps=1e-6)
-        attended = attended - (attended * unit).sum(dim=-1, keepdim=True) * unit
+        attended = self.project_exclusive(attended, own_value)
         return self.c_proj(
             attended.transpose(1, 2).contiguous().view(batch, length, width)
         )
@@ -149,6 +158,12 @@ class SDPAQKAttention(RMSQKAttention):
             diagonal=keys - length
         )
         return F.scaled_dot_product_attention(q, k, v, attn_mask=mask)
+
+
+class LowEpsilonQKAttention(RMSQKAttention):
+    """Keep ordinary XSA projection while using the newer clipping threshold."""
+
+    xsa_epsilon = XSA_EPS
 
 
 def fix_qk_temperature(attention: RMSQKAttention) -> None:

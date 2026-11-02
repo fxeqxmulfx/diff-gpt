@@ -5,15 +5,15 @@
     "per-head QK RMS normalization with fixed temperature",
     "native dtype epsilon at input/final RMS sites"
   ],
-  "accepted_model_commit": "f6dae84",
-  "active_stage": null,
+  "accepted_model_commit": "7faaaf3",
+  "active_stage": "xsa-epsilon",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain native dtype RMS epsilon after its 1850-update pass. Keep repaired backward, Q/K RMS, fixed attention gain, SwiGLU, ordinary AdamW and explicit attention; next isolate the XSA clipping threshold.",
+  "decision": "Retain the passing native-epsilon repaired RMS model. Test only XSA own-value clipping 1e-6 to 1e-12 with ordinary projection, explicit attention and ordinary AdamW; stop at the next fast-screen miss.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -77,16 +77,16 @@
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
   "next_feature": "XSA clipping threshold",
-  "next_feature_if_resumed": "XSA clipping threshold",
+  "next_feature_if_resumed": "centered XSA",
   "not_tested_after_stop": [
-    "XSA clipping threshold",
+    "XSA clipping threshold (active)",
     "centered XSA",
     "exact zero attention output at first position",
     "repeated-prefix stabilization"
   ],
   "optimizer": "ordinary torch.optim.AdamW throughout",
   "previous_stop_decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
-  "production_commit": "f6dae84",
+  "production_commit": "7faaaf3",
   "rejected_features": [
     "Schedule-Free AdamW",
     "depth-scaled projection initialization",
@@ -97,24 +97,25 @@
   ],
   "resume_protocol": {
     "branch_output_normalization": false,
-    "changed_epsilon_sites": 13,
     "dense_attention": "explicit causal softmax",
     "embedding_normalization": false,
     "forward_residual_scale": 1.0,
     "head_rms_epsilon": "native dtype epsilon (unchanged)",
     "initial_parameters_changed": false,
     "initial_projection_scale": 1.0,
-    "input_and_final_epsilon": "native dtype epsilon",
+    "input_and_final_epsilon": "native dtype epsilon (unchanged)",
     "learned_temperature": false,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
-    "parent": "fixed-temperature",
-    "parent_first99": 2500,
+    "parent": "rms-epsilon",
+    "parent_first99": 1850,
+    "parent_xsa_epsilon": 1e-06,
     "random_draws_added": false,
     "repaired_rms_sites": 25,
-    "rms_backward": "repaired FP64 radial/tangent",
     "seed": 1,
-    "stage": "rms-epsilon"
+    "stage": "xsa-epsilon",
+    "xsa_epsilon": 1e-12,
+    "xsa_projection": "ordinary subtraction"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -423,7 +424,7 @@
       "status": "passed"
     }
   ],
-  "status": "native dtype RMS epsilon passed; preparing XSA clipping screen",
+  "status": "native RMS epsilon passed; screening XSA clipping threshold",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -479,7 +480,7 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "focused_feature_tests_passed": 27,
+    "focused_feature_tests_passed": 33,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",
       "eager_replay": {
@@ -505,7 +506,7 @@
     },
     "full_domain_application_tests_passed": 855,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": null,
+    "full_suite_validation_commit": "7faaaf3",
     "full_suite_validation_source_sha256": {
       "research/recall_ablation/features.py": "1840d7c6b44bc708c8318d7bff50b663d34bfa43cf13bd3add83f7e7e75c5066",
       "src/diff_gpt/domain/model/gpt.py": "00a5abef324b6181a60331c9fca99a3bb851239a73cd4032ddd8b46d20e889d7",
