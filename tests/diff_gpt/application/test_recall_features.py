@@ -54,6 +54,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "qk-rms",
         "fixed-temperature",
         "sdpa",
+        "rms-epsilon",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -371,3 +372,56 @@ def test_sdpa_cache_reproduces_full_context_predictions() -> None:
                 )
                 position += length
             assert_close(torch.cat(results, 1), expected, rtol=1e-5, atol=1e-5)
+
+
+def test_dtype_epsilon_changes_only_input_and_final_norms() -> None:
+    """Keep explicit attention, all initial weights, fixed gains and the repair."""
+    parent, _ = build_model("fixed-temperature", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("rms-epsilon", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert_close(
+        dict(candidate.named_buffers()), dict(parent.named_buffers()), rtol=0, atol=0
+    )
+    assert metadata["parent_stage"] == "fixed-temperature"
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["dense_attention"] == "explicit causal softmax"
+    assert metadata["repaired_rms_sites"] == 4 * candidate.n_layer + 1
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["forward_residual_scale"] == 1.0
+    expected_sites = {"ln_f"} | {
+        f"blocks.{i}.ln_{branch}" for i in range(candidate.n_layer) for branch in (1, 2)
+    }
+    assert set(metadata["epsilon_changed_sites"]) == expected_sites
+    old_modules = dict(parent.named_modules())
+    for name, module in candidate.named_modules():
+        assert type(module) is type(old_modules[name])
+        if isinstance(module, RepairedRMSNorm):
+            assert module.eps is None
+            if name in expected_sites:
+                assert old_modules[name].eps == HISTORICAL_RMS_EPS
+            else:
+                assert old_modules[name].eps is None
+
+
+def test_dtype_epsilon_forward_and_radial_gradient_match_independent_equations() -> (
+    None
+):
+    """Exercise all thirteen changed sites at embedding and unit amplitudes."""
+    candidate, metadata = build_model("rms-epsilon", 1)
+    modules = dict(candidate.named_modules())
+    epsilon = torch.finfo(torch.float32).eps
+    for name in metadata["epsilon_changed_sites"]:
+        norm = modules[name]
+        for amplitude in (0.02, 1.0):
+            value = torch.full((2, candidate.n_embd), amplitude, requires_grad=True)
+            actual = norm(value)
+            assert_close(actual, F.rms_norm(value, (candidate.n_embd,)), rtol=0, atol=0)
+            gradient = torch.autograd.grad(actual.sum(), value)[0]
+            expected = epsilon / (value.detach().double().square() + epsilon) ** 1.5
+            assert_close(gradient, expected.float(), rtol=2e-6, atol=1e-12)

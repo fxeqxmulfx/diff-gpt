@@ -158,6 +158,16 @@ def fix_qk_temperature(attention: RMSQKAttention) -> None:
     attention.register_buffer("log_alpha", log_alpha, persistent=False)
 
 
+def use_native_rms_epsilon(model: nn.Module) -> list[str]:
+    """Use dtype epsilon at repaired RMS sites that had an explicit epsilon."""
+    changed = []
+    for name, module in model.named_modules():
+        if isinstance(module, RepairedRMSNorm) and module.eps is not None:
+            module.eps = None
+            changed.append(name)
+    return changed
+
+
 class MiniFeedForward(nn.Module):
     """Historical bias-free ReLU-squared MLP, with hidden width 4d."""
 

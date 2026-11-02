@@ -5,14 +5,14 @@
     "per-head QK RMS normalization with fixed temperature"
   ],
   "accepted_model_commit": "f6dae84",
-  "active_stage": null,
+  "active_stage": "rms-epsilon",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
+  "decision": "Continue from fixed-temperature with ordinary AdamW and explicit attention. Change only the thirteen input/final RMS epsilons to native dtype epsilon; retain repaired backward. Stop at the next fast-screen miss.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -72,19 +72,18 @@
   ],
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
-  "next_feature": "Q/K RMS normalization with learned temperature retained",
-  "next_feature_if_resumed": "native dtype epsilon at existing input/final RMS sites",
+  "next_feature": "native dtype epsilon at existing input/final RMS sites",
+  "next_feature_if_resumed": "XSA clipping threshold",
   "not_tested_after_stop": [
-    "QK normalization",
-    "removal of learned temperatures",
-    "centered XSA and clipping threshold",
-    "fused SDPA",
-    "first-position and repeated-prefix stabilization",
-    "native dtype epsilon"
+    "native dtype epsilon at input/final RMS sites (active)",
+    "XSA clipping threshold",
+    "centered XSA",
+    "exact zero attention output at first position",
+    "repeated-prefix stabilization"
   ],
   "optimizer": "ordinary torch.optim.AdamW throughout",
-  "previous_stop_decision": "Retain ordinary AdamW + SwiGLU + repaired RMS backward, raw embeddings, unscaled initialization and forward residual coefficient 1. Stop at forward residual scaling.",
-  "production_commit": "21ed2f6",
+  "previous_stop_decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
+  "production_commit": "f6dae84",
   "rejected_features": [
     "Schedule-Free AdamW",
     "depth-scaled projection initialization",
@@ -95,13 +94,14 @@
   ],
   "resume_protocol": {
     "branch_output_normalization": false,
+    "changed_epsilon_sites": 13,
+    "dense_attention": "explicit causal softmax",
     "embedding_normalization": false,
     "forward_residual_scale": 1.0,
-    "head_rms_epsilon": "native dtype epsilon",
-    "head_score_gain": "parent gain preserved by q * (gain * sqrt(head_dim)) before SDPA",
+    "head_rms_epsilon": "native dtype epsilon (unchanged)",
     "initial_parameters_changed": false,
     "initial_projection_scale": 1.0,
-    "input_and_final_epsilon": 1e-05,
+    "input_and_final_epsilon": "native dtype epsilon",
     "learned_temperature": false,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
@@ -109,9 +109,9 @@
     "parent_first99": 2500,
     "random_draws_added": false,
     "repaired_rms_sites": 25,
+    "rms_backward": "repaired FP64 radial/tangent",
     "seed": 1,
-    "single_query_cached_attention_changed": false,
-    "stage": "sdpa"
+    "stage": "rms-epsilon"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -384,7 +384,7 @@
       "status": "censored at fast-screen budget"
     }
   ],
-  "status": "stopped at first miss after continuation: fused SDPA",
+  "status": "resumed at user request: native dtype RMS epsilon",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -440,7 +440,7 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "focused_feature_tests_passed": 24,
+    "focused_feature_tests_passed": 27,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",
       "eager_replay": {

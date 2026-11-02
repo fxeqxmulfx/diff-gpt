@@ -8,10 +8,10 @@ regression, not a proof that the model can never generalize.
 Current accepted model: **SwiGLU + repaired RMS backward + Q/K RMS + ordinary AdamW**,
 with raw embeddings, unscaled projection initialization and no Peri branch
 norms. Fixed forward residual scaling missed its screen and remains off.
-Head temperatures are fixed at their initial values. The next untested
-feature is native dtype epsilon at existing input/final RMS sites.
-**The sequence has stopped again:** fused SDPA missed its fast screen;
-public GPT retains explicit dense attention.
+Head temperatures are fixed at their initial values. Fused SDPA missed its
+fast screen and remains off. The user requested continuation: the active
+candidate changes input/final RMS epsilon to the native dtype default,
+keeping repaired backward and explicit dense attention.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -19,6 +19,28 @@ public GPT retains explicit dense attention.
 | Add repaired per-head Q/K RMS, keep learned temperature | 2,050 | 99.02% |
 | Fix head temperature at its initial value | 2,500 | 99.22% |
 | Replace explicit attention with fused SDPA | Miss by 3,000 | 97.46% (best 98.83%) |
+
+## Active screen: native dtype RMS epsilon
+
+The `rms-epsilon` candidate starts fresh from the passing
+`fixed-temperature` model (99% at 2,500), skipping the rejected SDPA path.
+It changes epsilon at exactly thirteen existing branch-input/final RMS
+sites from 1e-5 to the native dtype default (FP32 epsilon, approximately
+1.19209e-7, in this run). The twelve per-head Q/K norms already use that
+default and stay unchanged. All 25 sites keep repaired FP64 radial/tangent
+backward. Parameter bytes, fixed temperatures, construction RNG, embedding
+and residual behavior remain identical to the parent. Ordinary AdamW, data,
+seed 1, 50-update observations and the 3,000-update criterion stay fixed.
+No trained endpoint initializes the candidate; no final-test data are used.
+
+Isolation checks verify all thirteen changed sites, unchanged Q/K epsilon,
+native forward equality and independent positive radial derivatives at
+embedding-scale and unit-scale inputs. Public GPT retains the passing
+explicit-epsilon model until this candidate passes.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage rms-epsilon --seeds 1 --max-updates 3000
+```
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 

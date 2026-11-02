@@ -17,6 +17,7 @@ from diff_gpt.domain.model.mini_block import (
     fix_qk_temperature,
     initialize_swiglu,
     repair_rms_backward,
+    use_native_rms_epsilon,
 )
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ ARCHITECTURE_STAGES = (
     "qk-rms",
     "fixed-temperature",
     "sdpa",
+    "rms-epsilon",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -46,9 +48,10 @@ PREDECESSOR = {
     "qk-rms": "rms-repaired",
     "fixed-temperature": "qk-rms",
     "sdpa": "fixed-temperature",
+    "rms-epsilon": "fixed-temperature",
 }
-QK_RMS_STAGES = {"qk-rms", "fixed-temperature", "sdpa"}
-FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa"}
+QK_RMS_STAGES = {"qk-rms", "fixed-temperature", "sdpa", "rms-epsilon"}
+FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa", "rms-epsilon"}
 
 
 def raw_parameter_digest(model: nn.Module) -> str:
@@ -147,9 +150,20 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             fix_qk_temperature(block.sa)
             removed_parameters.append(f"blocks.{index}.sa.log_alpha")
         features[-1] = "per-head QK RMS normalization with fixed temperature"
-    if stage == "sdpa":
+    if stage in {"sdpa", "rms-epsilon"}:
         parent_initial = raw_parameter_digest(model)
+    if stage == "sdpa":
         features.append("fused SDPA dense attention")
+    epsilon_changed_sites = []
+    if stage == "rms-epsilon":
+        epsilon_changed_sites = use_native_rms_epsilon(model)
+        if len(epsilon_changed_sites) != 2 * model.n_layer + 1:
+            msg = "dtype epsilon did not change exactly the input and final RMS sites"
+            raise RuntimeError(msg)
+        features.append("native dtype epsilon at input/final RMS sites")
+        if raw_parameter_digest(model) != parent_initial:
+            msg = "RMS epsilon changed the initial parameters"
+            raise RuntimeError(msg)
     residual_scale = 1.0
     if stage == "residual-scale":
         residual_scale = (2 * model.n_layer) ** -0.5
@@ -184,10 +198,18 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         ),
         "rms_backward": (
             "FP64 separated radial/tangent backward at all RMS sites, "
-            "existing epsilons preserved"
+            + (
+                "input/final epsilons changed to native dtype epsilon"
+                if epsilon_changed_sites
+                else "existing epsilons preserved"
+            )
             if repaired_sites
             else "native"
         ),
+        "epsilon_changed_sites": epsilon_changed_sites,
+        "input_and_final_epsilon": "native dtype epsilon"
+        if epsilon_changed_sites
+        else 1e-5,
         "repaired_rms_sites": repaired_sites,
         "qk_normalization": (
             "repaired per-head RMS" if stage in QK_RMS_STAGES else "unit L2"
