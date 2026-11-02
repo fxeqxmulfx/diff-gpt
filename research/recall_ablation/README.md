@@ -55,13 +55,38 @@ optimizer and data remain unchanged. The separated radial RMS backward is
 a later feature and is not included in this candidate. The same seed 1 and
 3,000-update screen apply; another miss stops the sequence again.
 
+**Embedding normalization missed the fast screen:** 375/512 exact sequences
+(73.24%) and 3,935/4,096 correct queries (96.07%) at 3,000 updates. Its best
+observation is that endpoint; it never reaches 99%. At the parent's
+2,300-update crossing it scores only 9/512 exact sequences (1.76%). Eager
+checkpoint replay reproduces every prediction count, and the independent
+latest-value oracle, source hashes, optimizer steps and complete sampler
+state all verify. All parameter bytes at initialization match the passed
+SwiGLU parent; the failed initialization change is absent.
+
+**Current decision:** stop again and retain public GPTMini + SwiGLU with
+ordinary AdamW, raw embeddings and unscaled initialization (`b91fdf8`).
+Embedding normalization is clearly learning by the endpoint; the result is
+a regression under the declared fast criterion on one fresh seed, not a
+claim of eventual impossibility. Effects of later normalization or different
+training rates remain untested. Six focused isolation/gradient tests pass;
+the preceding public-model promotion passed 830 domain/application tests
+with 40 skipped. Ruff passes for the changed Python files.
+
+| Ordinary AdamW, same seed and data | First 99% exact | Exact endpoint |
+| --- | --- | --- |
+| Historical ReLU-squared | 2,900 | 99.02% |
+| SwiGLU | 2,300 | 99.22% |
+| SwiGLU + scaled projection initialization | Miss by 3,000 | 88.48% (best 93.95%) |
+| SwiGLU + embedding RMS, unscaled initialization | Miss by 3,000 | 73.24% |
+
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage scaled-init --seeds 1 --max-updates 3000
 .venv/bin/python -m research.recall_ablation.run --stage embedding-norm --seeds 1 --max-updates 3000
 ```
 
-If embedding normalization passes, the remaining intended sequence is branch-output normalization,
+The untested remaining sequence is branch-output normalization,
 residual scaling, Q/K normalization, removal of learned temperatures,
 centered XSA and its clipping threshold, fused SDPA, first-position and
 repeated-prefix stabilization, native dtype epsilon, and the separated RMS

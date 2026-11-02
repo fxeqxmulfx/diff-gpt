@@ -210,6 +210,8 @@ $hi - lo$ takes the place of $2D$.
   Depth-scaled projection initialization missed the subsequent 3,000-update
   screen (best exact accuracy 93.95%), so the passing model retains unscaled
   initialization.
+  Embedding RMS normalization also missed the screen (73.24% exact at
+  3,000), so the passing model keeps raw embeddings.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates).

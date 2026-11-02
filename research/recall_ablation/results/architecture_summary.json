@@ -8,11 +8,14 @@
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain unscaled SwiGLU + ordinary AdamW; test embedding normalization from that passing parent and stop at the next miss.",
+  "decision": "Retain public GPTMini + SwiGLU, ordinary AdamW, raw embeddings and unscaled Normal(0,.02) initialization. Stop at the embedding-normalization miss.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
     "baseline_seed1_history.jsonl": "bb9c41c357ece1896da3c454a1f419bf9f344eac67b220c2fded752ee11113e3",
+    "embedding_norm_seed1.json": "caaa1c5017649c112ba9823cef3e36280aae45bcadf1950a1e47e672a6a44f8e",
+    "embedding_norm_seed1_audit.json": "ae02876fadfa0e9d7c7a47353dd76672d75e1eefa1cdb4c1b0b644f9fae5c647",
+    "embedding_norm_seed1_history.jsonl": "0666a8d81e0a30aea1d3e04edbb75d70bddbd33e17c8cd721cf842850c64fce9",
     "scaled_init_seed1.json": "289595bdd044f81fb11a3a03d1219bd3ddfc00005fe16b127d371a3a9640999e",
     "scaled_init_seed1_audit.json": "69ad33188e42f8e1e62a8b3032e2696444cdcfa72908f3dfb36a47f913d505a6",
     "scaled_init_seed1_history.jsonl": "e530ba7a7d0e82940c79c6d1a3e7883ff0be5d0dee6a631ff15245836cc48b9b",
@@ -22,10 +25,10 @@
   },
   "first_failing_feature": "depth-scaled projection initialization (multiply attention/MLP output matrices by 1/sqrt(2L))",
   "implementation_commit": "fbf4b0a",
-  "interpretation": "A finite speed regression in this cumulative feature order on one fresh seed. The candidate already learns much of recall, but never meets 99% exact within 3000 updates. No claim that eventual grokking is impossible or that later normalization cannot compensate.",
-  "next_feature": "embedding RMS normalization",
+  "interpretation": "Finite speed screens on one matched fresh seed, in the documented order. Scaled initialization and embedding normalization each miss 99% by 3000; both learn substantial recall. Later grokking, retuned hyperparameters and compensation by other features remain untested.",
+  "latest_failing_feature": "embedding RMS normalization, native dtype epsilon and native backward",
+  "next_feature": null,
   "not_tested_after_stop": [
-    "embedding normalization",
     "branch-output normalization",
     "fixed forward residual scaling",
     "QK normalization",
@@ -41,7 +44,8 @@
   "production_commit": "b91fdf8",
   "rejected_features": [
     "Schedule-Free AdamW",
-    "depth-scaled projection initialization"
+    "depth-scaled projection initialization",
+    "embedding RMS normalization"
   ],
   "resume_protocol": {
     "backward": "native RMSNorm; no separated radial repair",
@@ -51,7 +55,8 @@
     "parameters_changed": false,
     "parent": "swiglu",
     "seed": 1,
-    "stage": "embedding-norm"
+    "stage": "embedding-norm",
+    "status": "closed: 99% not reached by 3000 updates"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -113,16 +118,72 @@
       "sequences": 512,
       "stage": "scaled-init",
       "status": "censored at fast-screen budget"
+    },
+    {
+      "at_parent_first99": {
+        "loss": 1.1804151833057404,
+        "seconds": 622.5588455600009,
+        "sequence_accuracy": 0.017578125,
+        "step": 2300,
+        "token_accuracy": 0.6494140625
+      },
+      "audit_file": "embedding_norm_seed1_audit.json",
+      "best_validation_observation": {
+        "loss": 0.17402322217822075,
+        "seconds": 801.4909815790015,
+        "sequence_accuracy": 0.732421875,
+        "step": 3000,
+        "token_accuracy": 0.960693359375
+      },
+      "completed": 3000,
+      "correct_queries": 3935,
+      "exact": 375,
+      "first99": null,
+      "history_file": "embedding_norm_seed1_history.jsonl",
+      "initial_parameters_sha256": "4a5e339c3ad654fbe434dcb0bac6150360b0c341f5fe52acb250171df827bbf2",
+      "initial_projection_scale": 1.0,
+      "parameters": 1249048,
+      "parent": "swiglu",
+      "parent_initial_parameters_sha256": "4a5e339c3ad654fbe434dcb0bac6150360b0c341f5fe52acb250171df827bbf2",
+      "queries": 4096,
+      "result_file": "embedding_norm_seed1.json",
+      "sequences": 512,
+      "stage": "embedding-norm",
+      "status": "censored at fast-screen budget"
     }
   ],
-  "status": "resumed at user request: embedding normalization, scaled initialization excluded",
+  "status": "stopped at embedding normalization after requested resume",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
     "eager_endpoint_replay": "exact counts; sources and sampler state verified",
-    "focused_feature_tests_passed": 4,
+    "embedding_norm_endpoint_audit": {
+      "checkpoint_sha256": "2623578a23d78384d9b55b46ebe089ab57ed421af1486d1548c2bdd826b0e96e",
+      "eager_replay": {
+        "exact": 375,
+        "queries": 4096,
+        "queries_correct": 3935,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2612,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 62,
+        "unchanged_correct": 1323,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
+    "embedding_norm_preserves_all_parent_parameter_bytes_and_weight_tying": true,
+    "focused_feature_tests_passed": 6,
     "full_domain_application_tests_passed": 830,
     "full_domain_application_tests_skipped": 40,
     "ruff": "passed",
