@@ -8,8 +8,8 @@ regression, not a proof that the model can never generalize.
 Current accepted model: **SwiGLU + repaired RMS backward + Q/K RMS + ordinary AdamW**,
 with raw embeddings, unscaled projection initialization and no Peri branch
 norms. Fixed forward residual scaling missed its screen and remains off.
-Learned head temperatures remain. The next untested feature is fixing their
-scale to remove those learned parameters.
+Head temperatures are fixed at their initial values. The next untested
+feature is fused SDPA attention.
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 
@@ -48,7 +48,7 @@ The public `GPT` now matches the passing `qk-rms` candidate. This is one
 matched seed, with no final-test evaluation. Results, history and audit are
 retained as `results/qk_rms_seed1*`.
 
-## Next screen: fixed attention temperature
+## Continuation: fixed attention temperature
 
 The `fixed-temperature` candidate starts fresh from the passed `qk-rms`
 parent. Each head keeps its initial `log_alpha = log(sqrt(head_dim))` as a
@@ -64,11 +64,22 @@ XSA and explicit dense attention remain. Fused SDPA is a later feature.
 The same seed 1, AdamW recipe, data, 50-update observations and 3,000-update
 budget apply. Initial forward equality, removed parameter names, retained
 matrix values, fixed buffers and full-stack gradients are checked before
-training. Public GPT keeps learned temperatures while this test runs.
+training. Public GPT kept learned temperatures while this test ran.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage fixed-temperature --seeds 1 --max-updates 3000
 ```
+
+**Fixed temperature passed at 2,500 updates:** 508/512 exact sequences
+(99.22%) and 4,092/4,096 correct queries (99.90%). This is slower than the
+learned-temperature parent's 2,050, but remains within the declared fast
+criterion. Eager checkpoint replay reproduces those counts, including
+2,711/2,714 overwritten-key queries, 1,381/1,382 unchanged-key queries
+and one stale-value answer. Full sampler, optimizer, source and cadence
+checks pass. Public `GPT` now matches `fixed-temperature`, with 1,249,024
+parameters (24 fewer temperature scalars). Results, history and audit are
+retained as `results/fixed_temperature_seed1*`. This remains a single-seed
+screen; no final-test data were accessed.
 
 ## Continuation: ordinary AdamW, architectural features
 

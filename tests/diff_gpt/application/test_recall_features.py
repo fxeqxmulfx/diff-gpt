@@ -69,9 +69,9 @@ def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
         assert torch.count_nonzero(parameter.grad), name
 
 
-def test_public_gpt_is_the_passing_qk_rms_candidate() -> None:
+def test_public_gpt_is_the_passing_fixed_temperature_candidate() -> None:
     """Promotion preserves the exact architecture and tested initialization."""
-    candidate, _ = build_model("qk-rms", 1)
+    candidate, _ = build_model("fixed-temperature", 1)
     torch.manual_seed(1)
     model = GPT(
         548,

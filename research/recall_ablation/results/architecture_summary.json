@@ -2,16 +2,16 @@
   "accepted_features": [
     "SwiGLU",
     "repaired FP64 radial/tangent RMS backward",
-    "per-head QK RMS normalization with learned temperature"
+    "per-head QK RMS normalization with fixed temperature"
   ],
-  "active_stage": "fixed-temperature",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain Q/K RMS, SwiGLU, repaired RMS and ordinary AdamW; isolate removal of 24 learned temperature scalars. Stop at the next fast-screen miss.",
+  "decision": "Retain fixed-temperature Q/K RMS, repaired backward, SwiGLU and ordinary AdamW; next isolate fused SDPA.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -19,6 +19,9 @@
     "embedding_norm_seed1.json": "caaa1c5017649c112ba9823cef3e36280aae45bcadf1950a1e47e672a6a44f8e",
     "embedding_norm_seed1_audit.json": "ae02876fadfa0e9d7c7a47353dd76672d75e1eefa1cdb4c1b0b644f9fae5c647",
     "embedding_norm_seed1_history.jsonl": "0666a8d81e0a30aea1d3e04edbb75d70bddbd33e17c8cd721cf842850c64fce9",
+    "fixed_temperature_seed1.json": "17836bc4d510c5abb1f1d8d383bffb75c67047f1b267ead6d4e38fc9ec12ec06",
+    "fixed_temperature_seed1_audit.json": "60237a64f233f82c19c275015e466bc45bf2306cf467f68a8e70cd29d91ce1bb",
+    "fixed_temperature_seed1_history.jsonl": "37c4618bc333909a6b3a5d0b7f46c960148a7feae4ea0486a5d2244de20488f9",
     "peri_norm_native_seed1_history.jsonl": "a32dfb68c159ffdc4dd5125ca6351919eec90d0a3f255877ce40bd24109b09d9",
     "peri_norm_native_seed1_interruption.json": "5fba70edf41c3c1f80d3ef84d854f1955c5f42bab8085256002aed7f4a2aa96e",
     "peri_norm_native_seed1_protocol.json": "219e33c34663e1434d59deb29b7bda73a147f7b1f3634e4bbb8ccbef3453d70a",
@@ -314,9 +317,35 @@
       "sequences": 512,
       "stage": "qk-rms",
       "status": "passed"
+    },
+    {
+      "audit_file": "fixed_temperature_seed1_audit.json",
+      "correct_queries": 4092,
+      "exact": 508,
+      "first99": 2500,
+      "head_score_gain": "exp(fixed_log_alpha)/head_dim = 1/sqrt(head_dim)",
+      "history_file": "fixed_temperature_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "learned_attention_temperature": false,
+      "parameters": 1249024,
+      "parent": "qk-rms",
+      "queries": 4096,
+      "removed_parameter_names": [
+        "blocks.0.sa.log_alpha",
+        "blocks.1.sa.log_alpha",
+        "blocks.2.sa.log_alpha",
+        "blocks.3.sa.log_alpha",
+        "blocks.4.sa.log_alpha",
+        "blocks.5.sa.log_alpha"
+      ],
+      "repaired_rms_sites": 25,
+      "result_file": "fixed_temperature_seed1.json",
+      "sequences": 512,
+      "stage": "fixed-temperature",
+      "status": "passed"
     }
   ],
-  "status": "Q/K RMS passed; screening fixed attention temperature",
+  "status": "Fixed temperature passed; preparing fused SDPA screen",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -348,6 +377,29 @@
       "test_loaded": false
     },
     "embedding_norm_preserves_all_parent_parameter_bytes_and_weight_tying": true,
+    "fixed_temperature_endpoint_audit": {
+      "checkpoint_sha256": "10ef7976ffa225df011a6ae646d8ab4617a0fd1cd58d52b011e507364ca6232a",
+      "eager_replay": {
+        "exact": 508,
+        "queries": 4096,
+        "queries_correct": 4092,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2711,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 1,
+        "unchanged_correct": 1381,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
     "focused_feature_tests_passed": 19,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",

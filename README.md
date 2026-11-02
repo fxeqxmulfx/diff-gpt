@@ -1017,11 +1017,11 @@ held-out recovery and the existing trained modular-division fixtures.
 ### Restored GPTMini baseline
 
 `diff_gpt.domain.model.gpt.GPT` uses the passing GPTMini + SwiGLU architecture
-with repaired RMS backward and per-head Q/K RMS normalization. Learned head
-temperatures remain, with gain `exp(log_alpha)/head_dim` compensating the
-two RMS head lengths. This candidate first reaches 99% hard-recall exact
-sequences at 2,050 updates in the matched seed-1 screen (repaired L2-Q/K
-control: 2,400). Embeddings and branch outputs stay unnormalized and residual
+with repaired RMS backward and per-head Q/K RMS normalization. Attention
+uses fixed `1/sqrt(head_dim)` score scaling. The learned-temperature Q/K RMS
+candidate first reaches 99% hard-recall exact sequences at 2,050 updates;
+fixing that temperature passes at 2,500 (repaired L2-Q/K control: 2,400),
+within the matched seed-1 3,000-update screen. Embeddings and branch outputs stay unnormalized and residual
 coefficients stay 1. `GPTMini` in the same module retains the original ReLU-squared
 baseline for historical replay. The previous df1e9f7 architecture is retained explicitly as
 `diff_gpt.domain.model.normalized_gpt.NormalizedGPT` for replay of the existing
