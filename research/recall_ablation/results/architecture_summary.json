@@ -4,14 +4,14 @@
     "repaired FP64 radial/tangent RMS backward",
     "per-head QK RMS normalization with fixed temperature"
   ],
-  "active_stage": null,
+  "active_stage": "sdpa",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain fixed-temperature Q/K RMS, repaired backward, SwiGLU and ordinary AdamW; next isolate fused SDPA.",
+  "decision": "Retain fixed-temperature Q/K RMS, SwiGLU, repaired RMS and ordinary AdamW; isolate fused dense attention. Stop at the next fast-screen miss.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -68,7 +68,7 @@
   ],
   "latest_failing_feature": "fixed forward residual scaling by 1/sqrt(2L), with repaired RMS held constant",
   "next_feature": "Q/K RMS normalization with learned temperature retained",
-  "next_feature_if_resumed": "fused SDPA attention",
+  "next_feature_if_resumed": "native dtype epsilon at existing input/final RMS sites",
   "not_tested_after_stop": [
     "QK normalization",
     "removal of learned temperatures",
@@ -92,21 +92,20 @@
     "embedding_normalization": false,
     "forward_residual_scale": 1.0,
     "head_rms_epsilon": "native dtype epsilon",
-    "head_score_gain": "exp(fixed_log_alpha)/head_dim, initially and permanently 1/sqrt(head_dim)",
-    "initial_forward_changed": false,
+    "head_score_gain": "parent gain preserved by q * (gain * sqrt(head_dim)) before SDPA",
+    "initial_parameters_changed": false,
     "initial_projection_scale": 1.0,
     "input_and_final_epsilon": 1e-05,
     "learned_temperature": false,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
-    "parent": "qk-rms",
-    "parent_first99": 2050,
+    "parent": "fixed-temperature",
+    "parent_first99": 2500,
     "random_draws_added": false,
-    "remaining_initial_parameters_changed": false,
-    "removed_scalars": 24,
     "repaired_rms_sites": 25,
     "seed": 1,
-    "stage": "fixed-temperature"
+    "single_query_cached_attention_changed": false,
+    "stage": "sdpa"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -345,7 +344,7 @@
       "status": "passed"
     }
   ],
-  "status": "Fixed temperature passed; preparing fused SDPA screen",
+  "status": "Fixed temperature passed; screening fused SDPA",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -400,7 +399,7 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "focused_feature_tests_passed": 19,
+    "focused_feature_tests_passed": 24,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",
       "eager_replay": {

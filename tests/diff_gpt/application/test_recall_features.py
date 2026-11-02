@@ -53,6 +53,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "residual-scale",
         "qk-rms",
         "fixed-temperature",
+        "sdpa",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -305,3 +306,68 @@ def test_fixed_temperature_keeps_initial_forward_and_all_remaining_parameters() 
         assert_close(changed.sa.attention_gain(), expected)
     tokens = torch.randint(548, (2, 8))
     assert_close(candidate(tokens)[0], parent(tokens)[0], rtol=0, atol=0)
+
+
+def test_sdpa_preserves_fixed_parent_parameters_rng_and_forward() -> None:
+    """Change only the dense attention evaluation, preserving its real gain."""
+    parent, _ = build_model("fixed-temperature", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("sdpa", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert metadata["parent_stage"] == "fixed-temperature"
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["repaired_rms_sites"] == 4 * candidate.n_layer + 1
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["forward_residual_scale"] == 1.0
+    assert metadata["initial_projection_scale"] == 1.0
+    tokens = torch.randint(548, (2, 8))
+    assert_close(candidate(tokens)[0], parent(tokens)[0], rtol=1e-5, atol=1e-5)
+
+
+@pytest.mark.parametrize(("queries", "keys"), [(3, 3), (3, 7)])
+def test_sdpa_scores_and_gradients_match_independent_dense_oracle(
+    queries: int, keys: int
+) -> None:
+    """Check score scaling and the causal offset for a cached query chunk."""
+    model, _ = build_model("sdpa", 1)
+    attention = model.blocks[0].sa.double()
+    tensors = [
+        torch.randn(2, 4, length, 32, dtype=torch.float64, requires_grad=True)
+        for length in (queries, keys, keys)
+    ]
+    q, k, v = tensors
+    alpha = attention.attention_gain()
+    actual = attention.attend_dense(q, k, v, alpha)
+    causal = torch.ones(queries, keys, dtype=torch.bool).tril(diagonal=keys - queries)
+    scores = (q @ k.transpose(-1, -2)) * alpha
+    expected = scores.masked_fill(~causal, -torch.inf).softmax(-1) @ v
+    assert_close(actual, expected, rtol=1e-12, atol=1e-12)
+    upstream = torch.randn_like(expected)
+    actual_grads = torch.autograd.grad(actual, tensors, upstream)
+    expected_grads = torch.autograd.grad(expected, tensors, upstream)
+    assert_close(actual_grads, expected_grads, rtol=1e-12, atol=1e-12)
+
+
+def test_sdpa_cache_reproduces_full_context_predictions() -> None:
+    """Verify token-by-token decode and cached chunks after a fused prefill."""
+    model, _ = build_model("sdpa", 1)
+    model.eval()
+    tokens = torch.randint(548, (2, 8))
+    with torch.no_grad():
+        expected = model(tokens)[0]
+        for chunks in ([1] * 8, [3, 2, 3]):
+            cache = KVCache(
+                batch_size=2, num_heads=4, seq_len=64, head_dim=32, num_layers=6
+            )
+            position = 0
+            results = []
+            for length in chunks:
+                results.append(
+                    model(tokens[:, position : position + length], kv_cache=cache)[0]
+                )
+                position += length
+            assert_close(torch.cat(results, 1), expected, rtol=1e-5, atol=1e-5)

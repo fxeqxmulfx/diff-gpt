@@ -61,6 +61,19 @@ class MiniAttention(nn.Module):
         """Return each head's learned inverse temperature."""
         return self.log_alpha.exp().view(1, self.n_head, 1, 1)
 
+    @staticmethod
+    def attend_dense(
+        q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, alpha: torch.Tensor
+    ) -> torch.Tensor:
+        """Evaluate the historical explicit scores, causal softmax and values."""
+        length, keys = q.shape[-2], k.shape[-2]
+        scores = (q @ k.transpose(-2, -1)) * alpha
+        mask = torch.triu(
+            torch.full((length, keys), -torch.inf, device=q.device, dtype=q.dtype),
+            diagonal=keys - length + 1,
+        )
+        return (scores + mask).softmax(dim=-1) @ v
+
     def forward(
         self,
         value: torch.Tensor,
@@ -87,13 +100,7 @@ class MiniAttention(nn.Module):
         if length == 1 and kv_cache is not None:
             attended = one_query_attention(q * alpha * self.head_dim**0.5, k, v, prefix)
         else:
-            scores = (q @ k.transpose(-2, -1)) * alpha
-            keys = k.shape[-2]
-            mask = torch.triu(
-                torch.full((length, keys), -torch.inf, device=q.device, dtype=q.dtype),
-                diagonal=keys - length + 1,
-            )
-            attended = (scores + mask).softmax(dim=-1) @ v
+            attended = self.attend_dense(q, k, v, alpha)
         unit = F.normalize(own_value, dim=-1, eps=1e-6)
         attended = attended - (attended * unit).sum(dim=-1, keepdim=True) * unit
         return self.c_proj(
@@ -125,6 +132,23 @@ class RMSQKAttention(MiniAttention):
     def attention_gain(self) -> torch.Tensor:
         """Compensate the two sqrt(head_dim) factors, preserving cosine gain."""
         return super().attention_gain() / self.head_dim
+
+
+class SDPAQKAttention(RMSQKAttention):
+    """Use fused dense attention while retaining Q/K RMS and its exact gain."""
+
+    def attend_dense(
+        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, alpha: torch.Tensor
+    ) -> torch.Tensor:
+        """Keep the cosine gain and handle the offset of a cached query chunk."""
+        q = q * (alpha * self.head_dim**0.5)
+        length, keys = q.shape[-2], k.shape[-2]
+        if length == keys:
+            return F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        mask = torch.ones((length, keys), device=q.device, dtype=torch.bool).tril(
+            diagonal=keys - length
+        )
+        return F.scaled_dot_product_attention(q, k, v, attn_mask=mask)
 
 
 def fix_qk_temperature(attention: RMSQKAttention) -> None:

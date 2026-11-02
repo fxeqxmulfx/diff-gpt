@@ -13,6 +13,7 @@ from diff_gpt.domain.model.mini_block import (
     RMSNormEmbedding,
     RMSNormProjection,
     RMSQKAttention,
+    SDPAQKAttention,
     fix_qk_temperature,
     initialize_swiglu,
     repair_rms_backward,
@@ -31,6 +32,7 @@ ARCHITECTURE_STAGES = (
     "residual-scale",
     "qk-rms",
     "fixed-temperature",
+    "sdpa",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -43,8 +45,10 @@ PREDECESSOR = {
     "residual-scale": "rms-repaired",
     "qk-rms": "rms-repaired",
     "fixed-temperature": "qk-rms",
+    "sdpa": "fixed-temperature",
 }
-QK_RMS_STAGES = {"qk-rms", "fixed-temperature"}
+QK_RMS_STAGES = {"qk-rms", "fixed-temperature", "sdpa"}
+FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa"}
 
 
 def raw_parameter_digest(model: nn.Module) -> str:
@@ -130,18 +134,22 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             raise RuntimeError(msg)
     if stage in QK_RMS_STAGES:
         for block in model.blocks:
-            block.sa = RMSQKAttention(block.sa)
+            attention = SDPAQKAttention if stage == "sdpa" else RMSQKAttention
+            block.sa = attention(block.sa)
         repaired_sites += 2 * model.n_layer
         features.append("per-head QK RMS normalization with learned temperature")
         if raw_parameter_digest(model) != parent_initial:
             msg = "QK RMS normalization changed parameter values or order"
             raise RuntimeError(msg)
     removed_parameters = []
-    if stage == "fixed-temperature":
+    if stage in FIXED_TEMPERATURE_STAGES:
         for index, block in enumerate(model.blocks):
             fix_qk_temperature(block.sa)
             removed_parameters.append(f"blocks.{index}.sa.log_alpha")
         features[-1] = "per-head QK RMS normalization with fixed temperature"
+    if stage == "sdpa":
+        parent_initial = raw_parameter_digest(model)
+        features.append("fused SDPA dense attention")
     residual_scale = 1.0
     if stage == "residual-scale":
         residual_scale = (2 * model.n_layer) ** -0.5
@@ -184,7 +192,10 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         "qk_normalization": (
             "repaired per-head RMS" if stage in QK_RMS_STAGES else "unit L2"
         ),
-        "learned_attention_temperature": stage != "fixed-temperature",
+        "learned_attention_temperature": stage not in FIXED_TEMPERATURE_STAGES,
+        "dense_attention": "fused SDPA"
+        if stage == "sdpa"
+        else "explicit causal softmax",
         "removed_parameter_names": removed_parameters,
         "qk_gain_compensation": "exp(log_alpha) / head_dim"
         if stage in QK_RMS_STAGES

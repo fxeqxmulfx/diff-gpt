@@ -81,6 +81,28 @@ parameters (24 fewer temperature scalars). Results, history and audit are
 retained as `results/fixed_temperature_seed1*`. This remains a single-seed
 screen; no final-test data were accessed.
 
+## Next screen: fused SDPA
+
+The `sdpa` candidate branches from the passing `fixed-temperature` parent.
+It replaces only explicit dense score/softmax/value evaluation with
+`scaled_dot_product_attention`; the historical single-query cached path
+stays the same. It supplies `q * (gain * sqrt(head_dim))` to compensate
+SDPA's built-in `1/sqrt(head_dim)`, preserving the parent's real score
+gain. Fresh parameters and all construction RNG state are identical.
+All previous passing features, 25 repaired RMS sites, epsilons and ordinary
+XSA remain. CPU kernels and floating-point reduction order can change.
+
+A full prefill uses causal SDPA; a cached multi-token chunk gets an explicit
+offset causal mask. Independent FP64 forward/gradient oracles cover both,
+and whole-model tests cover token and chunk cache continuation. The frozen
+GPTMini fixture verifies that extracting the old explicit attention into a
+method did not change the original control. Public GPT retains explicit
+attention during the matched seed-1, 3,000-update screen.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage sdpa --seeds 1 --max-updates 3000
+```
+
 ## Continuation: ordinary AdamW, architectural features
 
 The next cohort keeps ordinary AdamW throughout and resumes the architectural
