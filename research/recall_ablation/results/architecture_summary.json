@@ -1,16 +1,17 @@
 {
   "accepted_features": [
     "SwiGLU",
-    "repaired FP64 radial/tangent RMS backward"
+    "repaired FP64 radial/tangent RMS backward",
+    "per-head QK RMS normalization with learned temperature"
   ],
-  "active_stage": "qk-rms",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Keep repaired SwiGLU + ordinary AdamW and unscaled raw-embedding residuals; test Q/K RMS normalization only, retaining learned temperatures.",
+  "decision": "Retain passing Q/K RMS, repaired backward, SwiGLU and ordinary AdamW; next isolate removal of learned temperatures.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -25,6 +26,9 @@
     "peri_norm_repaired_seed1.json": "1e1ac25eecf3ee109af2a7587c1d6cfdc8f5d4351771f972746cdfb0ad1c33d3",
     "peri_norm_repaired_seed1_audit.json": "83d1a9e7f8c86296977de4fb76849c0c29f43b3e93466f701582449776e3526b",
     "peri_norm_repaired_seed1_history.jsonl": "c7e4b50a401d551e352c301670c4dff70eaad89ef9e28637c0ca50805b79c976",
+    "qk_rms_seed1.json": "a1fa2a16b28a95ece3afe804b9ff645e7046ea50db3b2125ce76093d1b9b9ba1",
+    "qk_rms_seed1_audit.json": "1fd6aa2f6405051da1865ecded3340cbdc931d0d579b0764971c8d625cd20675",
+    "qk_rms_seed1_history.jsonl": "8e7823c8d225e72246a1be2008bb57dbe76e97519cf94f7751207a4cc22ed43f",
     "residual_scale_seed1.json": "c5de7ee27766a498842c9ca3cfd86a2b739dd20c1d40b4e6501f1f2afbf95bcb",
     "residual_scale_seed1_audit.json": "a0fb8d90928af8fd919c946d427f24df1359090c72cb18530cb85a96e14e94d2",
     "residual_scale_seed1_history.jsonl": "75288d54ad43c7cd8a711a7208222ff7fcf773760fbbfb6180edfbd553659a14",
@@ -61,6 +65,7 @@
   ],
   "latest_failing_feature": "fixed forward residual scaling by 1/sqrt(2L), with repaired RMS held constant",
   "next_feature": "Q/K RMS normalization with learned temperature retained",
+  "next_feature_if_resumed": "fixed attention temperature with Q/K RMS",
   "not_tested_after_stop": [
     "QK normalization",
     "removal of learned temperatures",
@@ -288,9 +293,27 @@
       "sequences": 512,
       "stage": "residual-scale",
       "status": "censored at fast-screen budget"
+    },
+    {
+      "audit_file": "qk_rms_seed1_audit.json",
+      "correct_queries": 4091,
+      "exact": 507,
+      "first99": 2050,
+      "head_score_gain": "exp(log_alpha)/head_dim",
+      "history_file": "qk_rms_seed1_history.jsonl",
+      "initial_parameters_sha256": "4a5e339c3ad654fbe434dcb0bac6150360b0c341f5fe52acb250171df827bbf2",
+      "learned_attention_temperature": true,
+      "parameters": 1249048,
+      "parent": "rms-repaired",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "qk_rms_seed1.json",
+      "sequences": 512,
+      "stage": "qk-rms",
+      "status": "passed"
     }
   ],
-  "status": "resumed at user request: Q/K RMS normalization with learned temperature",
+  "status": "Q/K RMS passed; preparing fixed-temperature screen",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -346,7 +369,7 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 842,
+    "full_domain_application_tests_passed": 845,
     "full_domain_application_tests_skipped": 40,
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",
@@ -363,6 +386,29 @@
         "rewritten_queries": 2714,
         "superseded_value_predictions": 209,
         "unchanged_correct": 80,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
+    "qk_rms_endpoint_audit": {
+      "checkpoint_sha256": "f1687396c0257efdfbf03312fdc9b61764f98fcab8072262f25ec452559e0052",
+      "eager_replay": {
+        "exact": 507,
+        "queries": 4096,
+        "queries_correct": 4091,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2713,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 0,
+        "unchanged_correct": 1378,
         "unchanged_queries": 1382
       },
       "optimizer_steps_match": true,

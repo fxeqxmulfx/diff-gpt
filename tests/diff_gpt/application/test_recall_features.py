@@ -68,9 +68,9 @@ def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
         assert torch.count_nonzero(parameter.grad), name
 
 
-def test_public_gpt_is_the_passing_repaired_swiglu_candidate() -> None:
+def test_public_gpt_is_the_passing_qk_rms_candidate() -> None:
     """Promotion preserves the exact architecture and tested initialization."""
-    candidate, _ = build_model("rms-repaired", 1)
+    candidate, _ = build_model("qk-rms", 1)
     torch.manual_seed(1)
     model = GPT(
         548,
@@ -87,7 +87,7 @@ def test_public_gpt_is_the_passing_repaired_swiglu_candidate() -> None:
     norms = [
         module for module in model.modules() if isinstance(module, RepairedRMSNorm)
     ]
-    assert len(norms) == 2 * model.n_layer + 1
+    assert len(norms) == 4 * model.n_layer + 1
 
 
 def test_scaled_initialization_changes_only_residual_projection_magnitudes() -> None:

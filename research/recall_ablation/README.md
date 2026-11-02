@@ -5,11 +5,11 @@ then add one feature at a time. Stop at the first feature that loses the
 baseline's fast 99% validation crossing. A finite-budget miss is a speed
 regression, not a proof that the model can never generalize.
 
-Current accepted model: **SwiGLU + repaired RMS backward + ordinary AdamW**,
+Current accepted model: **SwiGLU + repaired RMS backward + Q/K RMS + ordinary AdamW**,
 with raw embeddings, unscaled projection initialization and no Peri branch
 norms. Fixed forward residual scaling missed its screen and remains off.
-The next untested feature is Q/K RMS normalization with learned temperature
-retained.
+Learned head temperatures remain. The next untested feature is fixing their
+scale to remove those learned parameters.
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 
@@ -37,6 +37,16 @@ the frozen original GPTMini initialization/forward/backward fixture.
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage qk-rms --seeds 1 --max-updates 3000
 ```
+
+**Q/K RMS passed:** first 99% at **2,050 updates**, with 507/512 exact
+sequences (99.02%) and 4,091/4,096 correct queries (99.88%). The repaired
+L2-Q/K control reaches the same threshold at 2,400. Independent eager replay
+matches every count, including 2,713/2,714 overwritten-key answers and
+1,378/1,382 unchanged-key answers; no superseded-value answers remain.
+Source hashes, optimizer steps, cadence and full sampler state verify.
+The public `GPT` now matches the passing `qk-rms` candidate. This is one
+matched seed, with no final-test evaluation. Results, history and audit are
+retained as `results/qk_rms_seed1*`.
 
 ## Continuation: ordinary AdamW, architectural features
 

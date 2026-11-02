@@ -12,6 +12,7 @@ from torch.utils.checkpoint import checkpoint
 from diff_gpt.domain.model.mini_block import (
     MiniBlock,
     MiniRMSNorm,
+    RMSQKAttention,
     initialize_swiglu,
     repair_rms_backward,
 )
@@ -273,7 +274,7 @@ class GPTMini(BaseGPT):
 
 
 class GPT(GPTMini):
-    """Passing ordinary-AdamW GPTMini with SwiGLU and repaired RMS backward."""
+    """Passing GPTMini with SwiGLU, repaired RMS backward and Q/K RMS."""
 
     def __init__(
         self,
@@ -287,7 +288,7 @@ class GPT(GPTMini):
         pad_vocab_size_to: int = 64,
         rope_base: float = 10_000.0,
     ) -> None:
-        """Keep historical weights and install the passing SwiGLU and RMS repair."""
+        """Keep historical weights and install the passing recall features."""
         super().__init__(
             vocab_size=vocab_size,
             n_embd=n_embd,
@@ -300,3 +301,5 @@ class GPT(GPTMini):
         )
         initialize_swiglu(self.blocks, n_embd)
         repair_rms_backward(self, n_embd)
+        for block in self.blocks:
+            block.sa = RMSQKAttention(block.sa)
