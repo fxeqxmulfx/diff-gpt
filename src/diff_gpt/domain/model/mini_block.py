@@ -127,6 +127,13 @@ class RMSQKAttention(MiniAttention):
         return super().attention_gain() / self.head_dim
 
 
+def fix_qk_temperature(attention: RMSQKAttention) -> None:
+    """Keep the supplied head gains as fixed buffers outside optimizer/state."""
+    log_alpha = attention.log_alpha.detach().clone()
+    del attention.log_alpha
+    attention.register_buffer("log_alpha", log_alpha, persistent=False)
+
+
 class MiniFeedForward(nn.Module):
     """Historical bias-free ReLU-squared MLP, with hidden width 4d."""
 

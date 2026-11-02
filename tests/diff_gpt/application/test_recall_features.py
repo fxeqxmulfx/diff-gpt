@@ -52,6 +52,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "rms-repaired",
         "residual-scale",
         "qk-rms",
+        "fixed-temperature",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -267,3 +268,40 @@ def test_qk_rms_cache_reproduces_full_context_predictions() -> None:
             [model(tokens[:, i : i + 1], kv_cache=cache)[0] for i in range(8)], 1
         )
     assert_close(actual, expected, rtol=1e-5, atol=1e-5)
+
+
+def test_fixed_temperature_keeps_initial_forward_and_all_remaining_parameters() -> None:
+    """Remove only trainable gains; keep the initial scores and every matrix."""
+    parent, _ = build_model("qk-rms", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("fixed-temperature", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert metadata["parent_stage"] == "qk-rms"
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["repaired_rms_sites"] == 4 * candidate.n_layer + 1
+    old_parameters = dict(parent.named_parameters())
+    new_parameters = dict(candidate.named_parameters())
+    removed = {f"blocks.{i}.sa.log_alpha" for i in range(candidate.n_layer)}
+    assert set(metadata["removed_parameter_names"]) == removed
+    assert old_parameters.keys() - new_parameters.keys() == removed
+    assert sum(p.numel() for p in candidate.parameters()) == (
+        SWIGLU_PARAMETERS - candidate.n_layer * candidate.n_head
+    )
+    for name, parameter in new_parameters.items():
+        assert_close(parameter, old_parameters[name], rtol=0, atol=0)
+    buffers = dict(candidate.named_buffers())
+    for name in removed:
+        assert not buffers[name].requires_grad
+        assert name not in candidate.state_dict()
+        assert_close(buffers[name], old_parameters[name], rtol=0, atol=0)
+    for original, changed in zip(parent.blocks, candidate.blocks, strict=True):
+        assert_close(
+            changed.sa.attention_gain(), original.sa.attention_gain(), rtol=0, atol=0
+        )
+        expected = torch.full_like(
+            changed.sa.attention_gain(), changed.sa.head_dim**-0.5
+        )
+        assert_close(changed.sa.attention_gain(), expected)
+    tokens = torch.randint(548, (2, 8))
+    assert_close(candidate(tokens)[0], parent(tokens)[0], rtol=0, atol=0)

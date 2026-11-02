@@ -48,6 +48,28 @@ The public `GPT` now matches the passing `qk-rms` candidate. This is one
 matched seed, with no final-test evaluation. Results, history and audit are
 retained as `results/qk_rms_seed1*`.
 
+## Next screen: fixed attention temperature
+
+The `fixed-temperature` candidate starts fresh from the passed `qk-rms`
+parent. Each head keeps its initial `log_alpha = log(sqrt(head_dim))` as a
+nonpersistent buffer, removing its trainable parameter from AdamW. With Q/K
+RMS and the existing gain compensation this is fixed `1/sqrt(head_dim)`
+score scaling, as in the archived newer GPT. The exact existing exponential
+and division operations remain, so initial forward predictions match the
+learned-temperature parent bit for bit. All 24 removed scalars have the same
+initial values; every remaining parameter, RNG draw and epsilon is unchanged.
+No trained weights initialize this run. The 25 repaired RMS sites, ordinary
+XSA and explicit dense attention remain. Fused SDPA is a later feature.
+
+The same seed 1, AdamW recipe, data, 50-update observations and 3,000-update
+budget apply. Initial forward equality, removed parameter names, retained
+matrix values, fixed buffers and full-stack gradients are checked before
+training. Public GPT keeps learned temperatures while this test runs.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage fixed-temperature --seeds 1 --max-updates 3000
+```
+
 ## Continuation: ordinary AdamW, architectural features
 
 The next cohort keeps ordinary AdamW throughout and resumes the architectural

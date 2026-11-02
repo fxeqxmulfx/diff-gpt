@@ -4,14 +4,14 @@
     "repaired FP64 radial/tangent RMS backward",
     "per-head QK RMS normalization with learned temperature"
   ],
-  "active_stage": null,
+  "active_stage": "fixed-temperature",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain passing Q/K RMS, repaired backward, SwiGLU and ordinary AdamW; next isolate removal of learned temperatures.",
+  "decision": "Retain Q/K RMS, SwiGLU, repaired RMS and ordinary AdamW; isolate removal of 24 learned temperature scalars. Stop at the next fast-screen miss.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -65,7 +65,7 @@
   ],
   "latest_failing_feature": "fixed forward residual scaling by 1/sqrt(2L), with repaired RMS held constant",
   "next_feature": "Q/K RMS normalization with learned temperature retained",
-  "next_feature_if_resumed": "fixed attention temperature with Q/K RMS",
+  "next_feature_if_resumed": "fused SDPA attention",
   "not_tested_after_stop": [
     "QK normalization",
     "removal of learned temperatures",
@@ -89,18 +89,21 @@
     "embedding_normalization": false,
     "forward_residual_scale": 1.0,
     "head_rms_epsilon": "native dtype epsilon",
-    "head_score_gain": "exp(log_alpha)/head_dim",
-    "initial_parameters_changed": false,
+    "head_score_gain": "exp(fixed_log_alpha)/head_dim, initially and permanently 1/sqrt(head_dim)",
+    "initial_forward_changed": false,
     "initial_projection_scale": 1.0,
     "input_and_final_epsilon": 1e-05,
-    "learned_temperature": true,
+    "learned_temperature": false,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
-    "parent": "rms-repaired",
+    "parent": "qk-rms",
+    "parent_first99": 2050,
     "random_draws_added": false,
+    "remaining_initial_parameters_changed": false,
+    "removed_scalars": 24,
     "repaired_rms_sites": 25,
     "seed": 1,
-    "stage": "qk-rms"
+    "stage": "fixed-temperature"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -313,7 +316,7 @@
       "status": "passed"
     }
   ],
-  "status": "Q/K RMS passed; preparing fixed-temperature screen",
+  "status": "Q/K RMS passed; screening fixed attention temperature",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -345,7 +348,7 @@
       "test_loaded": false
     },
     "embedding_norm_preserves_all_parent_parameter_bytes_and_weight_tying": true,
-    "focused_feature_tests_passed": 17,
+    "focused_feature_tests_passed": 19,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",
       "eager_replay": {

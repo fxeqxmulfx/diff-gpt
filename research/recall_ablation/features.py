@@ -13,6 +13,7 @@ from diff_gpt.domain.model.mini_block import (
     RMSNormEmbedding,
     RMSNormProjection,
     RMSQKAttention,
+    fix_qk_temperature,
     initialize_swiglu,
     repair_rms_backward,
 )
@@ -29,6 +30,7 @@ ARCHITECTURE_STAGES = (
     "rms-repaired",
     "residual-scale",
     "qk-rms",
+    "fixed-temperature",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -40,7 +42,9 @@ PREDECESSOR = {
     "rms-repaired": "swiglu",
     "residual-scale": "rms-repaired",
     "qk-rms": "rms-repaired",
+    "fixed-temperature": "qk-rms",
 }
+QK_RMS_STAGES = {"qk-rms", "fixed-temperature"}
 
 
 def raw_parameter_digest(model: nn.Module) -> str:
@@ -113,13 +117,18 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             msg = "Peri-RMSNorm changed parameter values or order"
             raise RuntimeError(msg)
     repaired_sites = 0
-    if stage in {"peri-norm-repaired", "rms-repaired", "residual-scale", "qk-rms"}:
+    if stage in {
+        "peri-norm-repaired",
+        "rms-repaired",
+        "residual-scale",
+        *QK_RMS_STAGES,
+    }:
         repaired_sites = repair_rms_backward(model, model.n_embd)
         features.append("repaired FP64 radial/tangent RMS backward")
         if raw_parameter_digest(model) != parent_initial:
             msg = "RMS backward repair changed the initial parameters"
             raise RuntimeError(msg)
-    if stage == "qk-rms":
+    if stage in QK_RMS_STAGES:
         for block in model.blocks:
             block.sa = RMSQKAttention(block.sa)
         repaired_sites += 2 * model.n_layer
@@ -127,6 +136,12 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         if raw_parameter_digest(model) != parent_initial:
             msg = "QK RMS normalization changed parameter values or order"
             raise RuntimeError(msg)
+    removed_parameters = []
+    if stage == "fixed-temperature":
+        for index, block in enumerate(model.blocks):
+            fix_qk_temperature(block.sa)
+            removed_parameters.append(f"blocks.{index}.sa.log_alpha")
+        features[-1] = "per-head QK RMS normalization with fixed temperature"
     residual_scale = 1.0
     if stage == "residual-scale":
         residual_scale = (2 * model.n_layer) ** -0.5
@@ -166,10 +181,13 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             else "native"
         ),
         "repaired_rms_sites": repaired_sites,
-        "qk_normalization": "repaired per-head RMS" if stage == "qk-rms" else "unit L2",
-        "learned_attention_temperature": True,
+        "qk_normalization": (
+            "repaired per-head RMS" if stage in QK_RMS_STAGES else "unit L2"
+        ),
+        "learned_attention_temperature": stage != "fixed-temperature",
+        "removed_parameter_names": removed_parameters,
         "qk_gain_compensation": "exp(log_alpha) / head_dim"
-        if stage == "qk-rms"
+        if stage in QK_RMS_STAGES
         else "exp(log_alpha)",
         "forward_residual_scale": residual_scale,
         "mlp_initialization": (
