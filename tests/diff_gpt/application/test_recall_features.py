@@ -7,6 +7,7 @@ from torch.testing import assert_close
 
 from diff_gpt.domain.model.feed_forward import FeedForward
 from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.kv_cache import KVCache
 from diff_gpt.domain.model.mini_block import MiniRMSNorm
 from diff_gpt.domain.model.rms_norm import RMSNorm as RepairedRMSNorm
 from research.recall_ablation.features import build_model, raw_parameter_digest
@@ -50,6 +51,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "peri-norm-repaired",
         "rms-repaired",
         "residual-scale",
+        "qk-rms",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -209,3 +211,59 @@ def test_forward_residual_scaling_keeps_repaired_parent_and_initial_weights() ->
         ):
             inputs = torch.randn(2, 4, original.in_features)
             assert_close(changed(inputs), original(inputs) * scale, rtol=0, atol=0)
+
+
+def test_qk_rms_preserves_parameters_rng_and_learned_cosine_temperature() -> None:
+    """Isolate Q/K normalization without an accidental head-dimension gain."""
+    parent, _ = build_model("rms-repaired", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("qk-rms", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert metadata["parent_stage"] == "rms-repaired"
+    assert metadata["learned_attention_temperature"] is True
+    assert metadata["repaired_rms_sites"] == 4 * candidate.n_layer + 1
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["forward_residual_scale"] == 1.0
+    for original, changed in zip(parent.blocks, candidate.blocks, strict=True):
+        attention = changed.sa
+        assert attention.log_alpha.requires_grad
+        assert isinstance(attention.q_norm, RepairedRMSNorm)
+        assert isinstance(attention.k_norm, RepairedRMSNorm)
+        q = torch.randn(2, attention.n_head, 4, attention.head_dim)
+        k = torch.randn_like(q)
+        q_rms, k_rms = attention.normalize_qk(q, k)
+        assert_close(q_rms, F.rms_norm(q, (attention.head_dim,)), rtol=0, atol=0)
+        assert_close(k_rms, F.rms_norm(k, (attention.head_dim,)), rtol=0, atol=0)
+        assert_close(
+            attention.attention_gain(),
+            original.sa.attention_gain() / attention.head_dim,
+            rtol=0,
+            atol=0,
+        )
+        # FP64 makes the numerical epsilon negligible, so the same learned
+        # cosine temperature must produce the same score before/after RMS.
+        q64, k64 = q.double(), k.double()
+        original.sa.double()
+        attention.double()
+        old_q, old_k = original.sa.normalize_qk(q64, k64)
+        new_q, new_k = attention.normalize_qk(q64, k64)
+        old_scores = (old_q @ old_k.transpose(-1, -2)) * original.sa.attention_gain()
+        new_scores = (new_q @ new_k.transpose(-1, -2)) * attention.attention_gain()
+        assert_close(new_scores, old_scores, rtol=1e-12, atol=1e-12)
+
+
+def test_qk_rms_cache_reproduces_full_context_predictions() -> None:
+    """Keep the head-gain compensation valid for incremental decode too."""
+    model, _ = build_model("qk-rms", 1)
+    model.eval()
+    tokens = torch.randint(548, (2, 8))
+    cache = KVCache(batch_size=2, num_heads=4, seq_len=64, head_dim=32, num_layers=6)
+    with torch.no_grad():
+        expected = model(tokens)[0]
+        actual = torch.cat(
+            [model(tokens[:, i : i + 1], kv_cache=cache)[0] for i in range(8)], 1
+        )
+    assert_close(actual, expected, rtol=1e-5, atol=1e-5)

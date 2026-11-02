@@ -11,6 +11,33 @@ norms. Fixed forward residual scaling missed its screen and remains off.
 The next untested feature is Q/K RMS normalization with learned temperature
 retained.
 
+## Requested continuation: Q/K RMS with learned temperature retained
+
+The `qk-rms` candidate starts fresh from the passed repaired-SwiGLU control
+(`rms-repaired`, first 99% at 2,400). It changes only per-head Q/K
+normalization from unit L2 to repaired RMSNorm, before RoPE. All existing
+weights, learned head-temperature parameters and construction RNG state stay
+identical. Embeddings, branch outputs, initialization and forward residual
+coefficients stay at the passing settings. Ordinary AdamW and the same
+seed-1 3,000-update screen remain fixed.
+
+An RMS-normalized head has L2 length about `sqrt(head_dim)`. The learned
+score gain therefore becomes `exp(log_alpha)/head_dim`, compensating both
+head norms while retaining the original learned **cosine** temperature.
+Temperature removal and fused SDPA are later, separate features. New head
+norms use native dtype epsilon and the repaired FP64 backward; the thirteen
+existing input/final norms retain epsilon 1e-5. There are 25 repaired RMS
+sites in total.
+
+Focused checks verify identical initial parameters/RNG, native RMS forward
+equations, finite gradients to every parameter, retained learnable scales,
+independent FP64 cosine-score equivalence, cached-vs-full predictions and
+the frozen original GPTMini initialization/forward/backward fixture.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage qk-rms --seeds 1 --max-updates 3000
+```
+
 ## Continuation: ordinary AdamW, architectural features
 
 The next cohort keeps ordinary AdamW throughout and resumes the architectural

@@ -50,6 +50,17 @@ class MiniAttention(nn.Module):
             torch.full((n_head,), 0.5 * math.log(self.head_dim))
         )
 
+    @staticmethod
+    def normalize_qk(
+        q: torch.Tensor, k: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Keep the historical unit-vector query/key normalization."""
+        return F.normalize(q, dim=-1, eps=1e-6), F.normalize(k, dim=-1, eps=1e-6)
+
+    def attention_gain(self) -> torch.Tensor:
+        """Return each head's learned inverse temperature."""
+        return self.log_alpha.exp().view(1, self.n_head, 1, 1)
+
     def forward(
         self,
         value: torch.Tensor,
@@ -63,10 +74,10 @@ class MiniAttention(nn.Module):
             part.reshape(batch, length, self.n_head, self.head_dim).transpose(1, 2)
             for part in self.c_attn(value).chunk(3, dim=-1)
         )
-        q, k = F.normalize(q, dim=-1, eps=1e-6), F.normalize(k, dim=-1, eps=1e-6)
+        q, k = self.normalize_qk(q, k)
         q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
         own_value = v
-        alpha = self.log_alpha.exp().view(1, self.n_head, 1, 1)
+        alpha = self.attention_gain()
         prefix = None if kv_cache is None else kv_cache.prefix_kv(self.layer_idx)
         if prefix is not None and length != 1:
             msg = "rows sharing a cached prefix take one position per call"
@@ -88,6 +99,32 @@ class MiniAttention(nn.Module):
         return self.c_proj(
             attended.transpose(1, 2).contiguous().view(batch, length, width)
         )
+
+
+class RMSQKAttention(MiniAttention):
+    """Per-head repaired RMS Q/K with the learned cosine temperature retained."""
+
+    def __init__(self, attention: MiniAttention) -> None:
+        """Reuse all projections and temperatures without drawing new weights."""
+        nn.Module.__init__(self)
+        self.n_head = attention.n_head
+        self.head_dim = attention.head_dim
+        self.layer_idx = attention.layer_idx
+        self.log_alpha = attention.log_alpha
+        self.c_attn = attention.c_attn
+        self.c_proj = attention.c_proj
+        self.q_norm = RepairedRMSNorm(self.head_dim)
+        self.k_norm = RepairedRMSNorm(self.head_dim)
+
+    def normalize_qk(
+        self, q: torch.Tensor, k: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Normalize each head using native forward and the repaired backward."""
+        return self.q_norm(q), self.k_norm(k)
+
+    def attention_gain(self) -> torch.Tensor:
+        """Compensate the two sqrt(head_dim) factors, preserving cosine gain."""
+        return super().attention_gain() / self.head_dim
 
 
 class MiniFeedForward(nn.Module):

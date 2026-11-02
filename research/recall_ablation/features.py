@@ -12,6 +12,7 @@ from diff_gpt.domain.model.mini_block import (
     ResidualScaledProjection,
     RMSNormEmbedding,
     RMSNormProjection,
+    RMSQKAttention,
     initialize_swiglu,
     repair_rms_backward,
 )
@@ -27,6 +28,7 @@ ARCHITECTURE_STAGES = (
     "peri-norm-repaired",
     "rms-repaired",
     "residual-scale",
+    "qk-rms",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -37,6 +39,7 @@ PREDECESSOR = {
     "peri-norm-repaired": "swiglu",
     "rms-repaired": "swiglu",
     "residual-scale": "rms-repaired",
+    "qk-rms": "rms-repaired",
 }
 
 
@@ -110,11 +113,19 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             msg = "Peri-RMSNorm changed parameter values or order"
             raise RuntimeError(msg)
     repaired_sites = 0
-    if stage in {"peri-norm-repaired", "rms-repaired", "residual-scale"}:
+    if stage in {"peri-norm-repaired", "rms-repaired", "residual-scale", "qk-rms"}:
         repaired_sites = repair_rms_backward(model, model.n_embd)
         features.append("repaired FP64 radial/tangent RMS backward")
         if raw_parameter_digest(model) != parent_initial:
             msg = "RMS backward repair changed the initial parameters"
+            raise RuntimeError(msg)
+    if stage == "qk-rms":
+        for block in model.blocks:
+            block.sa = RMSQKAttention(block.sa)
+        repaired_sites += 2 * model.n_layer
+        features.append("per-head QK RMS normalization with learned temperature")
+        if raw_parameter_digest(model) != parent_initial:
+            msg = "QK RMS normalization changed parameter values or order"
             raise RuntimeError(msg)
     residual_scale = 1.0
     if stage == "residual-scale":
@@ -155,6 +166,11 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             else "native"
         ),
         "repaired_rms_sites": repaired_sites,
+        "qk_normalization": "repaired per-head RMS" if stage == "qk-rms" else "unit L2",
+        "learned_attention_temperature": True,
+        "qk_gain_compensation": "exp(log_alpha) / head_dim"
+        if stage == "qk-rms"
+        else "exp(log_alpha)",
         "forward_residual_scale": residual_scale,
         "mlp_initialization": (
             "construct replacement MLPs after historical initialization; "
