@@ -133,7 +133,7 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
         "target_sequence_accuracy": TARGET,
         "compiled": args.compile,
         "threads": args.threads,
-        "torch": torch.__version__,
+        "torch": str(torch.__version__),
         "python": platform.python_version(),
         "git_commit": subprocess.check_output(  # noqa: S603 -- fixed read-only git command
             [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
@@ -275,6 +275,9 @@ def main() -> None:
             if baseline["status"] != "passed":
                 msg = f"baseline seed {seed} did not pass; stop the ablation"
                 raise RuntimeError(msg)
+            if args.max_updates < baseline["first99"]:
+                msg = "the feature budget must cover the baseline's first crossing"
+                raise ValueError(msg)
     train, train_hash = split("train", TRAIN_ROWS)
     validation, validation_hash = split("validation", 512)
     data = {

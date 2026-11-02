@@ -1,0 +1,51 @@
+{
+  "batch": 64,
+  "batch_seed": 10001,
+  "betas": [
+    0.9,
+    0.98
+  ],
+  "compiled": true,
+  "completed": 2900,
+  "data_seed": 1,
+  "endpoint": {
+    "loss": 0.010869566758628935,
+    "seconds": 831.2285454669982,
+    "sequence_accuracy": 0.990234375,
+    "step": 2900,
+    "token_accuracy": 0.998779296875
+  },
+  "epoch_tail": 32,
+  "evaluate_every": 50,
+  "first99": 2900,
+  "git_commit": "df1e9f7afb16b2878adc13808e1e4bb66680040e",
+  "initial_parameters_sha256": "64c8ceab8de24ad993b068c1cf7f13c632f71b09c6dc623eecba00502a74959a",
+  "learning_rate": 0.0003,
+  "max_updates": 4800,
+  "model": "historical GPTMini, 128x6, 4 heads",
+  "optimizer": "AdamW",
+  "parameters": 1249816,
+  "python": "3.14.8",
+  "seed": 1,
+  "sources": {
+    "research/recall_ablation/run.py": "0baba7539e168a64107be2ceecec9013371178569961333bfd1df28ea767f280",
+    "src/diff_gpt/application/mqar.py": "60880ea224b61f8b292298ba717ba67efad1a5edf852e8a2afa46a0068311875",
+    "src/diff_gpt/domain/model/gpt.py": "abfa134ab4b7539edddf4d852a0816f6632b6746ab50000645995576a58b4623",
+    "src/diff_gpt/domain/model/mini_block.py": "e7c6ae1df6aa24680f54c9c5bcaede24fc2ab52b0ea16266328c737d35acad3d",
+    "src/diff_gpt/domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba",
+    "src/diff_gpt/domain/optimizer/schedule_free.py": "e9946bcc2c94bc2b13b501e3ec8ed8f00ffbbc40b7956cab21fb901bd4129008"
+  },
+  "split_fingerprints": {
+    "train": "f51d12def851594c47128b25a3d548ee609a28174c11e8b5a437bcc5f6d5c02e",
+    "validation": "ed164ac1c6a985f46568628f0624cb5d7b50a49bd0da4630a16ccb3ab5fcb23b"
+  },
+  "stage": "baseline",
+  "status": "passed",
+  "target_sequence_accuracy": 0.99,
+  "test_loaded": false,
+  "threads": 4,
+  "torch": "2.14.1+cu126",
+  "warmup": 50,
+  "warmup_convention": "completed_updates",
+  "weight_decay": 0.1
+}

@@ -5,6 +5,45 @@ then add one feature at a time. Stop at the first feature that loses the
 baseline's fast 99% validation crossing. A finite-budget miss is a speed
 regression, not a proof that the model can never generalize.
 
+## Completed result: stop at Schedule-Free AdamW
+
+The restored baseline is committed as `b7b8e89`. In the fresh CPU comparison,
+changing only the optimizer loses the rapid hard-recall transition:
+
+| Unchanged GPTMini, seed 1 | First 99% exact validation | Endpoint exact sequences | Endpoint query accuracy |
+| --- | --- | --- | --- |
+| AdamW | 2,900 updates | 507/512 = 99.02% | 4,091/4,096 = 99.88% |
+| Schedule-Free AdamW | Not reached by 3,000 | 0/512 = 0% | 411/4,096 = 10.03% |
+
+At the same 2,900 updates, Schedule-Free also has 0/512 exact sequences.
+Both arms start from byte-identical parameters and use identical splits,
+batch order, learning rates, warmup, betas and decay. Only the optimizer
+changes. The baseline's independent latest-value oracle checks every query;
+it answers 2,712/2,714 queries of overwritten keys correctly and predicts
+no superseded values. Eager checkpoint replay reproduces the compiled
+endpoint prediction counts. Optimizer steps, epoch tails, sampler RNG state,
+first-crossing observations and source snapshot hashes are verified.
+
+**Decision:** retain GPTMini + AdamW and stop adding features. SwiGLU,
+normalization changes, residual scaling, temperature removal and the remaining
+numerical changes have not been tested in this ablation. The result is one
+fresh matched seed and a finite speed screen; it does not establish permanent
+inability to learn or explain all effects of the newer architecture.
+
+[`results/summary.json`](results/summary.json) records the decision, matching
+conditions, test coverage and limitations. The same folder retains both full
+50-update histories, complete result metadata and endpoint replay audits.
+Raw checkpoints and exact executed source snapshots remain under
+`runs/recall-ablation/`. The replay script is retained there as
+`audit_replay.py`. The baseline started before its restoration commit was
+created; its metadata therefore records parent commit `df1e9f7` plus verified
+snapshots of the restored source. Training trajectories need not reproduce
+historical GPU/PyTorch crossing counts bit for bit.
+
+Validation: 828 domain/application tests passed, 40 skipped; changed Python
+files pass Ruff. The whole-repository suite could not collect optional
+corpus/leaderboard tests because dependencies including `pyarrow` are absent.
+
 The public `GPT` now implements GPTMini: PreNorm, native parameter-free
 RMSNorm with epsilon 1e-5, unit Q/K with learned head temperatures, RoPE,
 ordinary XSA, ReLU squared with hidden width 4d, tied embedding/readout,
@@ -30,7 +69,8 @@ continue to use it. No constructor switch changes the canonical model.
 | Training batch | 64, retaining the 32-example epoch tail |
 | Evaluation | all 512 validation rows, every 50 updates |
 | Pass | at least 99% exact sequences, all eight latest-value answers correct |
-| Screen budget | 4,800 updates; first crossing retained |
+| Baseline safety budget | 4,800 updates; first crossing retained |
+| First-feature screen | 3,000 updates, covering all historical 2,150–2,950 crossings |
 | Test set | never constructed or read by the screen |
 | Execution | CPU TorchInductor, FP32; four threads |
 
@@ -47,7 +87,9 @@ or restoration of a best checkpoint.
 2. Reproduce a fresh GPTMini + AdamW crossing, then change only the optimizer
    to the repository's Schedule-Free AdamW. Apply exactly the same external
    warmup to both arms; disable Schedule-Free's internal warmup. If the
-   candidate misses 99% within 4,800 updates, stop and retain GPTMini + AdamW.
+   candidate misses 99% within 3,000 updates, stop and retain GPTMini + AdamW.
+   This cap was chosen before candidate training, to keep the experiment short;
+   it must be at least the fresh baseline's crossing time.
 3. Only if the optimizer passes, introduce the newer architectural changes
    separately: SwiGLU, initialization, embedding normalization, output
    normalization, residual scaling, Q/K normalization and temperature removal,
@@ -60,7 +102,7 @@ From the repository root:
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage baseline --seeds 1
-.venv/bin/python -m research.recall_ablation.run --stage schedule-free --seeds 1
+.venv/bin/python -m research.recall_ablation.run --stage schedule-free --seeds 1 --max-updates 3000
 ```
 
 The second command requires a passed matching baseline. A run refuses to
