@@ -3,14 +3,26 @@
 from __future__ import annotations
 
 import hashlib
+from typing import TYPE_CHECKING
 
 import torch
-from torch import nn
 
-from diff_gpt.domain.model.feed_forward import FeedForward
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.gpt import GPTMini
+from diff_gpt.domain.model.mini_block import initialize_swiglu
 
-ARCHITECTURE_STAGES = ("swiglu",)
+if TYPE_CHECKING:
+    from torch import nn
+
+ARCHITECTURE_STAGES = ("swiglu", "scaled-init")
+PREDECESSOR = {"swiglu": "baseline", "scaled-init": "swiglu"}
+
+
+def raw_parameter_digest(model: nn.Module) -> str:
+    """Hash parameter bytes in the historical report's order."""
+    digest = hashlib.sha256()
+    for parameter in model.parameters():
+        digest.update(parameter.detach().cpu().numpy().tobytes())
+    return digest.hexdigest()
 
 
 def parameter_digest(model: nn.Module, *, exclude_mlp: bool = False) -> str:
@@ -25,10 +37,10 @@ def parameter_digest(model: nn.Module, *, exclude_mlp: bool = False) -> str:
     return digest.hexdigest()
 
 
-def build_model(stage: str, seed: int) -> tuple[GPT, dict[str, object]]:
+def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
     """Keep historical shared weights and replace only the declared feature."""
     torch.manual_seed(seed)
-    model = GPT(
+    model = GPTMini(
         vocab_size=548,
         n_embd=128,
         n_layer=6,
@@ -37,29 +49,40 @@ def build_model(stage: str, seed: int) -> tuple[GPT, dict[str, object]]:
         pad_vocab_size_to=1,
         use_checkpoint=False,
     )
-    historical = hashlib.sha256()
-    for parameter in model.parameters():
-        historical.update(parameter.detach().numpy().tobytes())
+    historical = raw_parameter_digest(model)
     shared = parameter_digest(model, exclude_mlp=True)
-    if stage == "swiglu":
+    if stage in ARCHITECTURE_STAGES:
         # Construct all replacements before drawing their Normal(0,.02)
         # weights. Historical shared tensors are already initialized and
         # remain byte-identical; no trained endpoint is used to initialize.
-        replacements = [FeedForward(model.n_embd) for _ in model.blocks]
-        for block, replacement in zip(model.blocks, replacements, strict=True):
-            for parameter in replacement.parameters():
-                nn.init.normal_(parameter, mean=0.0, std=0.02)
-            block.ffwd = replacement
+        initialize_swiglu(model.blocks, model.n_embd)
     elif stage not in {"baseline", "schedule-free"}:
         msg = f"unknown architectural feature {stage}"
         raise ValueError(msg)
     if parameter_digest(model, exclude_mlp=True) != shared:
         msg = "an MLP change modified shared historical weights"
         raise RuntimeError(msg)
+    parent_initial = historical if stage == "swiglu" else raw_parameter_digest(model)
+    scale = 1.0
+    if stage == "scaled-init":
+        scale = (2 * model.n_layer) ** -0.5
+        with torch.no_grad():
+            for block in model.blocks:
+                block.sa.c_proj.weight.mul_(scale)
+                block.ffwd.c_proj.weight.mul_(scale)
     return model, {
-        "features": ["SwiGLU"] if stage == "swiglu" else [],
-        "historical_initial_parameters_sha256": historical.hexdigest(),
+        "features": (
+            ["SwiGLU", "depth-scaled projection initialization"]
+            if stage == "scaled-init"
+            else ["SwiGLU"]
+            if stage == "swiglu"
+            else []
+        ),
+        "parent_stage": PREDECESSOR.get(stage),
+        "parent_initial_parameters_sha256": parent_initial,
+        "historical_initial_parameters_sha256": historical,
         "shared_non_mlp_initial_sha256": shared,
+        "initial_projection_scale": scale,
         "mlp_initialization": (
             "construct replacement MLPs after historical initialization; "
             "then Normal(0,.02) once per replacement matrix"

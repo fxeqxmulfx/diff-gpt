@@ -12,6 +12,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from diff_gpt.domain.model.feed_forward import FeedForward
 from diff_gpt.domain.model.mha import one_query_attention
 from diff_gpt.domain.model.rope import apply_rope
 
@@ -123,3 +124,12 @@ class MiniBlock(nn.Module):
         """Add the attention output, then the ReLU-squared MLP output."""
         value = value + self.sa(self.ln_1(value), cos, sin, kv_cache)
         return value + self.ffwd(self.ln_2(value))
+
+
+def initialize_swiglu(blocks: nn.ModuleList, n_embd: int) -> None:
+    """Install the passing SwiGLU feature without shifting shared random draws."""
+    replacements = [FeedForward(n_embd) for _ in blocks]
+    for block, replacement in zip(blocks, replacements, strict=True):
+        for parameter in replacement.parameters():
+            nn.init.normal_(parameter, mean=0.0, std=0.02)
+        block.ffwd = replacement

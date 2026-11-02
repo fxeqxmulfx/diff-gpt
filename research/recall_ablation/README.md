@@ -22,8 +22,23 @@ is no initialization from trained weights. Its parameter count is 1,249,048,
 compared with 1,249,816 for the control. Shape changes therefore do not shift
 the random initialization of unrelated embedding and attention matrices.
 
+**SwiGLU passed:** first 99% at 2,300 updates, with 508/512 exact sequences
+(99.22%) and 4,092/4,096 correct queries. Its endpoint, independent
+latest-value replay and full history are retained in `results/`.
+The public `GPT` now matches this passing candidate exactly; `GPTMini`
+retains the original ReLU-squared control. The optimizer remains ordinary
+AdamW.
+
+The next candidate, `scaled-init`, changes only the initial attention and MLP
+output matrices: multiply the parent's same Gaussian draws by
+`1/sqrt(2*n_layer)`. All other tensors, including the MLP input matrices,
+remain byte-identical. This isolates depth-scaled projection initialization
+from residual scaling during the forward pass. It requires a passed SwiGLU
+parent and verifies the parent's initial-parameter digest before training.
+
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage swiglu --seeds 1 --max-updates 3000
+.venv/bin/python -m research.recall_ablation.run --stage scaled-init --seeds 1 --max-updates 3000
 ```
 
 If it passes, the remaining intended sequence is depth-scaled projection
@@ -74,12 +89,13 @@ Validation: 828 domain/application tests passed, 40 skipped; changed Python
 files pass Ruff. The whole-repository suite could not collect optional
 corpus/leaderboard tests because dependencies including `pyarrow` are absent.
 
-The public `GPT` now implements GPTMini: PreNorm, native parameter-free
+The frozen `GPTMini` implements the original baseline: PreNorm, native parameter-free
 RMSNorm with epsilon 1e-5, unit Q/K with learned head temperatures, RoPE,
 ordinary XSA, ReLU squared with hidden width 4d, tied embedding/readout,
 and one Normal(0, 0.02) initialization per distinct matrix. Default
 `train`/`DiffGPT.train` uses native AdamW, betas (0.9, 0.98), decay 0.1,
 rate 0.0003 and the historical 50-update warmup starting at zero.
+The public `GPT` additionally includes the passing SwiGLU change described above.
 
 The former production architecture remains available as `NormalizedGPT`
 only through its explicit module. Existing numerical and learned-division

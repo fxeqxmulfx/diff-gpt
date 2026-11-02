@@ -194,9 +194,9 @@ $hi - lo$ takes the place of $2D$.
   $(1 - B)(1 - B^{24})$. `order_of_derivative` can be an array of shape $(F,)$
   giving each channel its own; mix $k = 0$ (raw) with $k = 1, 2, \ldots$ and
   seasonal operators in a single model.
-- **Historical GPTMini model**: a learned token embedding, RoPE in every
+- **GPTMini with SwiGLU**: a learned token embedding, RoPE in every
   layer, PreNorm residual blocks, exclusive self-attention (XSA), and a
-  ReLU-squared MLP of hidden width $4d$. Parameter-free native RMSNorm
+  SwiGLU MLP of hidden width approximately $8d/3$. Parameter-free native RMSNorm
   uses epsilon $10^{-5}$ before each branch and at the readout. Queries and
   keys are unit vectors with a learned per-head inverse temperature, initially
   $\sqrt{d_{\mathrm{head}}}$. Branch outputs are added directly. Every distinct
@@ -204,6 +204,9 @@ $hi - lo$ takes the place of $2D$.
   biases and the readout is tied to the embedding. The default trainer uses
   AdamW with the historical 50-update linear warmup. The hard-recall feature
   ablation is recorded in [`research/recall_ablation`](research/recall_ablation).
+  With ordinary AdamW, the isolated SwiGLU change reached 99.22% exact
+  hard-recall validation at 2,300 updates, compared with 2,900 for the
+  ReLU-squared control on the same fresh seed.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates).
@@ -1002,8 +1005,9 @@ held-out recovery and the existing trained modular-division fixtures.
 
 ### Restored GPTMini baseline
 
-`diff_gpt.domain.model.gpt.GPT` uses the historical GPTMini architecture
-described above. The previous df1e9f7 architecture is retained explicitly as
+`diff_gpt.domain.model.gpt.GPT` uses the passing GPTMini + SwiGLU architecture
+described above. `GPTMini` in the same module retains the original ReLU-squared
+baseline for historical replay. The previous df1e9f7 architecture is retained explicitly as
 `diff_gpt.domain.model.normalized_gpt.NormalizedGPT` for replay of the existing
 scaled-residual fixtures and numerical regressions. Its state dictionaries
 require that class. Model sizes, RoPE base, checkpointing and KV caching remain

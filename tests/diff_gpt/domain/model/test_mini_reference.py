@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.testing import assert_close
 
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.gpt import GPTMini as GPT
 
 FIXTURES = Path(__file__).resolve().parents[3] / "fixtures"
 

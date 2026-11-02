@@ -9,7 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from diff_gpt.domain.model.mini_block import MiniBlock, MiniRMSNorm
+from diff_gpt.domain.model.mini_block import MiniBlock, MiniRMSNorm, initialize_swiglu
 from diff_gpt.domain.model.rope import rope_tables
 
 if TYPE_CHECKING:
@@ -76,7 +76,7 @@ class BaseGPT(nn.Module, ABC):
         """Return the device of the model weights, with its index (`cuda:1`)."""
 
 
-class GPT(BaseGPT):
+class GPTMini(BaseGPT):
     """
     Historical GPTMini with the forecasting and KV-cache interfaces.
 
@@ -265,3 +265,32 @@ class GPT(BaseGPT):
     def device(self) -> torch.device:
         """Return the device of the model weights, with its index (`cuda:1`)."""
         return self.lm_head.weight.device
+
+
+class GPT(GPTMini):
+    """The passing ordinary-AdamW GPTMini architecture with a SwiGLU MLP."""
+
+    def __init__(
+        self,
+        vocab_size: int,
+        n_embd: int = 64,
+        block_size: int = 32,
+        n_head: int = 4,
+        n_layer: int = 4,
+        *,
+        use_checkpoint: bool = True,
+        pad_vocab_size_to: int = 64,
+        rope_base: float = 10_000.0,
+    ) -> None:
+        """Preserve historical shared initialization, then install tested SwiGLU."""
+        super().__init__(
+            vocab_size=vocab_size,
+            n_embd=n_embd,
+            block_size=block_size,
+            n_head=n_head,
+            n_layer=n_layer,
+            use_checkpoint=use_checkpoint,
+            pad_vocab_size_to=pad_vocab_size_to,
+            rope_base=rope_base,
+        )
+        initialize_swiglu(self.blocks, n_embd)

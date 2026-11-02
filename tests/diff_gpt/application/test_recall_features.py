@@ -4,7 +4,8 @@ import torch
 from torch.testing import assert_close
 
 from diff_gpt.domain.model.feed_forward import FeedForward
-from research.recall_ablation.features import build_model
+from diff_gpt.domain.model.gpt import GPT
+from research.recall_ablation.features import build_model, raw_parameter_digest
 
 HISTORICAL_INITIAL = "64c8ceab8de24ad993b068c1cf7f13c632f71b09c6dc623eecba00502a74959a"
 BASELINE_PARAMETERS = 1_249_816
@@ -47,3 +48,31 @@ def test_swiglu_candidate_keeps_finite_gradients_to_all_parameters() -> None:
         assert parameter.grad is not None, name
         assert torch.isfinite(parameter.grad).all(), name
         assert torch.count_nonzero(parameter.grad), name
+
+
+def test_public_gpt_is_the_passing_swiglu_candidate() -> None:
+    """Promotion preserves the exact architecture and tested initialization."""
+    candidate, _ = build_model("swiglu", 1)
+    torch.manual_seed(1)
+    model = GPT(
+        548,
+        128,
+        block_size=64,
+        n_head=4,
+        n_layer=6,
+        pad_vocab_size_to=1,
+        use_checkpoint=False,
+    )
+    assert_close(model.state_dict(), candidate.state_dict(), rtol=0, atol=0)
+
+
+def test_scaled_initialization_changes_only_residual_projection_magnitudes() -> None:
+    """Reuse every Gaussian draw and multiply only the twelve output matrices."""
+    parent, _ = build_model("swiglu", 1)
+    candidate, metadata = build_model("scaled-init", 1)
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    scale = (2 * parent.n_layer) ** -0.5
+    assert metadata["initial_projection_scale"] == scale
+    for name, parameter in parent.named_parameters():
+        expected = parameter * scale if name.endswith("c_proj.weight") else parameter
+        assert_close(dict(candidate.named_parameters())[name], expected, rtol=0, atol=0)

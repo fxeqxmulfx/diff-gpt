@@ -22,7 +22,11 @@ from torch.nn import functional as F
 
 from diff_gpt.application.mqar import IGNORE, MQAR, build_split, fingerprint
 from diff_gpt.domain.optimizer.schedule_free import ScheduleFreeAdamW
-from research.recall_ablation.features import ARCHITECTURE_STAGES, build_model
+from research.recall_ablation.features import (
+    ARCHITECTURE_STAGES,
+    PREDECESSOR,
+    build_model,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
@@ -145,6 +149,24 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
         baseline = json.loads(
             (args.output / "baseline" / f"seed{seed}" / "result.json").read_text()
         )
+        if args.stage in ARCHITECTURE_STAGES:
+            parent = json.loads(
+                (
+                    args.output
+                    / PREDECESSOR[args.stage]
+                    / f"seed{seed}"
+                    / "result.json"
+                ).read_text()
+            )
+            if (
+                metadata["parent_initial_parameters_sha256"]
+                != parent["initial_parameters_sha256"]
+            ):
+                msg = (
+                    "the architectural candidate does not reproduce "
+                    "its passing parent's initialization"
+                )
+                raise RuntimeError(msg)
         if (
             metadata["historical_initial_parameters_sha256"]
             != baseline["initial_parameters_sha256"]
@@ -274,6 +296,18 @@ def main() -> None:
     torch.set_float32_matmul_precision("highest")
     if args.stage != "baseline":
         for seed in args.seeds:
+            if args.stage in ARCHITECTURE_STAGES:
+                parent = json.loads(
+                    (
+                        args.output
+                        / PREDECESSOR[args.stage]
+                        / f"seed{seed}"
+                        / "result.json"
+                    ).read_text()
+                )
+                if parent["status"] != "passed":
+                    msg = "stop: the preceding architectural feature did not pass"
+                    raise RuntimeError(msg)
             baseline = json.loads(
                 (args.output / "baseline" / f"seed{seed}" / "result.json").read_text()
             )
