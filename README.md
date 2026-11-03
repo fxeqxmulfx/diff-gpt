@@ -1019,12 +1019,16 @@ held-out recovery and the existing trained modular-division fixtures.
 `diff_gpt.domain.model.gpt.GPT` uses the passing GPTMini + SwiGLU architecture
 with repaired RMS backward, native dtype RMS epsilon and per-head Q/K RMS
 normalization. Attention uses fixed `1/sqrt(head_dim)` score scaling. This
-model first reaches 99% hard-recall exact sequences at 1,850 updates in the
-matched seed-1 screen; its explicit-epsilon control takes 2,500. Embeddings
+native-epsilon candidate reaches 99% hard-recall exact sequences at 1,850
+updates; adding the newer XSA clipping threshold passes at 2,650 in the
+matched seed-1 screen. Embeddings
 and branch outputs stay unnormalized and residual
 coefficients stay 1. Dense attention stays explicit: fused SDPA missed the
 CPU FP32 screen, ending at 97.46% exact sequences (best 98.83%) by 3,000 updates.
 See `research/recall_ablation/README.md` for the matched protocol and evidence.
+The accepted XSA clipping threshold is 1e-12; it passes its screen at 2,650
+updates. Repeated compiled CPU backwards show small embedding-gradient
+variation, so these are individual-run crossing times.
 `GPTMini` in the same module retains the original ReLU-squared
 baseline for historical replay. The previous df1e9f7 architecture is retained explicitly as
 `diff_gpt.domain.model.normalized_gpt.NormalizedGPT` for replay of the existing

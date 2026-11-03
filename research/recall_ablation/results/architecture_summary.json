@@ -3,17 +3,18 @@
     "SwiGLU",
     "repaired FP64 radial/tangent RMS backward",
     "per-head QK RMS normalization with fixed temperature",
-    "native dtype epsilon at input/final RMS sites"
+    "native dtype epsilon at input/final RMS sites",
+    "XSA clipping epsilon 1e-12"
   ],
   "accepted_model_commit": "7faaaf3",
-  "active_stage": "xsa-epsilon",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain the passing native-epsilon repaired RMS model. Test only XSA own-value clipping 1e-6 to 1e-12 with ordinary projection, explicit attention and ordinary AdamW; stop at the next fast-screen miss.",
+  "decision": "Retain 1e-12 XSA clipping after its 2650-update pass. Keep native-epsilon repaired RMS, fixed Q/K gain, SwiGLU, ordinary AdamW and explicit attention; next isolate centered XSA.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -51,11 +52,15 @@
     "sdpa_seed1_history.jsonl": "ba1932524eae4189db9ae6b94a9d37010faa0edff7e62f3a601b4ab878ed4d88",
     "swiglu_seed1.json": "db01b965de183cfd12e0617cd2f24a0223524098776ca66e44013dc4b0fc780f",
     "swiglu_seed1_audit.json": "40fd67fb47e98528201fc360cd68f3d3482ae40424a10c16e345044ad7386dd2",
-    "swiglu_seed1_history.jsonl": "f04d970db31b6c0d6268f05edac586c4807c07ef1b2e3b9a49a69ac111aa587b"
+    "swiglu_seed1_history.jsonl": "f04d970db31b6c0d6268f05edac586c4807c07ef1b2e3b9a49a69ac111aa587b",
+    "xsa_epsilon_compiled_control_probe.json": "190d64c36231c96835423aa4cccee10a4fbdc7dfd4495e179348918cc7ee4cb1",
+    "xsa_epsilon_seed1.json": "fd3707a69f9646dd4098b4d84ba9423cd0b08c71a9743d7f76dcbc1408787859",
+    "xsa_epsilon_seed1_audit.json": "71382d83027078360568d84e53d69cfd09f58b86ef3cb533538ee15a36731ea8",
+    "xsa_epsilon_seed1_history.jsonl": "206c739f2855e837f8b023229d9b206abfbdc59ea3972f93ce55c93fb550fa71"
   },
   "first_failing_feature": "depth-scaled projection initialization (multiply attention/MLP output matrices by 1/sqrt(2L))",
   "implementation_commit": "fbf4b0a",
-  "interpretation": "Single-seed CPU FP32 finite speed screens in the documented order. Q/K RMS and fixed temperature pass; fused SDPA misses 99% exact by 3000 despite passing independent FP64 forward/gradient equations. This does not establish eventual inability to generalize, a GPU-kernel result, or rule out interactions with skipped features.",
+  "interpretation": "Single-seed CPU FP32 finite speed screens. Repeated identical compiled backwards vary by about 2e-8 in embedding gradients; matching seeds does not ensure bitwise trajectories. Near-threshold misses and timing changes are individual observations, not strong causal attribution or proof of eventual failure. Full trained endpoint predictions are independently replayed.",
   "interrupted_runs": [
     {
       "complete_state_retained": false,
@@ -76,10 +81,9 @@
   ],
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
-  "next_feature": "XSA clipping threshold",
+  "next_feature": "centered XSA",
   "next_feature_if_resumed": "centered XSA",
   "not_tested_after_stop": [
-    "XSA clipping threshold (active)",
     "centered XSA",
     "exact zero attention output at first position",
     "repeated-prefix stabilization"
@@ -422,15 +426,42 @@
       "sequences": 512,
       "stage": "rms-epsilon",
       "status": "passed"
+    },
+    {
+      "audit_file": "xsa_epsilon_seed1_audit.json",
+      "completed": 2650,
+      "correct_queries": 4091,
+      "dense_attention": "explicit causal softmax",
+      "exact": 507,
+      "first99": 2650,
+      "history_file": "xsa_epsilon_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "input_and_final_epsilon": "native dtype epsilon",
+      "learned_attention_temperature": false,
+      "parameters": 1249024,
+      "parent": "rms-epsilon",
+      "parent_initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "xsa_epsilon_seed1.json",
+      "sequences": 512,
+      "stage": "xsa-epsilon",
+      "status": "passed",
+      "xsa_epsilon": 1e-12
     }
   ],
-  "status": "native RMS epsilon passed; screening XSA clipping threshold",
+  "status": "XSA clipping passed; preparing centered XSA",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
-    "archived_evidence_hashes_verified": 37,
+    "archived_evidence_hashes_verified": 41,
+    "compiled_control_probe_file": "xsa_epsilon_compiled_control_probe.json",
+    "compiled_control_probe_source": {
+      "path": "runs/recall-ablation/xsa_refactor_probe.py",
+      "sha256": "f2c37da5496e5b7e876da292f8fcccb67431a3fccf6afa354715f4c638fad177"
+    },
     "compiled_repaired_gradient_probe_file": "peri_norm_repaired_compiled_gradient_probe.json",
     "eager_endpoint_replay": "exact counts; sources and sampler state verified",
     "embedding_norm_endpoint_audit": {
@@ -504,14 +535,14 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 855,
+    "full_domain_application_tests_passed": 861,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": "7faaaf3",
+    "full_suite_validation_commit": null,
     "full_suite_validation_source_sha256": {
-      "research/recall_ablation/features.py": "1840d7c6b44bc708c8318d7bff50b663d34bfa43cf13bd3add83f7e7e75c5066",
-      "src/diff_gpt/domain/model/gpt.py": "00a5abef324b6181a60331c9fca99a3bb851239a73cd4032ddd8b46d20e889d7",
-      "src/diff_gpt/domain/model/mini_block.py": "1da2534e48bfee8093c89ad0474c30ab524d6d880b3ade1b558ba82bcf932810",
-      "tests/diff_gpt/application/test_recall_features.py": "c9ef7310f711f5ee3331308c894b9f2b83a7459a2703455bb87c971e6c3b2a84"
+      "research/recall_ablation/features.py": "18243e7741224d3ad239b5ef38bb096b6726f9504be17048b81d465b281c430d",
+      "src/diff_gpt/domain/model/gpt.py": "1061bf93776ba4a825c3710e2ce8a32d8e6a73769ad744a6ef64dcec41d59f7b",
+      "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+      "tests/diff_gpt/application/test_recall_features.py": "01cb6c7f3e284cc90a92c901cbe95ec94f71ebd1183d8fc5a50dce5aca0c38a6"
     },
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",
@@ -654,6 +685,29 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "test_loaded": false
+    "test_loaded": false,
+    "xsa_epsilon_endpoint_audit": {
+      "checkpoint_sha256": "c75860fb7c096b6e5dd3c4f62e863bb06561598a1047b40ff3cad3e89bd2590f",
+      "eager_replay": {
+        "exact": 507,
+        "queries": 4096,
+        "queries_correct": 4091,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2711,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 0,
+        "unchanged_correct": 1380,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    }
   }
 }

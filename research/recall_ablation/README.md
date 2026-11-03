@@ -11,7 +11,8 @@ norms. Fixed forward residual scaling missed its screen and remains off.
 Head temperatures are fixed at their initial values. Fused SDPA missed its
 fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
-The active candidate is the XSA clipping threshold.
+The XSA clipping threshold 1e-12 passes and is retained. The next candidate
+is centered evaluation of the XSA projection.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -20,6 +21,16 @@ The active candidate is the XSA clipping threshold.
 | Fix head temperature at its initial value | 2,500 | 99.22% |
 | Replace explicit attention with fused SDPA | Miss by 3,000 | 97.46% (best 98.83%) |
 | Native dtype input/final RMS epsilon, explicit attention | 1,850 | 99.02% |
+| XSA clipping threshold 1e-12 | 2,650 | 99.02% |
+
+The compiled CPU embedding backward is not bitwise deterministic: repeated
+identical calls on the same unchanged model differ by up to 2.24e-8 in the
+embedding gradient. Loss and all other parameter gradients agree bitwise in
+the probe, at initialization and at the trained control endpoint. Matching
+seeds therefore does not guarantee identical numerical trajectories. Crossing
+times and near-threshold misses here are individual finite-run observations,
+not strong causal proof of permanent failure. The original training protocol
+stays fixed. See `results/xsa_epsilon_compiled_control_probe.json`.
 
 ## Passed screen: native dtype RMS epsilon
 
@@ -52,7 +63,7 @@ cadence checks pass. Results, complete history and audit are retained as
 `results/rms_epsilon_seed1*`. This is one matched CPU FP32 seed, with no
 final-test access.
 
-## Active screen: XSA clipping threshold
+## Passed screen: XSA clipping threshold
 
 The `xsa-epsilon` candidate changes only the own-value normalization clipping
 threshold from 1e-6 to 1e-12, matching the archived newer GPT. It keeps the
@@ -66,13 +77,24 @@ criterion remain. No rejected feature is reintroduced.
 Initial model predictions match the parent exactly. Independent clipped
 parallel/perpendicular examples cover zero vectors, vectors below either
 threshold and ordinary vectors; full-stack gradients and the frozen original
-GPTMini fixture pass. The public default keeps 1e-6 clipping until the screen
-passes. Source snapshots now also include the XSA helper and cached-attention
+GPTMini fixture pass. The public default now uses 1e-12 clipping.
+Source snapshots now also include the XSA helper and cached-attention
 module, with no training recipe change.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage xsa-epsilon --seeds 1 --max-updates 3000
 ```
+
+**Clipping passed at 2,650 updates:** 507/512 exact sequences (99.02%) and
+4,091/4,096 correct queries (99.88%). The native-epsilon parent crosses at
+1,850. Eager checkpoint replay, independent latest-value targets, source
+hashes, optimizer steps, observation cadence and full sampler replay verify.
+Overwritten-key queries score 2,711/2,714, unchanged-key queries 1,380/1,382,
+and no stale values are predicted. The compiled-control probe finds the
+same small embedding-gradient variation on repeated calls to either the old
+or refactored control; the observed speed difference cannot be attributed
+entirely to clipping from this single run. Public GPT retains all passing
+features and ordinary AdamW. Evidence is retained as `results/xsa_epsilon_seed1*`.
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 

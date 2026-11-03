@@ -1,0 +1,77 @@
+{
+  "comparisons": [
+    {
+      "phase": "initial",
+      "old_vs_refactored": {
+        "loss_bitwise_equal": true,
+        "gradient_differences": {
+          "token_embedding_table.weight": {
+            "different_elements": 4840,
+            "max_absolute_difference": 1.4901161193847656e-08,
+            "gradient_max_absolute": 0.11285229027271271
+          }
+        }
+      },
+      "same_old_model_repeated": {
+        "loss_bitwise_equal": true,
+        "gradient_differences": {
+          "token_embedding_table.weight": {
+            "different_elements": 4630,
+            "max_absolute_difference": 2.2351741790771484e-08,
+            "gradient_max_absolute": 0.11285229027271271
+          }
+        }
+      },
+      "same_refactored_model_repeated": {
+        "loss_bitwise_equal": true,
+        "gradient_differences": {
+          "token_embedding_table.weight": {
+            "different_elements": 4601,
+            "max_absolute_difference": 1.4901161193847656e-08,
+            "gradient_max_absolute": 0.11285229027271271
+          }
+        }
+      }
+    },
+    {
+      "phase": "trained",
+      "old_vs_refactored": {
+        "loss_bitwise_equal": true,
+        "gradient_differences": {
+          "token_embedding_table.weight": {
+            "different_elements": 4880,
+            "max_absolute_difference": 1.4901161193847656e-08,
+            "gradient_max_absolute": 0.3037242889404297
+          }
+        }
+      },
+      "same_old_model_repeated": {
+        "loss_bitwise_equal": true,
+        "gradient_differences": {
+          "token_embedding_table.weight": {
+            "different_elements": 4402,
+            "max_absolute_difference": 2.2351741790771484e-08,
+            "gradient_max_absolute": 0.3037242889404297
+          }
+        }
+      },
+      "same_refactored_model_repeated": {
+        "loss_bitwise_equal": true,
+        "gradient_differences": {
+          "token_embedding_table.weight": {
+            "different_elements": 5693,
+            "max_absolute_difference": 1.4901161193847656e-08,
+            "gradient_max_absolute": 0.3037242889404297
+          }
+        }
+      }
+    }
+  ],
+  "batch_size": 64,
+  "threads": 4,
+  "trained_weights_completed_updates": 1850,
+  "old_source_sha256": "1da2534e48bfee8093c89ad0474c30ab524d6d880b3ade1b558ba82bcf932810",
+  "current_source_sha256": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+  "probe_source_sha256": "f2c37da5496e5b7e876da292f8fcccb67431a3fccf6afa354715f4c638fad177",
+  "test_loaded": false
+}

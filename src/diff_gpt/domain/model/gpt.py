@@ -10,9 +10,9 @@ from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
 from diff_gpt.domain.model.mini_block import (
+    LowEpsilonQKAttention,
     MiniBlock,
     MiniRMSNorm,
-    RMSQKAttention,
     fix_qk_temperature,
     initialize_swiglu,
     repair_rms_backward,
@@ -276,7 +276,7 @@ class GPTMini(BaseGPT):
 
 
 class GPT(GPTMini):
-    """Passing SwiGLU GPTMini with repaired dtype-epsilon RMS and fixed Q/K gain."""
+    """Passing SwiGLU GPTMini with repaired RMS, fixed Q/K gain and XSA clipping."""
 
     def __init__(
         self,
@@ -304,6 +304,6 @@ class GPT(GPTMini):
         initialize_swiglu(self.blocks, n_embd)
         repair_rms_backward(self, n_embd)
         for block in self.blocks:
-            block.sa = RMSQKAttention(block.sa)
+            block.sa = LowEpsilonQKAttention(block.sa)
             fix_qk_temperature(block.sa)
         use_native_rms_epsilon(self)
