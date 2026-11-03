@@ -33,6 +33,7 @@ SOURCES = (
     "src/diff_gpt/domain/model/gpt.py",
     "src/diff_gpt/domain/model/mini_block.py",
     "src/diff_gpt/domain/model/centered_xsa.py",
+    "src/diff_gpt/domain/model/centered_mini.py",
     "src/diff_gpt/domain/model/mha.py",
     "src/diff_gpt/domain/model/rope.py",
     "src/diff_gpt/domain/model/feed_forward.py",

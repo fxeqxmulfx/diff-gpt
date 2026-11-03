@@ -6,15 +6,15 @@
     "native dtype epsilon at input/final RMS sites",
     "XSA clipping epsilon 1e-12"
   ],
-  "accepted_model_commit": "7faaaf3",
-  "active_stage": null,
+  "accepted_model_commit": "8e7a026",
+  "active_stage": "centered-xsa",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain 1e-12 XSA clipping after its 2650-update pass. Keep native-epsilon repaired RMS, fixed Q/K gain, SwiGLU, ordinary AdamW and explicit attention; next isolate centered XSA.",
+  "decision": "Retain the passing 1e-12 clipping model. Test centered XSA only, preserving real equations and the below-clipping remainder, with ordinary AdamW and explicit attention; stop at the next fast-screen miss.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -81,16 +81,16 @@
   ],
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
-  "next_feature": "centered XSA",
-  "next_feature_if_resumed": "centered XSA",
+  "next_feature": "exact zero attention output at first position",
+  "next_feature_if_resumed": "exact zero attention output at first position",
   "not_tested_after_stop": [
-    "centered XSA",
+    "centered XSA (active)",
     "exact zero attention output at first position",
     "repeated-prefix stabilization"
   ],
   "optimizer": "ordinary torch.optim.AdamW throughout",
   "previous_stop_decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
-  "production_commit": "7faaaf3",
+  "production_commit": "8e7a026",
   "rejected_features": [
     "Schedule-Free AdamW",
     "depth-scaled projection initialization",
@@ -103,6 +103,7 @@
     "branch_output_normalization": false,
     "dense_attention": "explicit causal softmax",
     "embedding_normalization": false,
+    "first_position_forced_zero": false,
     "forward_residual_scale": 1.0,
     "head_rms_epsilon": "native dtype epsilon (unchanged)",
     "initial_parameters_changed": false,
@@ -111,15 +112,15 @@
     "learned_temperature": false,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
-    "parent": "rms-epsilon",
-    "parent_first99": 1850,
-    "parent_xsa_epsilon": 1e-06,
+    "parent": "xsa-epsilon",
+    "parent_first99": 2650,
     "random_draws_added": false,
     "repaired_rms_sites": 25,
+    "repeated_prefix_rewrite": false,
     "seed": 1,
-    "stage": "xsa-epsilon",
+    "stage": "centered-xsa",
     "xsa_epsilon": 1e-12,
-    "xsa_projection": "ordinary subtraction"
+    "xsa_projection": "centered with below-clipping own remainder"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -450,7 +451,7 @@
       "xsa_epsilon": 1e-12
     }
   ],
-  "status": "XSA clipping passed; preparing centered XSA",
+  "status": "XSA clipping passed; screening centered XSA",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -511,7 +512,7 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "focused_feature_tests_passed": 33,
+    "focused_feature_tests_passed": 39,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",
       "eager_replay": {
@@ -537,7 +538,7 @@
     },
     "full_domain_application_tests_passed": 861,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": null,
+    "full_suite_validation_commit": "8e7a026",
     "full_suite_validation_source_sha256": {
       "research/recall_ablation/features.py": "18243e7741224d3ad239b5ef38bb096b6726f9504be17048b81d465b281c430d",
       "src/diff_gpt/domain/model/gpt.py": "1061bf93776ba4a825c3710e2ce8a32d8e6a73769ad744a6ef64dcec41d59f7b",

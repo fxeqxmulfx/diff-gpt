@@ -57,6 +57,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "sdpa",
         "rms-epsilon",
         "xsa-epsilon",
+        "centered-xsa",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -481,3 +482,122 @@ def test_xsa_clipping_preserves_perpendicular_and_clips_parallel(
         assert_close(actual, expected, rtol=1e-12, atol=1e-12)
         gradients = torch.autograd.grad(actual.sum(), (attended, own))
         assert all(torch.isfinite(gradient).all() for gradient in gradients)
+
+
+def test_centered_xsa_preserves_weights_rng_and_all_passing_settings() -> None:
+    """Keep the threshold, epsilons, fixed gain and explicit attention unchanged."""
+    parent, _ = build_model("xsa-epsilon", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("centered-xsa", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert_close(
+        dict(candidate.named_buffers()), dict(parent.named_buffers()), rtol=0, atol=0
+    )
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert metadata["parent_stage"] == "xsa-epsilon"
+    assert metadata["xsa_epsilon"] == MODERN_XSA_EPS
+    assert metadata["xsa_projection"] == "centered"
+    assert metadata["dense_attention"] == "explicit causal softmax"
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["forward_residual_scale"] == 1.0
+    assert all(
+        module.eps is None
+        for module in candidate.modules()
+        if isinstance(module, RepairedRMSNorm)
+    )
+
+
+@pytest.mark.parametrize("value_scale", [1.0, 1e-14])
+def test_centered_xsa_matches_fp64_parent_forward_and_gradients(
+    value_scale: float,
+) -> None:
+    """Preserve real attention, including the below-clipping own-value remainder."""
+    parent, _ = build_model("xsa-epsilon", 1)
+    candidate, _ = build_model("centered-xsa", 1)
+    parent.double()
+    candidate.double()
+    with torch.no_grad():
+        for model in (parent, candidate):
+            for block in model.blocks:
+                block.sa.c_attn.weight[2 * model.n_embd :].mul_(value_scale)
+    tokens = torch.randint(548, (2, 8))
+    expected, actual = parent(tokens)[0], candidate(tokens)[0]
+    assert_close(actual, expected, rtol=1e-10, atol=1e-10)
+    upstream = torch.randn_like(actual)
+    (expected * upstream).sum().backward()
+    (actual * upstream).sum().backward()
+    for (name, original), (_, changed) in zip(
+        parent.named_parameters(), candidate.named_parameters(), strict=True
+    ):
+        assert_close(changed.grad, original.grad, rtol=1e-9, atol=1e-9, msg=name)
+    if value_scale < 1:
+        attention = candidate.blocks[0].sa
+        value = torch.randn(2, 4, candidate.n_embd, dtype=torch.float64)
+        branch = attention(value, candidate.rope_cos[:4], candidate.rope_sin[:4])
+        assert torch.count_nonzero(branch[:, 0]), (
+            "below-clipping first output must survive"
+        )
+
+
+def test_centered_xsa_cache_and_guard_match_full_predictions() -> None:
+    """Verify raw cache storage, offset chunks and the future prefix guard output."""
+    model, _ = build_model("centered-xsa", 1)
+    model.eval()
+    tokens = torch.randint(548, (2, 8))
+    with torch.no_grad():
+        expected = model(tokens)[0]
+        for chunks in ([1] * 8, [3, 2, 3]):
+            cache = KVCache(
+                batch_size=2, num_heads=4, seq_len=64, head_dim=32, num_layers=6
+            )
+            position, parts = 0, []
+            for length in chunks:
+                parts.append(
+                    model(tokens[:, position : position + length], kv_cache=cache)[0]
+                )
+                position += length
+            assert_close(torch.cat(parts, 1), expected, rtol=1e-5, atol=1e-5)
+        attention = model.blocks[0].sa
+        value = torch.randn(2, 8, model.n_embd)
+        output, guard = attention(
+            value, model.rope_cos[:8], model.rope_sin[:8], return_guard=True
+        )
+        assert_close(
+            output,
+            attention(value, model.rope_cos[:8], model.rope_sin[:8]),
+            rtol=0,
+            atol=0,
+        )
+        assert guard.shape == (2,)
+        assert guard.all()
+
+
+def test_centered_xsa_compiles_with_matching_parameter_gradients() -> None:
+    """Check the fullgraph training path before launching a numerical ablation."""
+    eager, _ = build_model("centered-xsa", 1)
+    compiled_model, _ = build_model("centered-xsa", 1)
+    tokens = torch.randint(548, (2, 8))
+    positions = torch.tensor([[4, 7], [5, 7]])
+    targets = torch.randint(548, (2, 2))
+
+    def objective(
+        inputs: torch.Tensor, query: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+        return compiled_model(inputs, labels, positions=query)[1]
+
+    expected = eager(tokens, targets, positions=positions)[1]
+    actual = torch.compile(objective, fullgraph=True, dynamic=False)(
+        tokens, positions, targets
+    )
+    assert_close(actual, expected, rtol=1e-5, atol=1e-5)
+    expected.backward()
+    actual.backward()
+    for (name, original), (_, changed) in zip(
+        eager.named_parameters(), compiled_model.named_parameters(), strict=True
+    ):
+        assert_close(changed.grad, original.grad, rtol=2e-4, atol=2e-6, msg=name)

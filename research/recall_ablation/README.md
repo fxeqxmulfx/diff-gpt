@@ -12,7 +12,7 @@ Head temperatures are fixed at their initial values. Fused SDPA missed its
 fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
 The XSA clipping threshold 1e-12 passes and is retained. The next candidate
-is centered evaluation of the XSA projection.
+is centered evaluation of the XSA projection (now being screened).
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -95,6 +95,31 @@ same small embedding-gradient variation on repeated calls to either the old
 or refactored control; the observed speed difference cannot be attributed
 entirely to clipping from this single run. Public GPT retains all passing
 features and ordinary AdamW. Evidence is retained as `results/xsa_epsilon_seed1*`.
+
+## Active screen: centered XSA
+
+The `centered-xsa` candidate branches from the passed `xsa-epsilon` parent
+(first 99% at 2,650). It centers values on the first available cached/key
+value before explicit attention, then uses the archived `centered_projection`
+equation, including its below-epsilon own-value remainder. This changes
+floating-point evaluation while preserving the real attention/projection
+function. Raw values stay in the cache, including shared prefixes. The
+threshold remains 1e-12 and all RMS epsilons remain native with repaired
+backward. Weights, fixed head temperatures, RNG, ordinary AdamW and data
+remain matched. No embedding norm, Peri output norm, scaling or SDPA returns.
+
+Explicit first-position zeroing and repeated-prefix rewrites remain later
+features. A tiny below-clipping own vector therefore retains its legitimate
+first-position remainder in this candidate. Checks cover parameter/RNG
+isolation, FP64 parent forward and parameter gradients at ordinary/tiny
+value scales, raw KV-cache continuation in tokens/chunks, the optional guard
+return and the compiled fullgraph loss/gradients. The usual seed-1,
+3,000-update fast criterion and 50-update observations apply. Public GPT
+keeps ordinary subtraction until the candidate passes.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage centered-xsa --seeds 1 --max-updates 3000
+```
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 
