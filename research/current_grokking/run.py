@@ -416,6 +416,8 @@ def main() -> None:
                 continue
             for seed in args.seeds:
                 directory = args.output / case.name / f"seed{seed}"
+                if (directory / "skipped.json").exists():
+                    continue
                 if (directory / "result.json").exists():
                     continue
                 command = [

@@ -3498,5 +3498,20 @@
     1
   ],
   "protocol_note": "Before any non-arithmetic case trained: new GPT numeric probes use decoded MSE, noisy anchors use accuracy, and all series observe once per complete epoch. Model and arithmetic settings unchanged.",
-  "user_confirmed_budget_preference": "Keep full budgets (100,000 updates where planned)"
+  "user_confirmed_budget_preference": "Keep full budgets (100,000 updates where planned)",
+  "user_requested_skips": {
+    "kind": "chain",
+    "cases": [
+      "modular-chain-p17-l8",
+      "modular-chain-p97-l1",
+      "modular-chain-p97-l2",
+      "modular-chain-p97-l4",
+      "modular-chain-p97-l8",
+      "modular-chain-p193-l1",
+      "modular-chain-p193-l2",
+      "modular-chain-p193-l4",
+      "modular-chain-p193-l8"
+    ],
+    "reason": "Skip remaining long composition variants; continue other tasks"
+  }
 }

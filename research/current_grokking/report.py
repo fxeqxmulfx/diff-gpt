@@ -79,6 +79,13 @@ def collect(root: Path) -> dict:
                 row["model_source_reference"] = result["metadata"].get(
                     "model_source_reference"
                 )
+            elif (directory / "skipped.json").exists():
+                skipped = json.loads((directory / "skipped.json").read_text())
+                row.update(
+                    status="skipped_at_user_request",
+                    completed=skipped.get("completed", 0),
+                    skip_reason=skipped["reason"],
+                )
             elif (directory / "status.json").exists():
                 status = json.loads((directory / "status.json").read_text())
                 row.update(status="in_progress", completed=status["step"])
@@ -119,7 +126,8 @@ def collect(root: Path) -> dict:
         ],
         "families": {key: dict(value) for key, value in families.items()},
         "complete": all(
-            row["status"] in {"passed", "budget_exhausted"} for row in rows
+            row["status"] in {"passed", "budget_exhausted", "skipped_at_user_request"}
+            for row in rows
         ),
         "interpretation": (
             "Passed means the declared validation target was observed at least once; "
