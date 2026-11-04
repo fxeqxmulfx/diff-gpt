@@ -198,10 +198,11 @@ $hi - lo$ takes the place of $2D$.
   RoPE in every
   layer, PreNorm residual blocks, exclusive self-attention (XSA), and a
   SwiGLU MLP of hidden width approximately $8d/3$. Parameter-free RMSNorm
-  keeps the native forward with epsilon $10^{-5}$ before each branch and at
-  the readout, and uses the repaired FP64 radial/tangent backward. Queries and
-  keys are unit vectors with a learned per-head inverse temperature, initially
-  $\sqrt{d_{\mathrm{head}}}$. Branch outputs are added directly. Every distinct
+  keeps the native forward with dtype epsilon and uses the repaired FP64
+  radial/tangent backward. Per-head Q/K RMS normalization uses fixed
+  $1/\sqrt{d_{\mathrm{head}}}$ score scaling. Centered XSA uses clipping
+  threshold $10^{-12}$, an exactly zero first attention output, and guarded
+  repeated-prefix stabilization. Branch outputs are added directly. Every distinct
   matrix receives one $\mathcal{N}(0, 0.02)$ initialization; there are no
   biases and the readout is tied to the embedding. The default trainer uses
   AdamW with the historical 50-update linear warmup. The hard-recall feature
@@ -218,6 +219,9 @@ $hi - lo$ takes the place of $2D$.
   its thirteen RMS sites retain the same epsilons and forward outputs.
   Fixed forward residual scaling also missed its screen (93.36% exact at
   3,000; best 93.95%), so the accepted model keeps coefficient 1.
+  The final accepted architecture reached 99% exact hard-recall validation
+  in 2,550 / 2,600 / 2,650 updates for model seeds 0 / 1 / 2 with ordinary
+  AdamW. Independent checkpoint replay verifies all three endpoints.
 - **Inference engine**: KV-cache-accelerated generation, position-aware
   `force_schedule` for teacher-forced decoding (TimeXer-style exogenous
   covariates).
@@ -1014,14 +1018,16 @@ establish faster full-transformer grokking. Tests cover native forward equality,
 CPU/CUDA dtypes, an independent FP64 derivative, compiled gradients, known-solution
 held-out recovery and the existing trained modular-division fixtures.
 
-### Restored GPTMini baseline
+### Confirmed hard-recall model
 
 `diff_gpt.domain.model.gpt.GPT` uses the passing GPTMini + SwiGLU architecture
 with repaired RMS backward, native dtype RMS epsilon and per-head Q/K RMS
 normalization. Attention uses fixed `1/sqrt(head_dim)` score scaling and
-centered XSA with clipping threshold 1e-12 and an exactly zero first attention
-output. This model reaches 99% hard-recall exact sequences at 2,800 updates
-in the matched seed-1 screen; its centered parent takes 2,400. Embeddings
+centered XSA with clipping threshold 1e-12, an exactly zero first attention
+output and guarded repeated-prefix stabilization. This final architecture
+reaches 99% hard-recall exact sequences in 2,550 / 2,600 / 2,650 updates for
+model seeds 0 / 1 / 2 on the same fixed data streams. All endpoints are
+independently replayed against latest-value targets. Embeddings
 and branch outputs stay unnormalized and residual
 coefficients stay 1. Dense attention stays explicit: fused SDPA missed the
 CPU FP32 screen, ending at 97.46% exact sequences (best 98.83%) by 3,000 updates.

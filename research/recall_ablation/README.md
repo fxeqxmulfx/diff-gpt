@@ -13,8 +13,9 @@ fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
 The XSA clipping threshold 1e-12 and centered projection pass and are retained.
 Explicit zeroing of the first global attention position also passes and is
-retained. The final repeated-prefix screen also passes. Fresh-seed confirmation
-is next; the public default retains `first-zero` until that validation completes.
+retained. Guarded repeated-prefix stabilization also passes and is retained.
+The final architecture passes the same 3,000-update criterion on all three
+model seeds. Public `GPT` now matches this confirmed `prefix-stable` model.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -187,9 +188,9 @@ returns. Tests cover FP64 parent forward/gradient equivalence, exact prefix
 states, permanent clipping-guard disablement, mode/parameter identity,
 token/chunk cache continuation and compiled checkpointing in both modes.
 
-The seed-1 3,000-update screen remains fixed. The public default retains
-`first-zero` until this final feature passes. Three-seed confirmation follows
-the feature screens; this run does not load final-test data.
+The seed-1 3,000-update screen remains fixed. The public default includes
+this final feature after the three-seed confirmation below. No final-test
+data are loaded by the screen or confirmations.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage prefix-stable --seeds 1 --max-updates 3000
@@ -220,6 +221,34 @@ training. The model files stay frozen through both confirmations, and the
 model is never initialized from the reference checkpoint. Each requested seed
 is evaluated within its own fixed budget; no further feature work follows.
 No final-test data are accessed.
+
+**All three seeds passed within 3,000 updates.** Seed 1 is the original final
+feature screen; seeds 0 and 2 are fresh confirmations with different model
+initialization and seed-derived shuffle order.
+
+| Model seed | First 99% exact | Exact endpoint | Correct queries |
+| --- | --- | --- | --- |
+| 0 | 2,550 | 508/512 (99.22%) | 4,092/4,096 |
+| 1 | 2,600 | 511/512 (99.80%) | 4,095/4,096 |
+| 2 | 2,650 | 508/512 (99.22%) | 4,092/4,096 |
+
+Independent eager checkpoint replay matches every endpoint count. Latest-value
+oracles verify all 4,096 query targets per seed, and source hashes, full sampler
+state, optimizer steps and first-crossing cadence pass. Portable results,
+histories and audits are retained as `results/prefix_stable_seed{0,1,2}*`;
+`results/final_confirmation_summary.json` combines the cohort. The recorded
+confirmation-driver commit is `a2764d8`; use that revision to rerun the frozen
+experiment, since public-model promotion changes the guarded source hash.
+
+All planned features have been screened. Previously rejected features stay
+excluded. Public `GPT` now includes every passing feature, including the guarded
+prefix adapter, with exact initialization/RNG and repeated-prefix output checks
+against the confirmed factory. These are three model seeds on one fixed data
+split under the finite speed criterion; no final-test or new data-seed claim
+is made, and the measured CPU embedding-gradient nondeterminism still applies.
+
+Final public-model validation: **896 domain/application tests passed, 40 skipped**;
+Ruff passes. The model promotion is committed as `01f18f8`.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.confirm --seeds 0 2

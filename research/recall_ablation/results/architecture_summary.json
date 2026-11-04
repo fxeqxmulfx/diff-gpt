@@ -6,11 +6,12 @@
     "native dtype epsilon at input/final RMS sites",
     "XSA clipping epsilon 1e-12",
     "centered XSA projection",
-    "exact zero at first global attention position"
+    "exact zero at first global attention position",
+    "guarded repeated-prefix stabilization"
   ],
-  "accepted_model_commit": "e7994eb",
+  "accepted_model_commit": "01f18f86787511279fe52fe41883495fce0e3105",
   "active_stage": null,
-  "active_validation": "fresh seeds 0 and 2 for the final prefix-stable architecture",
+  "active_validation": null,
   "baseline_commit": "b7b8e89",
   "candidate_features": [
     "SwiGLU",
@@ -27,7 +28,7 @@
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "All feature screens are covered; rejected features remain excluded. Confirm the passed prefix-stable final architecture on fresh seeds 0 and 2, with the frozen model/recipe and original loop. Keep the public first-zero default pending this confirmation.",
+  "decision": "All planned feature screens and final three-seed confirmation are complete. Public GPT uses the confirmed prefix-stable architecture with ordinary AdamW. Rejected features stay excluded; no additional feature or training run remains.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -40,6 +41,7 @@
     "embedding_norm_seed1.json": "caaa1c5017649c112ba9823cef3e36280aae45bcadf1950a1e47e672a6a44f8e",
     "embedding_norm_seed1_audit.json": "ae02876fadfa0e9d7c7a47353dd76672d75e1eefa1cdb4c1b0b644f9fae5c647",
     "embedding_norm_seed1_history.jsonl": "0666a8d81e0a30aea1d3e04edbb75d70bddbd33e17c8cd721cf842850c64fce9",
+    "final_confirmation_summary.json": "f39eb8594a37043e4ccdcfac1823b9e0266927b320620f60c9ef59d7d0bff3d6",
     "first_zero_seed1.json": "aec9c040bf8dda2e575cf41f7d44e2a1be1cb18a1cf91b337c1ae98c058be377",
     "first_zero_seed1_audit.json": "af2e1273201c0be20c02c8d02259c33a18cea9d852a1a5e88fa4a341be24d0f4",
     "first_zero_seed1_history.jsonl": "7b140a5a96431c4312725982ad6778d9dd6cfa57a31be79b9620f4743afa1438",
@@ -53,9 +55,15 @@
     "peri_norm_repaired_seed1.json": "1e1ac25eecf3ee109af2a7587c1d6cfdc8f5d4351771f972746cdfb0ad1c33d3",
     "peri_norm_repaired_seed1_audit.json": "83d1a9e7f8c86296977de4fb76849c0c29f43b3e93466f701582449776e3526b",
     "peri_norm_repaired_seed1_history.jsonl": "c7e4b50a401d551e352c301670c4dff70eaad89ef9e28637c0ca50805b79c976",
+    "prefix_stable_seed0.json": "24c55a780e330db2d9831722646334e4787ca55852f42af676a7ad6e0406dd04",
+    "prefix_stable_seed0_audit.json": "3fff2e13f8de11b63ea67b6602af0e7fb9d9560a024c14b5f1338e46a7a82508",
+    "prefix_stable_seed0_history.jsonl": "56ea23a2b3b97d7acdcb23fb64abef6cd6a7eaa21f969870fe025232bab8fc78",
     "prefix_stable_seed1.json": "7c3c127dfc8a6bc750a76e83d7e42038322e58cb4ad1931acc0d5076c8d9dd89",
     "prefix_stable_seed1_audit.json": "1e8962772d7ee86f1f303417992d2a9c7aa25da2c34fe350252dbb066a465e00",
     "prefix_stable_seed1_history.jsonl": "e1c876759ca8ee0f1896043b62456843872419411c9b9ac2c430964837b74ff3",
+    "prefix_stable_seed2.json": "3d046fe5f0bb926dc0ea9d4016aa862d83bb03b74ab29a8850df1d28194542b1",
+    "prefix_stable_seed2_audit.json": "39882ae46af0e387e9e89f9988219b3bb3897a6767e0c59ad7a93a6818f904fb",
+    "prefix_stable_seed2_history.jsonl": "17874c742a51420e1b28765ccbd6db785d8c9248fbaf284e836a6a0b891a82ca",
     "qk_rms_seed1.json": "a1fa2a16b28a95ece3afe804b9ff645e7046ea50db3b2125ce76093d1b9b9ba1",
     "qk_rms_seed1_audit.json": "1fd6aa2f6405051da1865ecded3340cbdc931d0d579b0764971c8d625cd20675",
     "qk_rms_seed1_history.jsonl": "8e7823c8d225e72246a1be2008bb57dbe76e97519cf94f7751207a4cc22ed43f",
@@ -83,9 +91,27 @@
     "xsa_epsilon_seed1_history.jsonl": "206c739f2855e837f8b023229d9b206abfbdc59ea3972f93ce55c93fb550fa71"
   },
   "feature_screens_complete": true,
+  "final_validation": {
+    "additional_seeds": [
+      0,
+      2
+    ],
+    "all_three_seeds_passed": true,
+    "completed_fresh_seeds": [
+      0,
+      2
+    ],
+    "max_updates": 3000,
+    "public_model_commit": "01f18f86787511279fe52fe41883495fce0e3105",
+    "reference_seed": 1,
+    "result_file": "final_confirmation_summary.json",
+    "stage": "prefix-stable",
+    "status": "passed",
+    "threads": 4
+  },
   "first_failing_feature": "depth-scaled projection initialization (multiply attention/MLP output matrices by 1/sqrt(2L))",
   "implementation_commit": "fbf4b0a",
-  "interpretation": "Single-seed CPU FP32 finite speed screens. Repeated identical compiled backwards vary by about 2e-8 in embedding gradients; matching seeds does not ensure bitwise trajectories. Near-threshold misses and timing changes are individual observations, not strong causal attribution or proof of eventual failure. Full trained endpoint predictions are independently replayed.",
+  "interpretation": "Single-seed CPU FP32 finite feature screens followed by a three-model-seed confirmation of the accepted final architecture, all on the same fixed data split. Repeated identical compiled backwards vary by about 2e-8 in embedding gradients; matching seeds does not ensure bitwise trajectories. Near-threshold misses and timing changes are individual observations, not strong causal attribution or proof of eventual failure. All trained endpoint predictions are independently replayed.",
   "interrupted_runs": [
     {
       "complete_state_retained": false,
@@ -104,25 +130,16 @@
       "stage": "peri-norm"
     }
   ],
+  "latest_failed_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
-  "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
+  "latest_screen_implementation_commit": "a6a39b3f0428c9f8a148cfd74d9b322d8d2a25e1",
   "next_feature": null,
   "next_feature_if_resumed": null,
   "not_tested_after_stop": [],
-  "optimizer": "ordinary torch.optim.AdamW throughout",
-  "pending_validation": {
-    "additional_seeds": [
-      0,
-      2
-    ],
-    "max_updates": 3000,
-    "reference_seed": 1,
-    "stage": "prefix-stable",
-    "status": "ready",
-    "threads": 4
-  },
+  "optimizer": "ordinary torch.optim.AdamW for all architecture screens and final confirmations",
+  "pending_validation": null,
   "previous_stop_decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
-  "production_commit": "e7994eb",
+  "production_commit": "01f18f86787511279fe52fe41883495fce0e3105",
   "rejected_features": [
     "Schedule-Free AdamW",
     "depth-scaled projection initialization",
@@ -156,7 +173,7 @@
     "xsa_epsilon": 1e-12,
     "xsa_projection": "centered"
   },
-  "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
+  "scope": "Feature screens use fresh matched model seed 1/data seed 1 with a fixed 3000-update criterion. The final architecture also passes fresh model/shuffle seeds 0 and 2 on the same fixed data streams. No final-test access.",
   "stages": [
     {
       "audit_file": "baseline_seed1_audit.json",
@@ -558,13 +575,14 @@
       "xsa_projection": "centered"
     }
   ],
-  "status": "final feature passed; preparing three-seed confirmation",
+  "status": "complete: final architecture passed all three model seeds",
   "verification": {
+    "all_three_seeds_passed": true,
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
-    "archived_evidence_hashes_verified": 52,
+    "archived_evidence_hashes_verified": 59,
     "centered_xsa_endpoint_audit": {
       "checkpoint_sha256": "19e63bb71ad4f29d854a6e1d261122fb3b38e52a76e076c2e56ce58cb2cd4b74",
       "eager_replay": {
@@ -594,6 +612,10 @@
       "sha256": "f2c37da5496e5b7e876da292f8fcccb67431a3fccf6afa354715f4c638fad177"
     },
     "compiled_repaired_gradient_probe_file": "peri_norm_repaired_compiled_gradient_probe.json",
+    "confirmation_audit_source": {
+      "path": "runs/recall-ablation/confirmation_audit_replay.py",
+      "sha256": "68586ca16edda82183a12aa29a938eed4d55668a83335c452d8b63d3a9b43107"
+    },
     "confirmation_guard_tests_passed": 15,
     "eager_endpoint_replay": "exact counts; sources and sampler state verified",
     "embedding_norm_endpoint_audit": {
@@ -690,15 +712,26 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 872,
+    "full_domain_application_tests_passed": 896,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": "e7994eb",
+    "full_suite_validation_command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -m pytest -q tests/diff_gpt/domain tests/diff_gpt/application",
+    "full_suite_validation_commit": "01f18f86787511279fe52fe41883495fce0e3105",
     "full_suite_validation_source_sha256": {
-      "research/recall_ablation/features.py": "3c39cb6ee089c701ce7b808ed0b1bdd47707cffee3db9b636d8f0f45bbe74db8",
-      "src/diff_gpt/domain/model/centered_mini.py": "a2f98da8a4fbe5d4e28acdde3e4f0970e76224ec6c2e9c47e5997ab261a886e1",
-      "src/diff_gpt/domain/model/gpt.py": "81a9e534112cb6eb1e236116209af6f5a9c03870731976a3ebc0686a8d41a9a3",
+      "research/recall_ablation/confirm.py": "be683ab72ff90bbd467127a979371117df2ddb848e9ce9d60d7b7c917376972e",
+      "research/recall_ablation/features.py": "448e5690715feb608c6cbebf321fe70161abc3ff1b526e8354ff79d78e9e05e1",
+      "research/recall_ablation/run.py": "df53364d5f24338df730be5564af781ba954b96eb0087dc0f822e48eb184de27",
+      "src/diff_gpt/application/mqar.py": "60880ea224b61f8b292298ba717ba67efad1a5edf852e8a2afa46a0068311875",
+      "src/diff_gpt/domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+      "src/diff_gpt/domain/model/centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d",
+      "src/diff_gpt/domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+      "src/diff_gpt/domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+      "src/diff_gpt/domain/model/mha.py": "65045c01bc1819597b3d3f19ada6cf8277cbdcd2d1466bc1376b4e30ded0aa88",
       "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
-      "tests/diff_gpt/application/test_recall_features.py": "a47ae6c3f189a325c360e41d353dcae7ef16106adb64dd993068fbf32bb7433c"
+      "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+      "src/diff_gpt/domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba",
+      "src/diff_gpt/domain/optimizer/schedule_free.py": "e9946bcc2c94bc2b13b501e3ec8ed8f00ffbbc40b7956cab21fb901bd4129008",
+      "tests/diff_gpt/application/test_recall_confirmation.py": "65d1027ac00bd29b9da182f01d1040c817e0ce1d99269c52294dced194dca4bc",
+      "tests/diff_gpt/application/test_recall_features.py": "10e91976fe0d7e90b48adcffc69bd0da15109d83786add2b779d04851ef294ab"
     },
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",
@@ -715,6 +748,29 @@
         "rewritten_queries": 2714,
         "superseded_value_predictions": 209,
         "unchanged_correct": 80,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
+    "prefix_stable_seed0_endpoint_audit": {
+      "checkpoint_sha256": "03ae567653ae7462f05f7865f880b0090998200dbc1651148d10205265398e9a",
+      "eager_replay": {
+        "exact": 508,
+        "queries": 4096,
+        "queries_correct": 4092,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2712,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 1,
+        "unchanged_correct": 1380,
         "unchanged_queries": 1382
       },
       "optimizer_steps_match": true,
@@ -746,6 +802,30 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
+    "prefix_stable_seed2_endpoint_audit": {
+      "checkpoint_sha256": "ca3b4bd83c40ee87ffeeb56632828c05267f05b9de9aef019256c14f42c89247",
+      "eager_replay": {
+        "exact": 508,
+        "queries": 4096,
+        "queries_correct": 4092,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2713,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 1,
+        "unchanged_correct": 1379,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
+    "public_gpt_matches_confirmed_factory_initialization_rng_and_prefix_outputs": true,
     "qk_rms_endpoint_audit": {
       "checkpoint_sha256": "f1687396c0257efdfbf03312fdc9b61764f98fcab8072262f25ec452559e0052",
       "eager_replay": {

@@ -1,0 +1,104 @@
+{
+  "algorithm_equivalence_file": "confirmation_training_equivalence.json",
+  "all_three_seeds_passed": true,
+  "checkpoint_replays_and_latest_value_oracles_verified": true,
+  "compiled": true,
+  "confirmation_driver_commit": "a2764d8e0941372808a292e14092ff1fe908ff9c",
+  "criterion": {
+    "evaluate_every": 50,
+    "max_updates": 3000,
+    "target_sequence_accuracy": 0.99
+  },
+  "fixed_data_seed": 1,
+  "frozen_reference_model_and_data_sources_verified": true,
+  "limitations": "Three model/shuffle seeds on the same fixed train/validation streams. CPU compiled embedding gradients have measured small nondeterminism; this is a finite 3000-update confirmation, without final-test access.",
+  "optimizer": "ordinary torch.optim.AdamW",
+  "public_model_commit": "01f18f86787511279fe52fe41883495fce0e3105",
+  "public_model_equivalence": "Exact initialization, RNG state and repeated-prefix outputs match the confirmed factory; domain/application suite passes.",
+  "results": [
+    {
+      "audit_file": "prefix_stable_seed0_audit.json",
+      "driver_commit": "a2764d8e0941372808a292e14092ff1fe908ff9c",
+      "exact": 508,
+      "first99": 2550,
+      "history_file": "prefix_stable_seed0_history.jsonl",
+      "initial_parameters_sha256": "b56439553f2435608e752c7b6be5fd89bd621649b2a49bba8800b4a3d7e927a3",
+      "latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2712,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 1,
+        "unchanged_correct": 1380,
+        "unchanged_queries": 1382
+      },
+      "queries": 4096,
+      "queries_correct": 4092,
+      "result_file": "prefix_stable_seed0.json",
+      "role": "fresh_seed_confirmation",
+      "seed": 0,
+      "sequence_accuracy": 0.9921875,
+      "sequences": 512,
+      "status": "passed",
+      "token_accuracy": 0.9990234375
+    },
+    {
+      "audit_file": "prefix_stable_seed1_audit.json",
+      "driver_commit": "a6a39b3f0428c9f8a148cfd74d9b322d8d2a25e1",
+      "exact": 511,
+      "first99": 2600,
+      "history_file": "prefix_stable_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2714,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 0,
+        "unchanged_correct": 1381,
+        "unchanged_queries": 1382
+      },
+      "queries": 4096,
+      "queries_correct": 4095,
+      "result_file": "prefix_stable_seed1.json",
+      "role": "feature_screen_reference",
+      "seed": 1,
+      "sequence_accuracy": 0.998046875,
+      "sequences": 512,
+      "status": "passed",
+      "token_accuracy": 0.999755859375
+    },
+    {
+      "audit_file": "prefix_stable_seed2_audit.json",
+      "driver_commit": "a2764d8e0941372808a292e14092ff1fe908ff9c",
+      "exact": 508,
+      "first99": 2650,
+      "history_file": "prefix_stable_seed2_history.jsonl",
+      "initial_parameters_sha256": "f436052c1866d80cf1f32066e609f8d2beea2d96115612ed5f6a6e3d4e5f58c9",
+      "latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2713,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 1,
+        "unchanged_correct": 1379,
+        "unchanged_queries": 1382
+      },
+      "queries": 4096,
+      "queries_correct": 4092,
+      "result_file": "prefix_stable_seed2.json",
+      "role": "fresh_seed_confirmation",
+      "seed": 2,
+      "sequence_accuracy": 0.9921875,
+      "sequences": 512,
+      "status": "passed",
+      "token_accuracy": 0.9990234375
+    }
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "stage": "prefix-stable",
+  "status": "passed",
+  "test_loaded": false,
+  "threads": 4
+}
