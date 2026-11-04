@@ -52,6 +52,21 @@ def collect(root: Path) -> dict:
                 row["final_test"] = result["final_test"]
                 row["result_path"] = str(directory / "result.json")
                 row["audit_available"] = (directory / "audit.json").exists()
+                if row["audit_available"]:
+                    replay = json.loads((directory / "audit.json").read_text())
+                    values = replay["replayed"]["validation"]
+                    row["cpu_primary_metric"] = metric(spec, values)
+                    row["endpoint_target_decision_reproduced"] = (
+                        row["cpu_primary_metric"] >= spec.target
+                    ) == row["final_target_met"]
+                    if (
+                        "correct" in values
+                        and "correct" in result["endpoint"]["validation"]
+                    ):
+                        row["cpu_correct_count_delta"] = (
+                            values["correct"]
+                            - result["endpoint"]["validation"]["correct"]
+                        )
                 row["model_source_reference"] = result["metadata"].get(
                     "model_source_reference"
                 )
@@ -87,6 +102,12 @@ def collect(root: Path) -> dict:
         "transient_crossings": sum(
             row["status"] == "passed" and not row["final_target_met"] for row in rows
         ),
+        "audited_endpoints": sum(bool(row.get("audit_available")) for row in rows),
+        "endpoint_target_decision_mismatches": [
+            row["case"]
+            for row in rows
+            if row.get("endpoint_target_decision_reproduced") is False
+        ],
         "families": {key: dict(value) for key, value in families.items()},
         "complete": all(
             row["status"] in {"passed", "budget_exhausted"} for row in rows
@@ -128,6 +149,9 @@ def main() -> None:
         "final_validation",
         "seconds",
         "audit_available",
+        "cpu_primary_metric",
+        "endpoint_target_decision_reproduced",
+        "cpu_correct_count_delta",
     ]
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=fields, extrasaction="ignore")
