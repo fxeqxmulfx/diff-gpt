@@ -42,6 +42,7 @@ SOURCES = (
     "src/diff_gpt/application/mqar.py",
     "research/recall_ablation/run.py",
     "research/recall_ablation/features.py",
+    "research/recall_ablation/confirm.py",
 )
 TASK = MQAR(symbols=256, pairs=16, overwrites=8, queries=8)
 RATE = 3e-4
@@ -74,7 +75,52 @@ def split(name: str, count: int) -> tuple[tuple[torch.Tensor, ...], str]:
     return (tokens, positions, targets), digest
 
 
-def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
+def validate_confirmation(metadata: dict, reference: dict) -> None:
+    """Require a passed, identical architecture/recipe while allowing new seeds."""
+    if (
+        reference.get("status") != "passed"
+        or reference.get("first99") is None
+        or metadata["stage"] != reference.get("stage")
+    ):
+        msg = "confirmation requires a passed reference for the same stage"
+        raise ValueError(msg)
+    if metadata["batch_seed"] != metadata["seed"] + 10_000:
+        msg = "confirmation batch_seed must remain model seed + 10000"
+        raise ValueError(msg)
+    seed_specific = {
+        "seed",
+        "batch_seed",
+        "initial_parameters_sha256",
+        "parent_initial_parameters_sha256",
+        "historical_initial_parameters_sha256",
+        "shared_non_mlp_initial_sha256",
+        "git_commit",
+        "sources",
+    }
+    for field, value in metadata.items():
+        if field not in seed_specific and (
+            field not in reference or value != reference[field]
+        ):
+            msg = f"confirmation changes the accepted reference's {field}"
+            raise ValueError(msg)
+    for name, digest in reference["sources"].items():
+        # Only this driver changes to add the confirmation eligibility branch.
+        # Model, data, feature builder and optimizer sources must stay exact.
+        if (
+            name != "research/recall_ablation/run.py"
+            and metadata["sources"].get(name) != digest
+        ):
+            msg = f"confirmation changes model/data source {name}"
+            raise ValueError(msg)
+
+
+def run(
+    args: argparse.Namespace,
+    seed: int,
+    data: dict,
+    *,
+    confirmation_reference: dict | None = None,
+) -> dict:
     """Run one fresh, matched seed; save full state at its endpoint."""
     directory = args.output / args.stage / f"seed{seed}"
     directory.mkdir(parents=True, exist_ok=False)
@@ -149,7 +195,20 @@ def run(args: argparse.Namespace, seed: int, data: dict) -> dict:
         "split_fingerprints": data["fingerprints"],
         "test_loaded": False,
     }
-    if args.stage != "baseline":
+    if confirmation_reference is not None:
+        validate_confirmation(metadata, confirmation_reference)
+        metadata["experiment_role"] = "fresh_seed_confirmation"
+        metadata["confirmation_reference"] = {
+            "stage": confirmation_reference["stage"],
+            "seed": confirmation_reference["seed"],
+            "first99": confirmation_reference["first99"],
+            "result_path": confirmation_reference.get("_result_path"),
+            "result_sha256": confirmation_reference.get("_result_sha256"),
+            "training_signature_sha256": confirmation_reference.get(
+                "_training_signature_sha256"
+            ),
+        }
+    elif args.stage != "baseline":
         baseline = json.loads(
             (args.output / "baseline" / f"seed{seed}" / "result.json").read_text()
         )

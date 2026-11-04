@@ -13,7 +13,8 @@ fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
 The XSA clipping threshold 1e-12 and centered projection pass and are retained.
 Explicit zeroing of the first global attention position also passes and is
-retained. The active final feature screen is repeated-prefix stabilization.
+retained. The final repeated-prefix screen also passes. Fresh-seed confirmation
+is next; the public default retains `first-zero` until that validation completes.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -25,6 +26,7 @@ retained. The active final feature screen is repeated-prefix stabilization.
 | XSA clipping threshold 1e-12 | 2,650 | 99.02% |
 | Centered XSA with the same threshold | 2,400 | 99.02% |
 | Explicit first global attention zero | 2,800 | 99.22% |
+| Guarded repeated-prefix stabilization | 2,600 | 99.80% |
 
 The compiled CPU embedding backward is not bitwise deterministic: repeated
 identical calls on the same unchanged model differ by up to 2.24e-8 in the
@@ -168,7 +170,7 @@ overwritten-key answers, 1,379/1,382 unchanged-key answers and no stale-value
 predictions. Source hashes, sampler/optimizer state and observation cadence
 verify. Complete evidence is retained as `results/first_zero_seed1*`.
 
-## Active final feature screen: repeated-prefix stabilization
+## Passed final feature screen: repeated-prefix stabilization
 
 The `prefix-stable` candidate starts from the passing `first-zero` parent
 (first 99% at 2,800). For uncached full-context calls it shares each constant
@@ -192,6 +194,39 @@ the feature screens; this run does not load final-test data.
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage prefix-stable --seeds 1 --max-updates 3000
 ```
+
+**The final feature passed at 2,600 updates:** 511/512 exact sequences (99.80%)
+and 4,095/4,096 correct queries (99.98%). Independent eager replay agrees:
+all 2,714 overwritten-key answers are correct, 1,381/1,382 unchanged-key
+answers are correct, and no stale values are predicted. Source, sampler,
+optimizer and cadence checks pass. Portable evidence is retained as
+`results/prefix_stable_seed1*`.
+
+## Final architecture confirmation
+
+`confirm.py` repeats the passed `prefix-stable` architecture from fresh model
+seeds 0 and 2, alongside the existing seed-1 screen. It uses the original
+training/evaluation loop, native AdamW and the exact same 3,000-update budget,
+data fingerprints, thread count, compiler setting, architecture and model/data
+source files. Only the model initialization and its seed-derived shuffle
+change. It does not require or fabricate per-feature parent runs for the new
+seeds. This is architecture confirmation rather than another feature ablation.
+
+Eligibility and provenance handling were extended in `run.py`; an AST
+fingerprint verifies that the imports, task/training constants, split builder,
+model/optimizer/loss/compiler/sampler setup, update loop and endpoint handling
+match the frozen accepted driver. Recipe and source guards must pass before
+training. The model files stay frozen through both confirmations, and the
+model is never initialized from the reference checkpoint. Each requested seed
+is evaluated within its own fixed budget; no further feature work follows.
+No final-test data are accessed.
+
+```bash
+.venv/bin/python -m research.recall_ablation.confirm --seeds 0 2
+```
+
+Confirmations require the model/data source revision of their reference;
+use the recorded confirmation-driver commit to repeat this frozen cohort.
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 
