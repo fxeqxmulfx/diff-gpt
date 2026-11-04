@@ -50,6 +50,15 @@ def collect(root: Path) -> dict:
                 row["final_validation"] = metric(spec, result["endpoint"]["validation"])
                 row["final_train"] = metric(spec, result["endpoint"]["train"])
                 row["final_test"] = result["final_test"]
+                if "final_extra" in result:
+                    extra = result["final_extra"]
+                    row["final_extra"] = extra
+                    if extra.get("applicable"):
+                        row["forecast_origins"] = extra["origins"]
+                        for model_name, scores in extra.get("scores", {}).items():
+                            row["forecast_" + model_name + "_mse"] = scores[
+                                "train_normalized"
+                            ]["mse"]
                 row["result_path"] = str(directory / "result.json")
                 row["audit_available"] = (directory / "audit.json").exists()
                 if row["audit_available"]:
@@ -152,6 +161,10 @@ def main() -> None:
         "cpu_primary_metric",
         "endpoint_target_decision_reproduced",
         "cpu_correct_count_delta",
+        "forecast_origins",
+        "forecast_current_gpt_mse",
+        "forecast_persistence_mse",
+        "forecast_seasonal_naive_mse",
     ]
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=fields, extrasaction="ignore")
