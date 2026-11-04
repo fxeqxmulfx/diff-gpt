@@ -66,3 +66,28 @@ class CenteredQKAttention(LowEpsilonQKAttention):
             valid = (own_value[:, :, 0].norm(dim=-1) > self.xsa_epsilon).all(dim=1)
             return output, valid
         return output
+
+
+class FirstZeroQKAttention(CenteredQKAttention):
+    """Force the first global attention output and its direct gradient to zero."""
+
+    def forward(
+        self,
+        value: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+        kv_cache: KVCache | None = None,
+        *,
+        return_guard: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        """Zero the first global position, including a cached prefill."""
+        starts_at_zero = kv_cache is None or kv_cache.get_pos() == 0
+        result = super().forward(value, cos, sin, kv_cache, return_guard=return_guard)
+        if return_guard:
+            output, guard = result
+        else:
+            output = result
+        if starts_at_zero:
+            # The bias-free finite linear projection commutes with zeroing.
+            output[:, 0] = 0
+        return (output, guard) if return_guard else output

@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from diff_gpt.domain.model.centered_mini import CenteredQKAttention
+from diff_gpt.domain.model.centered_mini import (
+    CenteredQKAttention,
+    FirstZeroQKAttention,
+)
 from diff_gpt.domain.model.gpt import GPTMini
 from diff_gpt.domain.model.mini_block import (
     LowEpsilonQKAttention,
@@ -39,6 +42,7 @@ ARCHITECTURE_STAGES = (
     "rms-epsilon",
     "xsa-epsilon",
     "centered-xsa",
+    "first-zero",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -55,24 +59,13 @@ PREDECESSOR = {
     "rms-epsilon": "fixed-temperature",
     "xsa-epsilon": "rms-epsilon",
     "centered-xsa": "xsa-epsilon",
+    "first-zero": "centered-xsa",
 }
-QK_RMS_STAGES = {
-    "qk-rms",
-    "fixed-temperature",
-    "sdpa",
-    "rms-epsilon",
-    "xsa-epsilon",
-    "centered-xsa",
-}
-FIXED_TEMPERATURE_STAGES = {
-    "fixed-temperature",
-    "sdpa",
-    "rms-epsilon",
-    "xsa-epsilon",
-    "centered-xsa",
-}
-NATIVE_EPSILON_STAGES = {"rms-epsilon", "xsa-epsilon", "centered-xsa"}
-LOW_XSA_EPSILON_STAGES = {"xsa-epsilon", "centered-xsa"}
+CENTERED_STAGES = {"centered-xsa", "first-zero"}
+LOW_XSA_EPSILON_STAGES = {"xsa-epsilon", *CENTERED_STAGES}
+NATIVE_EPSILON_STAGES = {"rms-epsilon", *LOW_XSA_EPSILON_STAGES}
+FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa", *NATIVE_EPSILON_STAGES}
+QK_RMS_STAGES = {"qk-rms", *FIXED_TEMPERATURE_STAGES}
 
 
 def raw_parameter_digest(model: nn.Module) -> str:
@@ -161,8 +154,10 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             attention = SDPAQKAttention if stage == "sdpa" else RMSQKAttention
             if stage in LOW_XSA_EPSILON_STAGES:
                 attention = LowEpsilonQKAttention
-            if stage == "centered-xsa":
+            if stage in CENTERED_STAGES:
                 attention = CenteredQKAttention
+            if stage == "first-zero":
+                attention = FirstZeroQKAttention
             block.sa = attention(block.sa)
         repaired_sites += 2 * model.n_layer
         features.append("per-head QK RMS normalization with learned temperature")
@@ -191,8 +186,10 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
             raise RuntimeError(msg)
     if stage in LOW_XSA_EPSILON_STAGES:
         features.append("XSA clipping epsilon 1e-12")
-    if stage == "centered-xsa":
+    if stage in CENTERED_STAGES:
         features.append("centered XSA projection")
+    if stage == "first-zero":
+        features.append("exact zero at first global attention position")
     residual_scale = 1.0
     if stage == "residual-scale":
         residual_scale = (2 * model.n_layer) ** -0.5
@@ -242,8 +239,9 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         "repaired_rms_sites": repaired_sites,
         "xsa_epsilon": model.blocks[0].sa.xsa_epsilon,
         "xsa_projection": "centered"
-        if stage == "centered-xsa"
+        if stage in CENTERED_STAGES
         else "ordinary subtraction",
+        "first_position_forced_zero": stage == "first-zero",
         "qk_normalization": (
             "repaired per-head RMS" if stage in QK_RMS_STAGES else "unit L2"
         ),

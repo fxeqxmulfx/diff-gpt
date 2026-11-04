@@ -12,7 +12,7 @@ Head temperatures are fixed at their initial values. Fused SDPA missed its
 fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
 The XSA clipping threshold 1e-12 and centered projection pass and are retained.
-The next candidate explicitly zeros attention at the first global position.
+The active candidate explicitly zeros attention at the first global position.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -136,6 +136,28 @@ allowed CPUs (0, 2, 4, 6). Model/data/optimizer/thread-count settings stayed
 fixed. These scheduling interventions and system load make wall-clock
 comparisons inappropriate. A retrospective session note records the runtime
 details; the model source snapshots and trained state are complete.
+
+## Active screen: exact zero at the first attention position
+
+The `first-zero` candidate starts from the passed `centered-xsa` parent
+(first 99% at 2,400). It explicitly sets the first global attention output
+to zero, even when the own value is below the clipping threshold. This is
+separate from centered evaluation, which preserves the clipped own-value
+remainder. The bias-free finite output projection commutes with zeroing,
+so the shared attention path is reused and its projected first row is zeroed.
+Later positions and cached calls after global position zero are preserved.
+
+All parameters, fixed head temperatures and RNG stay identical. Centering,
+1e-12 clipping, native-epsilon repaired RMS, explicit attention, ordinary
+AdamW and the same task/sampler/budget remain. Repeated-prefix stabilization
+is still a later feature. Checks cover parameter/buffer isolation, exact
+first output and gradient zeros with tiny values, unchanged later outputs,
+token/chunk decoding and compiled training gradients. Public GPT keeps the
+passed centered implementation until this candidate passes.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage first-zero --seeds 1 --max-updates 3000
+```
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 

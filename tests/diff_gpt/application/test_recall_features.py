@@ -58,6 +58,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "rms-epsilon",
         "xsa-epsilon",
         "centered-xsa",
+        "first-zero",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -577,10 +578,11 @@ def test_centered_xsa_cache_and_guard_match_full_predictions() -> None:
         assert guard.all()
 
 
-def test_centered_xsa_compiles_with_matching_parameter_gradients() -> None:
+@pytest.mark.parametrize("stage", ["centered-xsa", "first-zero"])
+def test_xsa_candidates_compile_with_matching_parameter_gradients(stage: str) -> None:
     """Check the fullgraph training path before launching a numerical ablation."""
-    eager, _ = build_model("centered-xsa", 1)
-    compiled_model, _ = build_model("centered-xsa", 1)
+    eager, _ = build_model(stage, 1)
+    compiled_model, _ = build_model(stage, 1)
     tokens = torch.randint(548, (2, 8))
     positions = torch.tensor([[4, 7], [5, 7]])
     targets = torch.randint(548, (2, 2))
@@ -601,3 +603,71 @@ def test_centered_xsa_compiles_with_matching_parameter_gradients() -> None:
         eager.named_parameters(), compiled_model.named_parameters(), strict=True
     ):
         assert_close(changed.grad, original.grad, rtol=2e-4, atol=2e-6, msg=name)
+
+
+def test_first_zero_keeps_all_passing_parameters_and_settings() -> None:
+    """The extra zeroing adds no parameters, random draws or other norm changes."""
+    parent, _ = build_model("centered-xsa", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("first-zero", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert_close(
+        dict(candidate.named_buffers()), dict(parent.named_buffers()), rtol=0, atol=0
+    )
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert metadata["parent_stage"] == "centered-xsa"
+    assert metadata["first_position_forced_zero"] is True
+    assert metadata["xsa_epsilon"] == MODERN_XSA_EPS
+    assert metadata["xsa_projection"] == "centered"
+    assert metadata["dense_attention"] == "explicit causal softmax"
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["forward_residual_scale"] == 1.0
+    tokens = torch.randint(548, (2, 8))
+    assert_close(candidate(tokens)[0], parent(tokens)[0], rtol=0, atol=0)
+
+
+def test_first_zero_removes_clipped_remainder_and_its_direct_gradient() -> None:
+    """Use tiny values to distinguish explicit zeroing from the centered parent."""
+    parent, _ = build_model("centered-xsa", 1)
+    candidate, _ = build_model("first-zero", 1)
+    parent.double()
+    candidate.double()
+    with torch.no_grad():
+        for model in (parent, candidate):
+            model.blocks[0].sa.c_attn.weight[2 * model.n_embd :].mul_(1e-14)
+    value = torch.randn(2, 4, candidate.n_embd, dtype=torch.float64, requires_grad=True)
+    old = parent.blocks[0].sa(value, parent.rope_cos[:4], parent.rope_sin[:4])
+    actual, guard = candidate.blocks[0].sa(
+        value, candidate.rope_cos[:4], candidate.rope_sin[:4], return_guard=True
+    )
+    assert torch.count_nonzero(old[:, 0])
+    assert not torch.count_nonzero(actual[:, 0])
+    assert not guard.any()
+    assert_close(actual[:, 1:], old[:, 1:], rtol=0, atol=0)
+    gradient = torch.autograd.grad(actual[:, 0].sum(), value)[0]
+    assert not torch.count_nonzero(gradient)
+
+
+def test_first_zero_cache_preserves_later_positions_and_chunk_continuation() -> None:
+    """A cached call after position zero must keep its attention output."""
+    model, _ = build_model("first-zero", 1)
+    model.eval()
+    tokens = torch.randint(548, (2, 8))
+    with torch.no_grad():
+        expected = model(tokens)[0]
+        for chunks in ([1] * 8, [3, 2, 3]):
+            cache = KVCache(
+                batch_size=2, num_heads=4, seq_len=64, head_dim=32, num_layers=6
+            )
+            position, parts = 0, []
+            for length in chunks:
+                parts.append(
+                    model(tokens[:, position : position + length], kv_cache=cache)[0]
+                )
+                position += length
+            assert_close(torch.cat(parts, 1), expected, rtol=1e-5, atol=1e-5)
