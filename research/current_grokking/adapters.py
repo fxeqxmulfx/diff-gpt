@@ -293,6 +293,9 @@ class RecurrenceTask(DenseTask):
             "decoded_accuracy": decoded / count,
             "token_accuracy": field / count,
             "native_token_accuracy": native / count,
+            "correct": int(decoded),
+            "field_correct": int(field),
+            "native_correct": int(native),
             "examples": int(count),
         }
 
@@ -501,6 +504,9 @@ class SeriesTask(DenseTask):
             for key in keys
         }
         result["columns"] = columns
+        result["examples"] = len(rows)
+        result["correct"] = int(sum(values[1] for values in sums))
+        result["targets"] = int(sum(values[7] for values in sums))
         return result
 
 

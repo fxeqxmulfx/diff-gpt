@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import torch
@@ -46,6 +47,7 @@ def audit(directory: Path) -> dict:
         "validation": stepper.evaluate(task.selection),
     }
     exact_counts = {}
+    numeric_checks = {}
     for name, metrics in measured.items():
         original = result["endpoint"][name]
         for key in (
@@ -55,9 +57,31 @@ def audit(directory: Path) -> dict:
             "examples",
             "example_count",
             "target_count",
+            "field_correct",
+            "native_correct",
         ):
             if key in metrics and key in original:
                 exact_counts[f"{name}.{key}"] = metrics[key] == original[key]
+        for key in (
+            "loss",
+            "sequence_accuracy",
+            "token_accuracy",
+            "decoded_accuracy",
+            "native_token_accuracy",
+            "accuracy",
+            "skill",
+            "relative_ce_gain",
+            "mse",
+            "mae",
+            "bayes_loss",
+        ):
+            if key in metrics and key in original:
+                first, second = metrics[key], original[key]
+                numeric_checks[f"{name}.{key}"] = (
+                    first is None and second is None
+                    if first is None or second is None
+                    else math.isclose(first, second, rel_tol=1e-5, abs_tol=1e-7)
+                )
     sampler = EpochSampler(
         len(task.splits["train"]), case.batch, wrap=False, seed=metadata["batch_seed"]
     )
@@ -101,6 +125,9 @@ def audit(directory: Path) -> dict:
         "exact_count_checks": exact_counts,
         "exact_count_checks_available": bool(exact_counts),
         "all_exact_counts_match": all(exact_counts.values()) if exact_counts else None,
+        "numeric_metric_checks": numeric_checks,
+        "all_numeric_metrics_close": all(numeric_checks.values()),
+        "numeric_metric_tolerance": {"relative": 1e-5, "absolute": 1e-7},
         "sampler_replay_matches": sampling_matches,
         "optimizer_steps_match": optimizer_matches,
         "source_snapshot_hashes_match": sources_match,
