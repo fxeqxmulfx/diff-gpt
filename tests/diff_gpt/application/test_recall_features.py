@@ -76,9 +76,10 @@ def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
         assert torch.count_nonzero(parameter.grad), name
 
 
-def test_public_gpt_is_the_passing_first_zero_candidate() -> None:
+def test_public_gpt_is_the_passing_prefix_stable_candidate() -> None:
     """Promotion preserves the exact architecture and tested initialization."""
-    candidate, _ = build_model("first-zero", 1)
+    candidate, _ = build_model("prefix-stable", 1)
+    candidate_rng = torch.get_rng_state().clone()
     torch.manual_seed(1)
     model = GPT(
         548,
@@ -89,8 +90,11 @@ def test_public_gpt_is_the_passing_first_zero_candidate() -> None:
         pad_vocab_size_to=1,
         use_checkpoint=False,
     )
+    assert isinstance(model, PrefixStableGPT)
+    assert torch.equal(torch.get_rng_state(), candidate_rng)
     assert_close(model.state_dict(), candidate.state_dict(), rtol=0, atol=0)
     tokens = torch.randint(548, (2, 8))
+    tokens[:, :4] = tokens[:, :1].clone()
     assert_close(model(tokens)[0], candidate(tokens)[0], rtol=0, atol=0)
     norms = [
         module for module in model.modules() if isinstance(module, RepairedRMSNorm)

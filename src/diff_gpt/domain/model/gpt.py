@@ -346,8 +346,8 @@ class PrefixStableGPT(GPTMini):
         return logits, loss
 
 
-class GPT(GPTMini):
-    """Passing repaired-RMS GPTMini with centered XSA and explicit first zero."""
+class GPT(PrefixStableGPT):
+    """Three-seed confirmed GPTMini with all passing recall features."""
 
     def __init__(
         self,
@@ -362,7 +362,7 @@ class GPT(GPTMini):
         rope_base: float = 10_000.0,
     ) -> None:
         """Keep historical weights and install the passing recall features."""
-        super().__init__(
+        model = GPTMini(
             vocab_size=vocab_size,
             n_embd=n_embd,
             block_size=block_size,
@@ -372,9 +372,10 @@ class GPT(GPTMini):
             pad_vocab_size_to=pad_vocab_size_to,
             rope_base=rope_base,
         )
-        initialize_swiglu(self.blocks, n_embd)
-        repair_rms_backward(self, n_embd)
-        for block in self.blocks:
+        initialize_swiglu(model.blocks, n_embd)
+        repair_rms_backward(model, n_embd)
+        for block in model.blocks:
             block.sa = FirstZeroQKAttention(block.sa)
             fix_qk_temperature(block.sa)
-        use_native_rms_epsilon(self)
+        use_native_rms_epsilon(model)
+        super().__init__(model)
