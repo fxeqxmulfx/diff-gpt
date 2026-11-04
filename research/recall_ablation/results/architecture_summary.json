@@ -5,17 +5,18 @@
     "per-head QK RMS normalization with fixed temperature",
     "native dtype epsilon at input/final RMS sites",
     "XSA clipping epsilon 1e-12",
-    "centered XSA projection"
+    "centered XSA projection",
+    "exact zero at first global attention position"
   ],
   "accepted_model_commit": "be062a7",
-  "active_stage": "first-zero",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain the passing centered-XSA model. Test explicit first-position attention zeroing only, with ordinary AdamW and all accepted settings; stop at the next fast-screen miss.",
+  "decision": "Retain explicit first-position zeroing after its verified 2800-update pass. Next isolate repeated-prefix stabilization with ordinary AdamW and all accepted settings.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -27,6 +28,9 @@
     "embedding_norm_seed1.json": "caaa1c5017649c112ba9823cef3e36280aae45bcadf1950a1e47e672a6a44f8e",
     "embedding_norm_seed1_audit.json": "ae02876fadfa0e9d7c7a47353dd76672d75e1eefa1cdb4c1b0b644f9fae5c647",
     "embedding_norm_seed1_history.jsonl": "0666a8d81e0a30aea1d3e04edbb75d70bddbd33e17c8cd721cf842850c64fce9",
+    "first_zero_seed1.json": "aec9c040bf8dda2e575cf41f7d44e2a1be1cb18a1cf91b337c1ae98c058be377",
+    "first_zero_seed1_audit.json": "af2e1273201c0be20c02c8d02259c33a18cea9d852a1a5e88fa4a341be24d0f4",
+    "first_zero_seed1_history.jsonl": "7b140a5a96431c4312725982ad6778d9dd6cfa57a31be79b9620f4743afa1438",
     "fixed_temperature_seed1.json": "17836bc4d510c5abb1f1d8d383bffb75c67047f1b267ead6d4e38fc9ec12ec06",
     "fixed_temperature_seed1_audit.json": "60237a64f233f82c19c275015e466bc45bf2306cf467f68a8e70cd29d91ce1bb",
     "fixed_temperature_seed1_history.jsonl": "37c4618bc333909a6b3a5d0b7f46c960148a7feae4ea0486a5d2244de20488f9",
@@ -86,10 +90,9 @@
   ],
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
-  "next_feature": "exact zero attention output at first position",
+  "next_feature": "repeated-prefix stabilization",
   "next_feature_if_resumed": "repeated-prefix stabilization",
   "not_tested_after_stop": [
-    "exact zero attention output at first position (active)",
     "repeated-prefix stabilization"
   ],
   "optimizer": "ordinary torch.optim.AdamW throughout",
@@ -478,15 +481,39 @@
       "status": "passed",
       "xsa_epsilon": 1e-12,
       "xsa_projection": "centered"
+    },
+    {
+      "audit_file": "first_zero_seed1_audit.json",
+      "completed": 2800,
+      "correct_queries": 4092,
+      "dense_attention": "explicit causal softmax",
+      "exact": 508,
+      "first99": 2800,
+      "first_position_forced_zero": true,
+      "history_file": "first_zero_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "input_and_final_epsilon": "native dtype epsilon",
+      "learned_attention_temperature": false,
+      "parameters": 1249024,
+      "parent": "centered-xsa",
+      "parent_initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "first_zero_seed1.json",
+      "sequences": 512,
+      "stage": "first-zero",
+      "status": "passed",
+      "xsa_epsilon": 1e-12,
+      "xsa_projection": "centered"
     }
   ],
-  "status": "centered XSA passed; screening explicit first-position zeroing",
+  "status": "explicit first zero passed; preparing repeated-prefix stabilization",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
-    "archived_evidence_hashes_verified": 45,
+    "archived_evidence_hashes_verified": 48,
     "centered_xsa_endpoint_audit": {
       "checkpoint_sha256": "19e63bb71ad4f29d854a6e1d261122fb3b38e52a76e076c2e56ce58cb2cd4b74",
       "eager_replay": {
@@ -541,6 +568,29 @@
       "test_loaded": false
     },
     "embedding_norm_preserves_all_parent_parameter_bytes_and_weight_tying": true,
+    "first_zero_endpoint_audit": {
+      "checkpoint_sha256": "59c47aa2313f265f1ce9f1ab1a729e2d687bcc2e753b335d3b066a72ed98119e",
+      "eager_replay": {
+        "exact": 508,
+        "queries": 4096,
+        "queries_correct": 4092,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2713,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 0,
+        "unchanged_correct": 1379,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
     "fixed_temperature_endpoint_audit": {
       "checkpoint_sha256": "10ef7976ffa225df011a6ae646d8ab4617a0fd1cd58d52b011e507364ca6232a",
       "eager_replay": {
@@ -588,15 +638,15 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 867,
+    "full_domain_application_tests_passed": 872,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": "be062a7",
+    "full_suite_validation_commit": null,
     "full_suite_validation_source_sha256": {
-      "research/recall_ablation/features.py": "01a7e1e54da73a3d454d332d3831b591ac2596311128e3e9f8f4a803b79b7c19",
-      "src/diff_gpt/domain/model/centered_mini.py": "ed05922c7c00115d66ccd199e68b86a3cf5a7a1eb05af4925dc0314a3693df5b",
-      "src/diff_gpt/domain/model/gpt.py": "365ebbcc73dbad7fff9d5a1b00e3f4e58ed3c0956d1e95a5e651188828385fb3",
+      "research/recall_ablation/features.py": "3c39cb6ee089c701ce7b808ed0b1bdd47707cffee3db9b636d8f0f45bbe74db8",
+      "src/diff_gpt/domain/model/centered_mini.py": "a2f98da8a4fbe5d4e28acdde3e4f0970e76224ec6c2e9c47e5997ab261a886e1",
+      "src/diff_gpt/domain/model/gpt.py": "81a9e534112cb6eb1e236116209af6f5a9c03870731976a3ebc0686a8d41a9a3",
       "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
-      "tests/diff_gpt/application/test_recall_features.py": "7e1ec4d889f4103500a364189a0e8ecf792e1002b1bb66ab512e1c2507f63c01"
+      "tests/diff_gpt/application/test_recall_features.py": "a47ae6c3f189a325c360e41d353dcae7ef16106adb64dd993068fbf32bb7433c"
     },
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",

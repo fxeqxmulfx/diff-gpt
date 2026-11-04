@@ -12,7 +12,8 @@ Head temperatures are fixed at their initial values. Fused SDPA missed its
 fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
 The XSA clipping threshold 1e-12 and centered projection pass and are retained.
-The active candidate explicitly zeros attention at the first global position.
+Explicit zeroing of the first global attention position also passes and is
+retained. The next feature is repeated-prefix stabilization.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -23,6 +24,7 @@ The active candidate explicitly zeros attention at the first global position.
 | Native dtype input/final RMS epsilon, explicit attention | 1,850 | 99.02% |
 | XSA clipping threshold 1e-12 | 2,650 | 99.02% |
 | Centered XSA with the same threshold | 2,400 | 99.02% |
+| Explicit first global attention zero | 2,800 | 99.22% |
 
 The compiled CPU embedding backward is not bitwise deterministic: repeated
 identical calls on the same unchanged model differ by up to 2.24e-8 in the
@@ -137,7 +139,7 @@ fixed. These scheduling interventions and system load make wall-clock
 comparisons inappropriate. A retrospective session note records the runtime
 details; the model source snapshots and trained state are complete.
 
-## Active screen: exact zero at the first attention position
+## Passed screen: exact zero at the first attention position
 
 The `first-zero` candidate starts from the passed `centered-xsa` parent
 (first 99% at 2,400). It explicitly sets the first global attention output
@@ -152,12 +154,19 @@ All parameters, fixed head temperatures and RNG stay identical. Centering,
 AdamW and the same task/sampler/budget remain. Repeated-prefix stabilization
 is still a later feature. Checks cover parameter/buffer isolation, exact
 first output and gradient zeros with tiny values, unchanged later outputs,
-token/chunk decoding and compiled training gradients. Public GPT keeps the
-passed centered implementation until this candidate passes.
+token/chunk decoding and compiled training gradients. Public GPT now matches
+the passing `first-zero` candidate.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage first-zero --seeds 1 --max-updates 3000
 ```
+
+**Explicit first zero passed at 2,800 updates:** 508/512 exact sequences
+(99.22%) and 4,092/4,096 correct queries (99.90%). The centered parent
+crosses at 2,400. Independent eager replay matches, with 2,713/2,714 correct
+overwritten-key answers, 1,379/1,382 unchanged-key answers and no stale-value
+predictions. Source hashes, sampler/optimizer state and observation cadence
+verify. Complete evidence is retained as `results/first_zero_seed1*`.
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 

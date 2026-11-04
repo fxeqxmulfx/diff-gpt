@@ -75,9 +75,9 @@ def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
         assert torch.count_nonzero(parameter.grad), name
 
 
-def test_public_gpt_is_the_passing_centered_xsa_candidate() -> None:
+def test_public_gpt_is_the_passing_first_zero_candidate() -> None:
     """Promotion preserves the exact architecture and tested initialization."""
-    candidate, _ = build_model("centered-xsa", 1)
+    candidate, _ = build_model("first-zero", 1)
     torch.manual_seed(1)
     model = GPT(
         548,
