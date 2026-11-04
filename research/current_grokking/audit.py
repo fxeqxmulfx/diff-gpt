@@ -79,6 +79,14 @@ def audit(directory: Path) -> dict:
         == expected
         for name, expected in metadata["sources"].items()
     )
+    for resumption in metadata.get("resumptions", []):
+        sources_match &= all(
+            hashlib.sha256(
+                (directory / resumption["directory"] / "source" / name).read_bytes()
+            ).hexdigest()
+            == expected
+            for name, expected in resumption["sources"].items()
+        )
     parameters_finite = all(
         bool(torch.isfinite(parameter).all()) for parameter in model.parameters()
     )
@@ -91,7 +99,8 @@ def audit(directory: Path) -> dict:
         "device": "cpu",
         "replayed": measured,
         "exact_count_checks": exact_counts,
-        "all_exact_counts_match": all(exact_counts.values()),
+        "exact_count_checks_available": bool(exact_counts),
+        "all_exact_counts_match": all(exact_counts.values()) if exact_counts else None,
         "sampler_replay_matches": sampling_matches,
         "optimizer_steps_match": optimizer_matches,
         "source_snapshot_hashes_match": sources_match,
@@ -104,6 +113,7 @@ def audit(directory: Path) -> dict:
         or not optimizer_matches
         or not sources_match
         or not parameters_finite
+        or not report["completed_matches"]
     ):
         message = (
             "Endpoint provenance/state audit failed; details retained in audit.json"

@@ -266,6 +266,17 @@ def run(
         if saved["cuda_rng"] is not None:
             torch.cuda.set_rng_state(saved["cuda_rng"].cpu())
         metadata = saved["metadata"]
+        resumed_sources = directory / f"resume-{time.time_ns()}"
+        metadata.setdefault("resumptions", []).append(
+            {
+                "completed": completed,
+                "directory": resumed_sources.name,
+                "sources": source_snapshot(resumed_sources),
+                "device": device,
+                "compiled_loss": compiled and device == "cuda",
+            }
+        )
+        write(directory / "protocol.json", metadata)
         if (directory / "history.jsonl").exists():
             shutil.copy2(
                 directory / "history.jsonl",
