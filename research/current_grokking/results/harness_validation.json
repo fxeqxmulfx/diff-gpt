@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-04",
+  "model_unchanged": true,
+  "ordinary_adamw": true,
+  "checks": [
+    {
+      "command": "pytest -q tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py -k 'not cuda'",
+      "passed": 14,
+      "deselected": 1
+    },
+    {
+      "command": "pytest -q tests/diff_gpt/application/test_current_grokking.py -k cuda",
+      "passed": 1,
+      "deselected": 8,
+      "details": "Capture restores initial parameters and zero optimizer counters; three public-GPT compiled CUDA updates agree with issued native fused AdamW at rtol 2e-5 / atol 2e-6."
+    },
+    {
+      "command": "pytest -q tests/diff_gpt/application/test_diff_gpt.py",
+      "passed": 33,
+      "skipped": 3
+    },
+    {
+      "command": "pytest -q tests/diff_gpt/domain/model/test_rms_backward.py tests/diff_gpt/application/grokking/test_residual_attention_probe.py",
+      "passed": 12,
+      "skipped": 4
+    },
+    {
+      "check": "CPU data/scorer readiness for every non-arithmetic case",
+      "passed": 111,
+      "details": "Build complete actual datasets; verify ranges and supervision; run fresh public GPT on a small training batch and selected validation examples; require finite loss and declared primary metric. This is not training evidence."
+    },
+    {
+      "check": "Actual CUDA runtime, update, exhaustive train/validation/test scoring and final forecast smoke checks",
+      "passed": 7,
+      "cases": [
+        "recurrence-fibonacci-k1-c2-lgt",
+        "series-weather-k0-c8",
+        "gpt-probe-conditional-amplitudes",
+        "basis-depth-hard",
+        "basis-recall-hard",
+        "suite-parity-running-hints",
+        "fashion-mnist-gpt"
+      ],
+      "details": "One warmup-rate-zero update each, separate /tmp output; excluded from the trained cohort."
+    },
+    {
+      "check": "All numeric probe input prompts disjoint across train/validation/test",
+      "passed": 4
+    },
+    {
+      "check": "Independent CPU replay of complete first-seed arithmetic endpoints, sampler, optimizer counters, archived source hashes",
+      "passed": 54,
+      "exact_count_mismatches": 0
+    },
+    {
+      "check": "ruff check research/current_grokking tests/diff_gpt/application/test_current_grokking*.py",
+      "status": "passed"
+    },
+    {
+      "command": "pytest -q tests/diff_gpt/application/test_current_grokking_adapters.py -k numeric",
+      "passed": 1,
+      "deselected": 5,
+      "details": "Rerun after correcting the fixture to emit the actual EOS token."
+    }
+  ],
+  "scorer_corrections_before_affected_training": [
+    "Use the public MASH-half codec rather than the old integer-grid shortcut.",
+    "Use rolling context for full forecast horizons.",
+    "Penalize invalid or missing numeric generated components.",
+    "Early-EOS regression fixture emits the actual EOS token."
+  ],
+  "limits": "Validation checks alone do not count as successful training or grokking. The 165-case model training cohort has separate result and history records."
+}
