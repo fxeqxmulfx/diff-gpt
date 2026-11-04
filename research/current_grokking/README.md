@@ -4,6 +4,9 @@ The task catalog is [`../grokking_task_inventory.json`](../grokking_task_invento
 This experiment trains fresh instances of the public `diff_gpt.domain.model.gpt.GPT`
 on 165 declared cases with ordinary `torch.optim.AdamW`. It does not change the
 model to repair difficult tasks. One model seed (1) is the initial screen.
+The user subsequently skipped the nine unfinished modular-composition variants;
+three completed composition results and the interrupted run's checkpoint remain.
+Other families retain their declared budgets.
 
 | Family | Cases |
 | --- | ---: |
@@ -70,7 +73,8 @@ eligible origins; generated rows feed the next rolling context.
 .venv/bin/python -m research.current_grokking.report
 ```
 
-The dispatcher skips completed cells and resumes retained checkpoints. JSON/CSV
+The dispatcher skips completed cells and explicit `skipped.json` markers, and
+resumes retained checkpoints. JSON/CSV
 summaries include pending and execution-error cells. Original data dependencies
 are local: `lean_projects/transformer`, the arithmetic task registry under
 `rust_projects/grokking`, the repository's series/text datasets, and the archived
