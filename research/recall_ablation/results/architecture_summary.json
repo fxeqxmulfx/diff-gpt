@@ -4,21 +4,26 @@
     "repaired FP64 radial/tangent RMS backward",
     "per-head QK RMS normalization with fixed temperature",
     "native dtype epsilon at input/final RMS sites",
-    "XSA clipping epsilon 1e-12"
+    "XSA clipping epsilon 1e-12",
+    "centered XSA projection"
   ],
   "accepted_model_commit": "8e7a026",
-  "active_stage": "centered-xsa",
+  "active_stage": null,
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain the passing 1e-12 clipping model. Test centered XSA only, preserving real equations and the below-clipping remainder, with ordinary AdamW and explicit attention; stop at the next fast-screen miss.",
+  "decision": "Retain centered XSA after its verified 2400-update pass; next isolate explicit zeroing at the first global attention position. Keep ordinary AdamW and all passing settings.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
     "baseline_seed1_history.jsonl": "bb9c41c357ece1896da3c454a1f419bf9f344eac67b220c2fded752ee11113e3",
+    "centered_xsa_seed1.json": "73980f76d1b7d60fb7e565244978d108d80920edefb8d41917bb13771849b04d",
+    "centered_xsa_seed1_audit.json": "6cb48b8ccc39710cf1fbabaa0db2659f0d2a3b209e2bd3b3c3c1ec62124e421b",
+    "centered_xsa_seed1_history.jsonl": "6ca3b30ff9738e611cfba5ed9b0e3c398b5e030dbb0cfbbbf17a23256f34b0db",
+    "centered_xsa_seed1_runtime_notes.json": "a72ce1d2fc342c6ce6759d4546b6a1a484c98f6618914b17b083a165027f65fb",
     "embedding_norm_seed1.json": "caaa1c5017649c112ba9823cef3e36280aae45bcadf1950a1e47e672a6a44f8e",
     "embedding_norm_seed1_audit.json": "ae02876fadfa0e9d7c7a47353dd76672d75e1eefa1cdb4c1b0b644f9fae5c647",
     "embedding_norm_seed1_history.jsonl": "0666a8d81e0a30aea1d3e04edbb75d70bddbd33e17c8cd721cf842850c64fce9",
@@ -84,7 +89,6 @@
   "next_feature": "exact zero attention output at first position",
   "next_feature_if_resumed": "exact zero attention output at first position",
   "not_tested_after_stop": [
-    "centered XSA (active)",
     "exact zero attention output at first position",
     "repeated-prefix stabilization"
   ],
@@ -449,15 +453,62 @@
       "stage": "xsa-epsilon",
       "status": "passed",
       "xsa_epsilon": 1e-12
+    },
+    {
+      "audit_file": "centered_xsa_seed1_audit.json",
+      "completed": 2400,
+      "correct_queries": 4091,
+      "dense_attention": "explicit causal softmax",
+      "exact": 507,
+      "first99": 2400,
+      "history_file": "centered_xsa_seed1_history.jsonl",
+      "initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "input_and_final_epsilon": "native dtype epsilon",
+      "learned_attention_temperature": false,
+      "parameters": 1249024,
+      "parent": "xsa-epsilon",
+      "parent_initial_parameters_sha256": "bf430260468e0700fbc802be629f74d5b26bd9dcbcdcafa57113b6bd24942300",
+      "queries": 4096,
+      "repaired_rms_sites": 25,
+      "result_file": "centered_xsa_seed1.json",
+      "runtime_notes_file": "centered_xsa_seed1_runtime_notes.json",
+      "sequences": 512,
+      "stage": "centered-xsa",
+      "status": "passed",
+      "xsa_epsilon": 1e-12,
+      "xsa_projection": "centered"
     }
   ],
-  "status": "XSA clipping passed; screening centered XSA",
+  "status": "centered XSA passed; preparing first-position zeroing",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
       "sha256": "7db430aebd338cb86426b3a50d580a74db61eccd38ab6e8d2c47bf78b18462f3"
     },
-    "archived_evidence_hashes_verified": 41,
+    "archived_evidence_hashes_verified": 45,
+    "centered_xsa_endpoint_audit": {
+      "checkpoint_sha256": "19e63bb71ad4f29d854a6e1d261122fb3b38e52a76e076c2e56ce58cb2cd4b74",
+      "eager_replay": {
+        "exact": 507,
+        "queries": 4096,
+        "queries_correct": 4091,
+        "sequences": 512
+      },
+      "first_crossing_and_cadence_verified": true,
+      "independent_latest_value_oracle": {
+        "queries_checked": 4096,
+        "rewritten_correct": 2712,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 2,
+        "unchanged_correct": 1379,
+        "unchanged_queries": 1382
+      },
+      "optimizer_steps_match": true,
+      "parameters_finite": true,
+      "sampler_replay_matches": true,
+      "source_snapshot_hashes_match": true,
+      "test_loaded": false
+    },
     "compiled_control_probe_file": "xsa_epsilon_compiled_control_probe.json",
     "compiled_control_probe_source": {
       "path": "runs/recall-ablation/xsa_refactor_probe.py",
@@ -536,14 +587,15 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "full_domain_application_tests_passed": 861,
+    "full_domain_application_tests_passed": 867,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": "8e7a026",
+    "full_suite_validation_commit": null,
     "full_suite_validation_source_sha256": {
-      "research/recall_ablation/features.py": "18243e7741224d3ad239b5ef38bb096b6726f9504be17048b81d465b281c430d",
-      "src/diff_gpt/domain/model/gpt.py": "1061bf93776ba4a825c3710e2ce8a32d8e6a73769ad744a6ef64dcec41d59f7b",
+      "research/recall_ablation/features.py": "01a7e1e54da73a3d454d332d3831b591ac2596311128e3e9f8f4a803b79b7c19",
+      "src/diff_gpt/domain/model/centered_mini.py": "ed05922c7c00115d66ccd199e68b86a3cf5a7a1eb05af4925dc0314a3693df5b",
+      "src/diff_gpt/domain/model/gpt.py": "365ebbcc73dbad7fff9d5a1b00e3f4e58ed3c0956d1e95a5e651188828385fb3",
       "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
-      "tests/diff_gpt/application/test_recall_features.py": "01cb6c7f3e284cc90a92c901cbe95ec94f71ebd1183d8fc5a50dce5aca0c38a6"
+      "tests/diff_gpt/application/test_recall_features.py": "7e1ec4d889f4103500a364189a0e8ecf792e1002b1bb66ab512e1c2507f63c01"
     },
     "peri_repaired_endpoint_audit": {
       "checkpoint_sha256": "38d1284d299e9cee9bc99d4f0ac4c7889ce2606cc26306ad0400dac6677b01b9",

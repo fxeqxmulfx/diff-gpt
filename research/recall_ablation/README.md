@@ -11,8 +11,8 @@ norms. Fixed forward residual scaling missed its screen and remains off.
 Head temperatures are fixed at their initial values. Fused SDPA missed its
 fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
-The XSA clipping threshold 1e-12 passes and is retained. The next candidate
-is centered evaluation of the XSA projection (now being screened).
+The XSA clipping threshold 1e-12 and centered projection pass and are retained.
+The next candidate explicitly zeros attention at the first global position.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -22,6 +22,7 @@ is centered evaluation of the XSA projection (now being screened).
 | Replace explicit attention with fused SDPA | Miss by 3,000 | 97.46% (best 98.83%) |
 | Native dtype input/final RMS epsilon, explicit attention | 1,850 | 99.02% |
 | XSA clipping threshold 1e-12 | 2,650 | 99.02% |
+| Centered XSA with the same threshold | 2,400 | 99.02% |
 
 The compiled CPU embedding backward is not bitwise deterministic: repeated
 identical calls on the same unchanged model differ by up to 2.24e-8 in the
@@ -96,7 +97,7 @@ or refactored control; the observed speed difference cannot be attributed
 entirely to clipping from this single run. Public GPT retains all passing
 features and ordinary AdamW. Evidence is retained as `results/xsa_epsilon_seed1*`.
 
-## Active screen: centered XSA
+## Passed screen: centered XSA
 
 The `centered-xsa` candidate branches from the passed `xsa-epsilon` parent
 (first 99% at 2,650). It centers values on the first available cached/key
@@ -115,11 +116,26 @@ isolation, FP64 parent forward and parameter gradients at ordinary/tiny
 value scales, raw KV-cache continuation in tokens/chunks, the optional guard
 return and the compiled fullgraph loss/gradients. The usual seed-1,
 3,000-update fast criterion and 50-update observations apply. Public GPT
-keeps ordinary subtraction until the candidate passes.
+now matches the passing centered candidate.
 
 ```bash
 .venv/bin/python -m research.recall_ablation.run --stage centered-xsa --seeds 1 --max-updates 3000
 ```
+
+**Centered XSA passed at 2,400 updates:** 507/512 exact sequences (99.02%)
+and 4,091/4,096 correct queries (99.88%). Independent eager replay matches
+every count; the latest-value oracle verifies 2,712/2,714 overwritten-key
+answers and 1,379/1,382 unchanged-key answers, with two stale-value predictions.
+Source hashes, sampler replay, optimizer steps and observation cadence pass.
+Results, history and audit are retained as `results/centered_xsa_seed1*`.
+
+This run experienced substantial CPU contention. Three read-only debugger
+samples and separate throughput probes were used to investigate. After the
+last observed update 1,250, its four OpenMP workers were placed on distinct
+allowed CPUs (0, 2, 4, 6). Model/data/optimizer/thread-count settings stayed
+fixed. These scheduling interventions and system load make wall-clock
+comparisons inappropriate. A retrospective session note records the runtime
+details; the model source snapshots and trained state are complete.
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 
