@@ -229,6 +229,35 @@
       "first_fit": 250,
       "first_target": 500,
       "first_train99": 250,
+      "latest_value_oracle": {
+        "case": "gpt-probe-key-value-binding",
+        "checkpoint_sha256": "a876b840156a4567c9f62a2ddde6a5aff3b515ecd9179c5eac52a978528d8df3",
+        "device": "cpu",
+        "oracle": "Sequential dictionary updates parsed from input key/value writes",
+        "seed": 1,
+        "splits": {
+          "test": {
+            "all_targets_match_independent_latest_write_oracle": true,
+            "queries_checked": 512,
+            "queries_correct": 510,
+            "rewritten_correct": 0,
+            "rewritten_queries": 0,
+            "superseded_value_predictions": 0,
+            "unchanged_correct": 510,
+            "unchanged_queries": 512
+          },
+          "validation/novel": {
+            "all_targets_match_independent_latest_write_oracle": true,
+            "queries_checked": 512,
+            "queries_correct": 508,
+            "rewritten_correct": 0,
+            "rewritten_queries": 0,
+            "superseded_value_predictions": 0,
+            "unchanged_correct": 508,
+            "unchanged_queries": 512
+          }
+        }
+      },
       "optimizer_steps_match": true,
       "protocol": {
         "after_target": 500,
