@@ -1,0 +1,108 @@
+{
+  "case": "fashion-mnist-gpt",
+  "checkpoint_sha256": "e54b6db57c4a754a0e51bace69c8e86bd4eaa3a09dee38cbf36357d8eb38aab4",
+  "classification": "target_not_reached_within_budget",
+  "completed": 30000,
+  "cpu_audit": {
+    "all_exact_counts_match": true,
+    "all_numeric_metrics_close": true,
+    "optimizer_steps_match": true,
+    "sampler_replay_matches": true,
+    "source_snapshot_hashes_match": true
+  },
+  "data_fingerprints": {
+    "test": "4d05baa92f2cf4dbf42fd939844c0a39862f227ec61bf00440de4f67992097d0",
+    "train": "9871b1d12670a2dc92e2e0c2f7c030a045f382e4f4e96f6b32e80f2e6d04345d",
+    "validation": "7ade119156c4c1fb40fa36ccab1d7cc990d9dcfe966b1ec60a997013dbb1984a"
+  },
+  "data_metadata": {
+    "classes": 10,
+    "design": "New trained token-GPT image classifier; does not reproduce the original frozen random-feature double-descent solver.",
+    "input": "BOS then 196 row-major rounded mean intensities of 2x2 patches",
+    "official_test_rows": 10000,
+    "source_sha256": {
+      "t10k-images-idx3-ubyte.gz": "346e55b948d973a97e58d2351dde16a484bd415d4595297633bb08f03db6a073",
+      "t10k-labels-idx1-ubyte.gz": "67da17c76eaffca5446c3361aaab5c3cd6d1c2608764d35dfb1850b086bf8dd5",
+      "train-images-idx3-ubyte.gz": "3aede38d61863908ad78613f6a32ed271626dd12800ba2636569512369268a84",
+      "train-labels-idx1-ubyte.gz": "a04f17134ac03560a47e3764e11b92fc97de4d1bfaf8ba1a3aa29af54cc90845"
+    },
+    "training_rows": 50000,
+    "validation_rows": 10000
+  },
+  "final_target_met": false,
+  "first_fit": null,
+  "first_target": null,
+  "first_train99": null,
+  "interpretation": "New full-GPT image classifier. 30000-update bounded miss of 90% validation target. Official test evaluated only at final endpoint; not a frozen-feature double-descent reproduction.",
+  "model": "diff_gpt.domain.model.gpt.GPT",
+  "model_source_reference": {
+    "files": {
+      "domain/model/__init__.py": "b8583ecc51bae8eb1cc2009627b9d3be4c8f26bbd11f34d32841410d133522f4",
+      "domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+      "domain/model/block.py": "d3f55fb85933240da2e30defcd7bf66a7e234108aba3a91b9ce891d92dcd7784",
+      "domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+      "domain/model/centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d",
+      "domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+      "domain/model/engine.py": "de3a0a6f130e790959067a982bd4be69a2be3aabdc952f838639005f1fdec43a",
+      "domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+      "domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+      "domain/model/kv_cache.py": "7e60cda6058b6e2b3af460303ee5fb482d99362b82145f6feaf2affec193d895",
+      "domain/model/mha.py": "65045c01bc1819597b3d3f19ada6cf8277cbdcd2d1466bc1376b4e30ded0aa88",
+      "domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+      "domain/model/normalized_gpt.py": "12cfbbaef692fb76c572125f397cacbabf775c7f148ff79e85a9d4749d16f7ff",
+      "domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+      "domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba"
+    },
+    "model_commit": "01f18f86787511279fe52fe41883495fce0e3105"
+  },
+  "optimizer": "native fused torch.optim.AdamW",
+  "protocol": {
+    "after_target": 500,
+    "batch": 64,
+    "data": {},
+    "data_seed": 1,
+    "heads": 4,
+    "kind": "fashion",
+    "layers": 2,
+    "learning_rate": 0.001,
+    "max_updates": 30000,
+    "metric": "sequence_accuracy",
+    "name": "fashion-mnist-gpt",
+    "observe": 250,
+    "target": 0.9,
+    "warmup": 50,
+    "weight_decay": 0.1,
+    "width": 64
+  },
+  "seed": 1,
+  "status": "budget_exhausted",
+  "test": {
+    "test": {
+      "correct": 8216,
+      "exact": 8216,
+      "examples": 10000,
+      "loss": 0.5422542988300324,
+      "sequence_accuracy": 0.8216,
+      "targets": 10000,
+      "token_accuracy": 0.8216
+    }
+  },
+  "train": {
+    "correct": 45035,
+    "exact": 45035,
+    "examples": 50000,
+    "loss": 0.2677304754638672,
+    "sequence_accuracy": 0.9007,
+    "targets": 50000,
+    "token_accuracy": 0.9007
+  },
+  "validation": {
+    "correct": 8362,
+    "exact": 8362,
+    "examples": 10000,
+    "loss": 0.4878163228034973,
+    "sequence_accuracy": 0.8362,
+    "targets": 10000,
+    "token_accuracy": 0.8362
+  }
+}

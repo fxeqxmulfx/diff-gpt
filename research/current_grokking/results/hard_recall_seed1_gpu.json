@@ -1,0 +1,135 @@
+{
+  "case": "basis-recall-hard",
+  "checkpoint_sha256": "15cbb29c24810ec95c94fced96a780e5322e0ef3bd71044d32c9f8bd872fe6aa",
+  "classification": "generalized_without_low_plateau",
+  "completed": 3000,
+  "cpu_audit": {
+    "all_exact_counts_match": true,
+    "all_numeric_metrics_close": true,
+    "optimizer_steps_match": true,
+    "sampler_replay_matches": true,
+    "source_snapshot_hashes_match": true
+  },
+  "data_fingerprints": {
+    "test": "5c9bc46e78e6f3e961ea233f774694c9b9ac38a147775ce597b1be1b5d2f47c8",
+    "train": "f51d12def851594c47128b25a3d548ee609a28174c11e8b5a437bcc5f6d5c02e",
+    "validation": "ed164ac1c6a985f46568628f0624cb5d7b50a49bd0da4630a16ccb3ab5fcb23b",
+    "validation/novel": "4accd014da8004d909f554802a984d351628607a4834b1d8761df40f69d17796"
+  },
+  "data_metadata": {
+    "benchmark": "Synthetic(task=MQAR(symbols=256, pairs=16, queries=8, query_gap=0, alpha=0.1, overwrites=8), length=64, min_length=48, train=20000, validation=512, test=512, ood=(), study=None, target=0.99, metric='sequence_accuracy', select=None)",
+    "free_generation": false,
+    "original_selection": "validation",
+    "primary_selection": "validation/novel",
+    "selection_rule": "Score novel prompts/inputs when available; retain source validation separately."
+  },
+  "final_target_met": false,
+  "first_fit": 2750,
+  "first_target": 2950,
+  "first_train99": 2750,
+  "interpretation": "Transient first-observed 99% crossing at 2950; endpoint at the predeclared 3000-update cap does not retain target. Prior CPU confirmation stopped at its first crossing, so it is not a matched retention comparison. Current GPU and prior CPU use different execution kernels.",
+  "latest_value_oracle": {
+    "case": "basis-recall-hard",
+    "checkpoint_sha256": "15cbb29c24810ec95c94fced96a780e5322e0ef3bd71044d32c9f8bd872fe6aa",
+    "device": "cpu",
+    "oracle": "Sequential dictionary updates parsed from input key/value writes",
+    "seed": 1,
+    "splits": {
+      "test": {
+        "all_targets_match_independent_latest_write_oracle": true,
+        "queries_checked": 4096,
+        "queries_correct": 4074,
+        "rewritten_correct": 2673,
+        "rewritten_queries": 2679,
+        "superseded_value_predictions": 0,
+        "unchanged_correct": 1401,
+        "unchanged_queries": 1417
+      },
+      "validation/novel": {
+        "all_targets_match_independent_latest_write_oracle": true,
+        "queries_checked": 4096,
+        "queries_correct": 4086,
+        "rewritten_correct": 2709,
+        "rewritten_queries": 2714,
+        "superseded_value_predictions": 3,
+        "unchanged_correct": 1377,
+        "unchanged_queries": 1382
+      }
+    }
+  },
+  "model": "diff_gpt.domain.model.gpt.GPT",
+  "model_source_reference": {
+    "files": {
+      "domain/model/__init__.py": "b8583ecc51bae8eb1cc2009627b9d3be4c8f26bbd11f34d32841410d133522f4",
+      "domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+      "domain/model/block.py": "d3f55fb85933240da2e30defcd7bf66a7e234108aba3a91b9ce891d92dcd7784",
+      "domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+      "domain/model/centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d",
+      "domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+      "domain/model/engine.py": "de3a0a6f130e790959067a982bd4be69a2be3aabdc952f838639005f1fdec43a",
+      "domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+      "domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+      "domain/model/kv_cache.py": "7e60cda6058b6e2b3af460303ee5fb482d99362b82145f6feaf2affec193d895",
+      "domain/model/mha.py": "65045c01bc1819597b3d3f19ada6cf8277cbdcd2d1466bc1376b4e30ded0aa88",
+      "domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+      "domain/model/normalized_gpt.py": "12cfbbaef692fb76c572125f397cacbabf775c7f148ff79e85a9d4749d16f7ff",
+      "domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+      "domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba"
+    },
+    "model_commit": "01f18f86787511279fe52fe41883495fce0e3105"
+  },
+  "optimizer": "native fused torch.optim.AdamW",
+  "protocol": {
+    "after_target": 500,
+    "batch": 64,
+    "data": {
+      "mode": "hard",
+      "task": "recall"
+    },
+    "data_seed": 1,
+    "heads": 4,
+    "kind": "basis",
+    "layers": 6,
+    "learning_rate": 0.0003,
+    "max_updates": 3000,
+    "metric": "sequence_accuracy",
+    "name": "basis-recall-hard",
+    "observe": 50,
+    "target": 0.99,
+    "warmup": 50,
+    "weight_decay": 0.1,
+    "width": 128
+  },
+  "same_training_and_validation_fingerprints_as_prior_cpu_confirmation": true,
+  "seed": 1,
+  "status": "passed",
+  "test": {
+    "test": {
+      "correct": 4074,
+      "exact": 491,
+      "example_count": 512,
+      "loss": 0.028104533441364765,
+      "sequence_accuracy": 0.958984375,
+      "target_count": 4096,
+      "token_accuracy": 0.99462890625
+    }
+  },
+  "train": {
+    "correct": 159740,
+    "exact": 19740,
+    "example_count": 20000,
+    "loss": 0.010291419768705965,
+    "sequence_accuracy": 0.987,
+    "target_count": 160000,
+    "token_accuracy": 0.998375
+  },
+  "validation": {
+    "correct": 4086,
+    "exact": 502,
+    "example_count": 512,
+    "loss": 0.013566611334681511,
+    "sequence_accuracy": 0.98046875,
+    "target_count": 4096,
+    "token_accuracy": 0.99755859375
+  }
+}
