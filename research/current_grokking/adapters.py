@@ -352,6 +352,8 @@ class SeriesTask(DenseTask):
             )
             splits[names_map[name]] = (x, y)
         super().__init__(splits, self.config.vocab_size, device, self.dataset.metadata)
+        if case.metric in {"skill", "relative_ce_gain"}:
+            self.baseline = 0.0
         self.context += 1
         self.extras = {}
         optional = ("bayes", "seasonal", "past")

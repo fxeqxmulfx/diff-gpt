@@ -54,8 +54,10 @@ def test_series_scores_match_the_existing_independent_evaluator() -> None:
             "max_eval": 16,
             "context": 1,
         },
+        metric="skill",
     )
     task = SeriesTask(case, "cpu")
+    assert task.baseline == 0.0
     model = Logits(
         GPT(
             task.vocab,

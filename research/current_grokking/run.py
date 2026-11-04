@@ -231,6 +231,7 @@ def run(
         "parameters": sum(p.numel() for p in model.parameters()),
         "data_fingerprints": task.fingerprints,
         "data_metadata": task.metadata,
+        "selection_baseline": task.baseline,
         "model_source_reference": reference,
         "observe_updates": interval,
         "checkpoint_interval_updates": CHECKPOINT_INTERVAL,
