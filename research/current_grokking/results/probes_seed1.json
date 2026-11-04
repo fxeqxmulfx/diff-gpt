@@ -1,0 +1,528 @@
+{
+  "all_cpu_exact_counts_match": true,
+  "budget_exhausted": 2,
+  "cases": 6,
+  "interpretation": "Every model trains all GPT parameters. These are new held-out function-learning tasks, not reproductions of query-only or gate-only optimization parameterizations. Four numeric probes select freely decoded MSE <= 0.001; order and key/value binding select held-out sequence accuracy >= 0.99. Positive results generalize without the prescribed near-baseline plateau; no delayed-grokking claim.",
+  "model": "current public diff_gpt.domain.model.gpt.GPT",
+  "model_source_commit": "01f18f86787511279fe52fe41883495fce0e3105",
+  "optimizer": "ordinary torch.optim.AdamW",
+  "passed": 4,
+  "runs": [
+    {
+      "case": "gpt-probe-branch-amplitudes",
+      "checkpoint_sha256": "522ac6cef07f9b771ed9217fa5dac09b9ce2cfe841bd39b537e4e670dc20518a",
+      "classification": "generalized_without_low_plateau",
+      "completed": 750,
+      "cpu_exact_counts_match": true,
+      "data_fingerprints": {
+        "test": "4e8d1a667d9b6871a48f7ad3e5132837fd79c7c072af07cfd7b1e45ce6dd3336",
+        "train": "fd6adcefa9667c9c15bc0f70c560a8769916648ad4f6b103ee4c34d6acef75a7",
+        "validation": "826e422c3b383f8f7db6d3c3c7fb8a532c480112ece6841ea754fcd910ee02b8"
+      },
+      "design": {
+        "answer_metric": "Exact freely generated quantized vector, including EOS; not a query-only/gate-only convergence claim.",
+        "branches": 1,
+        "design": "Disjoint supplied Rademacher sign vectors. Predict x/4, x+sum(alpha_i*u_i/RMS_eps(u_i)), or conditional coefficients selected by the first identity sign. Quantized vector answers are generated freely; all GPT parameters train.",
+        "numeric_grid": {
+          "invalid_or_missing_component_squared_error": 64.0,
+          "offset": 16,
+          "step": 0.25,
+          "unquantized_teacher_sha256": {
+            "test": "226bc8c6b652f94ec14cdaabc98d325f34d97f8378da4d2da0684ac4fab40062",
+            "train": "95e33119420d011b6299f8089a6e70ee82cb4a54f2ba142803417bbd51b9e701",
+            "validation": "470e5ad7e4bece22378b28cf713c17b34dfc543015ab4ed9e482598c5b13be1a"
+          }
+        },
+        "task": "branch-amplitudes",
+        "vector_width": 32
+      },
+      "final_target_met": true,
+      "final_test": {
+        "test": {
+          "correct": 8448,
+          "exact": 256,
+          "example_count": 256,
+          "loss": 0.0011479344684630632,
+          "mse": 2.2204456522036368e-16,
+          "numeric_output_coverage": 1.0,
+          "sequence_accuracy": 1.0,
+          "target_count": 8448,
+          "token_accuracy": 1.0
+        }
+      },
+      "first_fit": 250,
+      "first_target": 250,
+      "first_train99": 750,
+      "optimizer_steps_match": true,
+      "protocol": {
+        "after_target": 500,
+        "batch": 32,
+        "data": {
+          "task": "branch-amplitudes"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "negative_mse",
+        "name": "gpt-probe-branch-amplitudes",
+        "observe": 250,
+        "target": -0.001,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "sampler_replay_matches": true,
+      "seed": 1,
+      "source_snapshot_hashes_match": true,
+      "status": "passed",
+      "train": {
+        "correct": 33792,
+        "exact": 1024,
+        "example_count": 1024,
+        "loss": 0.001150754833361134,
+        "mse": 2.2204456522036368e-16,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 1.0,
+        "target_count": 33792,
+        "token_accuracy": 1.0
+      },
+      "validation": {
+        "correct": 8448,
+        "exact": 256,
+        "example_count": 256,
+        "loss": 0.0011636725394055247,
+        "mse": 2.2204456522036368e-16,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 1.0,
+        "target_count": 8448,
+        "token_accuracy": 1.0
+      }
+    },
+    {
+      "case": "gpt-probe-conditional-amplitudes",
+      "checkpoint_sha256": "dfd618b885dd49289a08caed6bb081e933c150d28c7535ed45d1fdbff2d87c68",
+      "classification": "generalized_without_low_plateau",
+      "completed": 3250,
+      "cpu_exact_counts_match": true,
+      "data_fingerprints": {
+        "test": "3a9257666329b28410ff41313c2862cd48f6f98004373c294f79802a126a0c06",
+        "train": "36ec4949d3ac90f328e0e99a99760d1e6ddfdeeb7cf2d55d3da7fa4e91935800",
+        "validation": "1cc8cb2b577036d4116f1a9635ba33ea6ae4b3c5e34e2c21185d0308b45a585b"
+      },
+      "design": {
+        "answer_metric": "Exact freely generated quantized vector, including EOS; not a query-only/gate-only convergence claim.",
+        "branches": 4,
+        "design": "Disjoint supplied Rademacher sign vectors. Predict x/4, x+sum(alpha_i*u_i/RMS_eps(u_i)), or conditional coefficients selected by the first identity sign. Quantized vector answers are generated freely; all GPT parameters train.",
+        "numeric_grid": {
+          "invalid_or_missing_component_squared_error": 64.0,
+          "offset": 16,
+          "step": 0.25,
+          "unquantized_teacher_sha256": {
+            "test": "8aee8aaf736d1357004652be5af417e2a887be0eeb04bcbe4371f28eec2e0388",
+            "train": "ffe0904fed70ba63d3341770976f6fcc9f204a8ae1960e723d3cd4acadef93de",
+            "validation": "8152b60f32492f39c09704b63b44577799ae25ea1684471dc1180573393324b6"
+          }
+        },
+        "task": "conditional-amplitudes",
+        "vector_width": 32
+      },
+      "final_target_met": true,
+      "final_test": {
+        "test": {
+          "correct": 8442,
+          "exact": 250,
+          "example_count": 256,
+          "loss": 0.004755895584821701,
+          "mse": 0.0006103515261243065,
+          "numeric_output_coverage": 1.0,
+          "sequence_accuracy": 0.9765625,
+          "target_count": 8448,
+          "token_accuracy": 0.9992897727272727
+        }
+      },
+      "first_fit": 2000,
+      "first_target": 2750,
+      "first_train99": 2500,
+      "optimizer_steps_match": true,
+      "protocol": {
+        "after_target": 500,
+        "batch": 32,
+        "data": {
+          "task": "conditional-amplitudes"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "negative_mse",
+        "name": "gpt-probe-conditional-amplitudes",
+        "observe": 250,
+        "target": -0.001,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "sampler_replay_matches": true,
+      "seed": 1,
+      "source_snapshot_hashes_match": true,
+      "status": "passed",
+      "train": {
+        "correct": 33792,
+        "exact": 1024,
+        "example_count": 1024,
+        "loss": 0.0020140671404078603,
+        "mse": 4.249909125874232e-15,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 1.0,
+        "target_count": 33792,
+        "token_accuracy": 1.0
+      },
+      "validation": {
+        "correct": 8443,
+        "exact": 251,
+        "example_count": 256,
+        "loss": 0.0037062254268676043,
+        "mse": 0.0004882811990725593,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 0.98046875,
+        "target_count": 8448,
+        "token_accuracy": 0.9994081439393939
+      }
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "checkpoint_sha256": "a876b840156a4567c9f62a2ddde6a5aff3b515ecd9179c5eac52a978528d8df3",
+      "classification": "generalized_without_low_plateau",
+      "completed": 1000,
+      "cpu_exact_counts_match": true,
+      "data_fingerprints": {
+        "test": "0eb01c687f1d3c022e963aea4c61bb0ddd3cade3e59ec55d5c62ea44f2977240",
+        "train": "24a8459e9412acd4078e87faf4547d5e57c98668d2cb783879c25f822e6effce",
+        "validation": "c5c8e4ec3fb3e5a702d279c0e46a06768ee63b7a41f85eb7fbb31c275c4306e0",
+        "validation/novel": "ae1562d7e6a7699871d3b61c1a0991e43278b224c0474ecdeef286587c4b158c"
+      },
+      "design": {
+        "benchmark": "Synthetic(task=MQAR(symbols=32, pairs=2, queries=1, query_gap=0, alpha=0.1, overwrites=0), length=12, min_length=None, train=2048, validation=512, test=512, ood=(), study=None, target=0.99, metric='sequence_accuracy', select=None)",
+        "design": "Two bindings and one independent query, with 32 keys/values; no second-query elimination shortcut.",
+        "free_generation": false,
+        "original_selection": "validation",
+        "primary_selection": "validation/novel",
+        "selection_rule": "Score novel prompts/inputs when available; retain source validation separately."
+      },
+      "final_target_met": true,
+      "final_test": {
+        "test": {
+          "correct": 510,
+          "exact": 510,
+          "example_count": 512,
+          "loss": 0.01820987928658724,
+          "sequence_accuracy": 0.99609375,
+          "target_count": 512,
+          "token_accuracy": 0.99609375
+        }
+      },
+      "first_fit": 250,
+      "first_target": 500,
+      "first_train99": 250,
+      "optimizer_steps_match": true,
+      "protocol": {
+        "after_target": 500,
+        "batch": 32,
+        "data": {
+          "task": "key-value-binding"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "sequence_accuracy",
+        "name": "gpt-probe-key-value-binding",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "sampler_replay_matches": true,
+      "seed": 1,
+      "source_snapshot_hashes_match": true,
+      "status": "passed",
+      "train": {
+        "correct": 2048,
+        "exact": 2048,
+        "example_count": 2048,
+        "loss": 0.004760872281622142,
+        "sequence_accuracy": 1.0,
+        "target_count": 2048,
+        "token_accuracy": 1.0
+      },
+      "validation": {
+        "correct": 508,
+        "exact": 508,
+        "example_count": 512,
+        "loss": 0.03194494219496846,
+        "sequence_accuracy": 0.9921875,
+        "target_count": 512,
+        "token_accuracy": 0.9921875
+      }
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "checkpoint_sha256": "20eb4d39ae8378b28f140fa18988663334f94e8250991e1217cdc83c5e4a6092",
+      "classification": "generalized_without_low_plateau",
+      "completed": 750,
+      "cpu_exact_counts_match": true,
+      "data_fingerprints": {
+        "test": "9f8b1731139b2a474b45bbfe58a7ecf380d5d22034aafa2dff481a528d4ec3d9",
+        "train": "aaf411325c2ef555d459dfb522c7e62a1fb1173c73d787c7c121d9e3d338de85",
+        "validation": "59e000b54321f26525c26dcd22acdbe53501810cee6ab0e98f1ce4f45db7d1a3"
+      },
+      "design": {
+        "answer_metric": "Exact freely generated quantized vector, including EOS; not a query-only/gate-only convergence claim.",
+        "branches": 1,
+        "design": "Disjoint supplied Rademacher sign vectors. Predict x/4, x+sum(alpha_i*u_i/RMS_eps(u_i)), or conditional coefficients selected by the first identity sign. Quantized vector answers are generated freely; all GPT parameters train.",
+        "numeric_grid": {
+          "invalid_or_missing_component_squared_error": 64.0,
+          "offset": 16,
+          "step": 0.25,
+          "unquantized_teacher_sha256": {
+            "test": "7620aedf02bcbeee2290bbf15a2bb368224e380a490975a737f22efe61c03add",
+            "train": "fc07ae8c4c5361bb1a27fa99a9d609ae26b060ffe9da85625f599736b72054ed",
+            "validation": "067ad584bdcdb53ce2811df3bf1064fd29c740a17ea05fc88c151c0c4296dac8"
+          }
+        },
+        "task": "linear-transport",
+        "vector_width": 32
+      },
+      "final_target_met": true,
+      "final_test": {
+        "test": {
+          "correct": 8448,
+          "exact": 256,
+          "example_count": 256,
+          "loss": 8.819773938739672e-05,
+          "mse": 0.0,
+          "numeric_output_coverage": 1.0,
+          "sequence_accuracy": 1.0,
+          "target_count": 8448,
+          "token_accuracy": 1.0
+        }
+      },
+      "first_fit": 250,
+      "first_target": 250,
+      "first_train99": 250,
+      "optimizer_steps_match": true,
+      "protocol": {
+        "after_target": 500,
+        "batch": 32,
+        "data": {
+          "task": "linear-transport"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "negative_mse",
+        "name": "gpt-probe-linear-transport",
+        "observe": 250,
+        "target": -0.001,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "sampler_replay_matches": true,
+      "seed": 1,
+      "source_snapshot_hashes_match": true,
+      "status": "passed",
+      "train": {
+        "correct": 33792,
+        "exact": 1024,
+        "example_count": 1024,
+        "loss": 8.816369336273056e-05,
+        "mse": 0.0,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 1.0,
+        "target_count": 33792,
+        "token_accuracy": 1.0
+      },
+      "validation": {
+        "correct": 8448,
+        "exact": 256,
+        "example_count": 256,
+        "loss": 8.8173670519609e-05,
+        "mse": 0.0,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 1.0,
+        "target_count": 8448,
+        "token_accuracy": 1.0
+      }
+    },
+    {
+      "case": "gpt-probe-order-discrimination",
+      "checkpoint_sha256": "bdc57e2c7005b899944066eaa8cc17f3d357a2fedc1318d888beca723ca3dfc4",
+      "classification": "target_not_reached_within_budget",
+      "completed": 30000,
+      "cpu_exact_counts_match": true,
+      "data_fingerprints": {
+        "train": "cf5a5cc9cc27f33cdaeec35f6147f19773756fe290c0c19c9bd3c858d79e5b9f",
+        "validation": "74c3737a848901f0a7ccd4db53dd66772f76f85aee6c303d8175ef43aeb19c32"
+      },
+      "design": {
+        "design": "Generalizes the original two-order witness to held-out pairs; all embeddings remain learned.",
+        "rule": "a < b for distinct tokenized integers 0..31"
+      },
+      "final_target_met": false,
+      "final_test": {},
+      "first_fit": 250,
+      "first_target": null,
+      "first_train99": 250,
+      "optimizer_steps_match": true,
+      "protocol": {
+        "after_target": 500,
+        "batch": 32,
+        "data": {
+          "task": "order-discrimination"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "sequence_accuracy",
+        "name": "gpt-probe-order-discrimination",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "sampler_replay_matches": true,
+      "seed": 1,
+      "source_snapshot_hashes_match": true,
+      "status": "budget_exhausted",
+      "train": {
+        "correct": 496,
+        "exact": 496,
+        "examples": 496,
+        "loss": 1.36753823748985e-07,
+        "sequence_accuracy": 1.0,
+        "targets": 496,
+        "token_accuracy": 1.0
+      },
+      "validation": {
+        "correct": 468,
+        "exact": 468,
+        "examples": 496,
+        "loss": 0.5221134308845766,
+        "sequence_accuracy": 0.9435483870967742,
+        "targets": 496,
+        "token_accuracy": 0.9435483870967742
+      }
+    },
+    {
+      "case": "gpt-probe-routing-mixture",
+      "checkpoint_sha256": "bbbb2e003e14ea6de5c1ac3011432303ea9a09acf2abe70442e7ce71818f4f2f",
+      "classification": "target_not_reached_within_budget",
+      "completed": 30000,
+      "cpu_exact_counts_match": true,
+      "data_fingerprints": {
+        "test": "f71cfc15ddd0155e707f97f30fcb9bcbc69bc47e81eb83255f5998fb5dc0f78b",
+        "train": "9ffd0071fd08e273205b5dcc44ccba4af0a84def14ead602c2ce27ab0f130a7e",
+        "validation": "20fead2bbf3a16f9ee9eccc8d68f769adf8db9ed6623a8c736a04b81f3376e0f"
+      },
+      "design": {
+        "answer_metric": "Exact freely generated quantized vector, including EOS; not a query-only/gate-only convergence claim.",
+        "branches": 1,
+        "design": "Eight shuffled width-16 source vectors; markers +/-4; independent Gaussian payloads rounded to 1/8 and clipped to +/-2. Teacher is the explicit finite-epsilon normalized soft mixture. Input markers stay exact; numeric answers use a 1/32 grid.",
+        "numeric_grid": {
+          "invalid_or_missing_component_squared_error": 64.0,
+          "offset": 128,
+          "step": 0.03125,
+          "unquantized_teacher_sha256": {
+            "test": "818cdbf141a2ad4a288e49c336bcca00f702917202af26485bd2b6ea533da7aa",
+            "train": "f739f93a3487e5a09a21d46acda4ac7f8cb128fc0f4dcc37ac27da9152b82c66",
+            "validation": "724e55b76c56474b8aa2e3bbadbb2e448859816c5bfe3442285c637cd3aa8abe"
+          }
+        },
+        "task": "routing-mixture",
+        "vector_width": 16
+      },
+      "final_target_met": false,
+      "final_test": {
+        "test": {
+          "correct": 4316,
+          "exact": 223,
+          "example_count": 256,
+          "loss": 0.1126948818564415,
+          "mse": 0.009002873890305001,
+          "numeric_output_coverage": 1.0,
+          "sequence_accuracy": 0.87109375,
+          "target_count": 4352,
+          "token_accuracy": 0.9917279411764706
+        }
+      },
+      "first_fit": 2750,
+      "first_target": null,
+      "first_train99": 3250,
+      "optimizer_steps_match": true,
+      "protocol": {
+        "after_target": 500,
+        "batch": 32,
+        "data": {
+          "task": "routing-mixture"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "negative_mse",
+        "name": "gpt-probe-routing-mixture",
+        "observe": 250,
+        "target": -0.001,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "sampler_replay_matches": true,
+      "seed": 1,
+      "source_snapshot_hashes_match": true,
+      "status": "budget_exhausted",
+      "train": {
+        "correct": 17391,
+        "exact": 1007,
+        "example_count": 1024,
+        "loss": 0.005105628282763064,
+        "mse": 0.001472909567826745,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 0.9833984375,
+        "target_count": 17408,
+        "token_accuracy": 0.9990234375
+      },
+      "validation": {
+        "correct": 4302,
+        "exact": 211,
+        "example_count": 256,
+        "loss": 0.12512268126010895,
+        "mse": 0.007176504068419819,
+        "numeric_output_coverage": 1.0,
+        "sequence_accuracy": 0.82421875,
+        "target_count": 4352,
+        "token_accuracy": 0.9885110294117647
+      }
+    }
+  ],
+  "scope": "All six requested new full-GPT versions of component-only probes",
+  "seed": 1
+}
