@@ -1,0 +1,1029 @@
+{
+  "date": "2026-11-04",
+  "scope": "Task discovery from saved local Codex and Claude histories, current/archived lean_projects/transformer experiments, and referenced GPT/arithmetic laboratories.",
+  "interpretation": "A catalog of tasks, encodings and controls. Inclusion does not assert successful delayed grokking. Models, optimizers, metrics and source revisions differ between cohorts.",
+  "search_coverage": {
+    "codex_saved_session_files": 785,
+    "claude_saved_session_files": 771,
+    "keyword_scan": [
+      {
+        "provider": "codex",
+        "candidate_files": 315,
+        "matching_messages": 3096,
+        "message_files": 208,
+        "encoding_replacement_line_count": 10,
+        "malformed_matching_line_count": 0
+      },
+      {
+        "provider": "claude",
+        "candidate_files": 187,
+        "matching_messages": 472,
+        "message_files": 31,
+        "encoding_replacement_line_count": 3,
+        "malformed_matching_line_count": 0
+      }
+    ],
+    "note": "Some archived matching lines contain invalid UTF-8 bytes; decoding replacement was used. No matching JSON line was lost to JSON parse failure."
+  },
+  "history_evidence": [
+    {
+      "provider": "codex",
+      "topic": "Original mod97/mod193 grokking task list",
+      "path": "/home/misha/.codex/sessions/2026/10/08/rollout-2026-10-08T10-40-44-01a11a07-3c8b-7da1-8e3d-e28de341ddc6.jsonl",
+      "line": 52
+    },
+    {
+      "provider": "codex",
+      "topic": "Differenced division has no located successful grokking run",
+      "path": "/home/misha/.codex/sessions/2026/11/02/rollout-2026-11-02T15-50-53-01a19be2-2bcb-7692-b409-c1ee2a1b69ac.jsonl",
+      "line": 255
+    },
+    {
+      "provider": "codex",
+      "topic": "Normalization task distinctions and prior-history pointers",
+      "path": "/home/misha/.codex/sessions/2026/11/03/rollout-2026-11-03T00-05-47-01a19da7-4652-7c13-b29d-fd0169fff4ff.jsonl",
+      "line": 285
+    },
+    {
+      "provider": "claude",
+      "topic": "Mesh modular division and embedding RMS normalization",
+      "path": "/home/misha/.claude/projects/-home-misha-rust-projects-grokking-abmod/31437752-59ab-45de-b184-9a5888dbc2b8.jsonl",
+      "line": 5144
+    },
+    {
+      "provider": "claude",
+      "topic": "Arithmetic function/powers lab and failed spectral predictions",
+      "path": "/home/misha/.claude/projects/-home-misha-lean-projects-transformer/7f8c1b5b-fb83-40a0-b148-1aad6935ee9c.jsonl",
+      "line": 25107
+    },
+    {
+      "provider": "claude",
+      "topic": "Plan to extend grokking checks to time series",
+      "path": "/home/misha/.claude/projects/-home-misha-python-projects-gpt/a0ea6093-f4be-41e2-81ea-b3a08fd539a0.jsonl",
+      "line": 3118
+    }
+  ],
+  "arithmetic_function_catalog": {
+    "source": {
+      "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py"
+    },
+    "results": {
+      "path": "/home/misha/rust_projects/grokking/experiments/training/README.md"
+    },
+    "count": 40,
+    "default_prime": 97,
+    "note": "38 named base functions plus two blind variants. Refer to exact Python definitions for modular reduction, integer floor/max/absolute-value semantics and parity wrapping. Implementation does not imply every label has a completed neural run.",
+    "tasks": [
+      {
+        "name": "add",
+        "formula": "a + b",
+        "exact_python_definition": "lambda a, b, p: (a + b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 101
+        }
+      },
+      {
+        "name": "sub",
+        "formula": "a − b",
+        "exact_python_definition": "lambda a, b, p: (a - b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 102
+        }
+      },
+      {
+        "name": "mul",
+        "formula": "a·b",
+        "exact_python_definition": "lambda a, b, p: a * b % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 103
+        }
+      },
+      {
+        "name": "div",
+        "formula": "a / b",
+        "exact_python_definition": "lambda a, b, p: a * pow(b, -1, p) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 104
+        }
+      },
+      {
+        "name": "mixed",
+        "formula": "a/b (b odd), a−b (b even)",
+        "exact_python_definition": "lambda a, b, p: a * pow(b, -1, p) % p if b % 2 else (a - b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 105
+        }
+      },
+      {
+        "name": "square-sum",
+        "formula": "a² + b²",
+        "exact_python_definition": "lambda a, b, p: (a * a + b * b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 106
+        }
+      },
+      {
+        "name": "quadratic",
+        "formula": "a² + ab + b²",
+        "exact_python_definition": "lambda a, b, p: (a * a + a * b + b * b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 107
+        }
+      },
+      {
+        "name": "quadratic-linear",
+        "formula": "a² + ab + b² + a",
+        "exact_python_definition": "lambda a, b, p: (a * a + a * b + b * b + a) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 108
+        }
+      },
+      {
+        "name": "cubic-product",
+        "formula": "a³ + ab",
+        "exact_python_definition": "lambda a, b, p: (a ** 3 + a * b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 109
+        }
+      },
+      {
+        "name": "cubic-mixed",
+        "formula": "a³ + ab² + b",
+        "exact_python_definition": "lambda a, b, p: (a ** 3 + a * b * b + b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 110
+        }
+      },
+      {
+        "name": "half-sum",
+        "formula": "(a + b)/2",
+        "exact_python_definition": "lambda a, b, p: (a + b) * pow(2, -1, p) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 114
+        }
+      },
+      {
+        "name": "perm-add",
+        "formula": "π(a + b)",
+        "exact_python_definition": "lambda a, b, p: permutation(p)[(a + b) % p]",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 115
+        }
+      },
+      {
+        "name": "cube-plus",
+        "formula": "a³ + b",
+        "exact_python_definition": "lambda a, b, p: (a ** 3 + b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 116
+        }
+      },
+      {
+        "name": "square-times",
+        "formula": "a²b",
+        "exact_python_definition": "lambda a, b, p: a * a * b % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 117
+        }
+      },
+      {
+        "name": "affine-product",
+        "formula": "a + ab",
+        "exact_python_definition": "lambda a, b, p: (a + a * b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 118
+        }
+      },
+      {
+        "name": "abs-diff",
+        "formula": "|a − b|",
+        "exact_python_definition": "lambda a, b, p: abs(a - b)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 119
+        }
+      },
+      {
+        "name": "floor-product",
+        "formula": "⌊ab/p⌋",
+        "exact_python_definition": "lambda a, b, p: a * b // p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 120
+        }
+      },
+      {
+        "name": "max",
+        "formula": "max(a, b)",
+        "exact_python_definition": "lambda a, b, p: max(a, b)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 121
+        }
+      },
+      {
+        "name": "sum-square",
+        "formula": "(a + b)²",
+        "exact_python_definition": "lambda a, b, p: (a + b) ** 2 % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 122
+        }
+      },
+      {
+        "name": "sum-cube",
+        "formula": "(a + b)³",
+        "exact_python_definition": "lambda a, b, p: (a + b) ** 3 % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 123
+        }
+      },
+      {
+        "name": "square-product",
+        "formula": "a² + ab",
+        "exact_python_definition": "lambda a, b, p: (a * a + a * b) % p",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 124
+        }
+      },
+      {
+        "name": "random",
+        "formula": "random table",
+        "exact_python_definition": "lambda a, b, p: random_table(p)[a][b]",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 125
+        }
+      },
+      {
+        "name": "parity-cubic",
+        "formula": "2⌊(a³+ab)/2⌋ + parity(a+b)",
+        "exact_python_definition": "parity_cubic",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 126
+        }
+      },
+      {
+        "name": "sum-pow16",
+        "formula": "(a + b)¹⁶",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 16, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 127
+        }
+      },
+      {
+        "name": "sum-pow48",
+        "formula": "(a + b)⁴⁸",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 48, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 128
+        }
+      },
+      {
+        "name": "sum-pow4",
+        "formula": "(a + b)⁴",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 4, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 129
+        }
+      },
+      {
+        "name": "sum-pow6",
+        "formula": "(a + b)⁶",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 6, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 130
+        }
+      },
+      {
+        "name": "sum-pow8",
+        "formula": "(a + b)⁸",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 8, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 131
+        }
+      },
+      {
+        "name": "sum-pow12",
+        "formula": "(a + b)¹²",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 12, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 132
+        }
+      },
+      {
+        "name": "sum-pow24",
+        "formula": "(a + b)²⁴",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 24, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 133
+        }
+      },
+      {
+        "name": "sum-pow32",
+        "formula": "(a + b)³²",
+        "exact_python_definition": "lambda a, b, p: pow(a + b, 32, p)",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 134
+        }
+      },
+      {
+        "name": "sum-interval",
+        "formula": "[a + b < (p − 1)/2]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in interval_with_swaps(p, 0))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 135
+        }
+      },
+      {
+        "name": "sum-interval-2",
+        "formula": "[a + b ∈ I₂]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in interval_with_swaps(p, 2))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 136
+        }
+      },
+      {
+        "name": "sum-interval-4",
+        "formula": "[a + b ∈ I₄]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in interval_with_swaps(p, 4))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 137
+        }
+      },
+      {
+        "name": "sum-interval-8",
+        "formula": "[a + b ∈ I₈]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in interval_with_swaps(p, 8))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 138
+        }
+      },
+      {
+        "name": "sum-interval-12",
+        "formula": "[a + b ∈ I₁₂]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in interval_with_swaps(p, 12))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 139
+        }
+      },
+      {
+        "name": "sum-random-half",
+        "formula": "[a + b ∈ R]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in random_half(p))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 140
+        }
+      },
+      {
+        "name": "sum-squares",
+        "formula": "[a + b a nonzero square]",
+        "exact_python_definition": "lambda a, b, p: int((a + b) % p in squares(p))",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 141
+        }
+      },
+      {
+        "name": "parity-cubic/blind",
+        "formula": "floor((2⌊(a³+ab)/2⌋ + parity(a+b))/2)",
+        "description": "Drop the lowest bit of the completed base-task answer.",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 169
+        }
+      },
+      {
+        "name": "abs-diff/blind",
+        "formula": "floor((|a − b|)/2)",
+        "description": "Drop the lowest bit of the completed base-task answer.",
+        "source": {
+          "path": "/home/misha/rust_projects/grokking/experiments/training/src/training/domain/tasks.py",
+          "line": 169
+        }
+      }
+    ]
+  },
+  "synthetic_algorithmic_suite": {
+    "source": {
+      "path": "/home/misha/lean_projects/transformer/experiments/synthetic_amsgradw/experiment.py",
+      "line": 40
+    },
+    "results": {
+      "path": "/home/misha/lean_projects/transformer/experiments/synthetic_amsgradw/README.md"
+    },
+    "count": 37,
+    "families": [
+      "Addition",
+      "AlternatingBlocks",
+      "BooleanAnd",
+      "CRASP",
+      "Copy",
+      "Count",
+      "DoubleHistogram",
+      "Dyck",
+      "Histogram",
+      "Lookup",
+      "MQAR",
+      "Mode",
+      "MostFrequent",
+      "Parity",
+      "Reverse",
+      "Sort",
+      "TypedDyck"
+    ],
+    "variants": [
+      {
+        "label": "suite-mqar",
+        "family": "MQAR"
+      },
+      {
+        "label": "suite-lookup",
+        "family": "Lookup"
+      },
+      {
+        "label": "suite-dyck",
+        "family": "Dyck"
+      },
+      {
+        "label": "suite-blocks",
+        "family": "AlternatingBlocks"
+      },
+      {
+        "label": "suite-histogram-bos",
+        "family": "Histogram"
+      },
+      {
+        "label": "suite-histogram-no-bos",
+        "family": "Histogram"
+      },
+      {
+        "label": "suite-histogram2",
+        "family": "DoubleHistogram"
+      },
+      {
+        "label": "suite-mode-none",
+        "family": "Mode"
+      },
+      {
+        "label": "suite-mode-counts",
+        "family": "Mode"
+      },
+      {
+        "label": "suite-mode-itemized",
+        "family": "Mode"
+      },
+      {
+        "label": "suite-most_freq",
+        "family": "MostFrequent"
+      },
+      {
+        "label": "suite-copy-repeat",
+        "family": "Copy"
+      },
+      {
+        "label": "suite-copy-unique",
+        "family": "Copy"
+      },
+      {
+        "label": "suite-reverse-repeat",
+        "family": "Reverse"
+      },
+      {
+        "label": "suite-reverse-unique",
+        "family": "Reverse"
+      },
+      {
+        "label": "suite-sort-repeat",
+        "family": "Sort"
+      },
+      {
+        "label": "suite-sort-unique",
+        "family": "Sort"
+      },
+      {
+        "label": "suite-dyck-2",
+        "family": "TypedDyck"
+      },
+      {
+        "label": "suite-dyck-3",
+        "family": "TypedDyck"
+      },
+      {
+        "label": "suite-count",
+        "family": "Count"
+      },
+      {
+        "label": "suite-addition-forward-plain-standard",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-forward-plain-balanced",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-forward-hints-standard",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-forward-hints-balanced",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-reverse-plain-standard",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-reverse-plain-balanced",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-reverse-hints-standard",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-addition-reverse-hints-balanced",
+        "family": "Addition"
+      },
+      {
+        "label": "suite-parity-none",
+        "family": "Parity"
+      },
+      {
+        "label": "suite-parity-running",
+        "family": "Parity"
+      },
+      {
+        "label": "suite-parity-running-hints",
+        "family": "Parity"
+      },
+      {
+        "label": "suite-parity-ones-hints",
+        "family": "Parity"
+      },
+      {
+        "label": "suite-boolean-and-shift",
+        "family": "BooleanAnd"
+      },
+      {
+        "label": "suite-boolean-and-random",
+        "family": "BooleanAnd"
+      },
+      {
+        "label": "suite-crasp-depth-1",
+        "family": "CRASP"
+      },
+      {
+        "label": "suite-crasp-depth-2",
+        "family": "CRASP"
+      },
+      {
+        "label": "suite-crasp-depth-3",
+        "family": "CRASP"
+      }
+    ],
+    "separate_random_control": {
+      "name": "RandomLM",
+      "role": "memorization-only random-label control"
+    }
+  },
+  "additional_benchmark_families_and_protocols": [
+    {
+      "name": "Raw modular division",
+      "rule": "q = a * inverse(b) mod p, b != 0",
+      "variants": [
+        "p=97",
+        "p=193",
+        "GPTMini/openai-grok/Mesh/Rotate90/source-transformer representations",
+        "scalar/one-hot inputs and scalar/vector outputs",
+        "20%, 25%, 50% training tables",
+        "anchor-based and interpolated embeddings"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/mod97_grokking/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/mod193_stability/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/mod97_representation_controls/README.md"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/tests/diff_gpt/application/test_div97.py"
+        }
+      ],
+      "recorded_outcome": "Successful delayed generalization is recorded. Other recipes have early learning, failure or later relapse; representation/optimizer/seed matter."
+    },
+    {
+      "name": "Powered modular division",
+      "rule": "q = (a / b)^K mod p",
+      "variants": [
+        "p=17,97,193",
+        "K=1,2,3,5 in learning cohorts",
+        "K=0 and zero-input edge checks"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/rotate90_power_learning/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/adaptive_residual/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/python/tests/test_power_division.py"
+        }
+      ],
+      "recorded_outcome": "Many successful and failed cases retained; K=2 has strong larger-model results. This K is a power, not a derivative order."
+    },
+    {
+      "name": "Differenced division equations",
+      "rule": "[a, b-a] -> q-b, with codec offsets, q=a/b mod 97",
+      "variants": [
+        "derivative order k=1",
+        "k=2",
+        "LGT/MASH/MASH-half and grid variants"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/src/diff_gpt/application/grokking/div97.py"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/tests/diff_gpt/application/grokking/test_div97.py"
+        }
+      ],
+      "recorded_outcome": "No successful short-context differenced-division grokking located; the saved k=1 pilot fit train but tested at about 0.92% after 1000 epochs."
+    },
+    {
+      "name": "Division across time-series rows",
+      "rule": "x[t+2] = x[t] / x[t+1] mod 97",
+      "variants": [
+        "difference orders k>=1",
+        "short contexts",
+        "48-token period-copy control",
+        "whole-orbit train/test split"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/src/diff_gpt/application/grokking/recurrence.py"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 33
+        }
+      ],
+      "recorded_outcome": "The high-accuracy context-48 run is explained by copying the period; short-context division remains unresolved in the recorded studies."
+    },
+    {
+      "name": "Fibonacci across time-series rows",
+      "rule": "x[t+2] = (x[t] + x[t+1]) mod 97",
+      "variants": [
+        "difference order k=1",
+        "context=2",
+        "field/argmax readouts",
+        "LGT/MASH/MASH-half",
+        "whole-orbit split"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/tests/diff_gpt/application/test_fibonacci97.py"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 31
+        }
+      ],
+      "recorded_outcome": "Successful three-seed generalization/grokking anchors are recorded; training regressions also use a 90% decoded-accuracy target."
+    },
+    {
+      "name": "Associative division and register machine",
+      "rule": "Load key/value registers, retrieve queried operands, compute modular division, and optionally write computed values for later operations.",
+      "variants": [
+        "loads=2 or 8",
+        "one or multiple compute rows",
+        "overwrites and gaps",
+        "labels=division",
+        "labels=dividend or divisor (operand-copying controls)",
+        "random labels",
+        "independent queries and shortcut audits"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/src/diff_gpt/application/grokking/mqar_div97.py"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/src/diff_gpt/application/grokking/mqar_div97_copy_audit.py"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/runs/grokking-div97-mqar-residual/comparison/summary.csv"
+        }
+      ],
+      "recorded_outcome": "N=2 operand copying includes the Peri-RMSNorm speedup. Distinct-query controls permit a shortcut and do not establish unrestricted binding or division."
+    },
+    {
+      "name": "Basis depth",
+      "rule": "Label each prefix by membership in alternating-block language E_k.",
+      "variants": [
+        "easy E_2 at lengths 32..64",
+        "hard E_4 at length 128",
+        "length extrapolation",
+        "planned L_k with no neutral tokens/NoPositions, k=1..6"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/basis/README.md",
+          "line": 25
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/grokking_plan.md",
+          "line": 170
+        }
+      ]
+    },
+    {
+      "name": "Basis associative recall",
+      "rule": "Answer each queried key with its latest written value.",
+      "variants": [
+        "easy: 8 writes, 8 distinct keys",
+        "hard: 16 writes, 8 overwrites, 8 queries",
+        "256 key and 256 value tokens"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/basis/README.md",
+          "line": 45
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/research/recall_ablation/results/final_confirmation_summary.json"
+        }
+      ],
+      "recorded_outcome": "The latest public GPT + ordinary AdamW passes hard recall on model seeds 0/1/2 at 2550/2600/2650 updates."
+    },
+    {
+      "name": "Basis parity and parity stress tests",
+      "rule": "Whether a bit string contains an odd number of ones.",
+      "variants": [
+        "1..16 bits without scratchpad",
+        "20- and 24-bit stress tests",
+        "scratchpad variants in the synthetic suite",
+        "20% label-noise capacity/double-descent controls"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/basis/README.md",
+          "line": 78
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/synthetic_scaling/README.md"
+        }
+      ]
+    },
+    {
+      "name": "Mixed modular polynomial and composed chains",
+      "rule": "a^3 + a*b mod p; chains z <- z^3 + b*z + c mod p",
+      "variants": [
+        "p=17,97,193",
+        "chains of 1,2,4,8 updates",
+        "final-answer-only supervision",
+        "double-length evaluation"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/python/src/lab/domain/modular_composition.py"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/modular_composition_long/README.md"
+        }
+      ],
+      "recorded_outcome": "The long mixed-pair P97/P193 runs fit all training rows but remain near chance at 100000 updates; paired raw-division controls generalize."
+    },
+    {
+      "name": "Weather formulas as independent equations",
+      "variants": {
+        "VPact": "VPmax*rh/100",
+        "VPdef": "VPmax-VPact",
+        "H2OC": "1000*VPact/p",
+        "sh": "622*VPact/(p-0.378*VPact)"
+      },
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/src/diff_gpt/application/grokking/series_data.py",
+          "line": 41
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 134
+        }
+      ],
+      "recorded_outcome": "Measured formula learning, quantization ceilings, shortcut controls and bounded negative long runs are recorded; several confirmations remain unfinished."
+    },
+    {
+      "name": "Multivariate weather formula learning",
+      "rule": "Predict weather rows with per-column metrics and same-row physical relationships.",
+      "variants": [
+        "k=0 levels",
+        "k=1 differences",
+        "late per-column extensions",
+        "wind/rain stochastic controls"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 166
+        }
+      ],
+      "recorded_outcome": "Fast validation improvements are recorded; the planned late extensions were deferred."
+    },
+    {
+      "name": "Synthetic stochastic series",
+      "variants": [
+        "lattice AR",
+        "lattice seasonal AR",
+        "Gaussian AR",
+        "Gaussian seasonal AR"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/src/diff_gpt/application/grokking/series_data.py",
+          "line": 936
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 186
+        }
+      ],
+      "recorded_outcome": "Lattice processes have three-seed fast skill crossings. Gaussian controls are implemented but recorded as not run in the execution plan."
+    },
+    {
+      "name": "Real forecasting",
+      "variants": [
+        "Weather",
+        "ETTh1",
+        "M4 Hourly",
+        "persistence/seasonal-naive and shuffled-time controls"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 203
+        }
+      ],
+      "recorded_outcome": "Fast validation gains are recorded, but the documented free-running GPT forecasts lose to seasonal naive; these gains do not establish useful forecasting or delayed grokking."
+    },
+    {
+      "name": "Noise tolerance on arithmetic/recurrence anchors",
+      "variants": [
+        "div97",
+        "Fibonacci",
+        "0%,1%,5%,20% corrupted training answers",
+        "clean held-out evaluation"
+      ],
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+          "line": 125
+        }
+      ],
+      "recorded_outcome": "Div97 noise and some Fibonacci controls completed; remaining Fibonacci long fallbacks are bounded/deferred."
+    }
+  ],
+  "related_mechanism_and_performance_checks": [
+    {
+      "name": "Marked-source attention routing / teacher mixture",
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/research/residual_attention/README.md"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/research/residual_conditioning/README.md"
+        }
+      ],
+      "scope": "Query-only saturation, Q/K normalization and large-query conditioning; no full-transformer grokking claim."
+    },
+    {
+      "name": "Residual branch amplitude and linear gradient transport",
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/residual_gradient_paths/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/rms_backward/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/context_gains/README.md"
+        }
+      ],
+      "scope": "Known-solution sign-vector regressions for RMS backward, gain placement and depth scaling."
+    },
+    {
+      "name": "Two-example order discrimination and key/value binding",
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/convex_atomic/README.md"
+        },
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/convex_binding/README.md"
+        }
+      ],
+      "scope": "Exact optimization/expressivity controls; the two examples are shared by splits, so these are not held-out generalization tests."
+    },
+    {
+      "name": "Fashion-MNIST with fixed random Fourier features",
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/archive/synthetic_trainers/paper_reproduction/RANDOM_FEATURES.md"
+        }
+      ],
+      "scope": "Archived sample/model-size double descent; fixed features, not transformer grokking."
+    },
+    {
+      "name": "Tiny Shakespeare character modeling",
+      "evidence": [
+        {
+          "path": "/home/misha/lean_projects/transformer/experiments/shakespeare_zoo/README.md"
+        },
+        {
+          "path": "/home/misha/python_projects/gpt/tests/diff_gpt/application/test_text.py"
+        }
+      ],
+      "scope": "Language-model quality/optimizer comparison; no delayed-grokking result established by this benchmark."
+    },
+    {
+      "name": "Synthetic forecasting and spike/anomaly detection",
+      "evidence": [
+        {
+          "path": "/home/misha/python_projects/gpt/tests/diff_gpt/application/test_diff_gpt.py",
+          "line": 523
+        }
+      ],
+      "scope": "Forecast/sample/quantile/anomaly regression tests; no delayed-grokking criterion."
+    }
+  ],
+  "planned_or_literature_only_mentions": [
+    {
+      "name": "Weather Tpot and VPmax equations",
+      "scope": "Formula observations/proposed extensions; not among the four implemented independent FORMULAS.",
+      "source": {
+        "path": "/home/misha/python_projects/gpt/grokking_plan.md",
+        "line": 91
+      }
+    },
+    {
+      "name": "Learned rational vocabulary across arithmetic operations",
+      "scope": "Generalization to unseen rational numbers is a proposal; recorded anchor controls still use division mod97.",
+      "source": {
+        "path": "/home/misha/rust_projects/grokking_abmod/docs/learned-rational-vocabulary.md"
+      }
+    },
+    {
+      "name": "MNIST and IMDb grokking",
+      "scope": "Appear in literature discussions; no matching local executable grokking benchmark located.",
+      "source": {
+        "path": "/home/misha/lean_projects/transformer/grokking_plan.md",
+        "line": 73
+      }
+    },
+    {
+      "name": "Permutation-composition grokking",
+      "scope": "Mentioned in a paper abstract in history; no matching local executable benchmark located. This is distinct from perm-add, which permutes answer labels.",
+      "source": {
+        "path": "/home/misha/.codex/sessions/2026/10/11/rollout-2026-10-11T05-01-58-01a12844-2b40-7a93-8353-396891325497.jsonl",
+        "line": 121
+      }
+    }
+  ],
+  "current_model_note": "Only the recall confirmation explicitly verifies the newly promoted public GPT. Existing runners may import NormalizedGPT, archived GPTMini or Rotate90/Mesh models; their historical outcomes are not fresh checks of the current public GPT.",
+  "fresh_training_runs_started_for_this_inventory": false
+}
