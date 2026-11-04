@@ -150,8 +150,8 @@ class Stepper:
                         self.model, rows[start : start + batch], sums, static=True
                     )
 
-            calculate()
             if self.device == "cuda":
+                calculate()
                 graph = torch.cuda.CUDAGraph()
                 with torch.cuda.graph(graph):
                     calculate()

@@ -68,6 +68,11 @@ def collect(root: Path) -> dict:
                 row["status"] = "pending"
             families[case["kind"]]["planned"] += 1
             families[case["kind"]][row["status"]] += 1
+            if row["status"] == "passed":
+                retained = bool(row["final_target_met"])
+                families[case["kind"]][
+                    "retained_target" if retained else "transient_crossing"
+                ] += 1
             if row.get("classification") == "delayed_generalization":
                 families[case["kind"]]["delayed_generalization"] += 1
             rows.append(row)
@@ -77,6 +82,11 @@ def collect(root: Path) -> dict:
         "optimizer": plan["optimizer"],
         "planned_runs": len(rows),
         "counts": dict(counts),
+        "observed_target_crossings": counts["passed"],
+        "retained_targets": sum(bool(row.get("final_target_met")) for row in rows),
+        "transient_crossings": sum(
+            row["status"] == "passed" and not row["final_target_met"] for row in rows
+        ),
         "families": {key: dict(value) for key, value in families.items()},
         "complete": all(
             row["status"] in {"passed", "budget_exhausted"} for row in rows
