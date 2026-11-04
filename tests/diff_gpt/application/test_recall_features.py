@@ -6,7 +6,7 @@ from torch.nn import functional as F
 from torch.testing import assert_close
 
 from diff_gpt.domain.model.feed_forward import FeedForward
-from diff_gpt.domain.model.gpt import GPT
+from diff_gpt.domain.model.gpt import GPT, PrefixStableGPT
 from diff_gpt.domain.model.kv_cache import KVCache
 from diff_gpt.domain.model.mini_block import MiniRMSNorm
 from diff_gpt.domain.model.rms_norm import RMSNorm as RepairedRMSNorm
@@ -59,6 +59,7 @@ def test_swiglu_changes_only_the_mlp_of_the_recorded_control() -> None:
         "xsa-epsilon",
         "centered-xsa",
         "first-zero",
+        "prefix-stable",
     ],
 )
 def test_candidate_keeps_finite_gradients_to_all_parameters(stage: str) -> None:
@@ -578,12 +579,25 @@ def test_centered_xsa_cache_and_guard_match_full_predictions() -> None:
         assert guard.all()
 
 
-@pytest.mark.parametrize("stage", ["centered-xsa", "first-zero"])
-def test_xsa_candidates_compile_with_matching_parameter_gradients(stage: str) -> None:
+@pytest.mark.parametrize(
+    ("stage", "checkpointing"),
+    [
+        ("centered-xsa", False),
+        ("first-zero", False),
+        ("prefix-stable", False),
+        ("prefix-stable", True),
+    ],
+)
+def test_xsa_candidates_compile_with_matching_parameter_gradients(
+    stage: str, *, checkpointing: bool
+) -> None:
     """Check the fullgraph training path before launching a numerical ablation."""
     eager, _ = build_model(stage, 1)
     compiled_model, _ = build_model(stage, 1)
+    eager.use_checkpoint = compiled_model.use_checkpoint = checkpointing
     tokens = torch.randint(548, (2, 8))
+    if stage == "prefix-stable":
+        tokens[:, :4] = tokens[:, :1].clone()
     positions = torch.tensor([[4, 7], [5, 7]])
     targets = torch.randint(548, (2, 2))
 
@@ -670,4 +684,109 @@ def test_first_zero_cache_preserves_later_positions_and_chunk_continuation() -> 
                     model(tokens[:, position : position + length], kv_cache=cache)[0]
                 )
                 position += length
+            assert_close(torch.cat(parts, 1), expected, rtol=1e-5, atol=1e-5)
+
+
+def _repeated_prefix_tokens() -> torch.Tensor:
+    """Use different constant-prefix lengths, followed by ordinary token changes."""
+    return torch.tensor(
+        [[17, 17, 17, 17, 21, 23, 25, 27], [19, 19, 19, 31, 33, 35, 37, 39]]
+    )
+
+
+def test_prefix_adapter_preserves_weights_rng_buffers_and_mode() -> None:
+    """Share exact parameter objects and retain the accepted model settings."""
+    parent, _ = build_model("first-zero", 1)
+    parent_rng = torch.get_rng_state()
+    candidate, metadata = build_model("prefix-stable", 1)
+    assert torch.equal(torch.get_rng_state(), parent_rng)
+    assert_close(candidate.state_dict(), parent.state_dict(), rtol=0, atol=0)
+    assert_close(
+        dict(candidate.named_buffers()), dict(parent.named_buffers()), rtol=0, atol=0
+    )
+    assert raw_parameter_digest(candidate) == raw_parameter_digest(parent)
+    assert candidate.token_embedding_table.weight is candidate.lm_head.weight
+    assert metadata["parent_initial_parameters_sha256"] == raw_parameter_digest(parent)
+    assert metadata["parent_stage"] == "first-zero"
+    assert metadata["repeated_prefix_rewrite"] is True
+    assert metadata["first_position_forced_zero"] is True
+    assert metadata["xsa_projection"] == "centered"
+    assert metadata["xsa_epsilon"] == MODERN_XSA_EPS
+    assert metadata["learned_attention_temperature"] is False
+    assert metadata["dense_attention"] == "explicit causal softmax"
+    assert metadata["embedding_normalization"] is None
+    assert metadata["branch_output_normalization"] is None
+    assert metadata["initial_projection_scale"] == 1.0
+    assert metadata["forward_residual_scale"] == 1.0
+    parent.eval()
+    before_wrap = torch.get_rng_state()
+    wrapped = PrefixStableGPT(parent)
+    assert torch.equal(torch.get_rng_state(), before_wrap)
+    assert not wrapped.training
+    assert wrapped.use_checkpoint == parent.use_checkpoint
+    assert all(
+        p is q for p, q in zip(wrapped.parameters(), parent.parameters(), strict=True)
+    )
+
+
+@pytest.mark.parametrize("value_scale", [1.0, 1e-14])
+@pytest.mark.parametrize("checkpointing", [False, True])
+def test_prefix_forward_gradients_and_clipping_guard_match_parent(
+    value_scale: float, *, checkpointing: bool
+) -> None:
+    """Preserve real equations and permanently disable rewriting after clipping."""
+    parent, _ = build_model("first-zero", 1)
+    candidate, _ = build_model("prefix-stable", 1)
+    parent.double()
+    candidate.double()
+    candidate.use_checkpoint = checkpointing
+    with torch.no_grad():
+        for model in (parent, candidate):
+            model.blocks[0].sa.c_attn.weight[2 * model.n_embd :].mul_(value_scale)
+    tokens = _repeated_prefix_tokens()
+    positions = torch.tensor([[5, 7], [5, 7]])
+    targets = torch.tensor([[300, 301], [302, 303]])
+    expected, original_loss = parent(tokens, targets, positions=positions)
+    actual, loss = candidate(tokens, targets, positions=positions)
+    assert_close(actual, expected, rtol=1e-10, atol=1e-10)
+    original_loss.backward()
+    loss.backward()
+    for (name, original), (_, changed) in zip(
+        parent.named_parameters(), candidate.named_parameters(), strict=True
+    ):
+        assert_close(changed.grad, original.grad, rtol=1e-9, atol=1e-9, msg=name)
+    with torch.no_grad():
+        initial = (tokens != tokens[:, :1]).cumsum(1) == 0
+        constant = initial
+        value = candidate.token_embedding_table(tokens)
+        for block in candidate.blocks:
+            value, constant = block(
+                value, candidate.rope_cos[:8], candidate.rope_sin[:8], constant=constant
+            )
+            if value_scale < 1:
+                assert not constant.any()
+            else:
+                assert torch.equal(constant, initial)
+                assert torch.equal(
+                    value[constant], value[:, :1].expand_as(value)[constant]
+                )
+
+
+def test_prefix_cache_matches_full_context_with_repeated_tokens() -> None:
+    """Keep token and chunk decoding valid when full-context states are shared."""
+    model, _ = build_model("prefix-stable", 1)
+    model.eval()
+    tokens = _repeated_prefix_tokens()
+    with torch.no_grad():
+        expected = model(tokens)[0]
+        for chunks in ([1] * 8, [3, 2, 3]):
+            cache = KVCache(
+                batch_size=2, num_heads=4, seq_len=64, head_dim=32, num_layers=6
+            )
+            offset, parts = 0, []
+            for length in chunks:
+                parts.append(
+                    model(tokens[:, offset : offset + length], kv_cache=cache)[0]
+                )
+                offset += length
             assert_close(torch.cat(parts, 1), expected, rtol=1e-5, atol=1e-5)

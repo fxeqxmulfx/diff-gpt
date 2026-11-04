@@ -13,7 +13,7 @@ fast screen and remains off. Native dtype input/final RMS epsilon passes
 and is now retained, with repaired backward and explicit dense attention.
 The XSA clipping threshold 1e-12 and centered projection pass and are retained.
 Explicit zeroing of the first global attention position also passes and is
-retained. The next feature is repeated-prefix stabilization.
+retained. The active final feature screen is repeated-prefix stabilization.
 
 | Latest continuation, ordinary AdamW, seed 1 | First 99% exact | Exact endpoint |
 | --- | --- | --- |
@@ -167,6 +167,31 @@ crosses at 2,400. Independent eager replay matches, with 2,713/2,714 correct
 overwritten-key answers, 1,379/1,382 unchanged-key answers and no stale-value
 predictions. Source hashes, sampler/optimizer state and observation cadence
 verify. Complete evidence is retained as `results/first_zero_seed1*`.
+
+## Active final feature screen: repeated-prefix stabilization
+
+The `prefix-stable` candidate starts from the passing `first-zero` parent
+(first 99% at 2,800). For uncached full-context calls it shares each constant
+token prefix's attention/MLP branch outputs and final residual states with
+the first position. If any first-position value head is clipped in a layer,
+that row's rewrite is disabled permanently for the remaining layers.
+Cached calls retain the ordinary parent path.
+
+The adapter borrows every existing parameter and buffer without random draws,
+preserves weight tying, model dimensions, mode and checkpointing settings,
+and keeps centered XSA, first-position zeroing, native-epsilon repaired RMS,
+fixed head gain, explicit attention and ordinary AdamW. No rejected feature
+returns. Tests cover FP64 parent forward/gradient equivalence, exact prefix
+states, permanent clipping-guard disablement, mode/parameter identity,
+token/chunk cache continuation and compiled checkpointing in both modes.
+
+The seed-1 3,000-update screen remains fixed. The public default retains
+`first-zero` until this final feature passes. Three-seed confirmation follows
+the feature screens; this run does not load final-test data.
+
+```bash
+.venv/bin/python -m research.recall_ablation.run --stage prefix-stable --seeds 1 --max-updates 3000
+```
 
 ## Requested continuation: Q/K RMS with learned temperature retained
 

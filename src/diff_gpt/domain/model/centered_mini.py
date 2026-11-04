@@ -2,14 +2,15 @@
 
 from typing import TYPE_CHECKING
 
+import torch
+from torch import nn
+
 from diff_gpt.domain.model.centered_xsa import centered_projection
 from diff_gpt.domain.model.mha import one_query_attention
-from diff_gpt.domain.model.mini_block import LowEpsilonQKAttention
+from diff_gpt.domain.model.mini_block import LowEpsilonQKAttention, MiniBlock
 from diff_gpt.domain.model.rope import apply_rope
 
 if TYPE_CHECKING:
-    import torch
-
     from diff_gpt.domain.model.kv_cache import KVCache
 
 
@@ -91,3 +92,32 @@ class FirstZeroQKAttention(CenteredQKAttention):
             # The bias-free finite linear projection commutes with zeroing.
             output[:, 0] = 0
         return (output, guard) if return_guard else output
+
+
+class PrefixStableBlock(MiniBlock):
+    """Reuse a prepared block and share its still-valid constant prefix states."""
+
+    def __init__(self, block: MiniBlock) -> None:
+        """Borrow existing modules without drawing or changing any parameters."""
+        nn.Module.__init__(self)
+        self.ln_1, self.ln_2 = block.ln_1, block.ln_2
+        self.sa, self.ffwd = block.sa, block.ffwd
+
+    def forward(
+        self,
+        value: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+        kv_cache: KVCache | None = None,
+        *,
+        constant: torch.Tensor | None = None,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        """Rewrite a prefix only while every layer's value heads stay unclipped."""
+        if constant is None:
+            return super().forward(value, cos, sin, kv_cache)
+        branch, valid = self.sa(self.ln_1(value), cos, sin, kv_cache, return_guard=True)
+        constant = constant & valid[:, None]
+        value = value + torch.where(constant[..., None], branch[:, :1], branch)
+        branch = self.ffwd(self.ln_2(value))
+        value = value + torch.where(constant[..., None], branch[:, :1], branch)
+        return value, constant

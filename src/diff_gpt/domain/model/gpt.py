@@ -9,7 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from diff_gpt.domain.model.centered_mini import FirstZeroQKAttention
+from diff_gpt.domain.model.centered_mini import FirstZeroQKAttention, PrefixStableBlock
 from diff_gpt.domain.model.mini_block import (
     MiniBlock,
     MiniRMSNorm,
@@ -273,6 +273,77 @@ class GPTMini(BaseGPT):
     def device(self) -> torch.device:
         """Return the device of the model weights, with its index (`cuda:1`)."""
         return self.lm_head.weight.device
+
+
+class PrefixStableGPT(GPTMini):
+    """Add prefix stabilization to a prepared model without drawing new weights."""
+
+    def __init__(self, model: GPTMini) -> None:
+        """Reuse the passing model's exact parameters, buffers and runtime sizes."""
+        BaseGPT.__init__(
+            self,
+            model.block_size,
+            model.vocab_size,
+            model.n_embd,
+            model.n_head,
+            model.n_layer,
+        )
+        self.token_embedding_table = model.token_embedding_table
+        self.register_buffer("rope_cos", model.rope_cos, persistent=False)
+        self.register_buffer("rope_sin", model.rope_sin, persistent=False)
+        self.blocks = nn.ModuleList(PrefixStableBlock(block) for block in model.blocks)
+        self.ln_f, self.lm_head = model.ln_f, model.lm_head
+        self.use_checkpoint = model.use_checkpoint
+        self.train(model.training)
+
+    def forward(
+        self,
+        idx: torch.Tensor,
+        targets: torch.Tensor | None = None,
+        kv_cache: KVCache | None = None,
+        *,
+        positions: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        """Apply guarded prefix sharing and the original optional query readout."""
+        start = 0 if kv_cache is None else kv_cache.get_pos()
+        end = start + idx.shape[1]
+        if end > self.block_size:
+            msg = f"positions up to {end} exceed block_size {self.block_size}"
+            raise ValueError(msg)
+        cos, sin = self.rope_cos[start:end], self.rope_sin[start:end]
+        value = self.token_embedding_table(idx)
+        constant = (idx != idx[:, :1]).cumsum(dim=1) == 0 if kv_cache is None else None
+        for block in self.blocks:
+            if self.training and self.use_checkpoint:
+                result = checkpoint(
+                    block,
+                    value,
+                    cos,
+                    sin,
+                    kv_cache,
+                    constant=constant,
+                    use_reentrant=False,
+                )
+            else:
+                result = block(value, cos, sin, kv_cache, constant=constant)
+            if constant is None:
+                value = result
+            else:
+                value, constant = result
+        if constant is not None:
+            value = torch.where(constant[..., None], value[:, :1], value)
+        value = self.ln_f(value)
+        if positions is not None:
+            value = value.gather(1, positions[..., None].expand(-1, -1, self.n_embd))
+        logits = self.lm_head(value)
+        loss = (
+            None
+            if targets is None
+            else F.cross_entropy(
+                logits.reshape(-1, self.vocab_size), targets.reshape(-1)
+            )
+        )
+        return logits, loss
 
 
 class GPT(GPTMini):

@@ -8,15 +8,15 @@
     "centered XSA projection",
     "exact zero at first global attention position"
   ],
-  "accepted_model_commit": "be062a7",
-  "active_stage": null,
+  "accepted_model_commit": "e7994eb",
+  "active_stage": "prefix-stable",
   "baseline_commit": "b7b8e89",
   "criterion": {
     "evaluate_every": 50,
     "max_updates": 3000,
     "target_sequence_accuracy": 0.99
   },
-  "decision": "Retain explicit first-position zeroing after its verified 2800-update pass. Next isolate repeated-prefix stabilization with ordinary AdamW and all accepted settings.",
+  "decision": "Retain the passing first-zero model. Test guarded repeated-prefix sharing only with ordinary AdamW and all accepted settings; stop at the next fast-screen miss. If it passes, perform three-seed confirmation.",
   "evidence_hashes": {
     "baseline_seed1.json": "ce1f9b40f2f71d681f7706532b042c85cb7507274b10ae87c0eceb5b28b20ec9",
     "baseline_seed1_audit.json": "55f4c67e9f28f7835716d45732ab43c93103c8125933736f521c499f21ae9a2d",
@@ -91,13 +91,14 @@
   "latest_failing_feature": "fused SDPA dense attention (all parameters and real score scaling held fixed)",
   "latest_screen_implementation_commit": "c0c89bb4e200a5350fcf368ed9591155e7c5b4df",
   "next_feature": "repeated-prefix stabilization",
-  "next_feature_if_resumed": "repeated-prefix stabilization",
+  "next_feature_if_resumed": null,
   "not_tested_after_stop": [
-    "repeated-prefix stabilization"
+    "repeated-prefix stabilization (active)"
   ],
   "optimizer": "ordinary torch.optim.AdamW throughout",
+  "pending_validation": "three-seed confirmation after the final feature screen",
   "previous_stop_decision": "Stop at fused SDPA fast-screen miss. Retain public GPT with explicit attention, fixed-temperature Q/K RMS, repaired RMS backward, SwiGLU and ordinary AdamW. No further feature started.",
-  "production_commit": "be062a7",
+  "production_commit": "e7994eb",
   "rejected_features": [
     "Schedule-Free AdamW",
     "depth-scaled projection initialization",
@@ -108,6 +109,7 @@
   ],
   "resume_protocol": {
     "branch_output_normalization": false,
+    "clipping_disables_rewrite_permanently": true,
     "dense_attention": "explicit causal softmax",
     "embedding_normalization": false,
     "first_position_forced_zero": true,
@@ -119,16 +121,16 @@
     "learned_temperature": false,
     "max_updates": 3000,
     "optimizer": "ordinary AdamW",
-    "parent": "centered-xsa",
-    "parent_first99": 2400,
+    "parent": "first-zero",
+    "parent_first99": 2800,
     "random_draws_added": false,
     "repaired_rms_sites": 25,
-    "repeated_prefix_rewrite": false,
+    "repeated_prefix_rewrite": true,
     "seed": 1,
-    "stage": "first-zero",
+    "stage": "prefix-stable",
     "threads": 4,
     "xsa_epsilon": 1e-12,
-    "xsa_projection": "centered with below-clipping own remainder at later positions"
+    "xsa_projection": "centered"
   },
   "scope": "One fresh matched seed (model1/data1), fixed 3000-update fast screen; stop at first miss. No final-test access.",
   "stages": [
@@ -507,7 +509,7 @@
       "xsa_projection": "centered"
     }
   ],
-  "status": "explicit first zero passed; preparing repeated-prefix stabilization",
+  "status": "first-position zeroing passed; screening the final repeated-prefix feature",
   "verification": {
     "architecture_audit_source": {
       "path": "runs/recall-ablation/architecture_audit_replay.py",
@@ -614,7 +616,7 @@
       "source_snapshot_hashes_match": true,
       "test_loaded": false
     },
-    "focused_feature_tests_passed": 44,
+    "focused_feature_tests_passed": 53,
     "forward_scaling_endpoint_audit": {
       "checkpoint_sha256": "8c1743eafe1e0b6e6c803caff6e17165b56f57f4c1567051925584a039a3edf8",
       "eager_replay": {
@@ -640,7 +642,7 @@
     },
     "full_domain_application_tests_passed": 872,
     "full_domain_application_tests_skipped": 40,
-    "full_suite_validation_commit": null,
+    "full_suite_validation_commit": "e7994eb",
     "full_suite_validation_source_sha256": {
       "research/recall_ablation/features.py": "3c39cb6ee089c701ce7b808ed0b1bdd47707cffee3db9b636d8f0f45bbe74db8",
       "src/diff_gpt/domain/model/centered_mini.py": "a2f98da8a4fbe5d4e28acdde3e4f0970e76224ec6c2e9c47e5997ab261a886e1",

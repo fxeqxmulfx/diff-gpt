@@ -11,7 +11,7 @@ from diff_gpt.domain.model.centered_mini import (
     CenteredQKAttention,
     FirstZeroQKAttention,
 )
-from diff_gpt.domain.model.gpt import GPTMini
+from diff_gpt.domain.model.gpt import GPTMini, PrefixStableGPT
 from diff_gpt.domain.model.mini_block import (
     LowEpsilonQKAttention,
     ResidualScaledProjection,
@@ -43,6 +43,7 @@ ARCHITECTURE_STAGES = (
     "xsa-epsilon",
     "centered-xsa",
     "first-zero",
+    "prefix-stable",
 )
 PERI_STAGES = {"peri-norm", "peri-norm-repaired"}
 PREDECESSOR = {
@@ -60,8 +61,10 @@ PREDECESSOR = {
     "xsa-epsilon": "rms-epsilon",
     "centered-xsa": "xsa-epsilon",
     "first-zero": "centered-xsa",
+    "prefix-stable": "first-zero",
 }
-CENTERED_STAGES = {"centered-xsa", "first-zero"}
+FIRST_ZERO_STAGES = {"first-zero", "prefix-stable"}
+CENTERED_STAGES = {"centered-xsa", *FIRST_ZERO_STAGES}
 LOW_XSA_EPSILON_STAGES = {"xsa-epsilon", *CENTERED_STAGES}
 NATIVE_EPSILON_STAGES = {"rms-epsilon", *LOW_XSA_EPSILON_STAGES}
 FIXED_TEMPERATURE_STAGES = {"fixed-temperature", "sdpa", *NATIVE_EPSILON_STAGES}
@@ -156,7 +159,7 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
                 attention = LowEpsilonQKAttention
             if stage in CENTERED_STAGES:
                 attention = CenteredQKAttention
-            if stage == "first-zero":
+            if stage in FIRST_ZERO_STAGES:
                 attention = FirstZeroQKAttention
             block.sa = attention(block.sa)
         repaired_sites += 2 * model.n_layer
@@ -188,7 +191,7 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         features.append("XSA clipping epsilon 1e-12")
     if stage in CENTERED_STAGES:
         features.append("centered XSA projection")
-    if stage == "first-zero":
+    if stage in FIRST_ZERO_STAGES:
         features.append("exact zero at first global attention position")
     residual_scale = 1.0
     if stage == "residual-scale":
@@ -201,6 +204,12 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         features.append("fixed forward residual scaling")
         if raw_parameter_digest(model) != parent_initial:
             msg = "forward residual scaling changed the initial parameters"
+            raise RuntimeError(msg)
+    if stage == "prefix-stable":
+        model = PrefixStableGPT(model)
+        features.append("guarded repeated-prefix stabilization")
+        if raw_parameter_digest(model) != parent_initial:
+            msg = "prefix stabilization changed initial parameters or order"
             raise RuntimeError(msg)
     if model.token_embedding_table.weight is not model.lm_head.weight:
         msg = "the architectural candidate broke embedding/readout weight tying"
@@ -241,7 +250,8 @@ def build_model(stage: str, seed: int) -> tuple[GPTMini, dict[str, object]]:
         "xsa_projection": "centered"
         if stage in CENTERED_STAGES
         else "ordinary subtraction",
-        "first_position_forced_zero": stage == "first-zero",
+        "first_position_forced_zero": stage in FIRST_ZERO_STAGES,
+        "repeated_prefix_rewrite": stage == "prefix-stable",
         "qk_normalization": (
             "repaired per-head RMS" if stage in QK_RMS_STAGES else "unit L2"
         ),
