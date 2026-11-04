@@ -89,6 +89,7 @@ class AnswerOracle:
         self.vocab, self.early_eos = task.vocab, early_eos
         examples = task.splits["validation"].examples
         self.width = len(examples[0].prompt)
+        self.eos = examples[0].answer[-1]
         self.answers = {example.prompt: example.answer for example in examples}
 
     def __call__(self, tokens: torch.Tensor) -> torch.Tensor:
@@ -99,7 +100,7 @@ class AnswerOracle:
             answer = self.answers[key]
             for position in range(self.width - 1, tokens.shape[1]):
                 index = min(position - self.width + 1, len(answer) - 1)
-                token = 1 if self.early_eos else answer[index]
+                token = self.eos if self.early_eos else answer[index]
                 logits[row, position, token] = 1000
         return logits
 
