@@ -32,6 +32,14 @@ def test_temporal_adapter_uses_the_public_codec_without_future_grid_fit(
     assert rows.shape[-1] == case.data["context"]
     assert torch.all((rows[:, 1, -1] >= 0) & (rows[:, 1, -1] < task.vocab))
     assert torch.isfinite(task.decoder).all()
+    indices = rows[:, 2, 0]
+    decoded = torch.round(
+        task.decoder[indices, 0]
+        + (rows[:, 1, -1] - task.vocab // 2) * task.decoder[indices, 1]
+    )
+    torch.testing.assert_close(
+        decoded, task.raw[indices, -1], rtol=0, atol=0, check_dtype=False
+    )
 
 
 def test_series_scores_match_the_existing_independent_evaluator() -> None:

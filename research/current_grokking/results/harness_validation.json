@@ -61,6 +61,12 @@
       "passed": 1,
       "deselected": 5,
       "details": "Rerun after correcting the fixture to emit the actual EOS token."
+    },
+    {
+      "command": "pytest -q tests/diff_gpt/application/test_current_grokking_adapters.py -k temporal",
+      "passed": 3,
+      "deselected": 3,
+      "details": "Public-codec target tokens decode exactly to the raw held-out future for LGT, MASH and MASH-half."
     }
   ],
   "scorer_corrections_before_affected_training": [
