@@ -78,3 +78,7 @@ checksum-verified Fashion-MNIST IDX files. Those external repositories are read
 only. `tests/diff_gpt/application/test_current_grokking*.py` check independent
 integer oracles, codec behavior, numeric generation scoring, proper series scores,
 sampler/checkpoint integrity and CUDA capture neutrality.
+
+After the initial arithmetic and new-probe/image runs, dispatch prioritizes the
+hard-recall anchor and one representative from each remaining family. This
+changes execution order only; the frozen case settings and budgets are unchanged.

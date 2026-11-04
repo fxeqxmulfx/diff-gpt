@@ -25,6 +25,7 @@ from research.current_grokking.protocol import (
     LEAN,
     ROOT,
     cases,
+    dispatch_cases,
     records,
 )
 from research.current_grokking.train import Logits, Stepper
@@ -410,7 +411,7 @@ def main() -> None:
         )
         return
     if args.all:
-        for case in cases():
+        for case in dispatch_cases():
             if args.kind is not None and case.kind != args.kind:
                 continue
             for seed in args.seeds:

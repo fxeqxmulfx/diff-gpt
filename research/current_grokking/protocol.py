@@ -311,3 +311,27 @@ def cases() -> list[Case]:
 def records() -> list[dict]:
     """Serialize all frozen case settings without runtime objects."""
     return [asdict(row) for row in cases()]
+
+
+def dispatch_cases() -> list[Case]:
+    """Measure core anchors and family representatives before remaining variants."""
+    priorities = [
+        "basis-recall-hard",
+        "suite-copy-repeat",
+        "recurrence-fibonacci-k1-c2-lgt",
+        "series-ar-k0-c1",
+        "series-weather-k0-c8",
+        "associative-dividend-n2-l1-w0",
+        "basis-depth-easy",
+        "differenced-division-k1",
+        "modular-chain-p17-l1",
+        "tiny-shakespeare-gpt",
+        "weather-formula-VPact",
+        "basis-parity16",
+    ]
+    ranks = {name: index for index, name in enumerate(priorities)}
+    rows = cases()
+    if not set(priorities) <= {row.name for row in rows}:
+        message = "A dispatch priority is absent from the frozen case matrix"
+        raise ValueError(message)
+    return sorted(rows, key=lambda row: ranks.get(row.name, len(ranks)))
