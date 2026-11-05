@@ -67,6 +67,12 @@
       "passed": 3,
       "deselected": 3,
       "details": "Public-codec target tokens decode exactly to the raw held-out future for LGT, MASH and MASH-half."
+    },
+    {
+      "command": "pytest -q tests/diff_gpt/application/test_current_grokking_adapters.py -k 'generation or numeric'",
+      "passed": 3,
+      "deselected": 5,
+      "details": "Known-answer fixtures score 100% for variable-length copy/reversal; deliberate early EOS scores 0%. Numeric free-generation scorer regression also passes. These fixtures are not trained-model evidence."
     }
   ],
   "scorer_corrections_before_affected_training": [

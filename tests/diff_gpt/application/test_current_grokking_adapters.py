@@ -98,21 +98,47 @@ class AnswerOracle:
         """Look up held-out answers solely to verify the evaluation implementation."""
         self.vocab, self.early_eos = task.vocab, early_eos
         examples = task.splits["validation"].examples
-        self.width = len(examples[0].prompt)
+        self.widths = sorted(
+            {len(example.prompt) for example in examples}, reverse=True
+        )
         self.eos = examples[0].answer[-1]
         self.answers = {example.prompt: example.answer for example in examples}
 
     def __call__(self, tokens: torch.Tensor) -> torch.Tensor:
-        """Emit the oracle sequence, or intentionally stop before any numeric token."""
+        """Emit the oracle sequence, or intentionally stop at the first token."""
         logits = torch.full((*tokens.shape, self.vocab), -1000.0)
         for row in range(len(tokens)):
-            key = tuple(map(int, tokens[row, : self.width]))
+            key = next(
+                prefix
+                for width in self.widths
+                if (prefix := tuple(map(int, tokens[row, :width]))) in self.answers
+            )
+            width = len(key)
             answer = self.answers[key]
-            for position in range(self.width - 1, tokens.shape[1]):
-                index = min(position - self.width + 1, len(answer) - 1)
+            for position in range(width - 1, tokens.shape[1]):
+                index = min(position - width + 1, len(answer) - 1)
                 token = self.eos if self.early_eos else answer[index]
                 logits[row, position, token] = 1000
         return logits
+
+
+@pytest.mark.parametrize("name", ["suite-copy-repeat", "suite-reverse-unique"])
+def test_variable_length_generation_scores_correct_answers_and_early_eos(
+    name: str,
+) -> None:
+    """The source scorer handles variable prompts independently of model learning."""
+    task = build(next(case for case in cases() if case.name == name), "cpu")
+    rows = task.splits[task.selection]
+    assert rows.generates
+    assert len({len(example.prompt) for example in rows.examples}) > 1
+    for early, expected in ((False, 1.0), (True, 0.0)):
+        sums = task.accumulator()
+        task.accumulate(
+            AnswerOracle(task, early_eos=early), rows[: len(rows)], sums, static=True
+        )
+        measured = task.metrics(sums.tolist(), rows)
+        assert measured["sequence_accuracy"] == expected
+        assert measured["token_accuracy"] == expected
 
 
 def test_numeric_proxy_scores_free_generation_and_penalizes_early_eos() -> None:
