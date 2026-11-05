@@ -12,6 +12,7 @@ import torch
 from diff_gpt.domain.model.gpt import GPT
 from research.current_grokking.train import Logits, Stepper
 from research.early99.experiments.causal_centering import install_causal_centering
+from research.early99.experiments.initialization import LEROPE_VARIANTS
 from research.early99.experiments.learned_rope import LearnedRoPEGPT
 from research.early99.experiments.models import (
     install_embedding_rms,
@@ -66,6 +67,7 @@ class Configuration:
             "peri-rms-embedding-scaled-ssmax",
             "peri-rms-embedding-scaled-ssmax-noqk",
             "peri-rms-embedding-scaled-lerope",
+            "peri-rms-embedding-scaled-ssmax-lerope",
         }:
             message = "Unknown model variant"
             raise ValueError(message)
@@ -128,6 +130,9 @@ class Configuration:
                     "peri_rms_scaled_ssmax_noqk_public_gpt"
                 ),
                 "peri-rms-embedding-scaled-lerope": "peri_rms_scaled_lerope_public_gpt",
+                "peri-rms-embedding-scaled-ssmax-lerope": (
+                    "peri_rms_scaled_ssmax_lerope_public_gpt"
+                ),
             }[self.model_variant],
             "residual_scale": (2 * case.layers) ** -0.5
             if self.model_variant.startswith("peri-rms-embedding-scaled")
@@ -171,11 +176,11 @@ class Configuration:
                         "original_parameter_gradient_clipping": None,
                     },
                 }
-                if self.model_variant == "peri-rms-embedding-scaled-lerope"
+                if self.model_variant in LEROPE_VARIANTS
                 else {}
             ),
             "optimizer_factory": "native_adamw_lerope_groups"
-            if self.model_variant == "peri-rms-embedding-scaled-lerope"
+            if self.model_variant in LEROPE_VARIANTS
             else "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
@@ -260,6 +265,13 @@ def peri_rms_scaled_lerope_model(task: Task, case: Case, device: str) -> Logits:
     return model
 
 
+def peri_rms_scaled_ssmax_lerope_model(task: Task, case: Case, device: str) -> Logits:
+    """Add shared learned rotary frequencies to SSMax with Q/K RMS."""
+    model = peri_rms_scaled_ssmax_model(task, case, device)
+    model.model = LearnedRoPEGPT(model.model)
+    return model
+
+
 def native_adamw(
     model: Logits,
     rate: torch.Tensor,
@@ -324,9 +336,12 @@ def configured_factories(configuration: Configuration) -> Factories:
             "peri-rms-embedding-scaled-ssmax": peri_rms_scaled_ssmax_model,
             "peri-rms-embedding-scaled-ssmax-noqk": peri_rms_scaled_ssmax_noqk_model,
             "peri-rms-embedding-scaled-lerope": peri_rms_scaled_lerope_model,
+            "peri-rms-embedding-scaled-ssmax-lerope": (
+                peri_rms_scaled_ssmax_lerope_model
+            ),
         }[configuration.model_variant],
         optimizer=native_lerope_adamw
-        if configuration.model_variant == "peri-rms-embedding-scaled-lerope"
+        if configuration.model_variant in LEROPE_VARIANTS
         else native_adamw,
     )
 
@@ -358,7 +373,7 @@ class FactoryStepper(Stepper):
 
     def update(self, index: torch.Tensor) -> torch.Tensor:
         """Clip only LeRoPE's new frequency gradient before native AdamW."""
-        if self.configuration.model_variant != "peri-rms-embedding-scaled-lerope":
+        if self.configuration.model_variant not in LEROPE_VARIANTS:
             return super().update(index)
         self.optimizer.zero_grad(set_to_none=True)
         loss = self.objective(self.task.inputs(index, static=True))
@@ -371,7 +386,7 @@ class FactoryStepper(Stepper):
 
     def prepare(self, sizes: list[int]) -> None:
         """Restore both LeRoPE optimizer groups to the same live LR tensor."""
-        if self.configuration.model_variant != "peri-rms-embedding-scaled-lerope":
+        if self.configuration.model_variant not in LEROPE_VARIANTS:
             super().prepare(sizes)
             return
         if self.device != "cuda":

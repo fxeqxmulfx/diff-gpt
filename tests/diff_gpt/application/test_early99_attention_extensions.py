@@ -42,10 +42,12 @@ def cache(batch: int) -> KVCache:
     return KVCache(batch_size=batch, num_heads=2, seq_len=16, head_dim=8, num_layers=2)
 
 
-@pytest.mark.parametrize("qk_norm", [True, False])
+@pytest.mark.parametrize(
+    ("qk_norm", "learned"), [(True, False), (False, False), (True, True)]
+)
 @pytest.mark.parametrize("clipping_epsilon", [1e-12, 0.25])
 def test_ssmax_matches_independent_masked_logits_and_gradients(
-    clipping_epsilon: float, *, qk_norm: bool
+    clipping_epsilon: float, *, qk_norm: bool, learned: bool
 ) -> None:
     """Check explicit masked SSMax/XSA equations and their input gradients."""
     model = prepared(torch.float64)
@@ -58,7 +60,13 @@ def test_ssmax_matches_independent_masked_logits_and_gradients(
     att = model.blocks[0].sa
     att.xsa_epsilon = clipping_epsilon
     value = torch.randn(2, 7, 16, dtype=torch.float64, requires_grad=True)
-    cos, sin = model.rope_cos[:7], model.rope_sin[:7]
+    if learned:
+        wrapped = LearnedRoPEGPT(model)
+        with torch.no_grad():
+            wrapped.lerope.log_scales.copy_(torch.tensor([0.2, -0.1, 0.6, 0.3]))
+        cos, sin = wrapped.lerope(0, 7)
+    else:
+        cos, sin = model.rope_cos[:7], model.rope_sin[:7]
     q, k, v = [
         part.reshape(2, 7, 2, 8).transpose(1, 2)
         for part in F.linear(value, att.c_attn.weight).chunk(3, -1)
@@ -94,7 +102,9 @@ def test_ssmax_matches_independent_masked_logits_and_gradients(
 def adapted(kind: str) -> GPT | LearnedRoPEGPT:
     """Set nonzero learned frequencies before testing cached execution."""
     model = prepared().eval()
-    if kind == "lerope":
+    if "lerope" in kind:
+        if kind == "ssmax-lerope":
+            install_scalable_softmax(model)
         model = LearnedRoPEGPT(model)
         with torch.no_grad():
             model.lerope.log_scales.copy_(torch.tensor([0.2, -0.1, 0.6, 0.3]))
@@ -103,7 +113,7 @@ def adapted(kind: str) -> GPT | LearnedRoPEGPT:
     return model
 
 
-@pytest.mark.parametrize("kind", ["ssmax", "ssmax-noqk", "lerope"])
+@pytest.mark.parametrize("kind", ["ssmax", "ssmax-noqk", "lerope", "ssmax-lerope"])
 def test_caches_positions_and_future_causality(kind: str) -> None:
     """Check global positions, causal support and selected readout rows."""
     model = adapted(kind)
@@ -136,7 +146,7 @@ def test_caches_positions_and_future_causality(kind: str) -> None:
         )
 
 
-@pytest.mark.parametrize("kind", ["ssmax", "ssmax-noqk", "lerope"])
+@pytest.mark.parametrize("kind", ["ssmax", "ssmax-noqk", "lerope", "ssmax-lerope"])
 def test_shared_prefix_includes_global_position(kind: str) -> None:
     """Shared prompt groups use their full global positions and key counts."""
     model = adapted(kind)
@@ -156,9 +166,12 @@ def test_shared_prefix_includes_global_position(kind: str) -> None:
         assert prefix.get_pos() == prompts.size(1)
 
 
-def test_lerope_initial_weights_outputs_and_frequency_gradient() -> None:
+@pytest.mark.parametrize("ssmax", [False, True])
+def test_lerope_initial_weights_outputs_and_frequency_gradient(*, ssmax: bool) -> None:
     """Preserve parent initialization and check learned-frequency derivatives."""
     parent = prepared()
+    if ssmax:
+        install_scalable_softmax(parent)
     rng = torch.get_rng_state().clone()
     model = LearnedRoPEGPT(parent)
     assert_close(torch.get_rng_state(), rng, rtol=0, atol=0)

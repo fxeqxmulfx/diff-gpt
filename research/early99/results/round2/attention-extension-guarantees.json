@@ -90,5 +90,6 @@
     "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/LearnedRotary.lean",
     "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/ScalableSoftmax.lean",
     "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/NormalizedScores.lean"
-  ]
+  ],
+  "combined_model": "The combined LeRoPE + SSMax + Q/K-RMS candidate composes the same verified operations. Arbitrary learned rotary angles satisfy the normalized-score theorem; SSMax uses those scores with the same conditional gap hypothesis; every resulting raw branch still passes through fixed scaled RMS. No additional convergence theorem is inferred from this conjunction."
 }

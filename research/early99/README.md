@@ -497,3 +497,37 @@ this bound by `log(N)`. The no-Q/K arm loses this bound independent of learned
 projection norms. Neither upper bound establishes the positive winning margin
 needed for SSMax concentration. Both variants retain the scaled residual-state
 bound. See the [updated guarantee record](results/round2/attention-extension-guarantees.json).
+
+
+## Combined SSMax and LeRoPE candidate
+
+LeRoPE alone completed **18/18 screen passes**, improving four task medians
+against LR ×2 and two against the same scaled parent. Against that parent,
+6 cells are earlier, 5 tied and 7 later. It advances under the unchanged rule;
+its [complete screen](results/round2/screen-peri-rms-scaled-lerope-lr2.json),
+[parent comparison](results/round2/screen-peri-rms-scaled-lerope-lr2-vs-peri-scaled.json)
+and [checkpoint audit](results/round2/audit-peri-rms-scaled-lerope-lr2-screen.json)
+retain the positive and negative pairs. Its screen models add 8–16 learned
+frequency scalars, with every original tensor still matched.
+
+The user's confirmed next architecture is **Peri-RMS + XSA + SwiGLU + SSMax +
+Q/K RMS normalization + residual scaling after RMS + tied embedding/readout
+weights + parameter-free RMSNorm, including embedding RMSNorm + LeRoPE**.
+The [combined plan](results/round2/ssmax-lerope-plan.json) adds LeRoPE to the
+SSMax/QK parent with the same fixed `s=1`, `1/sqrt(2L)` branch coefficient,
+LR ×2 and frequency optimizer treatment. It introduces no causal centering.
+The parameter-free statement applies to RMSNorm; LeRoPE's shared frequency
+vector is learned and counted.
+
+The existing real-arithmetic hidden-state, Q/K score, conditional SSMax-margin
+and learned-rotation guarantees apply together with their original hypotheses.
+The combined mechanism is checked against independent equations and both
+single-mechanism parents. Earlier promoted arms replay from the verified
+`7cff292` checkout at `/tmp/early99-attention-replay-7cff`; their source plans
+remain unchanged. After the combined screen, every promoted arm must finish
+all 75 short cells before final selection and the one reused long diagnostic.
+
+All **77 relevant CPU/CUDA checks pass** with the combined arm enabled. The
+[validation record](results/round2/validation.json) preserves the full command,
+independent combined score/gradient checks, cache equivalence and both ordinary
+and clipping-stress native versus captured updates.

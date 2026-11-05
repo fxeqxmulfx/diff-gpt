@@ -158,5 +158,31 @@
       "peri-rms-scaled-ssmax-noqk-lr2": "8549242296e7d1b00780be299b01be715784de068a450f7cae4e470c44797d94",
       "peri-rms-scaled-lerope-lr2": "45964bf39536c51797b26ed3b77a25e6916ff84b826f3f0b50372a3b322a60cc"
     }
+  },
+  "combined_ssmax_lerope": {
+    "checked_at_utc": "2026-11-05T21:05:39.005686+00:00",
+    "combined_cpu_and_cuda": {
+      "passed": 77,
+      "seconds": 176.71,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_attention_extensions.py tests/diff_gpt/application/test_early99_lerope_training.py tests/diff_gpt/application/test_early99_causal_centering.py tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py --show-capture=no"
+    },
+    "focused_cpu": {
+      "passed": 19,
+      "seconds": 1.8
+    },
+    "checks": [
+      "Combined SSMax with nonzero learned angles matches independent masked equations and input gradients, including clipped XSA",
+      "Zero log-frequency initialization preserves the complete SSMax parent outputs and original tensors/RNG/tied weights",
+      "Both learned-RoPE variants pass added-capacity pairing checks and finite-difference frequency gradients",
+      "Combined dense, token, chunk and shared-prefix caches agree and future-token/readout checks pass",
+      "Both ordinary-loss and active-clipping-stress native GPU updates match captured combined updates and all optimizer groups restore correctly",
+      "All existing candidate, data, cadence, benchmark and model-integrity checks pass"
+    ],
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "old_attention_source_revision": "7cff292",
+    "old_attention_replay_checkout": "/tmp/early99-attention-replay-7cff",
+    "old_plan_replay_verified": true,
+    "formal_record": "research/early99/results/round2/attention-extension-guarantees.json"
   }
 }

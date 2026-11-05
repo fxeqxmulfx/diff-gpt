@@ -22,13 +22,17 @@ from research.early99.experiments.initialization import (
 )
 
 
-def test_pairing_allows_only_declared_extra_frequency_vector() -> None:
+@pytest.mark.parametrize(
+    "model_variant",
+    ["peri-rms-embedding-scaled-lerope", "peri-rms-embedding-scaled-ssmax-lerope"],
+)
+def test_pairing_allows_only_declared_extra_frequency_vector(
+    model_variant: str,
+) -> None:
     """New capacity is explicit; extra or changed parent tensors still fail pairing."""
     case = Case("pairing", "arithmetic", {"operation": "div", "prime": 7}, width=16)
     task = arithmetic(case, "cpu")
-    configuration = Configuration(
-        "lerope-check", 2, model_variant="peri-rms-embedding-scaled-lerope"
-    )
+    configuration = Configuration("lerope-check", 2, model_variant=model_variant)
     torch.manual_seed(4)
     base = configured_factories(Configuration()).model(task, case, "cpu")
     torch.manual_seed(4)
@@ -61,8 +65,13 @@ def test_pairing_allows_only_declared_extra_frequency_vector() -> None:
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
 @pytest.mark.parametrize("loss_gain", [1, 10_000])
+@pytest.mark.parametrize(
+    "model_variant",
+    ["peri-rms-embedding-scaled-lerope", "peri-rms-embedding-scaled-ssmax-lerope"],
+)
 def test_lerope_captured_updates_clip_only_frequencies_and_restore_both_groups(
     loss_gain: int,
+    model_variant: str,
 ) -> None:
     """Match independently clipped native updates before and after graph preparation."""
     torch.compiler.reset()
@@ -75,9 +84,7 @@ def test_lerope_captured_updates_clip_only_frequencies_and_restore_both_groups(
         warmup=3,
     )
     task = arithmetic(case, "cuda")
-    configuration = Configuration(
-        "lerope-capture", 2, model_variant="peri-rms-embedding-scaled-lerope"
-    )
+    configuration = Configuration("lerope-capture", 2, model_variant=model_variant)
     factories = configured_factories(configuration)
     torch.manual_seed(1)
     model = factories.model(task, case, "cuda")

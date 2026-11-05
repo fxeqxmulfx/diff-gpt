@@ -171,6 +171,15 @@ lerope-plan.json for the new frequency parameters' no-decay and independent
 clipping treatment, cache/capture checks, and rotation guarantees. Complete
 these requested mechanisms before freezing the short winner and long check.
 
+Combined LeRoPE + SSMax + Q/K RMS
+After the current single-mechanism LeRoPE screen, test the explicitly requested
+combination under ssmax-lerope-plan.json. Add the same learned frequencies to
+the SSMax-with-Q/K-RMS parent, retaining its fixed s=1 and LR x2. Compare with
+both single-mechanism parents. Preserve prior snapshots for their complete
+short suites when integrating new code. After this extension, complete the
+original goal: every promoted 75-cell short suite, frozen selection, one reused
+long diagnostic, full failure accounting, guarantees and reproducible commits.
+
 After selecting the best short-suite candidate, run the 30 long cells once as a
 regression check. Report regressions without tuning against that check. Keep all
 raw histories, checkpoints, fingerprints and candidate provenance. Commit the

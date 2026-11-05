@@ -10,7 +10,10 @@ if TYPE_CHECKING:
 
 BASE_CLASS = "diff_gpt.domain.model.gpt.GPT"
 LEROPE_CLASS = "research.early99.experiments.learned_rope.LearnedRoPEGPT"
-LEROPE_VARIANT = "peri-rms-embedding-scaled-lerope"
+LEROPE_VARIANTS = {
+    "peri-rms-embedding-scaled-lerope",
+    "peri-rms-embedding-scaled-ssmax-lerope",
+}
 
 
 def parameter_metadata(model: torch.nn.Module) -> dict:
@@ -45,7 +48,7 @@ def parent_initialization(metadata: dict) -> tuple[str, int]:
         .get("configuration", {})
         .get("model_variant", "baseline")
     )
-    if variant != LEROPE_VARIANT:
+    if variant not in LEROPE_VARIANTS:
         if metadata["model_class"] != BASE_CLASS or metadata.get("added_parameters"):
             message = "Undeclared model class or additional parameters"
             raise ValueError(message)

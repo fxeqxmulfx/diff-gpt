@@ -1,0 +1,41 @@
+{
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Complete the requested next mechanism before final short-only selection. A newly selected winner receives one reused 30-cell long diagnostic, without tuning or reselection.",
+  "declared_at_utc": "2026-11-05T20:56:44.943609+00:00",
+  "configuration": {
+    "name": "peri-rms-scaled-ssmax-lerope-lr2",
+    "learning_rate_multiplier": 2.0,
+    "model_variant": "peri-rms-embedding-scaled-ssmax-lerope"
+  },
+  "user_direction": "Test LeRoPE plus SSMax with Q/K normalization next, then complete the original goal.",
+  "parent": "peri-rms-scaled-ssmax-lr2",
+  "secondary_parent": "peri-rms-scaled-lerope-lr2",
+  "sources": [
+    "https://arxiv.org/html/2501.19399v1",
+    "https://arxiv.org/html/2607.10134v1"
+  ],
+  "single_change": "Add the previously specified shared LeRoPE log-frequency vector to SSMax with Q/K RMS. Reuse the same s=1, causal key counts, depth scaling, tied weights and LR x2. No causal centering and no additional normalization.",
+  "parameters": "Adds head_dim/2 learned scalars; preserve and separately hash every original tensor. Record full initialization hash, common-tensor hash, new tensor values and count, and total capacity. Never describe this arm as parameter-count matched.",
+  "optimizer": "Native fused AdamW with the same LR x2, moments and warmup. Only the new log-frequency vector has weight decay 0 and independent gradient L2 clipping at 1.0; original parameters retain weight decay 0.1 and their original unclipped update. Paper-inspired mechanism, not a reproduction of its complete language-model training recipe.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory. LeRoPE explicitly excepts the declared new head_dim/2 scalars and their optimizer group; original dimensions, parameters and initialization remain matched.",
+  "parent_comparison": "Compare with both single-mechanism parents and the scaled Peri-RMS model, in addition to baseline and LR x2. Keep all paired cells and no screen-only aggregate.",
+  "guarantees": "Existing finite-epsilon Peri-RMS hidden-state bound, normalized Q/K score bound, conditional SSMax margin bound, and arbitrary learned-frequency rotary identities all apply with their stated hypotheses. Their conjunction does not prove faster learning.",
+  "validation": "Check initial equivalence to the SSMax parent with zero log-frequency scales; preserve original tensors/RNG/tie; verify nonzero-frequency dense and cached outputs; independently compare clipped native versus captured updates for both optimizer groups and the combined score equation.",
+  "execution_order": "Finish and audit the currently running single-mechanism LeRoPE screen. Preserve source revision 7cff292 in an isolated replay checkout for all prior promoted candidates. Integrate and validate the combination in a new source snapshot, then run its 18-cell screen. Complete every promoted 75-cell short suite before frozen selection and the one reused 30-cell long diagnostic.",
+  "stop_rule": "After these requested experiments, complete the original selection, validation, reporting and commits; do not silently add further experimental branches."
+}
