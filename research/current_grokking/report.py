@@ -25,6 +25,10 @@ def collect(root: Path) -> dict:
                 "metric": case["metric"],
                 "target": case["target"],
                 "max_updates": case["max_updates"],
+                **{
+                    key: case[key]
+                    for key in ("width", "layers", "heads", "batch", "learning_rate")
+                },
             }
             if (directory / "result.json").exists():
                 result = json.loads((directory / "result.json").read_text())
@@ -49,6 +53,23 @@ def collect(root: Path) -> dict:
                 spec = Case(**case)
                 row["final_validation"] = metric(spec, result["endpoint"]["validation"])
                 row["final_train"] = metric(spec, result["endpoint"]["train"])
+                row["parameters"] = result["metadata"]["parameters"]
+                for split in ("train", "validation"):
+                    measured = result["endpoint"][split]
+                    row[split + "_examples"] = measured.get(
+                        "examples", measured.get("example_count")
+                    )
+                    for key in (
+                        "loss",
+                        "token_accuracy",
+                        "balanced_accuracy",
+                        "final_answer_accuracy",
+                        "decoded_accuracy",
+                        "native_token_accuracy",
+                        "numeric_output_coverage",
+                    ):
+                        if key in measured:
+                            row[split + "_" + key] = measured[key]
                 row["final_test"] = result["final_test"]
                 if "final_extra" in result:
                     extra = result["final_extra"]
@@ -156,6 +177,12 @@ def main() -> None:
         "metric",
         "target",
         "max_updates",
+        "width",
+        "layers",
+        "heads",
+        "parameters",
+        "batch",
+        "learning_rate",
         "completed",
         "first_train99",
         "first_fit",
@@ -164,6 +191,16 @@ def main() -> None:
         "final_target_met",
         "final_train",
         "final_validation",
+        "train_examples",
+        "validation_examples",
+        "train_loss",
+        "validation_loss",
+        "validation_token_accuracy",
+        "validation_balanced_accuracy",
+        "validation_final_answer_accuracy",
+        "validation_decoded_accuracy",
+        "validation_native_token_accuracy",
+        "validation_numeric_output_coverage",
         "seconds",
         "audit_available",
         "cpu_primary_metric",
