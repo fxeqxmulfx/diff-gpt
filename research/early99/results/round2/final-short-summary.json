@@ -1,0 +1,1148 @@
+{
+  "baseline": {
+    "passed": 75,
+    "expected": 75,
+    "geometric_mean_first99_epochs": 57.16527288696717,
+    "trainer_seconds_including_setup_scoring": 2066.366506818944
+  },
+  "incumbent_lr2": {
+    "passed": 75,
+    "expected": 75,
+    "geometric_mean_first99_epochs": 34.24993718279189,
+    "trainer_seconds_including_setup_scoring": 1297.2288083240273
+  },
+  "candidates": {
+    "adamw-lr3": {
+      "screen_report": "research/early99/results/round2/screen-adamw-lr3.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 35.33668349747754,
+        "trainer_seconds_including_setup_scoring": 1470.0552795528492
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.6181494762974143,
+        "epoch_reduction_fraction": 0.38185052370258565,
+        "earlier": 51,
+        "tied": 5,
+        "later": 19,
+        "worst_observed_paired_epoch_ratio": 15.076923076923077,
+        "largest_regressions": [
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 15.076923076923077,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 196.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 9.222222222222221,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 83.0
+          },
+          {
+            "case": "power-division-p97-k3",
+            "seed": 0,
+            "epoch_ratio": 8.25,
+            "baseline_first99_epochs": 40.0,
+            "candidate_first99_epochs": 330.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 0,
+            "epoch_ratio": 5.7407407407407405,
+            "baseline_first99_epochs": 27.0,
+            "candidate_first99_epochs": 155.0
+          },
+          {
+            "case": "power-division-p193-k2",
+            "seed": 0,
+            "epoch_ratio": 5.055555555555555,
+            "baseline_first99_epochs": 18.0,
+            "candidate_first99_epochs": 91.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 1.0317298776019852,
+        "epoch_reduction_fraction": -0.0317298776019852,
+        "earlier": 41,
+        "tied": 10,
+        "later": 24,
+        "worst_observed_paired_epoch_ratio": 20.625,
+        "largest_regressions": [
+          {
+            "case": "power-division-p97-k3",
+            "seed": 0,
+            "epoch_ratio": 20.625,
+            "baseline_first99_epochs": 16.0,
+            "candidate_first99_epochs": 330.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 10.31578947368421,
+            "baseline_first99_epochs": 19.0,
+            "candidate_first99_epochs": 196.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 0,
+            "epoch_ratio": 7.045454545454546,
+            "baseline_first99_epochs": 22.0,
+            "candidate_first99_epochs": 155.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 4.5,
+            "baseline_first99_epochs": 0.4,
+            "candidate_first99_epochs": 1.8
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 4.25,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 17.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "adamw-lr2-beta95": {
+      "screen_report": "research/early99/results/round2/screen-adamw-lr2-beta95.json",
+      "full_short_evaluated": false,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "full_suite_geometric_mean_first99_epochs": null,
+      "decision": "Rejected at the predeclared screen; no full-suite speed claim"
+    },
+    "adamw-lr3-cosine200": {
+      "screen_report": "research/early99/results/round2/screen-adamw-lr3-cosine200.json",
+      "full_short_evaluated": false,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "full_suite_geometric_mean_first99_epochs": null,
+      "decision": "Rejected at the predeclared screen; no full-suite speed claim"
+    },
+    "peri-rms-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-lr2.json",
+      "full_short_evaluated": false,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "full_suite_geometric_mean_first99_epochs": null,
+      "decision": "Rejected at the predeclared screen; no full-suite speed claim"
+    },
+    "peri-rms-embedding-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-embedding-lr2.json",
+      "full_short_evaluated": false,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "full_suite_geometric_mean_first99_epochs": null,
+      "decision": "Rejected at the predeclared screen; no full-suite speed claim"
+    },
+    "adamw-lr2p5": {
+      "screen_report": "research/early99/results/round2/screen-adamw-lr2p5.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 33.25854472791054,
+        "trainer_seconds_including_setup_scoring": 1181.8699239809648
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.5817963082879463,
+        "epoch_reduction_fraction": 0.41820369171205374,
+        "earlier": 55,
+        "tied": 2,
+        "later": 18,
+        "worst_observed_paired_epoch_ratio": 8.461538461538462,
+        "largest_regressions": [
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 8.461538461538462,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 110.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 6.111111111111111,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 55.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 2,
+            "epoch_ratio": 5.48,
+            "baseline_first99_epochs": 25.0,
+            "candidate_first99_epochs": 137.0
+          },
+          {
+            "case": "power-division-p193-k2",
+            "seed": 0,
+            "epoch_ratio": 5.388888888888889,
+            "baseline_first99_epochs": 18.0,
+            "candidate_first99_epochs": 97.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 0,
+            "epoch_ratio": 5.0,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 45.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.971054181805056,
+        "epoch_reduction_fraction": 0.028945818194944017,
+        "earlier": 38,
+        "tied": 13,
+        "later": 24,
+        "worst_observed_paired_epoch_ratio": 5.7894736842105265,
+        "largest_regressions": [
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 5.7894736842105265,
+            "baseline_first99_epochs": 19.0,
+            "candidate_first99_epochs": 110.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 0,
+            "epoch_ratio": 5.0,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 45.0
+          },
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 1,
+            "epoch_ratio": 3.111111111111111,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 28.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 2.391304347826087,
+            "baseline_first99_epochs": 23.0,
+            "candidate_first99_epochs": 55.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 2.25,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 9.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-scaled-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-lr2.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 28.36061308708404,
+        "trainer_seconds_including_setup_scoring": 1371.778061144054
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.49611611481609547,
+        "epoch_reduction_fraction": 0.5038838851839045,
+        "earlier": 54,
+        "tied": 4,
+        "later": 17,
+        "worst_observed_paired_epoch_ratio": 4.0,
+        "largest_regressions": [
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 4.0,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 20.0
+          },
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 0,
+            "epoch_ratio": 3.6,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 18.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 3.076923076923077,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 40.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 3.0,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 27.0
+          },
+          {
+            "case": "power-division-p193-k2",
+            "seed": 0,
+            "epoch_ratio": 2.1666666666666665,
+            "baseline_first99_epochs": 18.0,
+            "candidate_first99_epochs": 39.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.8280486161397459,
+        "epoch_reduction_fraction": 0.1719513838602541,
+        "earlier": 47,
+        "tied": 9,
+        "later": 19,
+        "worst_observed_paired_epoch_ratio": 5.999999999999999,
+        "largest_regressions": [
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 5.999999999999999,
+            "baseline_first99_epochs": 0.4,
+            "candidate_first99_epochs": 2.4
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 5.0,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 20.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 2.666666666666667,
+            "baseline_first99_epochs": 0.6,
+            "candidate_first99_epochs": 1.6
+          },
+          {
+            "case": "power-division-p97-k3",
+            "seed": 0,
+            "epoch_ratio": 2.625,
+            "baseline_first99_epochs": 16.0,
+            "candidate_first99_epochs": 42.0
+          },
+          {
+            "case": "arithmetic-cube-plus",
+            "seed": 0,
+            "epoch_ratio": 2.5,
+            "baseline_first99_epochs": 12.0,
+            "candidate_first99_epochs": 30.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-scaled-csa-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-csa-lr2.json",
+      "full_short_evaluated": false,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "full_suite_geometric_mean_first99_epochs": null,
+      "decision": "Rejected at the predeclared screen; no full-suite speed claim"
+    },
+    "peri-rms-scaled-csa-lr1": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-csa-lr1.json",
+      "full_short_evaluated": false,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "full_suite_geometric_mean_first99_epochs": null,
+      "decision": "Rejected at the predeclared screen; no full-suite speed claim"
+    },
+    "peri-rms-scaled-ssmax-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-ssmax-lr2.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "vs_same_scaled_parent": {
+        "geometric_mean_epoch_ratio": 0.8577765437338591,
+        "epoch_reduction_fraction": 0.14222345626614086,
+        "earlier": 52,
+        "tied": 10,
+        "later": 13,
+        "worst_observed_paired_epoch_ratio": 4.666666666666667,
+        "largest_regressions": [
+          {
+            "case": "division-p193",
+            "seed": 2,
+            "epoch_ratio": 4.666666666666667,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 42.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 2.0,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 18.0
+          },
+          {
+            "case": "power-division-p193-k3",
+            "seed": 0,
+            "epoch_ratio": 1.6666666666666667,
+            "baseline_first99_epochs": 12.0,
+            "candidate_first99_epochs": 20.0
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 2,
+            "epoch_ratio": 1.6666666666666667,
+            "baseline_first99_epochs": 3.0,
+            "candidate_first99_epochs": 5.0
+          },
+          {
+            "case": "suite-boolean-and-random",
+            "seed": 0,
+            "epoch_ratio": 1.5,
+            "baseline_first99_epochs": 2.0,
+            "candidate_first99_epochs": 3.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 24.327068672012203,
+        "trainer_seconds_including_setup_scoring": 1242.353806075058
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.42555676625762084,
+        "epoch_reduction_fraction": 0.5744432337423792,
+        "earlier": 58,
+        "tied": 4,
+        "later": 13,
+        "worst_observed_paired_epoch_ratio": 3.8461538461538463,
+        "largest_regressions": [
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 3.8461538461538463,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 50.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 2,
+            "epoch_ratio": 3.8181818181818183,
+            "baseline_first99_epochs": 11.0,
+            "candidate_first99_epochs": 42.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 3.2,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 16.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 3.0,
+            "baseline_first99_epochs": 6.0,
+            "candidate_first99_epochs": 18.0
+          },
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 0,
+            "epoch_ratio": 1.8,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 9.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.7102806799959562,
+        "epoch_reduction_fraction": 0.28971932000404377,
+        "earlier": 53,
+        "tied": 8,
+        "later": 14,
+        "worst_observed_paired_epoch_ratio": 4.0,
+        "largest_regressions": [
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 4.0,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 16.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 2,
+            "epoch_ratio": 3.5,
+            "baseline_first99_epochs": 12.0,
+            "candidate_first99_epochs": 42.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 3.3333333333333335,
+            "baseline_first99_epochs": 0.6,
+            "candidate_first99_epochs": 2.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 2.6315789473684212,
+            "baseline_first99_epochs": 19.0,
+            "candidate_first99_epochs": 50.0
+          },
+          {
+            "case": "arithmetic-cube-plus",
+            "seed": 0,
+            "epoch_ratio": 2.4166666666666665,
+            "baseline_first99_epochs": 12.0,
+            "candidate_first99_epochs": 29.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-scaled-ssmax-noqk-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-ssmax-noqk-lr2.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "vs_same_scaled_parent": {
+        "geometric_mean_epoch_ratio": 0.739751041678813,
+        "epoch_reduction_fraction": 0.260248958321187,
+        "earlier": 48,
+        "tied": 6,
+        "later": 21,
+        "worst_observed_paired_epoch_ratio": 3.5,
+        "largest_regressions": [
+          {
+            "case": "suite-boolean-and-random",
+            "seed": 0,
+            "epoch_ratio": 3.5,
+            "baseline_first99_epochs": 2.0,
+            "candidate_first99_epochs": 7.0
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 0,
+            "epoch_ratio": 3.25,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 13.0
+          },
+          {
+            "case": "suite-boolean-and-shift",
+            "seed": 0,
+            "epoch_ratio": 3.0,
+            "baseline_first99_epochs": 2.0,
+            "candidate_first99_epochs": 6.0
+          },
+          {
+            "case": "basis-depth-easy",
+            "seed": 0,
+            "epoch_ratio": 2.9999999999999996,
+            "baseline_first99_epochs": 0.2,
+            "candidate_first99_epochs": 0.6
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 2.888888888888889,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 26.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 20.9797930738202,
+        "trainer_seconds_including_setup_scoring": 1279.04415806607
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.36700241272885226,
+        "epoch_reduction_fraction": 0.6329975872711477,
+        "earlier": 55,
+        "tied": 2,
+        "later": 18,
+        "worst_observed_paired_epoch_ratio": 8.666666666666666,
+        "largest_regressions": [
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 8.666666666666666,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 78.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 4.666666666666667,
+            "baseline_first99_epochs": 1.2,
+            "candidate_first99_epochs": 5.6
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 4.333333333333333,
+            "baseline_first99_epochs": 6.0,
+            "candidate_first99_epochs": 26.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 4.0,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 20.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 3.923076923076923,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 51.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.6125498263500766,
+        "epoch_reduction_fraction": 0.3874501736499234,
+        "earlier": 49,
+        "tied": 9,
+        "later": 17,
+        "worst_observed_paired_epoch_ratio": 13.999999999999998,
+        "largest_regressions": [
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 13.999999999999998,
+            "baseline_first99_epochs": 0.4,
+            "candidate_first99_epochs": 5.6
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 5.0,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 20.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 4.0,
+            "baseline_first99_epochs": 0.6,
+            "candidate_first99_epochs": 2.4
+          },
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 3.391304347826087,
+            "baseline_first99_epochs": 23.0,
+            "candidate_first99_epochs": 78.0
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 0,
+            "epoch_ratio": 3.25,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 13.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-scaled-lerope-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-lerope-lr2.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "vs_same_scaled_parent": {
+        "geometric_mean_epoch_ratio": 0.9998301091614544,
+        "epoch_reduction_fraction": 0.0001698908385455722,
+        "earlier": 24,
+        "tied": 27,
+        "later": 24,
+        "worst_observed_paired_epoch_ratio": 2.125,
+        "largest_regressions": [
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 2,
+            "epoch_ratio": 2.125,
+            "baseline_first99_epochs": 8.0,
+            "candidate_first99_epochs": 17.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 1.875,
+            "baseline_first99_epochs": 1.6,
+            "candidate_first99_epochs": 3.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 1.5555555555555556,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 14.0
+          },
+          {
+            "case": "power-division-p97-k3",
+            "seed": 1,
+            "epoch_ratio": 1.5,
+            "baseline_first99_epochs": 18.0,
+            "candidate_first99_epochs": 27.0
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 2,
+            "epoch_ratio": 1.3333333333333333,
+            "baseline_first99_epochs": 3.0,
+            "candidate_first99_epochs": 4.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 28.35579487874501,
+        "trainer_seconds_including_setup_scoring": 1525.9715505549975
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.49603182923333344,
+        "epoch_reduction_fraction": 0.5039681707666666,
+        "earlier": 54,
+        "tied": 5,
+        "later": 16,
+        "worst_observed_paired_epoch_ratio": 3.6,
+        "largest_regressions": [
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 0,
+            "epoch_ratio": 3.6,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 18.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 2.8461538461538463,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 37.0
+          },
+          {
+            "case": "division-p193",
+            "seed": 1,
+            "epoch_ratio": 2.7777777777777777,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 25.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 2.4,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 12.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 2.3333333333333335,
+            "baseline_first99_epochs": 6.0,
+            "candidate_first99_epochs": 14.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.8279079382659934,
+        "epoch_reduction_fraction": 0.1720920617340066,
+        "earlier": 48,
+        "tied": 6,
+        "later": 21,
+        "worst_observed_paired_epoch_ratio": 5.5,
+        "largest_regressions": [
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 5.5,
+            "baseline_first99_epochs": 0.4,
+            "candidate_first99_epochs": 2.2
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 5.0,
+            "baseline_first99_epochs": 0.6,
+            "candidate_first99_epochs": 3.0
+          },
+          {
+            "case": "power-division-p97-k3",
+            "seed": 1,
+            "epoch_ratio": 3.0,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 27.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 3.0,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 12.0
+          },
+          {
+            "case": "power-division-p97-k2",
+            "seed": 0,
+            "epoch_ratio": 2.8947368421052633,
+            "baseline_first99_epochs": 19.0,
+            "candidate_first99_epochs": 55.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100744,
+      "maximum_parameters": 1183504
+    },
+    "peri-rms-scaled-ssmax-lerope-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-ssmax-lerope-lr2.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "vs_same_scaled_parent": {
+        "geometric_mean_epoch_ratio": 0.9166181535536243,
+        "epoch_reduction_fraction": 0.0833818464463757,
+        "earlier": 47,
+        "tied": 7,
+        "later": 21,
+        "worst_observed_paired_epoch_ratio": 5.888888888888889,
+        "largest_regressions": [
+          {
+            "case": "division-p193",
+            "seed": 2,
+            "epoch_ratio": 5.888888888888889,
+            "baseline_first99_epochs": 9.0,
+            "candidate_first99_epochs": 53.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 2.5,
+            "baseline_first99_epochs": 1.6,
+            "candidate_first99_epochs": 4.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 0,
+            "epoch_ratio": 2.3333333333333335,
+            "baseline_first99_epochs": 15.0,
+            "candidate_first99_epochs": 35.0
+          },
+          {
+            "case": "basis-depth-easy",
+            "seed": 0,
+            "epoch_ratio": 2.0,
+            "baseline_first99_epochs": 0.2,
+            "candidate_first99_epochs": 0.4
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 0,
+            "epoch_ratio": 1.6923076923076923,
+            "baseline_first99_epochs": 2.6,
+            "candidate_first99_epochs": 4.4
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 25.995852801531726,
+        "trainer_seconds_including_setup_scoring": 1574.273753167101
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.45474903711092735,
+        "epoch_reduction_fraction": 0.5452509628890727,
+        "earlier": 56,
+        "tied": 3,
+        "later": 16,
+        "worst_observed_paired_epoch_ratio": 4.818181818181818,
+        "largest_regressions": [
+          {
+            "case": "division-p193",
+            "seed": 2,
+            "epoch_ratio": 4.818181818181818,
+            "baseline_first99_epochs": 11.0,
+            "candidate_first99_epochs": 53.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 4.4,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 22.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 3.5384615384615383,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 46.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 0,
+            "epoch_ratio": 3.5,
+            "baseline_first99_epochs": 10.0,
+            "candidate_first99_epochs": 35.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 1,
+            "epoch_ratio": 2.0,
+            "baseline_first99_epochs": 6.0,
+            "candidate_first99_epochs": 12.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.7590043935786476,
+        "epoch_reduction_fraction": 0.24099560642135243,
+        "earlier": 51,
+        "tied": 4,
+        "later": 20,
+        "worst_observed_paired_epoch_ratio": 6.666666666666667,
+        "largest_regressions": [
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 6.666666666666667,
+            "baseline_first99_epochs": 0.6,
+            "candidate_first99_epochs": 4.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 5.5,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 22.0
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 5.5,
+            "baseline_first99_epochs": 0.4,
+            "candidate_first99_epochs": 2.2
+          },
+          {
+            "case": "division-p193",
+            "seed": 2,
+            "epoch_ratio": 4.416666666666667,
+            "baseline_first99_epochs": 12.0,
+            "candidate_first99_epochs": 53.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 2.4210526315789473,
+            "baseline_first99_epochs": 19.0,
+            "candidate_first99_epochs": 46.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100744,
+      "maximum_parameters": 1183504
+    },
+    "peri-rms-scaled-ssmax-lerope-log-angle-lr2": {
+      "screen_report": "research/early99/results/round2/screen-peri-rms-scaled-ssmax-lerope-log-angle-lr2.json",
+      "full_short_evaluated": true,
+      "formal_note": "Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.",
+      "vs_same_scaled_parent": {
+        "geometric_mean_epoch_ratio": 1.0000904998788782,
+        "epoch_reduction_fraction": -9.049987887821409e-05,
+        "earlier": 43,
+        "tied": 13,
+        "later": 19,
+        "worst_observed_paired_epoch_ratio": 5.749999999999999,
+        "largest_regressions": [
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 5.749999999999999,
+            "baseline_first99_epochs": 1.6,
+            "candidate_first99_epochs": 9.2
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 2,
+            "epoch_ratio": 3.6666666666666665,
+            "baseline_first99_epochs": 3.0,
+            "candidate_first99_epochs": 11.0
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 1,
+            "epoch_ratio": 3.3333333333333335,
+            "baseline_first99_epochs": 3.0,
+            "candidate_first99_epochs": 10.0
+          },
+          {
+            "case": "basis-depth-easy",
+            "seed": 2,
+            "epoch_ratio": 2.9999999999999996,
+            "baseline_first99_epochs": 0.2,
+            "candidate_first99_epochs": 0.6
+          },
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 2,
+            "epoch_ratio": 2.625,
+            "baseline_first99_epochs": 8.0,
+            "candidate_first99_epochs": 21.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "measurement": {
+        "passed": 75,
+        "expected": 75,
+        "geometric_mean_first99_epochs": 28.36317971913334,
+        "trainer_seconds_including_setup_scoring": 1687.521310432232
+      },
+      "vs_baseline": {
+        "geometric_mean_epoch_ratio": 0.4961610132643959,
+        "epoch_reduction_fraction": 0.5038389867356041,
+        "earlier": 52,
+        "tied": 2,
+        "later": 21,
+        "worst_observed_paired_epoch_ratio": 4.8,
+        "largest_regressions": [
+          {
+            "case": "gpt-probe-branch-amplitudes",
+            "seed": 0,
+            "epoch_ratio": 4.8,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 24.0
+          },
+          {
+            "case": "basis-depth-easy",
+            "seed": 2,
+            "epoch_ratio": 2.9999999999999996,
+            "baseline_first99_epochs": 0.2,
+            "candidate_first99_epochs": 0.6
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 2,
+            "epoch_ratio": 2.75,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 11.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 2.6,
+            "baseline_first99_epochs": 5.0,
+            "candidate_first99_epochs": 13.0
+          },
+          {
+            "case": "power-division-p193-k5",
+            "seed": 1,
+            "epoch_ratio": 2.5384615384615383,
+            "baseline_first99_epochs": 13.0,
+            "candidate_first99_epochs": 33.0
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "vs_lr2": {
+        "geometric_mean_epoch_ratio": 0.8281235544392117,
+        "epoch_reduction_fraction": 0.1718764455607883,
+        "earlier": 47,
+        "tied": 4,
+        "later": 24,
+        "worst_observed_paired_epoch_ratio": 15.333333333333332,
+        "largest_regressions": [
+          {
+            "case": "basis-depth-hard",
+            "seed": 2,
+            "epoch_ratio": 15.333333333333332,
+            "baseline_first99_epochs": 0.6,
+            "candidate_first99_epochs": 9.2
+          },
+          {
+            "case": "basis-depth-hard",
+            "seed": 1,
+            "epoch_ratio": 5.0,
+            "baseline_first99_epochs": 0.4,
+            "candidate_first99_epochs": 2.0
+          },
+          {
+            "case": "gpt-probe-linear-transport",
+            "seed": 2,
+            "epoch_ratio": 3.6666666666666665,
+            "baseline_first99_epochs": 3.0,
+            "candidate_first99_epochs": 11.0
+          },
+          {
+            "case": "gpt-probe-key-value-binding",
+            "seed": 2,
+            "epoch_ratio": 3.25,
+            "baseline_first99_epochs": 4.0,
+            "candidate_first99_epochs": 13.0
+          },
+          {
+            "case": "basis-depth-easy",
+            "seed": 2,
+            "epoch_ratio": 2.9999999999999996,
+            "baseline_first99_epochs": 0.2,
+            "candidate_first99_epochs": 0.6
+          }
+        ],
+        "censored_or_errors": []
+      },
+      "minimum_parameters": 100744,
+      "maximum_parameters": 1183504
+    }
+  },
+  "original_parameter_counts_and_initialization_identical_in_every_pair": true,
+  "additional_capacity": "LeRoPE adds head_dim/2 shared zero-initialized log-frequency scalars; every candidate reports its actual parameter counts.",
+  "runtime_note": "Each trainer clock includes setup, compilation and scoring; dispatcher startup and separate data preflight are excluded. No resumed cells.",
+  "guarantees_record": "research/early99/results/round2/guarantees.json",
+  "selected_name": "peri-rms-scaled-ssmax-noqk-lr2",
+  "selected_qk_rms": false,
+  "selected_score_bound_note": "No uniform score bound independent of projection norms; scaled residual-state bound retained.",
+  "selected_position_map": "p",
+  "shared_model_objective": "The user requires one architecture across small and large tasks. Keep Q/K RMS in the main shared-model candidate; no-QK remains an ablation. This selection reports the declared small-suite benchmark winner, not a universal-model recommendation. Cross-scale validation follows this completed round.",
+  "eligible_full_coverage_geometric_mean_epochs": {
+    "adamw-lr2": 34.24993718279189,
+    "adamw-lr2p5": 33.25854472791054,
+    "peri-rms-scaled-lr2": 28.36061308708404,
+    "peri-rms-scaled-ssmax-lr2": 24.327068672012203,
+    "peri-rms-scaled-ssmax-noqk-lr2": 20.9797930738202,
+    "peri-rms-scaled-lerope-lr2": 28.35579487874501,
+    "peri-rms-scaled-ssmax-lerope-lr2": 25.995852801531726,
+    "peri-rms-scaled-ssmax-lerope-log-angle-lr2": 28.36317971913334,
+    "adamw-lr3": 35.33668349747754
+  }
+}

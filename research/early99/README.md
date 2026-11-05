@@ -11,6 +11,19 @@ Every task runs model/shuffle seeds **0, 1, 2**, with fixed data seed 1. The sho
 suite has 75 cells; long has 30; their union has 105. Optimization uses the short
 suite. The long suite is a subsequent regression check.
 
+**Round 2 short selection is now frozen.** All eight promoted candidates
+completed 75/75 passes. The declared coverage/epoch rule selects
+`peri-rms-scaled-ssmax-noqk-lr2`: geometric mean **20.9798 epochs**, **38.7%
+fewer** than the LR ×2 incumbent and **63.3% fewer** than the original baseline.
+The [frozen selection](results/round2/selection.json) and
+[complete short summary](results/round2/final-short-summary.json) retain all
+eligible arms, rejected screens, regressions and mathematical tradeoffs.
+Its one reused 30-cell long diagnostic is running, with no reselection or
+tuning from those outcomes. **Q/K RMS remains in the shared-model research
+candidate**; the small-benchmark winner is an ablation, not a universal-model
+recommendation. SSMax/QK is the strongest completed Q/K-normalized arm at
+**24.3271 epochs**, **29.0% fewer** than LR ×2.
+
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
 probes now use exact generated vectors, not their former MSE target. Validation
@@ -655,6 +668,21 @@ stabilization measures. These are evidence from other training settings, not
 proof that our exact parameter-free RMS variant is sufficient at every scale.
 
 ## Log-Scaled LeRoPE with SSMax retained
+
+The final **SSMax + Log-Scaled LeRoPE + Q/K RMS** arm completed **75/75 short
+passes** and its [full audit](results/round2/audit-peri-rms-scaled-ssmax-lerope-log-angle-lr2-full-short.json).
+Its geometric mean is **28.3632 epochs**: **17.2% fewer** than LR ×2, but
+**16.59% more** than SSMax/QK and **9.11% more** than ordinary SSMax + LeRoPE.
+The aggregate is effectively unchanged from scaled Peri-RMS (ratio 1.0000905).
+Against LR ×2, 47 cells are earlier, 4 tied and 24 later; against SSMax/QK,
+23 are earlier, 13 tied and 39 later. Hard-depth seed 2 takes **0.6 → 9.2
+epochs (15.3333×)** versus LR ×2. The complete
+[LR ×2 comparison](results/round2/peri-rms-scaled-ssmax-lerope-log-angle-lr2-vs-lr2-short.json),
+[SSMax comparison](results/round2/peri-rms-scaled-ssmax-lerope-log-angle-lr2-vs-ssmax-qk-short.json)
+and [direct-parent comparison](results/round2/peri-rms-scaled-ssmax-lerope-log-angle-lr2-vs-ssmax-lerope-short.json)
+preserve every seed. Parameters are 100744–1183504; summed trainer time is
+1687.52 seconds. This full result supersedes any inference from its favorable
+recall screen alone. All required short comparisons are now complete.
 
 The ordinary **SSMax + LeRoPE + Q/K RMS** combination also completed
 **75/75 short passes**, with geometric mean **25.9959 epochs**. This is
