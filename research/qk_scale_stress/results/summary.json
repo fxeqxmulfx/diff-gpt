@@ -1,0 +1,1339 @@
+{
+  "manifest": {
+    "settings": {
+      "question": "Can a tiny trained retrieval module fail without Q/K RMS under controlled projection-scale growth?",
+      "scope": "Targeted attention-level stress test, not the fixed early99 benchmark or a full GPT. Both versions train the same query/key projections and use identical data, initialization, sampler, loss and optimizer. The ordinary-scale control must be reported alongside every stress scale.",
+      "dimension": 32,
+      "keys": 8,
+      "train_examples": 2048,
+      "heldout_examples": 2048,
+      "data_seed": 1,
+      "model_seeds": [
+        0,
+        1,
+        2
+      ],
+      "projection_scales": [
+        1.0,
+        4.0,
+        16.0,
+        64.0
+      ],
+      "qk_rms": [
+        true,
+        false
+      ],
+      "batch": 64,
+      "updates": 1024,
+      "observe_updates": 32,
+      "target": 0.99,
+      "learning_rate": 0.01,
+      "warmup_updates": 50,
+      "betas": [
+        0.9,
+        0.98
+      ],
+      "weight_decay": 0.1,
+      "optimizer_epsilon": 1e-08,
+      "readout_scale": 10.0,
+      "attention": "SSMax s=1: softmax(log(8) * dot(q,k) / sqrt(32)). A fixed stress multiplier multiplies both projected Q and K before optional parameter-free RMS. The RMS operation is the repository's repaired-backward implementation.",
+      "data": "Eight independent Gaussian keys per example. The query exactly equals one uniformly sampled key. Each key is paired with a distinct randomly permuted one-hot value. Predict the queried key's value on independently generated held-out examples. The attention output uses a fixed linear readout; only query/key projections are learned.",
+      "measurement": "First exhaustive held-out exact classification accuracy >= 0.99, evaluated at step zero and every 32 updates. Stop at the first crossing or 1024 updates. Preserve every scale and seed, losses, entropy, score magnitudes, saturation, gradient norms and numerical failures. No filtered aggregate.",
+      "interpretation": "A failure at a deliberately large fixed projection multiplier is a mechanistic stress counterexample. It does not establish spontaneous norm growth, universal superiority, or failure of the full no-QK GPT at its ordinary initialization. Report whether the ordinary-scale control succeeds. No retuning of this run after outcomes."
+    },
+    "source_sha256": {
+      "research/qk_scale_stress/run.py": "a5769d54850623a85408c920a4bbded94c10b9392b64f5bf9176f3be2f4b5097",
+      "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca"
+    },
+    "data_sha256": {
+      "train": "2b62ca144695f8ed9ef9d1817350f0e41d194bde7d9410efed1c3f0a7296f2d8",
+      "heldout": "4336f75bea4d06726a97a90aadcab21e1bff092c5cd9f5a9b313c9fbedb434de"
+    },
+    "validation": {
+      "distance_oracle": "passed",
+      "value_permutations": "passed",
+      "independent_rms_scale_forward_and_backward": "passed",
+      "independent_attention_and_fixed_readout": "passed"
+    },
+    "torch": "2.14.1+cu126",
+    "device": "cpu",
+    "dtype": "float32"
+  },
+  "runs": [
+    {
+      "name": "qk-scale1-seed0",
+      "seed": 0,
+      "scale": 1.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1484375,
+          "loss": 4.517670631408691,
+          "maximum_absolute_score": 7.858325481414795,
+          "mean_attention_entropy": 1.1889177560806274,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.15625,
+          "loss": 4.423137664794922,
+          "maximum_absolute_score": 7.917778015136719,
+          "mean_attention_entropy": 1.1795246601104736,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.016972124023595825
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.99853515625,
+          "loss": 0.0075931972824037075,
+          "maximum_absolute_score": 9.64527416229248,
+          "mean_attention_entropy": 0.16425105929374695,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.9990234375,
+          "loss": 0.004904191475361586,
+          "maximum_absolute_score": 10.501242637634277,
+          "mean_attention_entropy": 0.17396530508995056,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.07320459749695958,
+        "seconds": 0.056174839002778754
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.056344520999118686
+    },
+    {
+      "name": "noqk-scale1-seed0",
+      "seed": 0,
+      "scale": 1.0,
+      "qk_rms": false,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14404296875,
+          "loss": 2.4201149940490723,
+          "maximum_absolute_score": 3.6128501892089844,
+          "mean_attention_entropy": 1.8892097473144531,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.15966796875,
+          "loss": 2.3975307941436768,
+          "maximum_absolute_score": 3.505668878555298,
+          "mean_attention_entropy": 1.8889377117156982,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008495330024743453
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.998046875,
+          "loss": 0.04759824648499489,
+          "maximum_absolute_score": 11.025214195251465,
+          "mean_attention_entropy": 0.9027988910675049,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.99560546875,
+          "loss": 0.05663376674056053,
+          "maximum_absolute_score": 8.456197738647461,
+          "mean_attention_entropy": 0.9337248802185059,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.2457310065690924,
+        "seconds": 0.03650639901752584
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.03667562099872157
+    },
+    {
+      "name": "qk-scale1-seed1",
+      "seed": 1,
+      "scale": 1.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14599609375,
+          "loss": 4.6088104248046875,
+          "maximum_absolute_score": 8.175796508789062,
+          "mean_attention_entropy": 1.1609386205673218,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.138671875,
+          "loss": 4.712113857269287,
+          "maximum_absolute_score": 7.538571357727051,
+          "mean_attention_entropy": 1.1351348161697388,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008967858011601493
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.01612558774650097,
+          "maximum_absolute_score": 10.397668838500977,
+          "mean_attention_entropy": 0.17526227235794067,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.99853515625,
+          "loss": 0.00432712072506547,
+          "maximum_absolute_score": 10.346713066101074,
+          "mean_attention_entropy": 0.1840648651123047,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.5394022150366803,
+        "seconds": 0.048171113012358546
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.048358258994994685
+    },
+    {
+      "name": "noqk-scale1-seed1",
+      "seed": 1,
+      "scale": 1.0,
+      "qk_rms": false,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14501953125,
+          "loss": 2.4820995330810547,
+          "maximum_absolute_score": 4.22861909866333,
+          "mean_attention_entropy": 1.8799868822097778,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.13671875,
+          "loss": 2.4606118202209473,
+          "maximum_absolute_score": 4.240462779998779,
+          "mean_attention_entropy": 1.8797366619110107,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008342779008671641
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.99609375,
+          "loss": 0.05838653817772865,
+          "maximum_absolute_score": 9.889289855957031,
+          "mean_attention_entropy": 0.9518100619316101,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.9931640625,
+          "loss": 0.0636712983250618,
+          "maximum_absolute_score": 10.62378978729248,
+          "mean_attention_entropy": 0.9844618439674377,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.3452055777448216,
+        "seconds": 0.036267213989049196
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.03641930298181251
+    },
+    {
+      "name": "qk-scale1-seed2",
+      "seed": 2,
+      "scale": 1.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1162109375,
+          "loss": 4.6839599609375,
+          "maximum_absolute_score": 7.179418087005615,
+          "mean_attention_entropy": 1.1893295049667358,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.1298828125,
+          "loss": 4.641419410705566,
+          "maximum_absolute_score": 7.133177757263184,
+          "mean_attention_entropy": 1.1885052919387817,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008927020011469722
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.011857818812131882,
+          "maximum_absolute_score": 10.168871879577637,
+          "mean_attention_entropy": 0.17444130778312683,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.998046875,
+          "loss": 0.0066262101754546165,
+          "maximum_absolute_score": 10.041555404663086,
+          "mean_attention_entropy": 0.18865346908569336,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.12769528468638527,
+        "seconds": 0.04672514501726255
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.046884879004210234
+    },
+    {
+      "name": "noqk-scale1-seed2",
+      "seed": 2,
+      "scale": 1.0,
+      "qk_rms": false,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.10986328125,
+          "loss": 2.517040491104126,
+          "maximum_absolute_score": 3.8113040924072266,
+          "mean_attention_entropy": 1.8935381174087524,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.13623046875,
+          "loss": 2.4979960918426514,
+          "maximum_absolute_score": 3.3441789150238037,
+          "mean_attention_entropy": 1.897300124168396,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008477375988150015
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9970703125,
+          "loss": 0.053502652794122696,
+          "maximum_absolute_score": 10.726119995117188,
+          "mean_attention_entropy": 0.9356686472892761,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.99462890625,
+          "loss": 0.06024821475148201,
+          "maximum_absolute_score": 9.454521179199219,
+          "mean_attention_entropy": 0.9794583320617676,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.43793288294411353,
+        "seconds": 0.036606920999474823
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.03676890899077989
+    },
+    {
+      "name": "qk-scale4-seed0",
+      "seed": 0,
+      "scale": 4.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1484375,
+          "loss": 4.517672061920166,
+          "maximum_absolute_score": 7.8583269119262695,
+          "mean_attention_entropy": 1.1889175176620483,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.15625,
+          "loss": 4.423138618469238,
+          "maximum_absolute_score": 7.91778039932251,
+          "mean_attention_entropy": 1.179524302482605,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008933001983677968
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.99853515625,
+          "loss": 0.007593211252242327,
+          "maximum_absolute_score": 9.64527416229248,
+          "mean_attention_entropy": 0.1642509549856186,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.9990234375,
+          "loss": 0.004904189612716436,
+          "maximum_absolute_score": 10.501245498657227,
+          "mean_attention_entropy": 0.173965185880661,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.07320521925119376,
+        "seconds": 0.04670129998703487
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.04685708598117344
+    },
+    {
+      "name": "noqk-scale4-seed0",
+      "seed": 0,
+      "scale": 4.0,
+      "qk_rms": false,
+      "status": "passed",
+      "completed_updates": 96,
+      "first99_epochs": 3.0,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14404296875,
+          "loss": 7.631039142608643,
+          "maximum_absolute_score": 57.80560302734375,
+          "mean_attention_entropy": 0.24198313057422638,
+          "nearly_one_hot_fraction": 0.0927734375
+        },
+        "heldout": {
+          "accuracy": 0.15966796875,
+          "loss": 7.519474983215332,
+          "maximum_absolute_score": 56.090702056884766,
+          "mean_attention_entropy": 0.23603186011314392,
+          "nearly_one_hot_fraction": 0.10205078125
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008190218999516219
+      },
+      "final": {
+        "step": 96,
+        "epochs": 3.0,
+        "train": {
+          "accuracy": 0.9970703125,
+          "loss": 0.02170499414205551,
+          "maximum_absolute_score": 133.96730041503906,
+          "mean_attention_entropy": 0.004057650454342365,
+          "nearly_one_hot_fraction": 0.908203125
+        },
+        "heldout": {
+          "accuracy": 0.99169921875,
+          "loss": 0.05279824510216713,
+          "maximum_absolute_score": 142.28773498535156,
+          "mean_attention_entropy": 0.00789346918463707,
+          "nearly_one_hot_fraction": 0.89453125
+        },
+        "last_gradient_l2": 0.01529064334689079,
+        "seconds": 0.09114379499806091
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.09129783799289726
+    },
+    {
+      "name": "qk-scale4-seed1",
+      "seed": 1,
+      "scale": 4.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14599609375,
+          "loss": 4.608810901641846,
+          "maximum_absolute_score": 8.175801277160645,
+          "mean_attention_entropy": 1.1609383821487427,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.138671875,
+          "loss": 4.7121148109436035,
+          "maximum_absolute_score": 7.538573265075684,
+          "mean_attention_entropy": 1.1351344585418701,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008833443018374965
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.016125623136758804,
+          "maximum_absolute_score": 10.39767074584961,
+          "mean_attention_entropy": 0.17526215314865112,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.99853515625,
+          "loss": 0.004327127244323492,
+          "maximum_absolute_score": 10.346714973449707,
+          "mean_attention_entropy": 0.18406474590301514,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.5394025826602201,
+        "seconds": 0.04750087999855168
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.047669640014646575
+    },
+    {
+      "name": "noqk-scale4-seed1",
+      "seed": 1,
+      "scale": 4.0,
+      "qk_rms": false,
+      "status": "passed",
+      "completed_updates": 64,
+      "first99_epochs": 2.0,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14501953125,
+          "loss": 7.625543594360352,
+          "maximum_absolute_score": 67.65790557861328,
+          "mean_attention_entropy": 0.24109679460525513,
+          "nearly_one_hot_fraction": 0.11083984375
+        },
+        "heldout": {
+          "accuracy": 0.13671875,
+          "loss": 7.771492958068848,
+          "maximum_absolute_score": 67.84740447998047,
+          "mean_attention_entropy": 0.22468747198581696,
+          "nearly_one_hot_fraction": 0.1064453125
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008360183011973277
+      },
+      "final": {
+        "step": 64,
+        "epochs": 2.0,
+        "train": {
+          "accuracy": 0.990234375,
+          "loss": 0.07598640769720078,
+          "maximum_absolute_score": 168.57186889648438,
+          "mean_attention_entropy": 0.005829477682709694,
+          "nearly_one_hot_fraction": 0.89697265625
+        },
+        "heldout": {
+          "accuracy": 0.9951171875,
+          "loss": 0.03644344210624695,
+          "maximum_absolute_score": 138.92918395996094,
+          "mean_attention_entropy": 0.005994802340865135,
+          "nearly_one_hot_fraction": 0.888671875
+        },
+        "last_gradient_l2": 2.0630929189502765,
+        "seconds": 0.0638149630103726
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.06398452600114979
+    },
+    {
+      "name": "qk-scale4-seed2",
+      "seed": 2,
+      "scale": 4.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1162109375,
+          "loss": 4.683961391448975,
+          "maximum_absolute_score": 7.179421901702881,
+          "mean_attention_entropy": 1.1893293857574463,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.1298828125,
+          "loss": 4.641420841217041,
+          "maximum_absolute_score": 7.133181095123291,
+          "mean_attention_entropy": 1.1885050535202026,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008581383008277044
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.011857829988002777,
+          "maximum_absolute_score": 10.168872833251953,
+          "mean_attention_entropy": 0.17444120347499847,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.998046875,
+          "loss": 0.006626211106777191,
+          "maximum_absolute_score": 10.041559219360352,
+          "mean_attention_entropy": 0.1886533498764038,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.1276953078738607,
+        "seconds": 0.04694251800538041
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.0471093250089325
+    },
+    {
+      "name": "noqk-scale4-seed2",
+      "seed": 2,
+      "scale": 4.0,
+      "qk_rms": false,
+      "status": "passed",
+      "completed_updates": 96,
+      "first99_epochs": 3.0,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.10986328125,
+          "loss": 7.975075721740723,
+          "maximum_absolute_score": 60.980865478515625,
+          "mean_attention_entropy": 0.23798362910747528,
+          "nearly_one_hot_fraction": 0.08984375
+        },
+        "heldout": {
+          "accuracy": 0.13623046875,
+          "loss": 7.680578231811523,
+          "maximum_absolute_score": 53.50686264038086,
+          "mean_attention_entropy": 0.25915291905403137,
+          "nearly_one_hot_fraction": 0.10107421875
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008075591002125293
+      },
+      "final": {
+        "step": 96,
+        "epochs": 3.0,
+        "train": {
+          "accuracy": 0.998046875,
+          "loss": 0.016523325815796852,
+          "maximum_absolute_score": 172.9517822265625,
+          "mean_attention_entropy": 0.0032746698707342148,
+          "nearly_one_hot_fraction": 0.90478515625
+        },
+        "heldout": {
+          "accuracy": 0.99267578125,
+          "loss": 0.06272237747907639,
+          "maximum_absolute_score": 142.19703674316406,
+          "mean_attention_entropy": 0.007070114836096764,
+          "nearly_one_hot_fraction": 0.890625
+        },
+        "last_gradient_l2": 6.928995693480991,
+        "seconds": 0.09086057599051856
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.09102319501107559
+    },
+    {
+      "name": "qk-scale16-seed0",
+      "seed": 0,
+      "scale": 16.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1484375,
+          "loss": 4.517672061920166,
+          "maximum_absolute_score": 7.8583269119262695,
+          "mean_attention_entropy": 1.1889175176620483,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.15625,
+          "loss": 4.423138618469238,
+          "maximum_absolute_score": 7.91778039932251,
+          "mean_attention_entropy": 1.179524302482605,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008673468022607267
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.99853515625,
+          "loss": 0.007593211717903614,
+          "maximum_absolute_score": 9.645275115966797,
+          "mean_attention_entropy": 0.16425096988677979,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.9990234375,
+          "loss": 0.004904190544039011,
+          "maximum_absolute_score": 10.501245498657227,
+          "mean_attention_entropy": 0.173965185880661,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.0732056102402368,
+        "seconds": 0.04660689999582246
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.04678093100665137
+    },
+    {
+      "name": "noqk-scale16-seed0",
+      "seed": 0,
+      "scale": 16.0,
+      "qk_rms": false,
+      "status": "budget_exhausted",
+      "completed_updates": 1024,
+      "first99_epochs": null,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14404296875,
+          "loss": 8.516703605651855,
+          "maximum_absolute_score": 924.8896484375,
+          "mean_attention_entropy": 0.013911938294768333,
+          "nearly_one_hot_fraction": 0.87939453125
+        },
+        "heldout": {
+          "accuracy": 0.15966796875,
+          "loss": 8.336217880249023,
+          "maximum_absolute_score": 897.4512329101562,
+          "mean_attention_entropy": 0.014235620386898518,
+          "nearly_one_hot_fraction": 0.884765625
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.00863489499897696
+      },
+      "final": {
+        "step": 1024,
+        "epochs": 32.0,
+        "train": {
+          "accuracy": 0.89501953125,
+          "loss": 1.0446031093597412,
+          "maximum_absolute_score": 7589.63916015625,
+          "mean_attention_entropy": 0.0008288765093311667,
+          "nearly_one_hot_fraction": 0.99072265625
+        },
+        "heldout": {
+          "accuracy": 0.8935546875,
+          "loss": 1.0558921098709106,
+          "maximum_absolute_score": 9063.4912109375,
+          "mean_attention_entropy": 0.001580478623509407,
+          "nearly_one_hot_fraction": 0.9912109375
+        },
+        "last_gradient_l2": 1.4350234486734186e-10,
+        "seconds": 0.9087815599923488
+      },
+      "exact_zero_gradient_updates": 11,
+      "seconds": 0.9089728940161876
+    },
+    {
+      "name": "qk-scale16-seed1",
+      "seed": 1,
+      "scale": 16.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14599609375,
+          "loss": 4.608810901641846,
+          "maximum_absolute_score": 8.175801277160645,
+          "mean_attention_entropy": 1.1609383821487427,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.138671875,
+          "loss": 4.7121148109436035,
+          "maximum_absolute_score": 7.538575649261475,
+          "mean_attention_entropy": 1.1351344585418701,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008702814986463636
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.016125613823533058,
+          "maximum_absolute_score": 10.39767074584961,
+          "mean_attention_entropy": 0.17526215314865112,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.99853515625,
+          "loss": 0.00432713283225894,
+          "maximum_absolute_score": 10.346714973449707,
+          "mean_attention_entropy": 0.18406474590301514,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.5394006199775693,
+        "seconds": 0.04626750497845933
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.04642517497995868
+    },
+    {
+      "name": "noqk-scale16-seed1",
+      "seed": 1,
+      "scale": 16.0,
+      "qk_rms": false,
+      "status": "budget_exhausted",
+      "completed_updates": 1024,
+      "first99_epochs": null,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14501953125,
+          "loss": 8.478188514709473,
+          "maximum_absolute_score": 1082.5264892578125,
+          "mean_attention_entropy": 0.01754443161189556,
+          "nearly_one_hot_fraction": 0.87744140625
+        },
+        "heldout": {
+          "accuracy": 0.13671875,
+          "loss": 8.590041160583496,
+          "maximum_absolute_score": 1085.5584716796875,
+          "mean_attention_entropy": 0.01146407425403595,
+          "nearly_one_hot_fraction": 0.89306640625
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008683155989274383
+      },
+      "final": {
+        "step": 1024,
+        "epochs": 32.0,
+        "train": {
+          "accuracy": 0.90283203125,
+          "loss": 0.9649930596351624,
+          "maximum_absolute_score": 7203.35791015625,
+          "mean_attention_entropy": 0.0017543694702908397,
+          "nearly_one_hot_fraction": 0.99169921875
+        },
+        "heldout": {
+          "accuracy": 0.857421875,
+          "loss": 1.4249353408813477,
+          "maximum_absolute_score": 6562.1904296875,
+          "mean_attention_entropy": 0.0011949774343520403,
+          "nearly_one_hot_fraction": 0.99169921875
+        },
+        "last_gradient_l2": 0.11471699344297662,
+        "seconds": 0.9000333670119289
+      },
+      "exact_zero_gradient_updates": 13,
+      "seconds": 0.9002139010117389
+    },
+    {
+      "name": "qk-scale16-seed2",
+      "seed": 2,
+      "scale": 16.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1162109375,
+          "loss": 4.683961391448975,
+          "maximum_absolute_score": 7.179421901702881,
+          "mean_attention_entropy": 1.1893293857574463,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.1298828125,
+          "loss": 4.641420841217041,
+          "maximum_absolute_score": 7.133181095123291,
+          "mean_attention_entropy": 1.1885050535202026,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008730858011404052
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.011857833713293076,
+          "maximum_absolute_score": 10.16887378692627,
+          "mean_attention_entropy": 0.17444120347499847,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.998046875,
+          "loss": 0.006626216694712639,
+          "maximum_absolute_score": 10.041561126708984,
+          "mean_attention_entropy": 0.1886533498764038,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.1276956662903769,
+        "seconds": 0.04793202900327742
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.04810806398745626
+    },
+    {
+      "name": "noqk-scale16-seed2",
+      "seed": 2,
+      "scale": 16.0,
+      "qk_rms": false,
+      "status": "budget_exhausted",
+      "completed_updates": 1024,
+      "first99_epochs": null,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.10986328125,
+          "loss": 8.855854988098145,
+          "maximum_absolute_score": 975.69384765625,
+          "mean_attention_entropy": 0.01271464116871357,
+          "nearly_one_hot_fraction": 0.89306640625
+        },
+        "heldout": {
+          "accuracy": 0.13623046875,
+          "loss": 8.575693130493164,
+          "maximum_absolute_score": 856.1098022460938,
+          "mean_attention_entropy": 0.016089165583252907,
+          "nearly_one_hot_fraction": 0.88037109375
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.00861174101009965
+      },
+      "final": {
+        "step": 1024,
+        "epochs": 32.0,
+        "train": {
+          "accuracy": 0.89306640625,
+          "loss": 1.066344976425171,
+          "maximum_absolute_score": 6798.751953125,
+          "mean_attention_entropy": 0.001525779953226447,
+          "nearly_one_hot_fraction": 0.99072265625
+        },
+        "heldout": {
+          "accuracy": 0.8818359375,
+          "loss": 1.1699410676956177,
+          "maximum_absolute_score": 6858.3125,
+          "mean_attention_entropy": 0.0017154853558167815,
+          "nearly_one_hot_fraction": 0.98876953125
+        },
+        "last_gradient_l2": 1.6659909465986036e-18,
+        "seconds": 0.9094467410177458
+      },
+      "exact_zero_gradient_updates": 13,
+      "seconds": 0.9096468210045714
+    },
+    {
+      "name": "qk-scale64-seed0",
+      "seed": 0,
+      "scale": 64.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1484375,
+          "loss": 4.517672061920166,
+          "maximum_absolute_score": 7.8583269119262695,
+          "mean_attention_entropy": 1.1889175176620483,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.15625,
+          "loss": 4.423138618469238,
+          "maximum_absolute_score": 7.91778039932251,
+          "mean_attention_entropy": 1.179524302482605,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008771896013058722
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.99853515625,
+          "loss": 0.007593212183564901,
+          "maximum_absolute_score": 9.64527416229248,
+          "mean_attention_entropy": 0.16425096988677979,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.9990234375,
+          "loss": 0.004904191009700298,
+          "maximum_absolute_score": 10.501243591308594,
+          "mean_attention_entropy": 0.173965185880661,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.07320515254874278,
+        "seconds": 0.04672511501121335
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.04688613099278882
+    },
+    {
+      "name": "noqk-scale64-seed0",
+      "seed": 0,
+      "scale": 64.0,
+      "qk_rms": false,
+      "status": "budget_exhausted",
+      "completed_updates": 1024,
+      "first99_epochs": null,
+      "initial_parameters_sha256": "06cc0bbef0671bab125d142295d81320ab97541472b695553fd24ee86916c599",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14404296875,
+          "loss": 8.559782028198242,
+          "maximum_absolute_score": 14798.234375,
+          "mean_attention_entropy": 0.00022100588830653578,
+          "nearly_one_hot_fraction": 0.99755859375
+        },
+        "heldout": {
+          "accuracy": 0.15966796875,
+          "loss": 8.397923469543457,
+          "maximum_absolute_score": 14359.2197265625,
+          "mean_attention_entropy": 0.0006868624477647245,
+          "nearly_one_hot_fraction": 0.99267578125
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008741077006561682
+      },
+      "final": {
+        "step": 1024,
+        "epochs": 32.0,
+        "train": {
+          "accuracy": 0.2412109375,
+          "loss": 7.58782434463501,
+          "maximum_absolute_score": 103908.8984375,
+          "mean_attention_entropy": 9.326096915174276e-05,
+          "nearly_one_hot_fraction": 0.998046875
+        },
+        "heldout": {
+          "accuracy": 0.232421875,
+          "loss": 7.6760711669921875,
+          "maximum_absolute_score": 88211.3828125,
+          "mean_attention_entropy": 1.8370796169620007e-05,
+          "nearly_one_hot_fraction": 0.998046875
+        },
+        "last_gradient_l2": 1.7561721571381927e-10,
+        "seconds": 0.9093998100142926
+      },
+      "exact_zero_gradient_updates": 305,
+      "seconds": 0.9095667070068885
+    },
+    {
+      "name": "qk-scale64-seed1",
+      "seed": 1,
+      "scale": 64.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14599609375,
+          "loss": 4.608810901641846,
+          "maximum_absolute_score": 8.175801277160645,
+          "mean_attention_entropy": 1.1609383821487427,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.138671875,
+          "loss": 4.7121148109436035,
+          "maximum_absolute_score": 7.538575649261475,
+          "mean_attention_entropy": 1.1351344585418701,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.009135436994256452
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.016125619411468506,
+          "maximum_absolute_score": 10.397671699523926,
+          "mean_attention_entropy": 0.17526215314865112,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.99853515625,
+          "loss": 0.004327130503952503,
+          "maximum_absolute_score": 10.346714973449707,
+          "mean_attention_entropy": 0.18406474590301514,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.5394036048979755,
+        "seconds": 0.04779042999143712
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.047954572015441954
+    },
+    {
+      "name": "noqk-scale64-seed1",
+      "seed": 1,
+      "scale": 64.0,
+      "qk_rms": false,
+      "status": "budget_exhausted",
+      "completed_updates": 1024,
+      "first99_epochs": null,
+      "initial_parameters_sha256": "e7996e0161b18a559cb93bd26f117fde927e05d8a0e6e620022f1b53bac4ec86",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.14501953125,
+          "loss": 8.545879364013672,
+          "maximum_absolute_score": 17320.423828125,
+          "mean_attention_entropy": 0.0007677609100937843,
+          "nearly_one_hot_fraction": 0.99267578125
+        },
+        "heldout": {
+          "accuracy": 0.13671875,
+          "loss": 8.631669998168945,
+          "maximum_absolute_score": 17368.935546875,
+          "mean_attention_entropy": 0.00040449248626828194,
+          "nearly_one_hot_fraction": 0.99658203125
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008945837005740032
+      },
+      "final": {
+        "step": 1024,
+        "epochs": 32.0,
+        "train": {
+          "accuracy": 0.24365234375,
+          "loss": 7.559462070465088,
+          "maximum_absolute_score": 100741.421875,
+          "mean_attention_entropy": 0.00035363476490601897,
+          "nearly_one_hot_fraction": 0.99853515625
+        },
+        "heldout": {
+          "accuracy": 0.24072265625,
+          "loss": 7.593088626861572,
+          "maximum_absolute_score": 87613.9140625,
+          "mean_attention_entropy": 5.968003279122058e-06,
+          "nearly_one_hot_fraction": 0.99658203125
+        },
+        "last_gradient_l2": 0.0,
+        "seconds": 0.9060911989945453
+      },
+      "exact_zero_gradient_updates": 310,
+      "seconds": 0.9062558820005506
+    },
+    {
+      "name": "qk-scale64-seed2",
+      "seed": 2,
+      "scale": 64.0,
+      "qk_rms": true,
+      "status": "passed",
+      "completed_updates": 32,
+      "first99_epochs": 1.0,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.1162109375,
+          "loss": 4.683961391448975,
+          "maximum_absolute_score": 7.179421901702881,
+          "mean_attention_entropy": 1.1893293857574463,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.1298828125,
+          "loss": 4.641420841217041,
+          "maximum_absolute_score": 7.133181095123291,
+          "mean_attention_entropy": 1.1885050535202026,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.009133021987508982
+      },
+      "final": {
+        "step": 32,
+        "epochs": 1.0,
+        "train": {
+          "accuracy": 0.9951171875,
+          "loss": 0.011857831850647926,
+          "maximum_absolute_score": 10.168874740600586,
+          "mean_attention_entropy": 0.17444120347499847,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "heldout": {
+          "accuracy": 0.998046875,
+          "loss": 0.006626218557357788,
+          "maximum_absolute_score": 10.041558265686035,
+          "mean_attention_entropy": 0.1886533498764038,
+          "nearly_one_hot_fraction": 0.0
+        },
+        "last_gradient_l2": 0.12769563973892956,
+        "seconds": 0.04711107799084857
+      },
+      "exact_zero_gradient_updates": 0,
+      "seconds": 0.047277214005589485
+    },
+    {
+      "name": "noqk-scale64-seed2",
+      "seed": 2,
+      "scale": 64.0,
+      "qk_rms": false,
+      "status": "budget_exhausted",
+      "completed_updates": 1024,
+      "first99_epochs": null,
+      "initial_parameters_sha256": "c457ac911aef39c2039e076576ded1474db6a0791f628d5f84dfd0e161d4a95b",
+      "parameters": 2048,
+      "initial": {
+        "step": 0,
+        "epochs": 0.0,
+        "train": {
+          "accuracy": 0.10986328125,
+          "loss": 8.898258209228516,
+          "maximum_absolute_score": 15611.1015625,
+          "mean_attention_entropy": 0.0007267166511155665,
+          "nearly_one_hot_fraction": 0.9951171875
+        },
+        "heldout": {
+          "accuracy": 0.13623046875,
+          "loss": 8.633193016052246,
+          "maximum_absolute_score": 13697.7568359375,
+          "mean_attention_entropy": 0.0008107656612992287,
+          "nearly_one_hot_fraction": 0.9921875
+        },
+        "last_gradient_l2": null,
+        "seconds": 0.008692464005434886
+      },
+      "final": {
+        "step": 1024,
+        "epochs": 32.0,
+        "train": {
+          "accuracy": 0.15185546875,
+          "loss": 8.48060417175293,
+          "maximum_absolute_score": 98437.609375,
+          "mean_attention_entropy": 0.00027935049729421735,
+          "nearly_one_hot_fraction": 0.998046875
+        },
+        "heldout": {
+          "accuracy": 0.1513671875,
+          "loss": 8.481212615966797,
+          "maximum_absolute_score": 94255.109375,
+          "mean_attention_entropy": 0.0009604805964045227,
+          "nearly_one_hot_fraction": 0.998046875
+        },
+        "last_gradient_l2": 1.3247402402048915e-29,
+        "seconds": 0.9088572559994645
+      },
+      "exact_zero_gradient_updates": 306,
+      "seconds": 0.9090228000131901
+    }
+  ],
+  "expected_cells": 24,
+  "all_initialization_pairs_match": true,
+  "interpretation": "A failure at a deliberately large fixed projection multiplier is a mechanistic stress counterexample. It does not establish spontaneous norm growth, universal superiority, or failure of the full no-QK GPT at its ordinary initialization. Report whether the ordinary-scale control succeeds. No retuning of this run after outcomes."
+}
