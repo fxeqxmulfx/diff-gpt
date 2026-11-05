@@ -1,0 +1,28 @@
+{
+  "fixture": "research/transformer_stress_fixes/StressFixes.lean",
+  "fixture_sha256": "04d066457c729b409ce76f64bc222f51bdbb1de128321643fd1bbfeb8376ceb4",
+  "source_implementation_commit": "60ad06f",
+  "transformer_project": "/home/misha/lean_projects/transformer",
+  "transformer_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "lean": "4.35.0",
+  "mathlib_commit": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "command": "lake env lean /home/misha/python_projects/gpt/research/transformer_stress_fixes/StressFixes.lean",
+  "exit_code": 0,
+  "warnings": 0,
+  "extra_axioms": [],
+  "allowed_axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "checked_new_theorems": [
+    "frequency_bounds",
+    "frequency_hasDerivAt",
+    "frequency_derivative_bound",
+    "initial_frequency_and_derivative",
+    "pairwise_tangent_numerator",
+    "pairwise_tangent_eq",
+    "parallel_pairwise_zero"
+  ],
+  "scope": "Bounded frequency range and derivative, initialization, and real pairwise tangent identity. No floating-point or convergence theorem; finite-grid measurements are separate. Prior identity-skip/gate-placement/mHC counterexamples were also checked for axioms."
+}

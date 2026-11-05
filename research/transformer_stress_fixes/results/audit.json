@@ -1,0 +1,51 @@
+{
+  "audited_learning_cells": 84,
+  "passed": 7,
+  "budget_misses": 77,
+  "numerical_learning_failures": 0,
+  "numerical_probe_rows": 455,
+  "data_sha256": "28946d2e2c3975ea2a7ba99bf6ad6dfd910acdb76df9bf24448677c06811a929",
+  "source_files_verified": 36,
+  "all_checkpoints_histories_optimizer_steps_and_sampler_states_verified": true,
+  "paired_initializations_and_final_full_split_metrics_verified": true,
+  "ordinary_controls_verified_per_variant": 5,
+  "numerical_summary": [
+    {
+      "variant": "control",
+      "cases": 65,
+      "finite_and_accurate": 44
+    },
+    {
+      "variant": "range_rms",
+      "cases": 65,
+      "finite_and_accurate": 44
+    },
+    {
+      "variant": "wide_rotary",
+      "cases": 65,
+      "finite_and_accurate": 53
+    },
+    {
+      "variant": "wide_swiglu",
+      "cases": 65,
+      "finite_and_accurate": 49
+    },
+    {
+      "variant": "wide_xsa",
+      "cases": 65,
+      "finite_and_accurate": 44
+    },
+    {
+      "variant": "all_numeric",
+      "cases": 65,
+      "finite_and_accurate": 63
+    },
+    {
+      "variant": "all_numeric_bounded_rope",
+      "cases": 65,
+      "finite_and_accurate": 65
+    }
+  ],
+  "numerical_stress_failures_preserved": true,
+  "audit_source_sha256": "8daae88b99d95e92b489da22c8a42a3cb5c319d5dd9c1b00d17da2e2c083077a"
+}

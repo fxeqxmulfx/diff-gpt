@@ -47,5 +47,57 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.tr
 ```
 
 Sources, data and complete outputs are retained under
-`runs/transformer-stress/fixes-v1/`. Scientific results are pending; no claim
-that these candidates solve the failures is made before measuring them.
+`runs/transformer-stress/fixes-v1/`. The [audit](results/audit.json) verifies
+all 455 numerical cases and 84 learning checkpoints. Reproduce it with
+`PYTHONPATH=. .venv/bin/python research/stress_audits/transformer_fixes_v1.py`.
+
+## Numerical results
+
+The accuracy threshold is relative logit error below `0.001`, together with
+finite outputs, loss and parameter gradients. The new reference uses the
+intended FP64 angle formula for every arm; the bounded-frequency arm uses its
+explicitly changed formula. All parameters remain FP32 and tied weights remain
+the same parameter object. The [full records](results/numerical.json) retain
+every case, including the remeasured original controls.
+
+| Candidate | Finite and accurate / 65 |
+|---|---:|
+| Original | 44 |
+| Safer RMS only | 44 |
+| Wider rotary angles only | 53 |
+| Wider SwiGLU only | 49 |
+| Wider XSA only | 44 |
+| All four numerical repairs | 63 |
+| All repairs + bounded learned frequency | **65** |
+
+The combined numerical repairs make every forward accurate, but two
+`alpha=90` cases still overflow the FP32 frequency gradient: 2 layers/context
+1024 and 8 layers/context 32. The bounded-frequency candidate removes these
+remaining failures. Its maximum relative logit error is **4.2793e-6**. This
+solves the declared finite numerical grid, not every possible finite-precision
+failure. In particular, a bound on normalized hidden states is not a bound on
+unconstrained tied readout weights or every learned Jacobian.
+
+The [Lean fixture](StressFixes.lean) checks seven new statements: bounded
+frequency range and derivative, preserved initial value/derivative, the
+pairwise tangent identity, its division form for nonzero energy, and the
+zero tangent numerator for a parallel upstream. The
+[proof record](results/guarantees.json) and [checker output](results/lean-check.txt)
+have zero warnings and only `propext`, `Classical.choice`, `Quot.sound`.
+These are real-arithmetic statements; finite-precision behavior is measured
+separately above.
+
+## Learning results
+
+The [complete learning comparison](results/learning-summary.json) has **7/84
+threshold passes**: five with zero-initialized scalar gates and two with `1/D`
+scaling. All other arms still miss. With the zero-initialized gate, the linear
+path improves coverage from **0/12 to 5/12**, worst final relative MSE from
+**0.26673 to 0.07459**, and median from **0.18443 to 0.06050**. It is the best
+of this declared comparison, but seven cases remain unsolved. No aggregate
+first-crossing mean is reported for incomplete coverage.
+
+The deeper 16-branch model fits the teacher better; all six 4-branch cases
+still miss. A separately frozen rate study in `../transformer_stress_rates/`
+tests whether this is a fixed-budget optimization issue. These results do not
+yet establish a full-GPT improvement or justify calling the architecture ideal.
