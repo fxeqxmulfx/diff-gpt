@@ -1,0 +1,13 @@
+{
+  "question": "Can a larger internal SwiGLU feature width fix the remaining shallow-model generalization gap?",
+  "parent": "Shifted SwiGLU + Peri-RMS + zero-initialized scalar post-RMS gate scaled by 1/sqrt(D), peak LR0.01. Rate study selected this by coverage:6/12passes, all six depth16 cases; all six depth4 cases still miss.",
+  "variant": "peri_rezero",
+  "learning_rate": 0.01,
+  "control_hidden": 43,
+  "new_hidden_widths": [128, 256],
+  "expected_new_cells": 24,
+  "change": "Increase only the SwiGLU internal width from43 to128 or256. Keep residual state dimension16, original gate/value rows and output-projection columns exactly. Draw added entries from Normal(0,0.1) using a separate generator seeded model_seed+271828. Initialization outputs intentionally change and parameter counts increase; report them.",
+  "protocol": "Reuse original data, teacher strengths0.25/1, depths4/16, seeds0/1/2, sampler, optimizer, 512 updates, cadence32, and relative-MSE target0.05. Reuse all12rate0.01controls. No extra steps, changed threshold, or teacher-specific features. Numeric repairs remain a separate experiment.",
+  "selection": "After both new widths finish, rank 12-cell coverage first, then geometric-mean first crossing only for complete coverage; otherwise worst final error. Keep all36rows and parameter counts. This is capacity growth, not an equal-size improvement.",
+  "scope": "Adaptive follow-up on the same synthetic diagnostic. A successful result will not by itself establish universal-model or full-GPT superiority. Do not use the long diagnostic or change the ongoing early99 benchmark."
+}
