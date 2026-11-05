@@ -656,6 +656,20 @@ proof that our exact parameter-free RMS variant is sufficient at every scale.
 
 ## Log-Scaled LeRoPE with SSMax retained
 
+The ordinary **LeRoPE with Q/K RMS** arm completed **75/75 short passes**.
+Its geometric mean is **28.3558 epochs**, versus 28.3606 for its scaled Peri-RMS
+parent: ratio **0.999830**, an effectively unchanged aggregate. It has 24 earlier,
+27 tied and 24 later cells against that parent. Against LR ×2 it uses **17.2%
+fewer epochs** (ratio 0.827908; 48 earlier, 6 tied, 21 later), and against the
+original baseline **50.4% fewer**. Summed trainer time is 1525.97 seconds;
+parameter counts are 100744–1183504, including the declared frequency vector.
+Hard-depth seeds 1 and 2 take 5.5× and 5× LR ×2's exposure, respectively.
+The [complete comparison](results/round2/peri-rms-scaled-lerope-lr2-vs-lr2-short.json),
+[parent comparison](results/round2/peri-rms-scaled-lerope-lr2-vs-peri-scaled-short.json)
+and [75-cell audit](results/round2/audit-peri-rms-scaled-lerope-lr2-full-short.json)
+retain all outcomes. SSMax/QK is still the strongest completed Q/K-normalized
+arm by the declared aggregate. Both combined rotary arms remain in progress.
+
 The user requested a further experiment before resuming the current queue:
 **SSMax + Log-Scaled LeRoPE**, under the
 [declared plan](results/round2/ssmax-lerope-log-angle-plan.json).
