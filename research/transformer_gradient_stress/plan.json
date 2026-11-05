@@ -1,0 +1,13 @@
+{
+  "question": "Can the bounded-frequency model retain its small true gradient when native tanh backward rounds it to zero?",
+  "parent_implementation": "research/transformer_stress_fixes/models.py at60ad06f, all_numeric_bounded_rope",
+  "diagnostic": "At raw alpha90, native FP64 differentiation of exp(4*tanh(alpha/4)) gives0; the80-digit Decimal derivative is6.251528757339955e-18. Finite-gradient checks alone did not detect this loss.",
+  "change": "Preserve the forward exp(4*tanh(alpha/4)). Evaluate its VJP as upstream * multiplier * 4r/(1+r)^2 where r=exp(-2*abs(alpha/4)). No changed cap, parameters, weights, normalization, or optimizer.",
+  "scalar_parameters": [-90, -40, -4, -1, 0, 1, 4, 40, 90],
+  "scalar_parameter_dtypes": ["float32", "float64"],
+  "reference": "80-digit Decimal evaluation of the same real multiplier and derivative, using exponential identities rather than subtracting tanh squared.",
+  "maximum_scalar_relative_gradient_error": 0.000001,
+  "maximum_other_parameter_relative_gradient_error": 0.000001,
+  "full_stack": "Repeat all65 original full-stack interventions. Compare the corrected model against the already tested all_numeric_bounded_rope parent using identical original parameters, tokens and targets. Require identical forward logits, finite gradients, and agreement of other parameter gradients. Record all frequency-gradient changes, including old zeros.",
+  "scope": "A numerical derivative repair of the same mathematical model. No new learning claim. Extremely small but correct gradients may still lead to updates below a parameter's representable spacing. Source and numerical records are preserved separately from earlier successful finite-gradient checks."
+}
