@@ -642,6 +642,18 @@ projection norms. Faster observed learning and stronger score control are
 therefore distinct choices here. Final selection still waits for all remaining
 promoted arms; no new long diagnostic has run.
 
+The user's clarified research objective is one shared architecture for small
+and large tasks. **Q/K RMS remains in the main candidate**; the no-Q/K arm
+is an ablation whose small-suite speed does not establish scalable stability.
+The declared benchmark ranking remains intact, while a shared-model choice
+requires separate evidence across sizes and context lengths. This distinction
+is supported by large-model studies: [ViT-22B, Section 2](https://proceedings.mlr.press/v202/dehghani23a/dehghani23a.pdf)
+reports Q/K normalization preventing attention-logit-driven divergence in an
+8B model; [Chameleon, Section 2.3](https://arxiv.org/html/2405.09818v1#S2.SS3)
+reports a 7B ablation diverging without Q/K normalization and uses additional
+stabilization measures. These are evidence from other training settings, not
+proof that our exact parameter-free RMS variant is sufficient at every scale.
+
 ## Log-Scaled LeRoPE with SSMax retained
 
 The user requested a further experiment before resuming the current queue:

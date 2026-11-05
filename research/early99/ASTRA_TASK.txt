@@ -6,6 +6,18 @@ epochs before the first observed 99% exact held-out accuracy on the SHORT suite.
 A single historical crossing counts. Do not require a delayed learning plateau,
 continued retention, or a favorable final checkpoint.
 
+Shared-model objective: latest user clarification
+Build one architecture for both small and large tasks, rather than switching
+normalization or other mechanisms by task size. Keep Q/K normalization in the
+main shared-model candidate; the no-Q/K experiment is a uniform ablation, not
+a prescription to disable it on small tasks. Judge the shared model using
+coverage, first-99 learning speed, stability and stated mathematical bounds
+across model sizes and context lengths. Small-suite epoch ranking alone does
+not establish suitability at scale. Preserve the current round's declared
+benchmark ranking and single long diagnostic as measured evidence, then study
+the common architecture at larger contexts/scales in a separately frozen round.
+Keep the original fixed suite intact and never tune from its long diagnostic.
+
 User's fixed benchmark
 - research/early99/suite.json contains exactly the 35 requested nonconstant tasks.
 - Short: 25 tasks whose historical seed-1 crossing was within 60 seconds.
