@@ -1,0 +1,148 @@
+{
+  "all_passed": false,
+  "censored_cells": [
+    {
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "completed": {
+        "batch": 512,
+        "complete_epochs": 10000,
+        "epochs": 10000.0,
+        "examples_seen": 47040000,
+        "train_examples": 4704,
+        "updates": 100000,
+        "updates_per_epoch": 10
+      },
+      "data_fingerprints": {
+        "raw": "05a030d0ff4da8779a1d42fc45521082069201aa155ee4d07ba2407a02e71e27",
+        "train": "23b950ffe6c3cbbdd344fcb2727a2857e83c6e98879e7b6bc932ccdb82658c75",
+        "validation": "53f3db300603f9613afe013b87b8f2722d4a59ad2ead0a52db592ce5bf4916cb"
+      },
+      "final_heldout_accuracy": 0.9863945578231292,
+      "first99": null,
+      "first99_epochs": null,
+      "first99_updates": null,
+      "initial_parameters_sha256": "ea42a6b20ebe95420a78da5a909c300538eeecb83a8f3f701b375750c1346590",
+      "model_source_reference": {
+        "files": {
+          "domain/model/__init__.py": "b8583ecc51bae8eb1cc2009627b9d3be4c8f26bbd11f34d32841410d133522f4",
+          "domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+          "domain/model/block.py": "d3f55fb85933240da2e30defcd7bf66a7e234108aba3a91b9ce891d92dcd7784",
+          "domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+          "domain/model/centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d",
+          "domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+          "domain/model/engine.py": "de3a0a6f130e790959067a982bd4be69a2be3aabdc952f838639005f1fdec43a",
+          "domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+          "domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+          "domain/model/kv_cache.py": "7e60cda6058b6e2b3af460303ee5fb482d99362b82145f6feaf2affec193d895",
+          "domain/model/mha.py": "65045c01bc1819597b3d3f19ada6cf8277cbdcd2d1466bc1376b4e30ded0aa88",
+          "domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+          "domain/model/normalized_gpt.py": "12cfbbaef692fb76c572125f397cacbabf775c7f148ff79e85a9d4749d16f7ff",
+          "domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+          "domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba"
+        },
+        "model_commit": "01f18f86787511279fe52fe41883495fce0e3105"
+      },
+      "resumed": false,
+      "seconds_last_run_segment": 399.9686077350052,
+      "seed": 0,
+      "status": "budget_exhausted",
+      "tier": "long"
+    }
+  ],
+  "complete": true,
+  "geometric_mean_first99_epochs": null,
+  "interpretation": "A single observed 99% exact held-out crossing suffices. Epochs count actual presented examples, including short tails. Per-task median/worst and aggregate geometric mean require all expected seeds to pass. Unsolved cells are budget-censored and are never discarded.",
+  "passed_runs": 29,
+  "planned_runs": 30,
+  "raw_directory": "runs/early99/baseline",
+  "resumed_cells": 0,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "tasks": [
+    {
+      "all_three_passed": true,
+      "case": "arithmetic-abs-diff-blind",
+      "median_first99_epochs": 1617.0,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 1655.0
+    },
+    {
+      "all_three_passed": true,
+      "case": "arithmetic-abs-diff",
+      "median_first99_epochs": 640.0,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 774.0
+    },
+    {
+      "all_three_passed": true,
+      "case": "arithmetic-sum-pow4",
+      "median_first99_epochs": 2489.0,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 2627.0
+    },
+    {
+      "all_three_passed": true,
+      "case": "basis-parity20",
+      "median_first99_epochs": 11.8,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 15.8
+    },
+    {
+      "all_three_passed": true,
+      "case": "basis-parity16",
+      "median_first99_epochs": 10.0,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 18.6
+    },
+    {
+      "all_three_passed": true,
+      "case": "arithmetic-sum-cube",
+      "median_first99_epochs": 3531.0,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 4315.0
+    },
+    {
+      "all_three_passed": true,
+      "case": "basis-recall-easy",
+      "median_first99_epochs": 18.2112,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 30.512
+    },
+    {
+      "all_three_passed": false,
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "median_first99_epochs": null,
+      "passed_seeds": 2,
+      "tier": "long",
+      "worst_first99_epochs": null
+    },
+    {
+      "all_three_passed": true,
+      "case": "associative-divisor-n2-l1-w0",
+      "median_first99_epochs": 317.0,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 1070.0
+    },
+    {
+      "all_three_passed": true,
+      "case": "basis-parity24",
+      "median_first99_epochs": 31.4,
+      "passed_seeds": 3,
+      "tier": "long",
+      "worst_first99_epochs": 39.4
+    }
+  ],
+  "tier": "long",
+  "trainer_seconds_including_setup_scoring": 3628.009674072993
+}

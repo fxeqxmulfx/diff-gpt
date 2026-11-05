@@ -24,5 +24,39 @@
     "passed": 31,
     "seconds": 36.35
   },
+  "environment": {
+    "cuda_fused_adamw": true,
+    "final_gpu_memory_mib": 11,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "matmul_precision": "highest",
+    "rms_backward": "unchanged FP64 calculation",
+    "scientific_dtype": "torch.float32",
+    "torch": "2.14.1+cu126"
+  },
+  "final_audit": {
+    "all_checkpoints_histories_sources_retained": true,
+    "all_optimizer_step_counts_verified": true,
+    "all_parameters_finite": true,
+    "audited_pairs": 105,
+    "candidate_code_and_settings_unchanged_after_selection": true,
+    "completed_scientific_runs": 210,
+    "execution_errors": 0,
+    "json_csv_unique_paired_rows": {
+      "long": 30,
+      "short": 75
+    },
+    "model_parameter_counts_unchanged_in_all_pairs": true,
+    "remaining_training_processes": 0,
+    "resumed_runs": 0,
+    "tests_passed": 31
+  },
+  "long": {
+    "baseline_censored": 1,
+    "baseline_passed": 29,
+    "candidate_censored": 4,
+    "candidate_passed": 26,
+    "executed_once_after_short_selection": true,
+    "no_tuning_after_long_check": true
+  },
   "ruff": "passed"
 }

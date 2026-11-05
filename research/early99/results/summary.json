@@ -1,0 +1,90 @@
+{
+  "completed_at_utc": "2026-11-05T16:15:21.461597+00:00",
+  "long": {
+    "baseline_geometric_mean_first99_epochs": null,
+    "baseline_passed": 29,
+    "baseline_trainer_seconds_including_setup_scoring": 3628.009674072993,
+    "candidate_geometric_mean_first99_epochs": null,
+    "candidate_passed": 26,
+    "candidate_trainer_seconds_including_setup_scoring": 3238.0514002580894,
+    "coverage_gains": [
+      {
+        "case": "recurrence-fibonacci-k1-c2-lgt",
+        "first99_epochs": 3577.0,
+        "seed": 0
+      }
+    ],
+    "coverage_regressions": [
+      {
+        "case": "arithmetic-sum-pow4",
+        "censor_epochs": 5263.163265306122,
+        "seed": 0,
+        "status": "budget_exhausted"
+      },
+      {
+        "case": "arithmetic-sum-pow4",
+        "censor_epochs": 5263.163265306122,
+        "seed": 1,
+        "status": "budget_exhausted"
+      },
+      {
+        "case": "arithmetic-sum-cube",
+        "censor_epochs": 5263.163265306122,
+        "seed": 1,
+        "status": "budget_exhausted"
+      },
+      {
+        "case": "arithmetic-sum-cube",
+        "censor_epochs": 5263.163265306122,
+        "seed": 2,
+        "status": "budget_exhausted"
+      }
+    ],
+    "expected_cells": 30,
+    "geometric_mean_epoch_ratio": null,
+    "interpretation": "Coverage regressed from 29/30 to 26/30: four new budget misses and one recovered baseline miss. Among 25 pairs that both passed, 13 were earlier and 12 later. No paired geometric mean is reported because five pairs contain censoring. These paired counts do not discard the five censored comparisons.",
+    "paired_earlier": 13,
+    "paired_later": 12,
+    "paired_tied": 0,
+    "worst_observed_paired_epoch_ratio": 3.264705882352941
+  },
+  "raw_directories": [
+    "runs/early99/baseline",
+    "runs/early99/candidates/adamw-lr2"
+  ],
+  "runtime_note": "Trainer seconds include task/model setup, compilation, exhaustive scoring and final test scoring, but exclude dispatcher/process startup and separate CPU preflight. All budgets and censored runs are retained; clocks were never resumed.",
+  "scope": "Best short-suite configuration of baseline and one optimizer candidate tested. Long suite was evaluated once after selection, with no tuning.",
+  "selected_configuration": {
+    "learning_rate_multiplier": 2.0,
+    "name": "adamw-lr2"
+  },
+  "short": {
+    "baseline_geometric_mean_first99_epochs": 57.16527288696717,
+    "baseline_passed": 75,
+    "baseline_trainer_seconds_including_setup_scoring": 2066.366506818944,
+    "candidate_geometric_mean_first99_epochs": 34.249937182791875,
+    "candidate_passed": 75,
+    "candidate_trainer_seconds_including_setup_scoring": 1297.2288083240273,
+    "coverage_gains": [],
+    "coverage_regressions": [],
+    "expected_cells": 75,
+    "geometric_mean_epoch_ratio": 0.5991388731846734,
+    "geometric_mean_epoch_reduction_fraction": 0.4008611268153266,
+    "paired_earlier": 55,
+    "paired_later": 13,
+    "paired_tied": 7,
+    "worst_observed_paired_epoch_ratio": 5.8
+  },
+  "validation": {
+    "all_checkpoints_histories_sources_retained": true,
+    "all_optimizer_step_counts_verified": true,
+    "all_parameters_finite": true,
+    "audited_pairs": 105,
+    "candidate_code_and_settings_unchanged_after_selection": true,
+    "completed_scientific_runs": 210,
+    "execution_errors": 0,
+    "model_parameter_counts_unchanged_in_all_pairs": true,
+    "resumed_runs": 0,
+    "tests_passed": 31
+  }
+}

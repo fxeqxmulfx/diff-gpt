@@ -92,19 +92,56 @@ worst cases, all paired ratios and observation brackets are retained in
 
 Trainer seconds include model/data setup, compilation, exhaustive scoring and
 final test scoring; they exclude dispatcher/process startup and the separate CPU
-data preflight. No measured short cell was resumed. Parameter counts are unchanged
+data preflight. No measured cell was resumed. Parameter counts are unchanged
 in every pair, ranging from 100,736 to 1,183,488 depending on the fixed task.
 
 The 15-cell screen and its regressions are in
 [`results/screen-adamw-lr2.json`](results/screen-adamw-lr2.json). The selection was
 frozen in [`results/selection.json`](results/selection.json) before starting any
-long-suite training. The long check is in progress: one fresh baseline and one
+long-suite training. The long check is complete: one fresh baseline and one
 candidate run for each of its 30 cells, with no tuning against that check.
+
+## Long-suite regression check
+
+Coverage **regressed from 29/30 baseline passes to 26/30 candidate passes**.
+The candidate introduced four budget misses, each at 100,000 updates
+(5263.1633 epochs):
+
+| Task | Censored candidate seeds |
+| --- | --- |
+| `arithmetic-sum-pow4` | 0, 1 |
+| `arithmetic-sum-cube` | 1, 2 |
+
+It recovered the baseline miss on `recurrence-fibonacci-k1-c2-lgt`, seed 0:
+the candidate crossed at 3577 epochs, while baseline exhausted 10,000 epochs.
+Among the 25 pairs in which both runs passed, 13 candidate crossings were earlier
+and 12 were later. The worst observed paired ratio was 3.2647× on `basis-parity20`,
+seed 1. The five comparisons containing a censored run are retained, and **no long
+paired geometric mean is reported**. Summed trainer time was 3628.01 seconds for
+baseline and 3238.05 seconds for the candidate, including the budget misses.
+
+The short-suite improvement therefore comes with measured long-suite coverage
+and epoch regressions. The selected configuration was not changed after this
+check. All 30 comparisons, three-seed task statistics and censoring bounds are in
+[`results/adamw-lr2-long.json`](results/adamw-lr2-long.json),
+[`cell CSV`](results/adamw-lr2-long.csv) and
+[`task CSV`](results/adamw-lr2-long-tasks.csv). The compact combined result is
+[`results/summary.json`](results/summary.json).
+
+All **210 scientific runs** completed their first crossing or original budget.
+The final audit checked all 105 pairs, preserved checkpoints/histories/source
+snapshots, optimizer update counts and unchanged model/task/candidate provenance.
+There were no execution errors or resumed clocks. Validation details are in
+[`results/validation.json`](results/validation.json).
 
 ```bash
 # Candidate source/configuration archives reject changes within an existing output.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr2.json --tier short
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr2 --tier short
+
+# Completed long regression check; existing results are reused, not retrained.
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr2.json --tier long
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr2 --tier long
 
 # Full integrity, oracle, CPU equivalence and CUDA capture checks: 31 passed.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py
