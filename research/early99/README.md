@@ -531,3 +531,29 @@ All **77 relevant CPU/CUDA checks pass** with the combined arm enabled. The
 [validation record](results/round2/validation.json) preserves the full command,
 independent combined score/gradient checks, cache equivalence and both ordinary
 and clipping-stress native versus captured updates.
+
+The combination completed **18/18 screen passes** and improved three of six
+medians against LR ×2, meeting the unchanged promotion gate. Against SSMax
+with Q/K RMS alone, however, only one median improves: 4 cells are earlier,
+6 tied and 8 later. Recall's median is 1.375× that parent's exposure. The
+[full screen](results/round2/screen-peri-rms-scaled-ssmax-lerope-lr2.json),
+[SSMax parent comparison](results/round2/screen-peri-rms-scaled-ssmax-lerope-lr2-vs-ssmax-qk.json),
+[LeRoPE parent comparison](results/round2/screen-peri-rms-scaled-ssmax-lerope-lr2-vs-lerope.json)
+and [audit](results/round2/audit-peri-rms-scaled-ssmax-lerope-lr2-screen.json)
+retain every seed. Composition therefore does not automatically preserve each
+component's measured learning gains.
+
+Median paired screen epoch ratios against LR ×2 (lower is better):
+
+| Task | SSMax + Q/K RMS | SSMax without Q/K RMS | LeRoPE | SSMax + Q/K RMS + LeRoPE |
+|---|---:|---:|---:|---:|
+| Boolean AND | 1.0000 | 1.0000 | 0.7500 | 1.0000 |
+| Division p193 k2 | 0.3684 | 0.4316 | 0.3789 | 0.4000 |
+| Division p97 k2 | 1.3333 | 0.7619 | 1.2857 | 1.3810 |
+| Key-value recall | 0.8125 | 1.3750 | 0.6875 | 2.1875 |
+| Square-sum | 0.6896 | 0.4988 | 0.7190 | 0.7162 |
+| Numeric transport | 0.5000 | 1.0000 | 1.0000 | 0.5000 |
+
+All four arms advance to full 75-cell evaluation. This table is a declared
+screen, not an aggregate benchmark speed claim. The combined scientific source
+revision is `57aa3c9`; the three component arms retain `7cff292`.
