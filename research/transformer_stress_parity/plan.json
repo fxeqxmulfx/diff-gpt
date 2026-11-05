@@ -1,0 +1,16 @@
+{
+  "question": "Does learning the even component separately improve residual generalization without preventing learning an even target?",
+  "motivation": "In the existing LR0.01 shallow checkpoints, even-component energy accounts for0.0224 to0.0249 relative MSE although the original tanh teacher is odd. The odd-part error alone remains0.0561 to0.0642, above the unchanged0.05 threshold. This is a diagnosis, not a solved case.",
+  "architecture_change": "Replace shifted SwiGLU (1+SiLU(g))*v by (1+0.5*g*tanh(0.5*g)+0.5*b*g)*v. Learn one scalar b per branch, initialized to0. At b=1 this is the parent in real arithmetic, so even functions are still representable. Keep the output projection, input/output RMS, zero-initialized post-RMS residual gate and depth scaling. Add exactly D parameters; preserve every original matrix entry and RNG draw.",
+  "activation_variants": ["shifted", "learned_even"],
+  "teachers": ["original_odd", "mixed"],
+  "mixed_even_coefficient": 0.5,
+  "mixed_teacher": "For the same frozen sphere inputs x and orthogonal R, use residual tanh(xR)+0.5*((xR)^2-1), elementwise. This new control explicitly needs an even component. Original teacher arrays remain byte-for-byte unchanged. No additional training examples or data augmentation.",
+  "variant": "peri_rezero",
+  "learning_rate": 0.01,
+  "expected_new_cells": 36,
+  "reused_control_cells": 12,
+  "unchanged_protocol": "Use all original depths4/16, strengths0.25/1 and seeds0/1/2, hidden width43, train512/heldout512, data seed1, batch64, AdamW betas0.9/0.98 epsilon1e-8 decay0.01, warmup16, budget512, observation32 and target relativeMSE<=0.05. Apply the same optimizer treatment to the extra scalars. Reuse the12 original-teacher LR0.01 shifted controls; run both arms on the mixed teacher and the new arm on the original teacher. Preserve every outcome and checkpoint.",
+  "selection": "Report each teacher separately and all24 cells per activation arm. Rank pooled threshold coverage, then geometric-mean first-crossing updates only with all24 passes; otherwise worst final relative MSE over all24, median as tie-break. No filtered successful-cell aggregate. Require all48 comparison rows before selecting. Improvement on the original odd teacher alone is not a universal-model win.",
+  "scope": "Adaptive synthetic follow-up informed by the already observed residual stress results. The mixed teacher is an explicit countercheck of the symmetry bias, not a broad unseen-task evaluation. No original data, threshold, budget, early99 selection or main model changes; no long-suite outcomes used. The original tiny-shifted controls and all previous failed fixes remain retained."
+}
