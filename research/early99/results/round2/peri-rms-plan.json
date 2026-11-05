@@ -1,0 +1,47 @@
+{
+  "declared_at_utc": "2026-11-05T17:41:10.329937+00:00",
+  "request": "User suggested PeriNorm and investigation of the transformer project as a model-change path.",
+  "name": "peri-rms-lr2",
+  "parent": "adamw-lr2",
+  "single_change": "Add parameter-free RMS normalization after the attention and SwiGLU output projections in every existing block.",
+  "configuration": {
+    "name": "peri-rms-lr2",
+    "learning_rate_multiplier": 2.0,
+    "beta1": 0.9,
+    "beta2": 0.98,
+    "model_variant": "peri-rms"
+  },
+  "hypothesis": "Controlling residual branch output magnitudes may improve optimization; the frozen model has pre-branch RMS but no branch output RMS. This requires direct benchmark evidence.",
+  "source_project": "/home/misha/lean_projects/transformer",
+  "source_project_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "source_sha256": {
+    "MODEL_ARCHITECTURE.md": "9dd0375aa58d0813874d526e54837a2915b83cce27bd2b74876b3b226ba8e351",
+    "src/Transformer/Normalization/Basic.lean": "49ce14e7a9d0c92209a2b3642772da3966046c3b5229e9bd2d5a0f7388d10826",
+    "papers/arXiv-2510.22026v2/main_content.tex": "2fb50e62cb15e762f34b0647c16d55160b5814044433e01c09161d4dee7d2d12"
+  },
+  "source_papers": [
+    "https://arxiv.org/abs/2510.22026v2",
+    "https://arxiv.org/abs/2502.02732v3"
+  ],
+  "source_scope": "Use the branch update from Table 1 of Normalization in Attention Dynamics. The local Lean Scheme.peri and speedFactor describe idealized attention dynamics, not a guarantee of lower first-99 epochs for a trained GPT.",
+  "adaptation": "Keep the repaired FP64 RMS backward, native dtype epsilon, all weights and RNG draws, unnormalized embedding, unit residual coefficients, Q/K RMS, XSA, RoPE, prefix guard and native AdamW LR x2. No learned gains, affine norm parameters, depth scaling or schedule change.",
+  "external_project_activity": "Read-only source/paper/index inspection; the experiment runs in this authorized early99 benchmark, without modifying or launching the older transformer experiment queue.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Resolve both the cosine schedule and Peri-RMS short experiments before final selection. Run a new short winner on the already observed long regression suite once; never tune or reselect from long.",
+  "parameter_policy": "No added trainable parameters; require exact matching initial parameter names, values and counts in every pair."
+}

@@ -30,17 +30,17 @@ from research.current_grokking.run import (
 )
 from research.early99.experiments.factories import (
     Configuration,
-    Factories,
     FactoryStepper,
+    configured_factories,
 )
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from research.current_grokking.protocol import Case
+    from research.early99.experiments.factories import Factories
 
 BASELINE_CONFIGURATION = Configuration()
-BASELINE_FACTORIES = Factories()
 
 
 def run(
@@ -52,9 +52,11 @@ def run(
     resume: bool = False,
     compiled: bool = True,
     configuration: Configuration = BASELINE_CONFIGURATION,
-    factories: Factories = BASELINE_FACTORIES,
+    factories: Factories | None = None,
 ) -> dict:
     """Reuse the frozen loop with explicit construction and stricter resume checks."""
+    if factories is None:
+        factories = configured_factories(configuration)
     directory = output / case.name / f"seed{seed}"
     checkpoint = directory / "checkpoint.pt"
     if directory.exists() and not resume:

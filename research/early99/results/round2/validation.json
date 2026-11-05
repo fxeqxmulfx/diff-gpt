@@ -28,5 +28,27 @@
     "passed": 12
   },
   "ruff": "passed",
-  "selection_uses_short_only": true
+  "selection_uses_short_only": true,
+  "cosine_and_peri_rms": {
+    "combined_cpu_and_cuda": {
+      "passed": 38,
+      "seconds": 39.69,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py"
+    },
+    "cpu_preflight": {
+      "passed": 15,
+      "cuda_deselected": 6
+    },
+    "checks": [
+      "cosine rate at zero, peak, halfway, floor and after floor with short-tail exposure",
+      "independent eager reference follows every issued warmup/decay/floor update",
+      "Peri-RMS adds no learned tensors or RNG draws",
+      "Peri-RMS branch forward matches independent native functional equations",
+      "Peri-RMS finite backward, prefix causality and cached generation",
+      "six configurations preserve weights/moments/RNG through capture, evaluation and recapture"
+    ],
+    "ruff": "passed",
+    "fixed_baseline_sources_unchanged": true,
+    "prior_experiment_source_revision": "de711da"
+  }
 }

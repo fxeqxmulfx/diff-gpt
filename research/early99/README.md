@@ -177,24 +177,69 @@ retains the regressions. All 93 new runs passed the
 The user then requested a learning-rate schedule. The separate
 [cosine plan](results/round2/schedule-plan.json) retains the 50-update warmup,
 starts at LR ×3, and decays to LR ×1.5 over 200 actual epochs after warmup.
-Final round-2 selection waits for this additional short-suite experiment.
+Final round-2 selection waits for the additional short-suite experiments.
+
+The user also suggested PeriNorm and inspection of
+`/home/misha/lean_projects/transformer`. Its older architecture documentation
+describes Peri-RMS with depth scaling, whereas the frozen benchmark GPT uses
+pre-branch RMS and unit residual coefficients. The isolated
+[`peri-rms-lr2`](configs/peri-rms-lr2.json) candidate adds parameter-free RMS after
+the attention and SwiGLU output projections, at the incumbent LR ×2. It reuses
+every original weight and RNG draw, the repaired FP64 RMS backward and the
+existing attention/prefix behavior. It adds no trainable parameters. The cosine
+candidate keeps the original model, so the two mechanisms remain separate.
+
+The normalization placement follows Table 1 of
+[Normalization in Attention Dynamics](https://arxiv.org/abs/2510.22026v2), with
+parameter-free RMS as the explicit adaptation. The inspected Lean
+`Transformer.Normalization.Scheme.peri` describes idealized attention dynamics;
+it does not prove faster trained-GPT convergence. The
+[model experiment plan](results/round2/peri-rms-plan.json) records the external
+source revision/hashes, hypothesis, deviations and the same 18-cell screen gate.
+The transformer repository was consulted read-only; training uses this fixed
+early99 benchmark and its native AdamW contract.
+
+The cosine screen completed **18/18 passes**, but improved only **1/6** task
+medians versus LR ×2, below the required three. Its square-sum median paired
+ratio was 1.3104. It also improved no task median versus constant LR ×3.
+The [screen](results/round2/screen-adamw-lr3-cosine200.json) and the
+[constant-LR parent comparison](results/round2/screen-adamw-lr3-cosine200-vs-lr3.json)
+retain every seed. This schedule was rejected without a full-suite aggregate.
+
+Branch-only Peri-RMS completed **12/18 passes** and improved no complete task
+median; four were available and two were suppressed by censoring. All three
+key-value recall seeds exhausted 30,000 updates
+(468.75 epochs); all three square-sum seeds exhausted 100,000 updates
+(5263.1633 epochs). The numeric-vector task passed all three seeds, with a tied
+median. The [Peri-RMS screen](results/round2/screen-peri-rms-lr2.json) preserves
+all six censored outcomes; this variant was rejected.
+
+An [initialization-only training-input probe](results/round2/peri-initial-scales.json)
+found a first-attention-branch/residual RMS ratio of 48.26 on recall with the
+branch-only norms, versus 0.578 in the baseline. Adding embedding RMS makes it
+0.957. This motivates a separately [declared follow-up](results/round2/peri-embedding-plan.json)
+that adds only parameter-free embedding RMS to Peri-RMS, retaining the tied
+weight, unit residual coefficients and LR ×2. These initial scales do not
+establish why training failed or prove that the follow-up learns faster.
 
 The round-2 factories record explicit moment coefficients; their default settings
 still match the frozen baseline. CUDA checks cover the baseline, LR ×2, LR ×3
-and LR ×2 with beta2 0.95 against native eager AdamW. The combined integrity,
-oracle, CPU and CUDA suite passed **33 tests**; the separate report-destination
-check also passed. See [validation](results/round2/validation.json).
+and LR ×2 with beta2 0.95 against native eager AdamW. Adding the cosine and
+Peri-RMS mechanisms expanded the combined integrity, oracle, CPU and CUDA suite
+from 33 to **38 passing tests**, including independent schedule/branch equations
+and cached generation. See [validation](results/round2/validation.json).
 
 Candidate source/configuration archives are immutable. The current driver
-therefore rejects training into the old LR ×2 output, whose archived schema
-predates explicit moment fields. Its histories remain readable by the comparison
-tool. Replaying round 1 requires its archived sources or commit `fde92f2` with a
-fresh output directory; do not replace its plan or expected hashes.
+therefore rejects training into outputs made by older driver revisions. Their
+histories remain readable by the comparison tool. Replaying round 1 requires
+its archived sources or commit `fde92f2`; constant LR ×3 and beta2 0.95 use
+`de711da`. Use a fresh output directory for a repeat; do not replace an existing
+plan or expected hashes.
 
 ```bash
-# Current round-2 configuration; completed cells are reused.
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/adamw-lr3.json
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr3.json --tier short
+# Current candidate plans; these commands do not train.
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/adamw-lr3-cosine200.json
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-lr2.json
 
 # Separate report destinations preserve both controls.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr3 --tier short --output runs/early99/candidates/adamw-lr3/comparisons/baseline

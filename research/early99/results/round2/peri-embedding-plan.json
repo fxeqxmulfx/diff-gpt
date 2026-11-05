@@ -1,0 +1,42 @@
+{
+  "declared_at_utc": "2026-11-05T18:04:33.212878+00:00",
+  "name": "peri-rms-embedding-lr2",
+  "parent": "peri-rms-lr2",
+  "single_change": "Add parameter-free RMS immediately after the shared token embedding, retaining the already tested Peri-RMS branch norms and all optimizer settings.",
+  "configuration": {
+    "name": "peri-rms-embedding-lr2",
+    "learning_rate_multiplier": 2.0,
+    "beta1": 0.9,
+    "beta2": 0.98,
+    "model_variant": "peri-rms-embedding"
+  },
+  "motivation": "The branch-only Peri-RMS candidate exhausted the recall budget in all three short-screen seeds. An initialization-only training-input probe measured a first-attention-branch/residual RMS ratio of 48.26 on recall, versus 0.578 for the baseline; embedding RMS makes it 0.957. This scale imbalance is a proposed mechanism, not a demonstrated cause of the misses.",
+  "initialization_probe": "research/early99/results/round2/peri-initial-scales.json",
+  "initialization_probe_sha256": "711062a8f56b89a51da1f18fdb835b5ade06ffbe277dd02dfa4c99f52eaf3360",
+  "source_project": "/home/misha/lean_projects/transformer",
+  "source_project_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "source_papers": [
+    "https://arxiv.org/abs/2510.22026v2",
+    "https://arxiv.org/abs/2502.02732v3"
+  ],
+  "adaptation": "Use the existing RMSNormEmbedding wrapper with the repaired RMS backward and native dtype epsilon. Preserve the exact embedding weight object shared with the readout, all random draws, unit residual coefficients, Q/K RMS, XSA, RoPE and prefix guard. No learned normalization gains, new trainable parameters, depth scaling, learning-rate or schedule changes.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "parent_comparison": "Preserve all 18 paired screen rows against branch-only Peri-RMS as well, including its censored recall/square-sum cells. No paired geometric mean with censoring.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Resolve both the cosine schedule and Peri-RMS short experiments before final selection. Run a new short winner on the already observed long regression suite once; never tune or reselect from long.",
+  "implementation_policy": "Finish and archive the branch-only Peri-RMS screen before changing the candidate factory. Freeze new source/configuration and pass native-eager/capture and tied-embedding tests before starting the follow-up."
+}

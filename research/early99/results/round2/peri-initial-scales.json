@@ -1,0 +1,123 @@
+{
+  "scope": "Initialization-only CPU diagnostic using the first frozen training batch, seed 0. No learning or held-out scoring. Scalar RMS is over all batch/token/channel entries, including zero first-position attention.",
+  "interpretation": "A branch/residual scale imbalance is a hypothesis for the failed Peri-RMS screen, not a demonstrated cause or evidence of improved first-99 epochs. Embedding-normalized values are an untrained prospective variant.",
+  "runs": [
+    {
+      "case": "power-division-p97-k2",
+      "seed": 0,
+      "variant": "baseline",
+      "first_block": {
+        "attention_input_rms": 0.020094451838388903,
+        "attention_output_rms": 0.02084625460407084,
+        "ffn_input_rms": 0.02899521417490302,
+        "ffn_output_rms": 0.009522163490738197
+      },
+      "attention_branch_to_residual_ratio": 1.0374134498282594,
+      "ffn_branch_to_residual_ratio": 0.32840466131062973
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 0,
+      "variant": "peri-rms",
+      "first_block": {
+        "attention_input_rms": 0.020094451838388903,
+        "attention_output_rms": 0.7014943614286534,
+        "ffn_input_rms": 0.7018208417222812,
+        "ffn_output_rms": 0.9993159164096796
+      },
+      "attention_branch_to_residual_ratio": 34.90985308136162,
+      "ffn_branch_to_residual_ratio": 1.423890339245754
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 0,
+      "variant": "peri-rms-with-embedding",
+      "first_block": {
+        "attention_input_rms": 0.9998501201009095,
+        "attention_output_rms": 0.7014943844639349,
+        "ffn_input_rms": 1.2224609229163215,
+        "ffn_output_rms": 0.9993105778106139
+      },
+      "attention_branch_to_residual_ratio": 0.7015995401322118,
+      "ffn_branch_to_residual_ratio": 0.8174580954511359
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 0,
+      "variant": "baseline",
+      "first_block": {
+        "attention_input_rms": 0.01982991933748546,
+        "attention_output_rms": 0.011462439606317001,
+        "ffn_input_rms": 0.0229847344427196,
+        "ffn_output_rms": 0.0034820433462591444
+      },
+      "attention_branch_to_residual_ratio": 0.5780376314818888,
+      "ffn_branch_to_residual_ratio": 0.15149373837390928
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 0,
+      "variant": "peri-rms",
+      "first_block": {
+        "attention_input_rms": 0.01982991933748546,
+        "attention_output_rms": 0.9569482197919813,
+        "ffn_input_rms": 0.957312025815792,
+        "ffn_output_rms": 0.9943765768014667
+      },
+      "attention_branch_to_residual_ratio": 48.257796892951326,
+      "ffn_branch_to_residual_ratio": 1.0387173147167867
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 0,
+      "variant": "peri-rms-with-embedding",
+      "first_block": {
+        "attention_input_rms": 0.999843829448024,
+        "attention_output_rms": 0.9569483763079603,
+        "ffn_input_rms": 1.3901207345652575,
+        "ffn_output_rms": 0.9945593635534148
+      },
+      "attention_branch_to_residual_ratio": 0.9570978468069912,
+      "ffn_branch_to_residual_ratio": 0.715448190091525
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 0,
+      "variant": "baseline",
+      "first_block": {
+        "attention_input_rms": 0.020077554187928507,
+        "attention_output_rms": 0.020915424685724295,
+        "ffn_input_rms": 0.029061094089476006,
+        "ffn_output_rms": 0.009689185312999825
+      },
+      "attention_branch_to_residual_ratio": 1.041731701478836,
+      "ffn_branch_to_residual_ratio": 0.3334074513219584
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 0,
+      "variant": "peri-rms",
+      "first_block": {
+        "attention_input_rms": 0.020077554187928507,
+        "attention_output_rms": 0.7056599606488522,
+        "ffn_input_rms": 0.7060213361752322,
+        "ffn_output_rms": 0.9993460663382511
+      },
+      "attention_branch_to_residual_ratio": 35.14670930750746,
+      "ffn_branch_to_residual_ratio": 1.4154615662921222
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 0,
+      "variant": "peri-rms-with-embedding",
+      "first_block": {
+        "attention_input_rms": 0.999849852032179,
+        "attention_output_rms": 0.7056599778684786,
+        "ffn_input_rms": 1.2258790750102861,
+        "ffn_output_rms": 0.9993368465340302
+      },
+      "attention_branch_to_residual_ratio": 0.7057659471912066,
+      "ffn_branch_to_residual_ratio": 0.8152001832037511
+    }
+  ]
+}

@@ -10,6 +10,8 @@ import torch
 
 from diff_gpt.domain.model.gpt import GPT
 from research.current_grokking.train import Logits, Stepper
+from research.early99.experiments.models import install_peri_rms
+from research.early99.protocol import exposure
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,12 +22,16 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class Configuration:
-    """One task-independent optimizer setting; data and scoring are immutable."""
+    """One task-independent candidate setting; data and scoring are immutable."""
 
     name: str = "baseline-factory"
     learning_rate_multiplier: float = 1.0
     beta1: float = 0.9
     beta2: float = 0.98
+    model_variant: str = "baseline"
+    schedule: str = "constant"
+    decay_epochs: float = 200.0
+    minimum_lr_ratio: float = 0.5
 
     def __post_init__(self) -> None:
         """Reject unsafe output names and invalid rates before allocating a model."""
@@ -43,6 +49,21 @@ class Configuration:
         if not all(math.isfinite(beta) and 0 <= beta < 1 for beta in self.betas):
             message = "AdamW moment coefficients must be finite and in [0, 1)"
             raise ValueError(message)
+        if self.model_variant not in {"baseline", "peri-rms"}:
+            message = "Unknown model variant"
+            raise ValueError(message)
+        if self.schedule not in {"constant", "cosine"}:
+            message = "Unknown learning-rate schedule"
+            raise ValueError(message)
+        if not math.isfinite(self.decay_epochs) or self.decay_epochs <= 0:
+            message = "Cosine duration must be finite and positive"
+            raise ValueError(message)
+        if (
+            not math.isfinite(self.minimum_lr_ratio)
+            or not 0 < self.minimum_lr_ratio <= 1
+        ):
+            message = "Minimum learning-rate ratio must be finite and in (0, 1]"
+            raise ValueError(message)
 
     @property
     def betas(self) -> tuple[float, float]:
@@ -55,12 +76,31 @@ class Configuration:
             case, learning_rate=case.learning_rate * self.learning_rate_multiplier
         )
 
+    def learning_rate_at(
+        self, case: Case, completed: int, train_examples: int
+    ) -> float:
+        """Warm up by issued updates, then decay by actual post-warmup exposure."""
+        peak = case.learning_rate * self.learning_rate_multiplier
+        warmup = min(1.0, completed / case.warmup) if case.warmup else 1.0
+        if self.schedule == "constant" or completed <= case.warmup:
+            return peak * warmup
+        epochs = exposure(completed, train_examples, case.batch)["epochs"]
+        start = exposure(case.warmup, train_examples, case.batch)["epochs"]
+        progress = min((epochs - start) / self.decay_epochs, 1.0)
+        decay = (
+            self.minimum_lr_ratio
+            + (1 - self.minimum_lr_ratio) * (1 + math.cos(math.pi * progress)) / 2
+        )
+        return peak * decay
+
     def metadata(self, case: Case) -> dict:
         """Record all effective optimizer and schedule hyperparameters."""
         effective = self.training_case(case)
         return {
             "configuration": asdict(self),
-            "model_factory": "frozen_public_gpt",
+            "model_factory": "frozen_public_gpt"
+            if self.model_variant == "baseline"
+            else "peri_rms_public_gpt",
             "optimizer_factory": "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
@@ -69,7 +109,12 @@ class Configuration:
             "weight_decay": effective.weight_decay,
             "warmup_updates": effective.warmup,
             "warmup_uses_completed_updates": True,
-            "schedule": "linear warmup from zero, then constant",
+            "schedule": "linear warmup from zero, then constant"
+            if self.schedule == "constant"
+            else (
+                "linear warmup from zero, then cosine decay "
+                "by actual epochs to a fixed floor"
+            ),
             "dtype": "torch.float32",
             "matmul_precision": "highest",
             "rms_backward": "unchanged FP64 calculation",
@@ -89,6 +134,13 @@ def baseline_model(task: Task, case: Case, device: str) -> Logits:
             pad_vocab_size_to=1,
         ).to(device)
     )
+
+
+def peri_rms_model(task: Task, case: Case, device: str) -> Logits:
+    """Add parameter-free branch output RMS to the matched baseline weights."""
+    model = baseline_model(task, case, device)
+    install_peri_rms(model.model)
+    return model
 
 
 def native_adamw(
@@ -120,6 +172,15 @@ class Factories:
     optimizer: Callable = native_adamw
 
 
+def configured_factories(configuration: Configuration) -> Factories:
+    """Select an explicit model factory from the archived configuration."""
+    return Factories(
+        model=baseline_model
+        if configuration.model_variant == "baseline"
+        else peri_rms_model
+    )
+
+
 class FactoryStepper(Stepper):
     """Reuse verified capture, evaluation and updates with an explicit optimizer."""
 
@@ -136,9 +197,28 @@ class FactoryStepper(Stepper):
     ) -> None:
         """Set the effective schedule before the original update path is built."""
         effective = configuration.training_case(case)
+        self.configuration, self.original_case = configuration, case
+        self.train_examples = len(task.splits["train"])
         super().__init__(model, task, effective, device, compiled=compiled)
         # AdamW construction consumes no updates or RNG. The original Stepper
         # owns capture and evaluation; this factory owns the scientific optimizer.
         self.optimizer = factories.optimizer(
             model, self.rate, effective, device, betas=configuration.betas
         )
+
+    def step(self, indices: torch.Tensor, completed: int) -> None:
+        """Set the declared schedule before replaying one verified update."""
+        if self.configuration.schedule == "constant":
+            super().step(indices, completed)
+            return
+        rate = self.configuration.learning_rate_at(
+            self.original_case, completed, self.train_examples
+        )
+        self.rate.fill_(rate)
+        if self.device == "cuda":
+            graph, index, _ = self.graphs[len(indices)]
+            index.copy_(indices.to(self.device))
+            graph.replay()
+        else:
+            self.model.train()
+            self.update(indices)
