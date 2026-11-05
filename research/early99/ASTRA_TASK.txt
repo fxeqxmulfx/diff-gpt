@@ -32,11 +32,7 @@ AdamW and verified capture-neutral graphs. FP32 matmul precision is highest;
 the repaired RMS backward uses its existing FP64 calculation.
 
 The current GPT includes SwiGLU, repaired RMS backward, Q/K RMS, fixed attention
-temperature, centered XSA and guarded prefix stabilization. Earlier ablations
-rejected or skipped Schedule-Free AdamW, embedding RMS, Peri output norm, scaled
-initialization, residual scaling and SDPA under their tested settings. Consult
-research/recall_ablation/ before repeating these blindly. Revisit a failure only
-with a concrete hypothesis and a controlled comparison.
+temperature, centered XSA and guarded prefix stabilization.
 
 Run the baseline before claiming improvements
 1. Read research/early99/README.md and suite.json.
