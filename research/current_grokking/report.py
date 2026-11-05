@@ -10,6 +10,9 @@ from pathlib import Path
 from research.current_grokking.protocol import ROOT, Case
 from research.current_grokking.run import metric, write
 
+HISTORY_ACCURACY_TARGET = 0.99
+FIVE_MINUTES_SECONDS = 300
+
 
 def collect(root: Path) -> dict:
     """Report the whole predeclared matrix, including every unfinished cell."""
@@ -54,6 +57,45 @@ def collect(root: Path) -> dict:
                 row["final_validation"] = metric(spec, result["endpoint"]["validation"])
                 row["final_train"] = metric(spec, result["endpoint"]["train"])
                 row["parameters"] = result["metadata"]["parameters"]
+                row["resumed"] = bool(result["metadata"].get("resumptions"))
+                history_path = directory / "history.jsonl"
+                observations = [
+                    json.loads(line)
+                    for line in history_path.read_text().splitlines()
+                ]
+                accuracies = [
+                    (
+                        value,
+                        value["validation"].get(
+                            "sequence_accuracy", value["validation"].get("accuracy")
+                        ),
+                    )
+                    for value in observations
+                ]
+                crossing99 = next(
+                    (
+                        (value, accuracy)
+                        for value, accuracy in accuracies
+                        if accuracy is not None and accuracy >= HISTORY_ACCURACY_TARGET
+                    ),
+                    None,
+                )
+                if crossing99 is not None:
+                    row["first_heldout99"] = crossing99[0]["step"]
+                    row["first_heldout99_accuracy"] = crossing99[1]
+                    if not row["resumed"]:
+                        row["first_heldout99_seconds"] = crossing99[0]["seconds"]
+                if row["first_target"] is not None and not row["resumed"]:
+                    crossing = next(
+                        value
+                        for value in observations
+                        if value["step"] == row["first_target"]
+                    )
+                    row["first_target_seconds"] = crossing["seconds"]
+                    row["initial_observation_seconds"] = observations[0]["seconds"]
+                    row["seconds_after_initial_observation"] = (
+                        crossing["seconds"] - observations[0]["seconds"]
+                    )
                 for split in ("train", "validation"):
                     measured = result["endpoint"][split]
                     row[split + "_examples"] = measured.get(
@@ -135,6 +177,18 @@ def collect(root: Path) -> dict:
         "planned_runs": len(rows),
         "counts": dict(counts),
         "observed_target_crossings": counts["passed"],
+        "observed_heldout99_crossings": sum(
+            row.get("first_heldout99") is not None for row in rows
+        ),
+        "heldout99_within_five_minutes": sum(
+            row.get("first_heldout99_seconds", float("inf")) <= FIVE_MINUTES_SECONDS
+            for row in rows
+        ),
+        "heldout99_definition": (
+            "Any observed primary held-out sequence/classification accuracy >= 0.99; "
+            "no delay or retention requirement. This split is validation where the "
+            "benchmark uses ongoing held-out evaluation."
+        ),
         "retained_targets": sum(bool(row.get("final_target_met")) for row in rows),
         "transient_crossings": sum(
             row["status"] == "passed" and not row["final_target_met"] for row in rows
@@ -157,6 +211,12 @@ def collect(root: Path) -> dict:
             "observations before target. One model seed is an initial screen. "
             "Controls, forecasting, language modeling and new supplied-feature GPT "
             "probes have task-specific targets, not interchangeable grokking claims."
+        ),
+        "timing_note": (
+            "First-target times include setup and initial evaluation. The interval "
+            "after initial evaluation also includes scoring and checkpoint overhead. "
+            "These timing fields are omitted for resumed runs because their clocks "
+            "reset; seconds for a resumed result describes its last segment."
         ),
         "runs": rows,
     }
@@ -187,6 +247,9 @@ def main() -> None:
         "first_train99",
         "first_fit",
         "first_target",
+        "first_heldout99",
+        "first_heldout99_accuracy",
+        "first_heldout99_seconds",
         "classification",
         "final_target_met",
         "final_train",
@@ -202,6 +265,10 @@ def main() -> None:
         "validation_native_token_accuracy",
         "validation_numeric_output_coverage",
         "seconds",
+        "resumed",
+        "first_target_seconds",
+        "initial_observation_seconds",
+        "seconds_after_initial_observation",
         "audit_available",
         "cpu_primary_metric",
         "endpoint_target_decision_reproduced",

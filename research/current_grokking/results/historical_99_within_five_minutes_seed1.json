@@ -1,0 +1,349 @@
+{
+  "date": "2026-11-05",
+  "scope": "Current GPT, ordinary AdamW, seed 1; completed runs so far",
+  "criterion": "At least one history observation with held-out sequence/classification accuracy >= 0.99, at most 300 seconds including setup. No delay or final retention requirement. Resumed clocks are excluded. The observed split is the frozen primary held-out validation split.",
+  "runs": [
+    {
+      "case": "power-division-p17-k0",
+      "seconds": 5.303123965997656,
+      "updates": 250,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": true,
+      "history_path": "runs/current-grokking/power-division-p17-k0/seed1/history.jsonl"
+    },
+    {
+      "case": "suite-boolean-and-shift",
+      "seconds": 5.9919438310025726,
+      "updates": 250,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/suite-boolean-and-shift/seed1/history.jsonl"
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "seconds": 6.027854268992087,
+      "updates": 250,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/suite-boolean-and-random/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p97-k3",
+      "seconds": 8.453394435004157,
+      "updates": 250,
+      "heldout_accuracy": 0.9914089347079038,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/power-division-p97-k3/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p193-k0",
+      "seconds": 8.747126198999467,
+      "updates": 250,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": true,
+      "history_path": "runs/current-grokking/power-division-p193-k0/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-cube-plus",
+      "seconds": 9.040916717000073,
+      "updates": 750,
+      "heldout_accuracy": 0.9914984059511158,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-cube-plus/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p193-k5",
+      "seconds": 9.842101170004753,
+      "updates": 1000,
+      "heldout_accuracy": 0.9976791882556131,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/power-division-p193-k5/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seconds": 12.135002026996517,
+      "updates": 2000,
+      "heldout_accuracy": 0.9912025043177893,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/power-division-p193-k2/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seconds": 12.43585887899826,
+      "updates": 3000,
+      "heldout_accuracy": 0.9959192439862543,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/power-division-p97-k2/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-square-times",
+      "seconds": 14.869877332996111,
+      "updates": 5250,
+      "heldout_accuracy": 0.9900106269925611,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-square-times/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-sub",
+      "seconds": 15.071243737998884,
+      "updates": 5000,
+      "heldout_accuracy": 0.9940488841657811,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-sub/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p97-k0",
+      "seconds": 15.29160365700227,
+      "updates": 250,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": true,
+      "history_path": "runs/current-grokking/power-division-p97-k0/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-mul",
+      "seconds": 18.25163518399495,
+      "updates": 3000,
+      "heldout_accuracy": 0.9900106269925611,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-mul/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-add",
+      "seconds": 18.373138091003057,
+      "updates": 3250,
+      "heldout_accuracy": 0.9910733262486716,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-add/seed1/history.jsonl"
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seconds": 19.300252646004083,
+      "updates": 500,
+      "heldout_accuracy": 0.9921875,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/gpt-probe-key-value-binding/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p193-k3",
+      "seconds": 20.47536007600138,
+      "updates": 2750,
+      "heldout_accuracy": 0.9941709844559585,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/power-division-p193-k3/seed1/history.jsonl"
+    },
+    {
+      "case": "division-p193",
+      "seconds": 27.208761203000904,
+      "updates": 750,
+      "heldout_accuracy": 0.9997841105354058,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/division-p193/seed1/history.jsonl"
+    },
+    {
+      "case": "basis-depth-easy",
+      "seconds": 30.69117891100177,
+      "updates": 500,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/basis-depth-easy/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seconds": 30.970161556004314,
+      "updates": 16750,
+      "heldout_accuracy": 0.9942614240170032,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-square-sum/seed1/history.jsonl"
+    },
+    {
+      "case": "gpt-probe-branch-amplitudes",
+      "seconds": 31.103335702006007,
+      "updates": 750,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/gpt-probe-branch-amplitudes/seed1/history.jsonl"
+    },
+    {
+      "case": "power-division-p97-k5",
+      "seconds": 31.213523525999335,
+      "updates": 13500,
+      "heldout_accuracy": 0.9939862542955327,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/power-division-p97-k5/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-half-sum",
+      "seconds": 34.761866510998516,
+      "updates": 19250,
+      "heldout_accuracy": 0.9908607863974496,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-half-sum/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-sum-square",
+      "seconds": 37.713588131002325,
+      "updates": 16500,
+      "heldout_accuracy": 0.9910733262486716,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-sum-square/seed1/history.jsonl"
+    },
+    {
+      "case": "basis-depth-hard",
+      "seconds": 46.086656384024536,
+      "updates": 1000,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/basis-depth-hard/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-affine-product",
+      "seconds": 47.27273915400292,
+      "updates": 24500,
+      "heldout_accuracy": 0.9912858660998938,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-affine-product/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-perm-add",
+      "seconds": 48.51097636399936,
+      "updates": 27250,
+      "heldout_accuracy": 0.9904357066950054,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-perm-add/seed1/history.jsonl"
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seconds": 48.908554267,
+      "updates": 250,
+      "heldout_accuracy": 1.0,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/gpt-probe-linear-transport/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-div",
+      "seconds": 57.62611693399958,
+      "updates": 4000,
+      "heldout_accuracy": 0.9944158075601375,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-div/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-abs-diff-blind",
+      "seconds": 63.880811773997266,
+      "updates": 33500,
+      "heldout_accuracy": 0.9906482465462274,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-abs-diff-blind/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-abs-diff",
+      "seconds": 67.41603285600286,
+      "updates": 10500,
+      "heldout_accuracy": 0.9921360255047822,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-abs-diff/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-sum-pow4",
+      "seconds": 70.15022042999772,
+      "updates": 45250,
+      "heldout_accuracy": 0.9908607863974496,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-sum-pow4/seed1/history.jsonl"
+    },
+    {
+      "case": "basis-parity20",
+      "seconds": 86.315706399997,
+      "updates": 27750,
+      "heldout_accuracy": 0.9929577464788732,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/basis-parity20/seed1/history.jsonl"
+    },
+    {
+      "case": "basis-parity16",
+      "seconds": 96.36695510600111,
+      "updates": 9750,
+      "heldout_accuracy": 0.9936305732484076,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/basis-parity16/seed1/history.jsonl"
+    },
+    {
+      "case": "arithmetic-sum-cube",
+      "seconds": 100.90890625199972,
+      "updates": 67500,
+      "heldout_accuracy": 0.9904357066950054,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/arithmetic-sum-cube/seed1/history.jsonl"
+    },
+    {
+      "case": "basis-recall-easy",
+      "seconds": 146.62136051198468,
+      "updates": 4200,
+      "heldout_accuracy": 0.990234375,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/basis-recall-easy/seed1/history.jsonl"
+    },
+    {
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "seconds": 149.57764732500073,
+      "updates": 75000,
+      "heldout_accuracy": 0.9900085034013606,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/recurrence-fibonacci-k1-c2-lgt/seed1/history.jsonl"
+    },
+    {
+      "case": "associative-divisor-n2-l1-w0",
+      "seconds": 168.0794218289957,
+      "updates": 25750,
+      "heldout_accuracy": 0.9903350515463918,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/associative-divisor-n2-l1-w0/seed1/history.jsonl"
+    },
+    {
+      "case": "basis-parity24",
+      "seconds": 228.57445245599956,
+      "updates": 75000,
+      "heldout_accuracy": 0.9967320261437909,
+      "metric": "sequence_accuracy",
+      "constant_output_control": false,
+      "history_path": "runs/current-grokking/basis-parity24/seed1/history.jsonl"
+    }
+  ]
+}

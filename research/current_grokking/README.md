@@ -45,6 +45,13 @@ first-target updates remain available. Success without this plateau is reported
 separately. Continuous forecasting, language modeling and negative controls do
 not share an exact-sequence grokking interpretation.
 
+The user's historical-success query counts any observed 99% held-out
+sequence/classification accuracy, without a delay or final-retention requirement.
+`first_heldout99` and its recorded seconds identify that crossing separately from
+each task's declared target. Times include setup; timing fields are omitted for
+resumed runs because their clocks reset. The current qualifying cases are in
+[`results/historical_99_within_five_minutes_seed1.csv`](results/historical_99_within_five_minutes_seed1.csv).
+
 The new numeric GPT probes serialize supplied vectors and generate entire answer
 vectors freely. Their primary score is decoded MSE against the unquantized
 teacher; missing or invalid components receive an explicit squared-error penalty.
