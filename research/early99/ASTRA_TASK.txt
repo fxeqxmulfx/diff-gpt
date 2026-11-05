@@ -141,7 +141,10 @@ Use the separately declared csa-plan.json, prove the applicable algebraic
 properties, verify causal/cached behavior and preserve the unchanged benchmark.
 Do not apply unmasked asymptotic spectral conclusions to this causal trained
 model without proving their hypotheses. Include this requested experiment in
-short-suite selection before running a new winner's long diagnostic.
+short-suite selection before running a new winner's long diagnostic. The user's
+learning-rate question motivates the separately declared csa-lr-plan.json: test
+the same centering model at LR x1 after its LR x2 screen, changing only rate.
+Do not conclude that the architecture is unsuitable from a single rate.
 
 After selecting the best short-suite candidate, run the 30 long cells once as a
 regression check. Report regressions without tuning against that check. Keep all

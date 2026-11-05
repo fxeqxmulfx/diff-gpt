@@ -119,5 +119,16 @@
     "previous_refinement_source_revision": "9e57d7e",
     "candidate_plan_sha256": "12301eb7cc82f3467490b475289989af94fa670ebb6ab2e4b1c4ea2a245384c3",
     "formal_record": "research/early99/results/round2/csa-guarantees.json"
+  },
+  "causal_centering_lr1": {
+    "focused_cuda_capture": {
+      "passed": 1,
+      "seconds": 24.38,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q 'tests/diff_gpt/application/test_early99_experiments.py::test_candidate_capture_preserves_rng_and_matches_native_updates[1.0-0.98-peri-rms-embedding-scaled-csa-constant]'"
+    },
+    "scientific_source_revision": "51e15ed",
+    "scientific_python_unchanged_from_lr2_centering": true,
+    "candidate_plan_sha256": "0e0c4016fa53bf79ba1f4c8ae9c68e7cd5506b822b55a357a188c662c8ba242a",
+    "scope": "Additional learning-rate combination; prior 51-check suite remains recorded separately."
   }
 }

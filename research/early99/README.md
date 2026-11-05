@@ -413,3 +413,21 @@ future-gradient exclusion, constant-signal cancellation, cache equivalence and
 native eager versus captured updates. Its frozen 18-cell screen starts after
 the complete scaled-parent short suite, as requested. The screen retains the
 same six tasks, three seeds, promotion rule, evaluation cadence and budgets.
+
+Centering at LR ×2 completed **18/18 screen passes** but improved only one
+of the six task medians against LR ×2, below the required three. Every task
+median was slower than the scaled Peri-RMS parent. Against LR ×2, median ratios
+are 0.5684 for modulus-193 squared division, 8.0345 for modulus-97 squared
+division, 3.0 for recall, 7.8234 for square-sum, 1.3333 for numeric transport,
+and 1.0 for the boolean task. The worst observed ratio is 27.5× on recall seed 2.
+All rows are in the [screen](results/round2/screen-peri-rms-scaled-csa-lr2.json)
+and [parent comparison](results/round2/screen-peri-rms-scaled-csa-lr2-vs-peri-scaled.json),
+with the [checkpoint/source audit](results/round2/audit-csa-lr2-screen.json).
+There is no screen-only geometric-mean speed claim.
+
+The user's learning-rate question motivates a separately
+[declared LR ×1 sensitivity trial](results/round2/csa-lr-plan.json), halving only
+the rate. Its additional native-eager/CUDA-capture check passed; the 18-cell
+screen follows the completed LR ×2 centering screen. Both centering rates use
+scientific source revision `51e15ed`. Final selection waits for this rate check;
+one unsuccessful rate does not establish the best performance of the mechanism.

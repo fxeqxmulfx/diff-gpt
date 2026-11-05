@@ -105,6 +105,7 @@ def test_candidate_plan_refuses_configuration_execution_and_source_changes(
         (2.0, 0.98, "peri-rms", "constant"),
         (2.0, 0.98, "peri-rms-embedding", "constant"),
         (2.0, 0.98, "peri-rms-embedding-scaled", "constant"),
+        (1.0, 0.98, "peri-rms-embedding-scaled-csa", "constant"),
         (2.0, 0.98, "peri-rms-embedding-scaled-csa", "constant"),
     ],
 )

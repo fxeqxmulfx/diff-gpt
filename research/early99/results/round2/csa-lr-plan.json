@@ -1,0 +1,32 @@
+{
+  "declared_at_utc": "2026-11-05T20:09:33.498147+00:00",
+  "configuration": {
+    "name": "peri-rms-scaled-csa-lr1",
+    "learning_rate_multiplier": 1.0,
+    "model_variant": "peri-rms-embedding-scaled-csa"
+  },
+  "parent": "peri-rms-scaled-csa-lr2",
+  "single_change": "Halve the learning-rate multiplier from 2 to 1; retain the exact centering architecture, fixed 50-update warmup and all other optimizer settings.",
+  "motivation": "The user asked whether the learning rate explains the slower centering results. Its first twelve LR x2 screen cells pass but small-prime division and recall regress. This separate sensitivity experiment distinguishes a rate-specific result from evidence across two rates; it cannot prove optimality.",
+  "hypothesis": "Mean subtraction followed by RMS can change gradient magnitudes and conditioning; a smaller update may improve learning. This remains a hypothesis, not a mathematical guarantee.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "parent_comparison": "Retain all paired cells against both the LR x2 centering parent and the scaled Peri-RMS model without centering. Promotion still uses the same LR x2 control.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Include this LR sensitivity screen, and its full short suite if promoted, before final short-only selection. Run the final new winner once on the already observed long diagnostic; do not tune or reselect from long.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory.",
+  "execution_order": "Finish the current LR x2 centering screen, validate the LR x1 captured update, then run the LR x1 centering screen. All configurations retain their own source plan and output directory."
+}
