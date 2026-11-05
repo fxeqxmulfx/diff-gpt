@@ -252,13 +252,13 @@ capacity, and verify ordinary controls as well as the failed cases. Do not
 claim an ideal/universal model from a finite collection of successful tests.
 
 Round 2 execution update
-All eight promoted candidates completed and passed all75 short cells. The
-frozen selection is peri-rms-scaled-ssmax-noqk-lr2, GM20.9798 epochs, 38.7%
-fewer than LR x2. Its one reused long30 diagnostic is now running from the
+All eight promoted candidates completed and passed all 75 short cells. The
+frozen selection is peri-rms-scaled-ssmax-noqk-lr2, geometric mean 20.9798 epochs, 38.7%
+fewer than LR x2. Its one reused 30-cell long diagnostic is now running from the
 pinned 7cff292 source. Do not duplicate it or alter the frozen selection.
 This remains the benchmark ablation winner; the shared-model candidate keeps
-Q/K RMS. SSMax/QK is the best completed normalized arm at GM24.3271. The
-user's full Log-Scaled LeRoPE combination passes75/75 at GM28.3632 but is
+Q/K RMS. SSMax/QK is the best completed normalized arm at geometric mean 24.3271. The
+user's full Log-Scaled LeRoPE combination passes 75/75 at geometric mean 28.3632 but is
 16.59% slower than SSMax/QK on this suite. Preserve those negative results.
 Independent component stress fixes and their proofs/results are recorded in
 research/transformer_stress_fixes, with separate rate/width/epsilon follow-ups.
