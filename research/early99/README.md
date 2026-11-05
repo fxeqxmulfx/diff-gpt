@@ -480,3 +480,20 @@ All **69 relevant CPU/CUDA checks pass** for the frozen attention-extension
 implementation. The [validation record](results/round2/validation.json) includes
 the command, independent equations, optimizer/capture checks, and the
 loss-unit correction to the initial clipping-stress assertion.
+
+Both SSMax arms completed **18/18 screen passes**. The Q/K-RMS arm improves
+four of six medians against LR ×2 and five against the same scaled parent;
+its direct parent pairs are 10 earlier, 4 tied and 4 later. The no-Q/K arm
+improves three medians against LR ×2. Both satisfy the predeclared gate and
+advance to the complete 75-cell short suite after LeRoPE's screen. Their
+screen JSON/CSV files and checkpoint audits retain every result. No aggregate
+screen speed claim is made. The user explicitly defers runtime optimization;
+selection uses coverage and first-99% epochs, with seconds retained as records.
+
+The additional [Q/K score fixture](guarantees/NormalizedScores.lean) proves
+`abs(dot(Q_norm,K_norm)) <= head_dim` after arbitrary rotary angles. With
+fixed gain `g`, scores satisfy `abs(score) <= abs(g)*head_dim`; SSMax multiplies
+this bound by `log(N)`. The no-Q/K arm loses this bound independent of learned
+projection norms. Neither upper bound establishes the positive winning margin
+needed for SSMax concentration. Both variants retain the scaled residual-state
+bound. See the [updated guarantee record](results/round2/attention-extension-guarantees.json).

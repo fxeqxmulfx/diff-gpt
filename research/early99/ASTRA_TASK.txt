@@ -73,8 +73,10 @@ Keep the recorded update budgets. A run that misses its budget is censored,
 never a zero-epoch success or a discarded row. Record every seed, misses and
 execution errors. A later drop does not undo the user's first-crossing success.
 Compare identical cadence, data, batch order, dtype and evaluation between
-baseline and candidate. Seconds include setup/scoring and are secondary; epochs
-are the primary objective. Account for resumed clocks separately.
+baseline and candidate. Seconds include setup/scoring and remain recorded; epochs
+are the primary objective. The user explicitly defers runtime optimization:
+wall-clock speed does not affect candidate promotion or final selection.
+Account for resumed clocks separately.
 
 Candidate implementation boundary
 The ready baseline entrypoint deliberately reuses the verified current-GPT/native

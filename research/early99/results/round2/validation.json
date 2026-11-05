@@ -151,6 +151,12 @@
     "initial_stress_assertion": "An earlier test compared moments from a test-only loss multiplied by 10000 using unscaled absolute tolerances. Model states passed; a small original-parameter moment residual failed that assertion. The final test compares these unclipped first/second moments in original loss units, keeps frequency moments in clipped units, and adds a separate unscaled scientific-loss case. No scientific model change or training run preceded this correction.",
     "ruff": "passed",
     "git_diff_check": "passed",
-    "formal_record": "research/early99/results/round2/attention-extension-guarantees.json"
+    "formal_record": "research/early99/results/round2/attention-extension-guarantees.json",
+    "scientific_source_revision": "7cff292",
+    "candidate_plan_sha256": {
+      "peri-rms-scaled-ssmax-lr2": "f2e2838bd0e3892a2cdc0818cebd1822b77fc281bf327a383150ec09a68a5479",
+      "peri-rms-scaled-ssmax-noqk-lr2": "8549242296e7d1b00780be299b01be715784de068a450f7cae4e470c44797d94",
+      "peri-rms-scaled-lerope-lr2": "45964bf39536c51797b26ed3b77a25e6916ff84b826f3f0b50372a3b322a60cc"
+    }
   }
 }

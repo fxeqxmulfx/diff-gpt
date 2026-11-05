@@ -56,6 +56,31 @@
       "assumptions": "Positive base frequency for positivity; arbitrary finite real log-scales and positions. Learned frequencies are shared between query/key rotations and fixed during a cached generation. Real arithmetic.",
       "nonvacuity": "Positive 1/10000 base, alpha=-2, nonzero position 7, four bands/eight channels and arbitrary vectors.",
       "limitations": "No bounded learned frequency range, bounded gradient at arbitrary distance, or length-extrapolation/optimization theorem. Stored float32 angle factors and sine/cosine evaluations have rounding; numerical cache/equation checks are separate evidence. This is one-dimensional token position with two-dimensional channel rotations, not two-coordinate positional encoding."
+    },
+    "qk_scores": {
+      "checked_at_utc": "2026-11-05T20:54:47.364041+00:00",
+      "fixture": "research/early99/guarantees/NormalizedScores.lean",
+      "fixture_sha256": "4a789a11e8ef68a650cc8ef47b8b631ffd941609b26fab72253bf572ef9907e4",
+      "output": "research/early99/results/round2/qk-score-lean-check.txt",
+      "output_sha256": "c07d0cb19d4cbef870ee55ad6e47eb99e1a6a568be08b0d23a5081e1802003f5",
+      "exit_code": 0,
+      "warnings": 0,
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "theorems": [
+        "Early99.NormalizedScores.normalized_norm",
+        "Early99.NormalizedScores.normalized_dot",
+        "Early99.NormalizedScores.normalized_score",
+        "Early99.NormalizedScores.ssmax_score"
+      ],
+      "statement": "For head width d>0 and eps>0, arbitrary rotary angles preserve each Q/K RMS norm bound sqrt(d); the Q/K dot product is bounded in absolute value by d. With fixed gain g, ordinary scores are bounded by abs(g)*d and s=1 SSMax scores by log(N)*abs(g)*d for N>=1.",
+      "assumptions": "Positive width and epsilon; arbitrary finite raw projected queries/keys, rotary angles and fixed real gain. Both queries and keys receive the implemented RMS normalization before the SSMax scale.",
+      "implemented_gain": "exp(log_alpha)/head_dim, with a fixed buffer initialized at 0.5*log(head_dim). Ideal exact initialization gives g=1/sqrt(d); the theorem permits the actual rounded buffer-derived gain too.",
+      "limitations": "The no-Q/K arm has no corresponding bound independent of learned projection norms. These upper bounds do not ensure a positive winning-logit gap, bounded full-network derivatives, numerical overflow protection or earlier grokking.",
+      "nonvacuity": "Positive scientific epsilon 1/8388608, width 8, nonzero angles 2 and 3, four visible keys, unrestricted vectors."
     }
   },
   "inherited_bounds": "Every extension retains post-branch RMS and alpha=1/sqrt(2L), so the PeriBounds real-arithmetic residual RMS bound 1+sqrt(2L) still applies. Removing Q/K RMS removes that operation's raw-score norm bound, while keeping the post-branch bound.",
@@ -63,6 +88,7 @@
   "compile_commands": [
     "lake build Transformer.RoPE.LeRoPE.Section3_LearnedFrequencies Transformer.SequenceModel.Rotary",
     "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/LearnedRotary.lean",
-    "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/ScalableSoftmax.lean"
+    "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/ScalableSoftmax.lean",
+    "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/NormalizedScores.lean"
   ]
 }
