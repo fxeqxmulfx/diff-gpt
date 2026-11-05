@@ -557,3 +557,29 @@ Median paired screen epoch ratios against LR ×2 (lower is better):
 All four arms advance to full 75-cell evaluation. This table is a declared
 screen, not an aggregate benchmark speed claim. The combined scientific source
 revision is `57aa3c9`; the three component arms retain `7cff292`.
+
+
+## First complete attention-extension result
+
+SSMax with Q/K RMS completed **75/75 short passes**, with geometric-mean
+first-99% exposure **24.3271 epochs**. Its ratios are **0.710281** versus
+LR ×2 (**29.0% fewer epochs**), **0.857777** versus the same scaled Peri-RMS
+parent (**14.2% fewer**), and **0.425557** versus the original baseline
+(**57.4% fewer**). Against LR ×2, 53 cells are earlier, 8 tied and 14 later;
+against the parent, 52 are earlier, 10 tied and 13 later. Parameters remain
+matched at 100736–1183488 across cases.
+
+The improvements are not uniform. Recall seed 2 takes 4× LR ×2's exposure
+(4 → 16 epochs). Division p193 seed 2 takes 3.5× LR ×2 (12 → 42) and
+4.6667× the scaled parent (9 → 42). Hard-depth seed 2 takes 3.3333× LR ×2
+(0.6 → 2.0). The [LR ×2 comparison](results/round2/peri-rms-scaled-ssmax-lr2-vs-lr2-short.json),
+[parent comparison](results/round2/peri-rms-scaled-ssmax-lr2-vs-peri-scaled-short.json),
+[baseline comparison](results/round2/peri-rms-scaled-ssmax-lr2-vs-baseline-short.json),
+CSV files and [complete audit](results/round2/audit-peri-rms-scaled-ssmax-lr2-full-short.json)
+preserve every cell.
+
+The first audit attempt used a relative result path inside the replay checkout.
+Training had used absolute paths throughout and was unaffected. Correcting the
+temporary audit helper's result paths produced a clean 75-cell audit, with no
+retraining or resumed cells. Final selection waits for the remaining three
+promoted attention candidates; no new long diagnostic has run.

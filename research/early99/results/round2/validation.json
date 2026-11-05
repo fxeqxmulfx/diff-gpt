@@ -157,7 +157,8 @@
       "peri-rms-scaled-ssmax-lr2": "f2e2838bd0e3892a2cdc0818cebd1822b77fc281bf327a383150ec09a68a5479",
       "peri-rms-scaled-ssmax-noqk-lr2": "8549242296e7d1b00780be299b01be715784de068a450f7cae4e470c44797d94",
       "peri-rms-scaled-lerope-lr2": "45964bf39536c51797b26ed3b77a25e6916ff84b826f3f0b50372a3b322a60cc"
-    }
+    },
+    "full_short_audit_path_correction": "The first full attention audit initially addressed results relative to a replay checkout with a tracked runs directory. Training already used absolute paths, so all 75 results were intact. Corrected only the temporary audit helper to use absolute run/control paths; all 75 histories/checkpoints/sources passed without retraining or resuming."
   },
   "combined_ssmax_lerope": {
     "checked_at_utc": "2026-11-05T21:05:39.005686+00:00",
