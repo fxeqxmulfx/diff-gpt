@@ -648,7 +648,63 @@ relative-position invariance is therefore not claimed. Existing Q/K score,
 conditional SSMax-margin and scaled residual-state bounds still apply;
 none establishes improved learning or extrapolation.
 
+The [completed screen](results/round2/screen-peri-rms-scaled-ssmax-lerope-log-angle-lr2.json)
+passes **18/18** and improves three of six task medians against LR ×2, so it
+advances to the full 75 cells. Against that control, 10 cells are earlier,
+1 tied and 7 later. Against the
+[direct SSMax + LeRoPE parent](results/round2/screen-peri-rms-scaled-ssmax-lerope-log-angle-lr2-vs-ssmax-lerope.json),
+7 are earlier, 5 tied and 6 later, with two improved task medians. Recall
+improves in every seed: **35 → 15, 12 → 9, 22 → 13 epochs**. Numeric transport
+regresses in every seed: **2 → 7, 2 → 10, 5 → 11 epochs**, including a 5×
+regression for seed 1. The paired task medians against the direct parent are
+1.0 (Boolean), 1.0 (p193), 1.0 (p97), 0.5909 (recall), 0.9793 (square-sum)
+and 3.5 (transport). These are screen results, with no aggregate speed claim.
+The [18-cell audit](results/round2/audit-peri-rms-scaled-ssmax-lerope-log-angle-lr2-screen.json)
+verifies every original stopping rule, checkpoint, source and optimizer group.
+The original queue resumed after this audit, reusing all 65 completed no-Q/K
+cells; this new arm is included among the promoted full-suite comparisons.
+
 After completing this round's frozen short selection, reused long diagnostic,
 reports and commits, the user's latest instruction is to continue research in
 a separately declared short-suite round. Long outcomes remain regression
 evidence and cannot guide the next candidates.
+
+### Replaying the attention candidates
+
+The immutable run plans hash every research Python source. Resume an old
+candidate from its recorded scientific revision, using absolute output and
+baseline paths; do not replace its expected hashes with the current tree's.
+
+| Candidates | Scientific revision |
+|---|---|
+| SSMax with/without Q/K RMS; ordinary LeRoPE | `7cff292` |
+| SSMax + LeRoPE | `57aa3c9` |
+| SSMax + Log-Scaled LeRoPE | `c6c24d8` |
+
+For example, from a checkout of `7cff292`, the SSMax/QK dispatcher command is:
+
+```bash
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. /home/misha/python_projects/gpt/.venv/bin/python -m research.early99.experiments.run \
+  --run --tier short \
+  --configuration research/early99/configs/peri-rms-scaled-ssmax-lr2.json \
+  --output /home/misha/python_projects/gpt/runs/early99/candidates/peri-rms-scaled-ssmax-lr2 \
+  --baseline /home/misha/python_projects/gpt/runs/early99/baseline
+```
+
+Completed cells are reused; changed sources or settings are rejected. Use a
+separate output directory for an independent repeat. The committed comparison
+entrypoint can regenerate the complete JSON and both CSV files from preserved
+records, without training, from the current checkout:
+
+```bash
+PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare \
+  --baseline runs/early99/candidates/adamw-lr2 \
+  --candidate runs/early99/candidates/peri-rms-scaled-ssmax-lr2 \
+  --output /tmp/early99-recomputed-ssmax-vs-lr2 --tier short
+```
+
+Use the corresponding candidate name for other arms. All plan, configuration,
+source, initialization, checkpoint, history and data hashes remain archived
+under each candidate's run directory. Raw checkpoints are retained locally;
+the compact comparison reports, configurations, implementation and proofs are
+committed.
