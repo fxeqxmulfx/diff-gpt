@@ -90,5 +90,51 @@ data. Its tasks, optimizer and budgets differ, so its results are not merged
 into this suite or early99. DeepNorm and ResiDual remain related candidates,
 not tested reproductions in this small residual comparison.
 
-Results are pending scientific execution. No architecture is selected from
-preflight or smoke-test outcomes.
+## Complete first results
+
+All **322 numerical probes and 84 learning cells** completed. The
+[audit](results/audit.json) verifies every source archive, paired initialization,
+optimizer/sampler state, history and final full-split evaluation. Run it with
+`PYTHONPATH=. .venv/bin/python research/stress_audits/transformer_v1.py`.
+The [complete numerical records](results/components.json),
+[learning summary](results/learning-summary.json) and
+[all-cell CSV](results/learning-cells.csv) retain every failure.
+
+The five ordinary full-stack controls remain finite and agree closely with
+FP64. Extreme interventions expose genuine limitations of the implementation:
+native FP32 RMS can return an incorrect finite zero after its squared norm
+overflows; the standalone SwiGLU probe does this at projection scale `1e10`
+and becomes nonfinite at `1e20`. The tied-readout probe similarly returns zero
+at weight scale `1e20`, despite a nonzero finite FP64 reference. Ten of the 65
+full-stack probes have nonfinite values/gradients, at the largest SwiGLU and
+frequency interventions. Other probes remain finite with large accuracy errors.
+
+Log-Scaled LeRoPE's rotation norm is still accurate to about `1e-7` when its
+phase vector is badly wrong. At position 1048576 and raw log frequency 4,
+the maximum phase-vector error is **1.999** versus the FP64 formula. Even
+at the initial log frequency zero it is **0.03994** there. Norm preservation
+does not establish intended positional accuracy.
+
+All residual learning runs stayed finite, but **0/84 reached the fixed 5%
+relative-MSE threshold**. No filtered first-crossing mean is reported.
+
+| Residual choice | Passed / 12 | Worst final relative MSE | Median final relative MSE |
+|---|---:|---:|---:|
+| Raw pre-normalized branch | 0 | 0.1670 | 0.1349 |
+| Unit Peri-RMS | 0 | 29.2124 | 0.9371 |
+| Current `1/sqrt(D)` Peri-RMS | 0 | 3.8927 | 0.2768 |
+| `1/D` Peri-RMS | 0 | 0.3968 | 0.2375 |
+| Bounded post-RMS gate | 0 | 2.8241 | 0.2615 |
+| Bounded pre-RMS gate | 0 | 3.8926 | 0.2768 |
+| Zero-initialized scalar gate | 0 | 0.2667 | 0.1844 |
+
+The raw pre-normalized branch ranks first under the declared worst-error
+tie-break, but it **does not solve the test**. The zero-initialized gate is
+more robust to depth here than the current scaled Peri-RMS. The post-gate
+does not remove the learning failure, and the pre-gate closely reproduces the
+fixed arm. These are evidence against declaring the complete recipe ideal.
+
+The user's subsequent instruction is to fix failures. A separate
+`research/transformer_stress_fixes/` experiment preserves these original
+results and tests numerical repairs separately from a learning change.
+The original data, thresholds and budgets remain unchanged.
