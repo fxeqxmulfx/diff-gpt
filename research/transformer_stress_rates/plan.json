@@ -1,0 +1,12 @@
+{
+  "question": "Can optimizer step size close the remaining fixed-budget residual learning gap?",
+  "parent_source": "60ad06f",
+  "parent": "Shifted SwiGLU plus Peri-RMS and zero-initialized scalar post-RMS gates, scaled by 1/sqrt(D). This was the best of the declared seven residual alternatives after adding the linear path: 5/12 threshold passes, worst final relative MSE 0.07459413.",
+  "variant": "peri_rezero",
+  "control_learning_rate": 0.003,
+  "new_learning_rates": [0.01, 0.03],
+  "expected_new_cells": 24,
+  "settings": "Change only peak LR. Reuse the identical source training loop, shifted SwiGLU matrices, original initialization, seeds 0/1/2, 4/16 branches, teacher strengths 0.25/1, data fingerprint, batch ordering, warmup16, AdamW moments/epsilon/decay, 512 updates, observation cadence32 and target relative MSE0.05. No resumed cells or budget extension.",
+  "selection": "Keep all 36 rows including the 12 existing LR0.003 controls. Rank 12-cell coverage first, then geometric mean of first crossing only if all12pass; otherwise worst final error over all12. Retain every regression and miss. Select only after both new rates finish.",
+  "scope": "Adaptive follow-up on an already observed synthetic stress diagnostic, not fresh held-out evidence or a full-GPT improvement claim. No long-suite information is used. The ongoing early99 source and selection remain frozen."
+}
