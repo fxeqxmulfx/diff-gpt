@@ -1,0 +1,93 @@
+{
+  "checked_at_utc": "2026-11-05T19:20:03.856879+00:00",
+  "scope": "Existing frozen-baseline mechanisms; no new architecture change or new learning claim.",
+  "fixture": "research/early99/guarantees/ExistingMechanisms.lean",
+  "fixture_sha256": "fe238e8d16bd577d77e6a0deff4b259c96f6d93eb56a5eaa5733ed71796d9277",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "source_sha256": {
+    "src/Transformer/SequenceModel/Attention/CenteredXSA.lean": "dd6b47bb73175224233831178ec3a74e21f86dd631229cbb455e8de413340eb6",
+    "src/Transformer/Residual/RMSBackward.lean": "4363cbb83edd49a67a5094a12f217ef132a27a32ffa3be141bd3559b1c4ce3c5"
+  },
+  "commands": [
+    {
+      "command": "lake build Transformer.SequenceModel.Attention.CenteredXSA Transformer.Residual.RMSBackward",
+      "cwd": "/home/misha/lean_projects/transformer",
+      "exit_code": 0,
+      "output": "Build completed successfully (4002 jobs)."
+    },
+    {
+      "command": "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/ExistingMechanisms.lean",
+      "cwd": "/home/misha/lean_projects/transformer",
+      "exit_code": 0,
+      "output_file": "research/early99/results/round2/existing-mechanisms-check.txt"
+    }
+  ],
+  "output_sha256": "829a46aa8b09899e14574d7922e2cf5434f98aac6589ae7b9ba649c6e391a963",
+  "checks": [
+    {
+      "theorem": "Transformer.SequenceModel.Attention.centeredXSA_eq",
+      "hypotheses": "Attention weights sum to one; arbitrary value vectors and anchor. Actual code requires positive clipping epsilon.",
+      "guarantee": "Centered XSA equals the original clipped own-direction projection, including the clipped region."
+    },
+    {
+      "theorem": "Transformer.SequenceModel.Attention.headOutput_constant_values",
+      "hypotheses": "All value vectors are the same v and ||v|| >= xeps.",
+      "guarantee": "The real-arithmetic rotary causal XSA head output is zero, for arbitrary queries and keys."
+    },
+    {
+      "theorem": "Transformer.Residual.rms_vjp_decomposition",
+      "hypotheses": "Mean-square energy m > 0 and epsilon > 0; c is the mean input/upstream product in the VJP interpretation.",
+      "guarantee": "The direct and separated tangent/radial coordinate formulas are algebraically equal."
+    },
+    {
+      "theorem": "Transformer.Residual.rms_vjp_parallel",
+      "hypotheses": "m > 0, epsilon > 0, upstream is a*x so its mean product with x is a*m.",
+      "guarantee": "The coordinate derivative is a*x*epsilon/(m+epsilon)^(3/2)."
+    },
+    {
+      "theorem": "Transformer.Residual.rms_backward_coefficient_ratio",
+      "hypotheses": "m >= 0, epsilon > 0.",
+      "guarantee": "The radial/tangent coefficient ratio remains epsilon/(m+epsilon). Rearrangement does not remove poor conditioning."
+    },
+    {
+      "theorem": "Transformer.Residual.radialRMS_zero_hasDerivAt",
+      "hypotheses": "epsilon > 0.",
+      "guarantee": "The scalar radial RMS derivative at zero is 1/sqrt(epsilon)."
+    }
+  ],
+  "axioms": {
+    "Transformer.SequenceModel.Attention.centeredXSA_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.SequenceModel.Attention.headOutput_constant_values": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.Residual.rms_vjp_decomposition": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.Residual.rms_vjp_parallel": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.Residual.rms_backward_coefficient_ratio": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.Residual.radialRMS_zero_hasDerivAt": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "warnings": 0,
+  "limitations": "These are identities and local derivative properties over real arithmetic. They do not prove finite-precision error bounds, preservation of every PyTorch gradient at clipping boundaries, global network conditioning, or successful/faster grokking. Existing finite-precision regression tests are separate evidence."
+}

@@ -332,3 +332,19 @@ lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/PeriBo
 ```
 
 The fixture lives in this repository; the external project's sources are unchanged.
+
+The baseline's existing centered XSA and repaired RMS backward also have
+[checked identities](results/round2/existing-mechanisms.json). Centering averages
+`v_j - anchor` and retains the clipped own-value remainder; normalized attention
+weights give exactly the original XSA projection over the reals. Constant values
+above the clipping threshold therefore give zero. The separated RMS backward is
+algebraically the same derivative, and its radial/tangent coefficient ratio
+remains `epsilon/(mean_square + epsilon)`. These facts support the numerical
+rearrangements but do not establish a roundoff or training-convergence bound.
+The [dependency fixture](guarantees/ExistingMechanisms.lean) and
+[Lean output](results/round2/existing-mechanisms-check.txt) retain the checks.
+
+With finite epsilon, scaling a vector before RMS is not exactly canceled; it
+changes epsilon's relative effect. Applying the coefficient after RMS is what
+makes the stated branch-size and Lipschitz bounds apply to the intended residual
+coefficient.
