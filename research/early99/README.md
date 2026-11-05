@@ -558,6 +558,40 @@ All four arms advance to full 75-cell evaluation. This table is a declared
 screen, not an aggregate benchmark speed claim. The combined scientific source
 revision is `57aa3c9`; the three component arms retain `7cff292`.
 
+The [recall diagnosis](results/round2/combined-recall-diagnosis.json) compares
+saved histories without retraining. First held-out 99% epochs are:
+
+| Seed | Scaled Peri-RMS | + SSMax | + LeRoPE | + SSMax and LeRoPE |
+|---|---:|---:|---:|---:|
+| 0 | 15 | 13 | 11 | 35 |
+| 1 | 9 | 18 | 14 | 12 |
+| 2 | 20 | 16 | 12 | 22 |
+
+For seed 0, the combination first fits the training split at epoch 9, but
+needs 35 epochs for the held-out crossing. At SSMax's epoch-13 crossing,
+the combination has 99.66% training and 96.48% held-out accuracy. Seed 2
+likewise has 99.51% training and 97.27% held-out accuracy when SSMax first
+passes at epoch 16. This locates a generalization delay in those two seeds;
+seed 1 improves. The combined endpoint frequency multipliers span
+0.899–1.084 across these seeds, so the saved endpoints do not show exploding
+frequencies. They do not bound earlier trajectories or positional phase changes.
+
+A plausible interaction follows from the equations: the SSMax logit is
+`log(N) * g * qᵀ R(delta * theta * exp(alpha)) k`. Holding q and k fixed,
+its frequency derivative contains both `log(N)` and
+`delta * theta * exp(alpha)`. Q/K RMS controls vector lengths, but does not
+fix the learned angles or the winning attention key. The softmax derivative
+also changes with the resulting probabilities, so this does not establish
+a universal gradient amplification. It motivates testing a smaller frequency
+LR or SSMax scale in future work; neither is a tested explanation here.
+The current comparison measures no attention entropy or gradient trajectories
+and does not identify a unique cause. No extra tuning arm is introduced.
+LeRoPE itself computes `position * base_frequency * exp(log_scale)` without
+`log(N)`; SSMax scales scores after rotation. The existing LeRoPE-only arm
+already tests these learned angles with ordinary softmax. Removing the
+SSMax factor only from frequency backpropagation would change the update
+rule, not correct the current forward calculation.
+
 
 ## First complete attention-extension result
 
