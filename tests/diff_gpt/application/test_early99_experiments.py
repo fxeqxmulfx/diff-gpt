@@ -93,9 +93,12 @@ def test_candidate_plan_refuses_configuration_execution_and_source_changes(
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-@pytest.mark.parametrize("multiplier", [1.0, 2.0])
+@pytest.mark.parametrize(
+    ("multiplier", "beta2"), [(1.0, 0.98), (2.0, 0.98), (3.0, 0.98), (2.0, 0.95)]
+)
 def test_candidate_capture_preserves_rng_and_matches_native_updates(
     multiplier: float,
+    beta2: float,
 ) -> None:
     """Both batch shapes and evaluation preserve state; replay counts real steps."""
     case = Case(
@@ -107,7 +110,7 @@ def test_candidate_capture_preserves_rng_and_matches_native_updates(
         warmup=3,
     )
     task = arithmetic(case, "cuda")
-    configuration = Configuration("graph-check", multiplier)
+    configuration = Configuration("graph-check", multiplier, beta2=beta2)
     torch.manual_seed(1)
     model = baseline_model(task, case, "cuda")
     initial = copy.deepcopy(model.state_dict())
@@ -134,6 +137,15 @@ def test_candidate_capture_preserves_rng_and_matches_native_updates(
         replace(case, learning_rate=case.learning_rate * multiplier),
         "cuda",
         compiled=False,
+    )
+    eager.optimizer = torch.optim.AdamW(
+        reference.parameters(),
+        lr=eager.rate,
+        betas=(0.9, beta2),
+        eps=1e-8,
+        weight_decay=case.weight_decay,
+        capturable=True,
+        fused=True,
     )
     for completed, size in enumerate([8, 8, 5, 8, 8, 5]):
         before_eval = copy.deepcopy(stepper.optimizer.state_dict())
@@ -188,9 +200,12 @@ def test_comparison_keeps_censoring_and_suppresses_filtered_mean(
         }
 
     monkeypatch.setattr(compare, "paired_cell", cell)
-    result = compare.comparison(tmp_path, tmp_path, "short")
+    destination = tmp_path / "comparisons/incumbent"
+    result = compare.comparison(tmp_path, tmp_path, "short", output=destination)
     assert result["expected_cells"] == SEEDS
     assert result["candidate_passed"] == SEEDS - 1
     assert result["geometric_mean_epoch_ratio"] is None
     assert result["tasks"][0]["candidate_median_first99_epochs"] is None
     assert len(result["failures_and_pending"]) == 1
+    assert (destination / "comparison-short.json").is_file()
+    assert not (tmp_path / "comparison-short.json").exists()

@@ -85,7 +85,7 @@ def run(
         "device": device,
         "torch": str(torch.__version__),
         "optimizer": "torch.optim.AdamW",
-        "optimizer_betas": [0.9, 0.98],
+        "optimizer_betas": list(configuration.betas),
         "optimizer_eps": 1e-8,
         "optimizer_fused": device == "cuda",
         "compiled_loss": compiled and device == "cuda",

@@ -1,0 +1,38 @@
+{
+  "declared_at_utc": "2026-11-05T17:29:00.168919+00:00",
+  "request": "User requested an additional learning-rate schedule experiment during the constant LR x3 full-short run.",
+  "name": "adamw-lr3-cosine200",
+  "parent": "adamw-lr3",
+  "single_change": "Replace the post-warmup constant rate with cosine decay to half the peak over 200 actual training epochs after warmup.",
+  "configuration": {
+    "name": "adamw-lr3-cosine200",
+    "learning_rate_multiplier": 3.0,
+    "beta1": 0.9,
+    "beta2": 0.98,
+    "schedule": "cosine",
+    "decay_epochs": 200.0,
+    "minimum_lr_ratio": 0.5
+  },
+  "schedule_definition": "At issued update u, use the original completed-update linear warmup for u <= 50. Afterwards let e=actual_epochs(u)-actual_epochs(50), x=min(e/200,1), and rate=3*task_rate*(0.5+0.25*(1+cos(pi*x))). Include short-tail batches in actual_epochs. Keep rate at 1.5*task_rate after decay; no restarts or resets.",
+  "hypothesis": "Keep the larger early steps while lowering the later rate, which may reduce short-suite overshoot without losing all of the early progress. This is a hypothesis to test, not an assumed improvement.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "parent_comparison": "Also report ratios versus constant LR x3 to isolate the schedule change.",
+  "full_suite_policy": "If the screen qualifies, evaluate all 75 short cells. Select among complete configurations using coverage then full-suite geometric-mean epochs. Never compute a screened or censored filtered aggregate.",
+  "long_policy": "Defer the round-2 long check until this additional short experiment is resolved. Check only the final short winner once, at original budgets; explicitly label the previously observed long suite as a reused regression diagnostic.",
+  "provenance_policy": "Finish and preserve constant LR x3 before extending the schedule factory. Keep its source archive immutable and use its pinned source revision if its long diagnostic is later needed.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory."
+}

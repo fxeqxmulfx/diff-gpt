@@ -24,6 +24,8 @@ class Configuration:
 
     name: str = "baseline-factory"
     learning_rate_multiplier: float = 1.0
+    beta1: float = 0.9
+    beta2: float = 0.98
 
     def __post_init__(self) -> None:
         """Reject unsafe output names and invalid rates before allocating a model."""
@@ -38,6 +40,14 @@ class Configuration:
         ):
             message = "Learning-rate multiplier must be finite and positive"
             raise ValueError(message)
+        if not all(math.isfinite(beta) and 0 <= beta < 1 for beta in self.betas):
+            message = "AdamW moment coefficients must be finite and in [0, 1)"
+            raise ValueError(message)
+
+    @property
+    def betas(self) -> tuple[float, float]:
+        """Return the exact coefficients passed to native AdamW."""
+        return self.beta1, self.beta2
 
     def training_case(self, case: Case) -> Case:
         """Override only the allowed optimizer field, leaving the task intact."""
@@ -54,7 +64,7 @@ class Configuration:
             "optimizer_factory": "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
-            "betas": [0.9, 0.98],
+            "betas": list(self.betas),
             "epsilon": 1e-8,
             "weight_decay": effective.weight_decay,
             "warmup_updates": effective.warmup,
@@ -82,13 +92,18 @@ def baseline_model(task: Task, case: Case, device: str) -> Logits:
 
 
 def native_adamw(
-    model: Logits, rate: torch.Tensor, case: Case, device: str
+    model: Logits,
+    rate: torch.Tensor,
+    case: Case,
+    device: str,
+    *,
+    betas: tuple[float, float] = (0.9, 0.98),
 ) -> torch.optim.AdamW:
-    """Construct native AdamW with the baseline's exact implementation settings."""
+    """Construct native AdamW with explicit moments and baseline execution settings."""
     return torch.optim.AdamW(
         model.parameters(),
         lr=rate,
-        betas=(0.9, 0.98),
+        betas=betas,
         weight_decay=case.weight_decay,
         eps=1e-8,
         capturable=device == "cuda",
@@ -124,4 +139,6 @@ class FactoryStepper(Stepper):
         super().__init__(model, task, effective, device, compiled=compiled)
         # AdamW construction consumes no updates or RNG. The original Stepper
         # owns capture and evaluation; this factory owns the scientific optimizer.
-        self.optimizer = factories.optimizer(model, self.rate, effective, device)
+        self.optimizer = factories.optimizer(
+            model, self.rate, effective, device, betas=configuration.betas
+        )

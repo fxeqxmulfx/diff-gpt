@@ -66,9 +66,9 @@ The candidate loop reuses the original sampler, stepper, evaluators and stopping
 logic. Exact CPU checkpoint equivalence and CUDA capture/update checks cover
 weights, moments, RNG, short batches, zero-rate first updates and recapture.
 
-## Measured short-suite result
+## Round 1: measured short-suite result
 
-The selected candidate is [`configs/adamw-lr2.json`](configs/adamw-lr2.json): multiply
+The round-1 selected candidate is [`configs/adamw-lr2.json`](configs/adamw-lr2.json): multiply
 every task's native AdamW learning rate by **2**. Betas remain `(0.9, 0.98)`, epsilon
 `1e-8`, weight decay `0.1`, and warmup 50 completed updates. Model architecture,
 initialization, parameter counts, dtype and all task/scoring settings match the
@@ -101,7 +101,7 @@ frozen in [`results/selection.json`](results/selection.json) before starting any
 long-suite training. The long check is complete: one fresh baseline and one
 candidate run for each of its 30 cells, with no tuning against that check.
 
-## Long-suite regression check
+## Round 1: long-suite regression check
 
 Coverage **regressed from 29/30 baseline passes to 26/30 candidate passes**.
 The candidate introduced four budget misses, each at 100,000 updates
@@ -128,24 +128,79 @@ check. All 30 comparisons, three-seed task statistics and censoring bounds are i
 [`task CSV`](results/adamw-lr2-long-tasks.csv). The compact combined result is
 [`results/summary.json`](results/summary.json).
 
-All **210 scientific runs** completed their first crossing or original budget.
+All **210 round-1 scientific runs** completed their first crossing or original budget.
 The final audit checked all 105 pairs, preserved checkpoints/histories/source
 snapshots, optimizer update counts and unchanged model/task/candidate provenance.
 There were no execution errors or resumed clocks. Validation details are in
 [`results/validation.json`](results/validation.json).
 
 ```bash
-# Candidate source/configuration archives reject changes within an existing output.
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr2.json --tier short
+# Recompute comparisons from the preserved round-1 histories.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr2 --tier short
-
-# Completed long regression check; existing results are reused, not retrained.
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr2.json --tier long
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr2 --tier long
 
-# Full integrity, oracle, CPU equivalence and CUDA capture checks: 31 passed.
+# Full integrity, oracle, CPU equivalence and CUDA capture checks.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py
 ```
 
 All raw histories, checkpoints, source snapshots and fingerprints remain under
 `runs/early99/baseline` and `runs/early99/candidates/adamw-lr2`.
+
+## Round 2: further optimizer experiments
+
+The [predeclared round-2 plan](results/round2/plan.json) tests two separate changes
+from LR ×2: increase the rate multiplier to **3**, or retain LR ×2 and reduce
+AdamW **beta2 to 0.95**. Both use beta1 0.9 and retain the original warmup,
+weight decay, model, data, seeds, cadence and budgets. The six-task screen uses
+all three seeds and requires 18/18 passes plus improved median paired epochs on
+at least three tasks relative to LR ×2. No screen-only aggregate is reported.
+
+Both configurations passed 18/18 screen cells. LR ×3 improved three task medians
+and advanced to all 75 short cells. Beta2 0.95 improved only two and was rejected
+at the declared gate. All screen observations, including regressions, are in
+[`screen-adamw-lr3.json`](results/round2/screen-adamw-lr3.json) and
+[`screen-adamw-lr2-beta95.json`](results/round2/screen-adamw-lr2-beta95.json).
+
+Constant LR ×3 completed **75/75** short cells, but did not beat LR ×2.
+Its geometric mean was **35.3367 epochs**, versus **34.2499** for LR ×2:
+the paired ratio **1.031730** means **3.17% more epochs**. There were 41 earlier,
+10 tied and 24 later cells; the worst ratio was **20.625×** on
+`power-division-p97-k3`, seed 0. Against the original baseline it used 38.19%
+fewer epochs (ratio 0.618149). Summed trainer time was 1470.06 seconds.
+All paired records and task medians/worst cases are in
+[`LR ×3 versus LR ×2`](results/round2/adamw-lr3-vs-lr2-short.json) and
+[`LR ×3 versus baseline`](results/round2/adamw-lr3-vs-baseline-short.json), with
+matching cell/task CSV files. The [short summary](results/round2/short-summary.json)
+retains the regressions. All 93 new runs passed the
+[checkpoint and source audit](results/round2/audit-before-schedule.json).
+
+The user then requested a learning-rate schedule. The separate
+[cosine plan](results/round2/schedule-plan.json) retains the 50-update warmup,
+starts at LR ×3, and decays to LR ×1.5 over 200 actual epochs after warmup.
+Final round-2 selection waits for this additional short-suite experiment.
+
+The round-2 factories record explicit moment coefficients; their default settings
+still match the frozen baseline. CUDA checks cover the baseline, LR ×2, LR ×3
+and LR ×2 with beta2 0.95 against native eager AdamW. The combined integrity,
+oracle, CPU and CUDA suite passed **33 tests**; the separate report-destination
+check also passed. See [validation](results/round2/validation.json).
+
+Candidate source/configuration archives are immutable. The current driver
+therefore rejects training into the old LR ×2 output, whose archived schema
+predates explicit moment fields. Its histories remain readable by the comparison
+tool. Replaying round 1 requires its archived sources or commit `fde92f2` with a
+fresh output directory; do not replace its plan or expected hashes.
+
+```bash
+# Current round-2 configuration; completed cells are reused.
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/adamw-lr3.json
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr3.json --tier short
+
+# Separate report destinations preserve both controls.
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr3 --tier short --output runs/early99/candidates/adamw-lr3/comparisons/baseline
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr3 --baseline runs/early99/candidates/adamw-lr2 --tier short --output runs/early99/candidates/adamw-lr3/comparisons/incumbent
+```
+
+Short-suite observations alone determine selection. The long suite has already
+been observed in round 1; a later check of a new winner is a reused regression
+diagnostic, not new holdout evidence, and cannot affect selection or tuning.

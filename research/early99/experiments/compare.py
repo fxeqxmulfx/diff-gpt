@@ -120,7 +120,9 @@ def paired_cell(row: dict, seed: int, baseline: Path, candidate: Path) -> dict:
     return result
 
 
-def comparison(baseline: Path, candidate: Path, tier: str) -> dict:
+def comparison(
+    baseline: Path, candidate: Path, tier: str, *, output: Path | None = None
+) -> dict:
     """Require all expected paired cells for the aggregate geometric mean."""
     rows, tasks = [], []
     for task in selected(tier):
@@ -180,7 +182,9 @@ def comparison(baseline: Path, candidate: Path, tier: str) -> dict:
         "tasks": tasks,
         "runs": rows,
     }
-    write(candidate / f"comparison-{tier}.json", result)
+    output = candidate if output is None else output
+    output.mkdir(parents=True, exist_ok=True)
+    write(output / f"comparison-{tier}.json", result)
     for suffix, records in (("", rows), ("-tasks", tasks)):
         buffer = io.StringIO()
         writer = csv.DictWriter(
@@ -188,7 +192,7 @@ def comparison(baseline: Path, candidate: Path, tier: str) -> dict:
         )
         writer.writeheader()
         writer.writerows(records)
-        (candidate / f"comparison-{tier}{suffix}.csv").write_text(buffer.getvalue())
+        (output / f"comparison-{tier}{suffix}.csv").write_text(buffer.getvalue())
     return result
 
 
@@ -197,11 +201,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument(
+        "--output", type=Path, help="Separate report destination for multiple controls"
+    )
     parser.add_argument("--tier", choices=("short", "long"), default="short")
     args = parser.parse_args()
     report(args.baseline, args.tier)
     report(args.candidate, args.tier)
-    result = comparison(args.baseline, args.candidate, args.tier)
+    result = comparison(args.baseline, args.candidate, args.tier, output=args.output)
     print(
         json.dumps(
             {

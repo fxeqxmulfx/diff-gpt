@@ -1,0 +1,34 @@
+{
+  "objective": "Improve first-observed 99% exact held-out epochs beyond the completed LR x2 short-suite incumbent",
+  "baseline_directory": "runs/early99/baseline",
+  "incumbent_directory": "runs/early99/candidates/adamw-lr2",
+  "incumbent_short_geometric_mean_epoch_ratio_to_baseline": 0.5991388731846734,
+  "selection_data": "Short-suite observations only. Previously observed long-suite outcomes are excluded from candidate selection and tuning.",
+  "candidates": [
+    {
+      "configuration": "research/early99/configs/adamw-lr3.json",
+      "parent": "adamw-lr2",
+      "single_change_from_parent": "Increase the learning-rate multiplier from 2 to 3",
+      "hypothesis": "The arithmetic and depth gains seen on short may extend to a larger step size; the larger-prime and recall screens test the known short-suite tradeoffs."
+    },
+    {
+      "configuration": "research/early99/configs/adamw-lr2-beta95.json",
+      "parent": "adamw-lr2",
+      "single_change_from_parent": "Reduce AdamW beta2 from 0.98 to 0.95, retaining LR x2 and beta1=0.9",
+      "hypothesis": "Faster adaptation of the second moment may reduce update lag while retaining the incumbent step size."
+    }
+  ],
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [0, 1, 2],
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Keep all prior long results frozen. A single diagnostic check of a newly selected short winner may follow selection, never influence it, and must be labeled as reuse of an already observed regression suite rather than fresh holdout evidence.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory."
+}

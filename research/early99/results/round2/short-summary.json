@@ -1,0 +1,124 @@
+{
+  "baseline": {
+    "passed": 75,
+    "expected": 75,
+    "geometric_mean_first99_epochs": 57.16527288696717,
+    "trainer_seconds_including_setup_scoring": 2066.366506818944
+  },
+  "incumbent_lr2": {
+    "passed": 75,
+    "expected": 75,
+    "geometric_mean_first99_epochs": 34.24993718279189,
+    "trainer_seconds_including_setup_scoring": 1297.2288083240273
+  },
+  "candidate_lr3": {
+    "passed": 75,
+    "expected": 75,
+    "geometric_mean_first99_epochs": 35.33668349747754,
+    "trainer_seconds_including_setup_scoring": 1470.0552795528492
+  },
+  "candidate_vs_baseline": {
+    "geometric_mean_epoch_ratio": 0.6181494762974143,
+    "epoch_reduction_fraction": 0.38185052370258565,
+    "earlier": 51,
+    "tied": 5,
+    "later": 19,
+    "worst_observed_paired_epoch_ratio": 15.076923076923077,
+    "largest_regressions": [
+      {
+        "case": "power-division-p193-k5",
+        "seed": 1,
+        "epoch_ratio": 15.076923076923077,
+        "baseline_first99_epochs": 13.0,
+        "candidate_first99_epochs": 196.0
+      },
+      {
+        "case": "division-p193",
+        "seed": 1,
+        "epoch_ratio": 9.222222222222221,
+        "baseline_first99_epochs": 9.0,
+        "candidate_first99_epochs": 83.0
+      },
+      {
+        "case": "power-division-p97-k3",
+        "seed": 0,
+        "epoch_ratio": 8.25,
+        "baseline_first99_epochs": 40.0,
+        "candidate_first99_epochs": 330.0
+      },
+      {
+        "case": "power-division-p193-k5",
+        "seed": 0,
+        "epoch_ratio": 5.7407407407407405,
+        "baseline_first99_epochs": 27.0,
+        "candidate_first99_epochs": 155.0
+      },
+      {
+        "case": "power-division-p193-k2",
+        "seed": 0,
+        "epoch_ratio": 5.055555555555555,
+        "baseline_first99_epochs": 18.0,
+        "candidate_first99_epochs": 91.0
+      }
+    ],
+    "censored_or_errors": []
+  },
+  "candidate_vs_lr2": {
+    "geometric_mean_epoch_ratio": 1.0317298776019852,
+    "epoch_reduction_fraction": -0.0317298776019852,
+    "earlier": 41,
+    "tied": 10,
+    "later": 24,
+    "worst_observed_paired_epoch_ratio": 20.625,
+    "largest_regressions": [
+      {
+        "case": "power-division-p97-k3",
+        "seed": 0,
+        "epoch_ratio": 20.625,
+        "baseline_first99_epochs": 16.0,
+        "candidate_first99_epochs": 330.0
+      },
+      {
+        "case": "power-division-p193-k5",
+        "seed": 1,
+        "epoch_ratio": 10.31578947368421,
+        "baseline_first99_epochs": 19.0,
+        "candidate_first99_epochs": 196.0
+      },
+      {
+        "case": "power-division-p193-k5",
+        "seed": 0,
+        "epoch_ratio": 7.045454545454546,
+        "baseline_first99_epochs": 22.0,
+        "candidate_first99_epochs": 155.0
+      },
+      {
+        "case": "basis-depth-hard",
+        "seed": 1,
+        "epoch_ratio": 4.5,
+        "baseline_first99_epochs": 0.4,
+        "candidate_first99_epochs": 1.8
+      },
+      {
+        "case": "gpt-probe-key-value-binding",
+        "seed": 2,
+        "epoch_ratio": 4.25,
+        "baseline_first99_epochs": 4.0,
+        "candidate_first99_epochs": 17.0
+      }
+    ],
+    "censored_or_errors": []
+  },
+  "beta95_screen": {
+    "passed": 18,
+    "expected": 18,
+    "improved_task_medians": 2,
+    "required_improved_task_medians": 3,
+    "advanced": false,
+    "full_suite_result": null
+  },
+  "parameter_counts_identical_in_every_pair": true,
+  "minimum_parameters": 100736,
+  "maximum_parameters": 1183488,
+  "runtime_note": "Each unique trainer clock includes setup, compilation and scoring, and excludes dispatcher/process startup and separate CPU data preflight. No resumed clocks."
+}

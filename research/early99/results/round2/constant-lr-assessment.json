@@ -1,0 +1,19 @@
+{
+  "new_short_winner": false,
+  "selection_data": "All 75 paired short cells only; no round-2 long cells have been run.",
+  "selection_reason": "Complete coverage, then lowest full-suite geometric-mean first-99 epochs among completed configurations. Beta2 0.95 was rejected at its predeclared screen, not evaluated on the full suite.",
+  "candidate_plan_sha256": "5e46b12b4374a154b8ebd8ca356d27bcbc54e1c954f5b4a16d990714ee24feed",
+  "search_plan_sha256": "c7692327753c73af65288a219d74ef0c523513b45513b4d35feec59a6a243eda",
+  "short_summary_sha256": "d2a1ee7163e620c01bf99f55e68cf6aef3598a71115348af9f185bb80a69910c",
+  "comparison_sha256": {
+    "baseline": "4f934211672ae70fabceccc4a7ec9f450bb5a19825171e7477b22c085b1ba8ca",
+    "lr2": "fb698b9904fb20644fa244d92b8b624abc0560002fc584fe8dc1fe2c2c69cb2a"
+  },
+  "long_policy": "If a new short winner is selected, run its 30 long cells once at original budgets. This is reuse of the already observed round-1 regression suite, not fresh holdout evidence. Never tune or reselect using its outcomes.",
+  "status": "Interim constant-rate comparison; final selection waits for the user-requested schedule experiment.",
+  "assessed_at_utc": "2026-11-05T17:30:30.994525+00:00",
+  "provisional_best_configuration": {
+    "name": "adamw-lr2",
+    "learning_rate_multiplier": 2.0
+  }
+}
