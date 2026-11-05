@@ -618,6 +618,30 @@ temporary audit helper's result paths produced a clean 75-cell audit, with no
 retraining or resumed cells. Final selection waits for the remaining three
 promoted attention candidates; no new long diagnostic has run.
 
+The **SSMax without Q/K RMS** arm has now also completed and passed its
+[75-cell audit](results/round2/audit-peri-rms-scaled-ssmax-noqk-lr2-full-short.json).
+Its geometric mean is **20.9798 epochs**: **38.7% fewer** than LR ×2,
+**26.0% fewer** than the scaled Peri-RMS parent, **13.8% fewer** than the
+otherwise matched SSMax/QK arm, and **63.3% fewer** than the original baseline.
+Against LR ×2 it has 49 earlier, 9 tied and 17 later cells. Against SSMax/QK
+it has 47 earlier, 4 tied and 24 later cells. Capacity remains matched at
+100736–1183488 parameters. Summed trainer time is 1279.04 seconds; the queue
+pause interrupted no training cell, and all 75 cells have no resumptions.
+
+The [direct Q/K ablation](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-ssmax-qk-short.json)
+shows large regressions too: hard-depth seed 1 takes **0.4 → 5.6 epochs (14×)**,
+division p193 seed 1 takes **9 → 78 (8.6667×)**, and numeric transport seed 0
+takes **2 → 13 (6.5×)**. Its
+[LR ×2 comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-lr2-short.json),
+[scaled-parent comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-peri-scaled-short.json)
+and [baseline comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-baseline-short.json)
+retain every row and complete task medians/worst cases. This arm is the current
+empirical leader under the predeclared coverage/epoch rule. It retains the
+scaled residual-state bound but loses Q/K RMS's score bound independent of
+projection norms. Faster observed learning and stronger score control are
+therefore distinct choices here. Final selection still waits for all remaining
+promoted arms; no new long diagnostic has run.
+
 ## Log-Scaled LeRoPE with SSMax retained
 
 The user requested a further experiment before resuming the current queue:
