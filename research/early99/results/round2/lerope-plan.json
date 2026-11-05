@@ -1,0 +1,41 @@
+{
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "parent_comparison": "Retain all paired comparisons against the scaled Peri-RMS parent in addition to baseline and LR x2.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Complete the requested next mechanism before final short-only selection. A newly selected winner receives one reused 30-cell long diagnostic, without tuning or reselection.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory. LeRoPE explicitly excepts the declared new head_dim/2 scalars and their optimizer group; original dimensions, parameters and initialization remain matched.",
+  "declared_at_utc": "2026-11-05T20:28:13.852326+00:00",
+  "configuration": {
+    "name": "peri-rms-scaled-lerope-lr2",
+    "learning_rate_multiplier": 2.0,
+    "model_variant": "peri-rms-embedding-scaled-lerope"
+  },
+  "parent": "peri-rms-scaled-lr2",
+  "source": {
+    "url": "https://arxiv.org/html/2607.10134v1",
+    "title": "LeRoPE: Learnable RoPE Frequencies Improve Language Modeling",
+    "version": "v1",
+    "sections": "3.1 and Appendix A.1"
+  },
+  "mechanism": "Replace fixed RoPE frequencies theta_m by theta_m * exp(alpha_m). One alpha per half-split band, shared by all heads and layers; alpha=0 initially. Keep the current base 10000, Q/K RMS and standard softmax/XSA. No causal centering or SSMax in this isolated arm.",
+  "parameters": "Adds head_dim/2 learned scalars; preserve and separately hash every original tensor. Record full initialization hash, common-tensor hash, new tensor values and count, and total capacity. Never describe this arm as parameter-count matched.",
+  "optimizer": "Native fused AdamW with the same LR x2, moments and warmup. Only the new log-frequency vector has weight decay 0 and independent gradient L2 clipping at 1.0; original parameters retain weight decay 0.1 and their original unclipped update. Paper-inspired mechanism, not a reproduction of its complete language-model training recipe.",
+  "implementation": "Recompute differentiable rotary angles on every forward pass; never cache training-time frequency tables across updates. Cached decoding uses full global positions with frozen weights, including shared prefixes.",
+  "guarantee_targets": "Positive frequencies for finite real alpha; per-band rotation norm preservation and relative-position dot-product identity for any learned fixed frequency. The existing Peri-RMS state bounds remain applicable. No promised frequency range, gradient bound or length extrapolation/grokking benefit.",
+  "validation": "Exact initial outputs and original tensor/RNG preservation; nonzero independently checked alpha gradients; arbitrary-frequency rotation and position identities; dense/token/chunk/shared-prefix equality; native versus captured updates including alpha, both optimizer groups, clipping, RNG and capture/resume restoration.",
+  "execution_order": "Finish current centering LR x1 screen. Freeze both SSMax arms and LeRoPE before their first runs. Run the SSMax-with-QK screen, SSMax-without-QK screen, then independent LeRoPE screen. Complete all promoted 75-cell suites before short-only selection."
+}

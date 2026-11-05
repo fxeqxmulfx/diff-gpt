@@ -7,7 +7,6 @@ checkpointing, first-crossing stopping and endpoint verification are reused.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
 import time
@@ -33,6 +32,7 @@ from research.early99.experiments.factories import (
     FactoryStepper,
     configured_factories,
 )
+from research.early99.experiments.initialization import parameter_metadata
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -73,17 +73,13 @@ def run(
     )
     torch.manual_seed(seed)
     model = factories.model(task, case, device)
-    initial = hashlib.sha256()
-    for name, parameter in model.model.named_parameters():
-        initial.update(name.encode())
-        initial.update(parameter.detach().cpu().contiguous().numpy().tobytes())
     metadata = {
         "case": asdict(case),
         "experiment": configuration.metadata(case),
         "experiment_source_plan": str(output / "plan.json"),
         "seed": seed,
         "batch_seed": seed + 10_000,
-        "model_class": "diff_gpt.domain.model.gpt.GPT",
+        **parameter_metadata(model.model),
         "device": device,
         "torch": str(torch.__version__),
         "optimizer": "torch.optim.AdamW",
@@ -93,8 +89,6 @@ def run(
         "compiled_loss": compiled and device == "cuda",
         "warmup_uses_completed_updates": True,
         "source_model_commit": reference["model_commit"],
-        "initial_parameters_sha256": initial.hexdigest(),
-        "parameters": sum(p.numel() for p in model.parameters()),
         "data_fingerprints": task.fingerprints,
         "data_metadata": task.metadata,
         "selection_baseline": task.baseline,
@@ -137,7 +131,8 @@ def run(
                 raise ValueError(msg)
         model.model.load_state_dict(saved["model"])
         stepper.optimizer.load_state_dict(saved["optimizer"])
-        stepper.optimizer.param_groups[0]["lr"] = stepper.rate
+        for group in stepper.optimizer.param_groups:
+            group["lr"] = stepper.rate
         sampler.restore(saved["sampler"])
         completed, history = saved["completed"], saved["history"]
         torch.set_rng_state(saved["cpu_rng"].cpu())

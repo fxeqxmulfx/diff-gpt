@@ -1,0 +1,62 @@
+{
+  "declared_at_utc": "2026-11-05T20:21:56.072000+00:00",
+  "configuration": {
+    "name": "peri-rms-scaled-ssmax-lr2",
+    "learning_rate_multiplier": 2.0,
+    "model_variant": "peri-rms-embedding-scaled-ssmax"
+  },
+  "parent": "peri-rms-scaled-lr2",
+  "user_direction": "Evaluate arXiv:2501.19399v1 next instead of centering.",
+  "source": {
+    "url": "https://arxiv.org/html/2501.19399v1",
+    "title": "Scalable-Softmax Is Superior for Attention",
+    "version": "v1",
+    "equations": "(2), (9), (11)",
+    "variant": "Section 3 configuration (c), fixed s=1 without learnable scaling or bias"
+  },
+  "single_change": "Multiply each normalized/rotated query by log(n), where n is its full visible causal key count, before the existing softmax attention. Retain XSA and the scaled Peri-RMS parent; do not subtract a prefix mean.",
+  "equation": "Attention row i = softmax(log(i+1) * original_scores_i) over keys j<=i. For cached execution, i includes the complete shared and private prefix.",
+  "adaptations": "Use the paper's parameter-free s=1 variant. Keep the benchmark's fixed Q/K temperature, Q/K RMS, RoPE base, initialization, dimensions, native AdamW, LR x2, warmup and budgets. No RoPE extrapolation experiment and no learned scale/bias are imported.",
+  "implementation_cautions": [
+    "Scale queries AFTER Q/K RMS so normalization does not absorb the intended factor.",
+    "Use global visible-key counts in dense, chunked and shared-prefix caches.",
+    "At n=1 log(n)=0; scale finite queries before masking, avoiding 0*(-infinity).",
+    "Keep attention row sums one and use the original centered-XSA evaluation, with no causal-centering correction."
+  ],
+  "hypothesis": "Length-dependent sharpening may improve useful attention selection while retaining mean aggregation and positive normalized weights. This is an empirical hypothesis, especially for the benchmark's short contexts.",
+  "guarantee_targets": "State and check a finite logit-margin probability bound with exact hypotheses; retain the Peri-RMS state bounds. Do not claim unconditional attention concentration, bounded full-network gradients or faster grokking. Equal logits remain uniform. Removing Q/K RMS removes its uniform raw-score bound; post-branch RMS still bounds each residual contribution.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "parent_comparison": "Retain all paired comparisons against the scaled Peri-RMS parent in addition to baseline and LR x2.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Complete the requested next mechanism before final short-only selection. A newly selected winner receives one reused 30-cell long diagnostic, without tuning or reselection.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory.",
+  "execution_order": "Complete the already running LR x1 centering screen, preserve its results, then integrate/test/freeze SSMax and run its screen. Develop SSMax outside the frozen Python source trees in the meantime.",
+  "extended_at_utc": "2026-11-05T20:28:13.852171+00:00",
+  "configurations": [
+    {
+      "name": "peri-rms-scaled-ssmax-lr2",
+      "learning_rate_multiplier": 2.0,
+      "model_variant": "peri-rms-embedding-scaled-ssmax"
+    },
+    {
+      "name": "peri-rms-scaled-ssmax-noqk-lr2",
+      "learning_rate_multiplier": 2.0,
+      "model_variant": "peri-rms-embedding-scaled-ssmax-noqk"
+    }
+  ],
+  "qk_ablation": "Explicit user request: test SSMax with and without Q/K RMS. The second arm bypasses only the two parameter-free Q/K RMS operations; it keeps the same fixed attention temperature, initialization, LR, visible-key scale and all other modules. Compare the two arms directly. No extra rescaling is silently substituted."
+}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING
@@ -11,11 +12,13 @@ import torch
 from diff_gpt.domain.model.gpt import GPT
 from research.current_grokking.train import Logits, Stepper
 from research.early99.experiments.causal_centering import install_causal_centering
+from research.early99.experiments.learned_rope import LearnedRoPEGPT
 from research.early99.experiments.models import (
     install_embedding_rms,
     install_peri_rms,
     install_residual_scaling,
 )
+from research.early99.experiments.scalable_softmax import install_scalable_softmax
 from research.early99.protocol import exposure
 
 if TYPE_CHECKING:
@@ -60,6 +63,9 @@ class Configuration:
             "peri-rms-embedding",
             "peri-rms-embedding-scaled",
             "peri-rms-embedding-scaled-csa",
+            "peri-rms-embedding-scaled-ssmax",
+            "peri-rms-embedding-scaled-ssmax-noqk",
+            "peri-rms-embedding-scaled-lerope",
         }:
             message = "Unknown model variant"
             raise ValueError(message)
@@ -117,10 +123,14 @@ class Configuration:
                 "peri-rms-embedding-scaled-csa": (
                     "peri_rms_embedding_scaled_csa_public_gpt"
                 ),
+                "peri-rms-embedding-scaled-ssmax": "peri_rms_scaled_ssmax_public_gpt",
+                "peri-rms-embedding-scaled-ssmax-noqk": (
+                    "peri_rms_scaled_ssmax_noqk_public_gpt"
+                ),
+                "peri-rms-embedding-scaled-lerope": "peri_rms_scaled_lerope_public_gpt",
             }[self.model_variant],
             "residual_scale": (2 * case.layers) ** -0.5
-            if self.model_variant
-            in {"peri-rms-embedding-scaled", "peri-rms-embedding-scaled-csa"}
+            if self.model_variant.startswith("peri-rms-embedding-scaled")
             else 1.0,
             **(
                 {
@@ -133,7 +143,40 @@ class Configuration:
                 if self.model_variant == "peri-rms-embedding-scaled-csa"
                 else {}
             ),
-            "optimizer_factory": "native_adamw",
+            **(
+                {
+                    "scalable_softmax": {
+                        "s": 1.0,
+                        "bias": 0.0,
+                        "visible_keys": "global causal position + 1",
+                        "placement": "after Q/K normalization and RoPE, before masking",
+                    },
+                    "qk_rms": self.model_variant
+                    != "peri-rms-embedding-scaled-ssmax-noqk",
+                }
+                if "ssmax" in self.model_variant
+                else {}
+            ),
+            **(
+                {
+                    "learned_rope": {
+                        "base": 10000.0,
+                        "parameterization": "base_frequency * exp(log_scale)",
+                        "sharing": "all layers and heads",
+                        "initial_log_scale": 0.0,
+                        "added_parameters": case.width // case.heads // 2,
+                        "frequency_weight_decay": 0.0,
+                        "frequency_gradient_clip_norm": 1.0,
+                        "frequency_learning_rate_multiplier": 1.0,
+                        "original_parameter_gradient_clipping": None,
+                    },
+                }
+                if self.model_variant == "peri-rms-embedding-scaled-lerope"
+                else {}
+            ),
+            "optimizer_factory": "native_adamw_lerope_groups"
+            if self.model_variant == "peri-rms-embedding-scaled-lerope"
+            else "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
             "betas": list(self.betas),
@@ -196,6 +239,27 @@ def peri_rms_scaled_csa_model(task: Task, case: Case, device: str) -> Logits:
     return model
 
 
+def peri_rms_scaled_ssmax_model(task: Task, case: Case, device: str) -> Logits:
+    """Add fixed s=1 SSMax, retaining the parent's Q/K RMS."""
+    model = peri_rms_scaled_model(task, case, device)
+    install_scalable_softmax(model.model)
+    return model
+
+
+def peri_rms_scaled_ssmax_noqk_model(task: Task, case: Case, device: str) -> Logits:
+    """Bypass only Q/K RMS in the otherwise identical SSMax arm."""
+    model = peri_rms_scaled_model(task, case, device)
+    install_scalable_softmax(model.model, normalize_qk=False)
+    return model
+
+
+def peri_rms_scaled_lerope_model(task: Task, case: Case, device: str) -> Logits:
+    """Reuse the verified parent and explicitly replace its rotary-table source."""
+    model = peri_rms_scaled_model(task, case, device)
+    model.model = LearnedRoPEGPT(model.model)
+    return model
+
+
 def native_adamw(
     model: Logits,
     rate: torch.Tensor,
@@ -207,6 +271,29 @@ def native_adamw(
     """Construct native AdamW with explicit moments and baseline execution settings."""
     return torch.optim.AdamW(
         model.parameters(),
+        lr=rate,
+        betas=betas,
+        weight_decay=case.weight_decay,
+        eps=1e-8,
+        capturable=device == "cuda",
+        fused=device == "cuda",
+        foreach=False if device != "cuda" else None,
+    )
+
+
+def native_lerope_adamw(
+    model: Logits,
+    rate: torch.Tensor,
+    case: Case,
+    device: str,
+    *,
+    betas: tuple[float, float] = (0.9, 0.98),
+) -> torch.optim.AdamW:
+    """Apply no decay only to the declared shared log-frequency vector."""
+    frequency = model.model.lerope.log_scales
+    original = [p for p in model.parameters() if p is not frequency]
+    return torch.optim.AdamW(
+        [{"params": original}, {"params": [frequency], "weight_decay": 0.0}],
         lr=rate,
         betas=betas,
         weight_decay=case.weight_decay,
@@ -234,7 +321,13 @@ def configured_factories(configuration: Configuration) -> Factories:
             "peri-rms-embedding": peri_rms_embedding_model,
             "peri-rms-embedding-scaled": peri_rms_scaled_model,
             "peri-rms-embedding-scaled-csa": peri_rms_scaled_csa_model,
-        }[configuration.model_variant]
+            "peri-rms-embedding-scaled-ssmax": peri_rms_scaled_ssmax_model,
+            "peri-rms-embedding-scaled-ssmax-noqk": peri_rms_scaled_ssmax_noqk_model,
+            "peri-rms-embedding-scaled-lerope": peri_rms_scaled_lerope_model,
+        }[configuration.model_variant],
+        optimizer=native_lerope_adamw
+        if configuration.model_variant == "peri-rms-embedding-scaled-lerope"
+        else native_adamw,
     )
 
 
@@ -262,6 +355,63 @@ class FactoryStepper(Stepper):
         self.optimizer = factories.optimizer(
             model, self.rate, effective, device, betas=configuration.betas
         )
+
+    def update(self, index: torch.Tensor) -> torch.Tensor:
+        """Clip only LeRoPE's new frequency gradient before native AdamW."""
+        if self.configuration.model_variant != "peri-rms-embedding-scaled-lerope":
+            return super().update(index)
+        self.optimizer.zero_grad(set_to_none=True)
+        loss = self.objective(self.task.inputs(index, static=True))
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(
+            [self.model.model.lerope.log_scales], max_norm=1.0, foreach=False
+        )
+        self.optimizer.step()
+        return loss.detach()
+
+    def prepare(self, sizes: list[int]) -> None:
+        """Restore both LeRoPE optimizer groups to the same live LR tensor."""
+        if self.configuration.model_variant != "peri-rms-embedding-scaled-lerope":
+            super().prepare(sizes)
+            return
+        if self.device != "cuda":
+            return
+        # Same warm/capture procedure as the frozen Stepper; the only extension
+        # reattaches the shared live rate to every restored parameter group.
+        values = [p.detach().clone() for p in self.model.parameters()]
+        moments = copy.deepcopy(self.optimizer.state_dict())
+        cpu_rng, cuda_rng = torch.get_rng_state(), torch.cuda.get_rng_state()
+        stream = torch.cuda.Stream()
+        stream.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(stream):
+            for size in sizes:
+                for _ in range(3):
+                    self.update(torch.arange(size, device=self.device))
+        torch.cuda.current_stream().wait_stream(stream)
+        torch.cuda.synchronize()
+        with torch.no_grad():
+            for parameter, value in zip(self.model.parameters(), values, strict=True):
+                parameter.copy_(value)
+            if moments["state"]:
+                self.optimizer.load_state_dict(moments)
+                for group in self.optimizer.param_groups:
+                    group["lr"] = self.rate
+            else:
+                for state in self.optimizer.state.values():
+                    for value in state.values():
+                        value.zero_()
+        self.optimizer.zero_grad(set_to_none=True)
+        torch.set_rng_state(cpu_rng)
+        torch.cuda.set_rng_state(cuda_rng)
+        for size in sizes:
+            index = torch.zeros(size, dtype=torch.long, device=self.device)
+            graph = torch.cuda.CUDAGraph()
+            self.model.train()
+            self.optimizer.zero_grad(set_to_none=True)
+            with torch.cuda.graph(graph):
+                loss = self.update(index)
+            self.graphs[size] = (graph, index, loss)
+        self.optimizer.zero_grad(set_to_none=True)
 
     def step(self, indices: torch.Tensor, completed: int) -> None:
         """Set the declared schedule before replaying one verified update."""

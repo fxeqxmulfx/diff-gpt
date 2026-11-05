@@ -107,6 +107,8 @@ def test_candidate_plan_refuses_configuration_execution_and_source_changes(
         (2.0, 0.98, "peri-rms-embedding-scaled", "constant"),
         (1.0, 0.98, "peri-rms-embedding-scaled-csa", "constant"),
         (2.0, 0.98, "peri-rms-embedding-scaled-csa", "constant"),
+        (2.0, 0.98, "peri-rms-embedding-scaled-ssmax", "constant"),
+        (2.0, 0.98, "peri-rms-embedding-scaled-ssmax-noqk", "constant"),
     ],
 )
 def test_candidate_capture_preserves_rng_and_matches_native_updates(

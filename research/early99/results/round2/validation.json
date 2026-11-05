@@ -130,5 +130,27 @@
     "scientific_python_unchanged_from_lr2_centering": true,
     "candidate_plan_sha256": "0e0c4016fa53bf79ba1f4c8ae9c68e7cd5506b822b55a357a188c662c8ba242a",
     "scope": "Additional learning-rate combination; prior 51-check suite remains recorded separately."
+  },
+  "attention_extensions": {
+    "checked_at_utc": "2026-11-05T20:41:38.316948+00:00",
+    "combined_cpu_and_cuda": {
+      "passed": 69,
+      "seconds": 161.25,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_attention_extensions.py tests/diff_gpt/application/test_early99_lerope_training.py tests/diff_gpt/application/test_early99_causal_centering.py tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py --show-capture=no"
+    },
+    "checks": [
+      "SSMax with and without Q/K RMS matches independently masked logits and XSA, including clipped values and input gradients",
+      "Dense, token, chunk and shared-prefix cached paths agree, including singleton queries and future-token exclusion",
+      "LeRoPE preserves original weights, RNG, tied readout and initial CPU logits; frequency gradients match finite differences",
+      "Arbitrary learned rotations preserve norm and relative dot products numerically",
+      "Added-capacity pairing accepts exactly head_dim/2 zero frequency scalars and rejects changed original weights or counts",
+      "Native fused AdamW matches captured SSMax updates",
+      "LeRoPE ordinary loss and clipping stress match independent native updates, with state/RNG restoration and shared live LR for both optimizer groups",
+      "All inherited data, cadence, optimizer, mechanism and benchmark checks pass"
+    ],
+    "initial_stress_assertion": "An earlier test compared moments from a test-only loss multiplied by 10000 using unscaled absolute tolerances. Model states passed; a small original-parameter moment residual failed that assertion. The final test compares these unclipped first/second moments in original loss units, keeps frequency moments in clipped units, and adds a separate unscaled scientific-loss case. No scientific model change or training run preceded this correction.",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "formal_record": "research/early99/results/round2/attention-extension-guarantees.json"
   }
 }

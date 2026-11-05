@@ -1,0 +1,68 @@
+{
+  "checked_at_utc": "2026-11-05T20:40:28.745829+00:00",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "external_source_edits": false,
+  "checks": {
+    "ssmax": {
+      "fixture": "research/early99/guarantees/ScalableSoftmax.lean",
+      "fixture_sha256": "e15f2240fd6c0fc1a73336e8a477a2163f164f6e9072a7db8959ac2a82c4a6b1",
+      "output": "research/early99/results/round2/ssmax-lean-check.txt",
+      "output_sha256": "91d51033d289ac1d25620047998a61cd6ad3eb0cf9b1b1631539d04bb57e08bf",
+      "exit_code": 0,
+      "warnings": 0,
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "source": "https://arxiv.org/html/2501.19399v1",
+      "equations": "(2), (9)",
+      "theorems": [
+        "Early99.ScalableSoftmax.probability_row",
+        "Early99.ScalableSoftmax.softmax_margin",
+        "Early99.ScalableSoftmax.ssmax_margin",
+        "Early99.ScalableSoftmax.constant_logits"
+      ],
+      "statement": "For N>=1 visible keys and s>=0, if every competing logit is at most z_i-gap, p_i >= 1/(1+(N-1)*exp(-s*log(N)*gap)). This is the exponential form of 1/(1+(N-1)*N^(-s*gap)). All rows are nonnegative and sum to one; equal logits give exactly 1/N.",
+      "assumptions": "Nonempty finite row. The gap is measured in the original fixed-temperature scores before SSMax. The proof explicitly checks every other key. No uniform positive gap across growing contexts is inferred from Q/K normalization or the architecture.",
+      "nonvacuity": "Unequal logits [2,0], s=1 and gap=2; singleton row; concrete probability-row witness.",
+      "limitations": "The finite bound is proved, not an asymptotic theorem for trained networks. Concentration as N grows additionally requires a sufficiently large gap maintained across contexts. No unconditional focus, improved learning, or finite-precision guarantee follows."
+    },
+    "lerope": {
+      "fixture": "research/early99/guarantees/LearnedRotary.lean",
+      "fixture_sha256": "d9a4c3c10e84dfa41d98467928c0155d738de802332091c777b0e428043928d8",
+      "output": "research/early99/results/round2/lerope-lean-check.txt",
+      "output_sha256": "808c8a9910351a903b0b5fb20fefce256e5d38f03f419b593fbe177b5367c543",
+      "exit_code": 0,
+      "warnings": 0,
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "source": "https://arxiv.org/html/2607.10134v1",
+      "sections": "3.1, 3.2 and Eq. (3)",
+      "theorems": [
+        "Transformer.RoPE.LeRoPE.learned_frequency_pos",
+        "Transformer.RoPE.LeRoPE.learned_frequency_init",
+        "Transformer.RoPE.LeRoPE.learned_frequency_hasDerivAt",
+        "Transformer.RoPE.LeRoPE.score_log_frequency_hasDerivAt",
+        "Transformer.SequenceModel.rotateHead_isometry",
+        "Transformer.SequenceModel.rope_relative"
+      ],
+      "statement": "For positive base frequency, exp(alpha)*frequency stays positive; zero alpha recovers the base frequency and its derivative with respect to alpha is the current frequency. Any real per-band angle preserves the half-split Euclidean norm. For fixed learned frequencies, rotary dot products depend on the position difference.",
+      "assumptions": "Positive base frequency for positivity; arbitrary finite real log-scales and positions. Learned frequencies are shared between query/key rotations and fixed during a cached generation. Real arithmetic.",
+      "nonvacuity": "Positive 1/10000 base, alpha=-2, nonzero position 7, four bands/eight channels and arbitrary vectors.",
+      "limitations": "No bounded learned frequency range, bounded gradient at arbitrary distance, or length-extrapolation/optimization theorem. Stored float32 angle factors and sine/cosine evaluations have rounding; numerical cache/equation checks are separate evidence. This is one-dimensional token position with two-dimensional channel rotations, not two-coordinate positional encoding."
+    }
+  },
+  "inherited_bounds": "Every extension retains post-branch RMS and alpha=1/sqrt(2L), so the PeriBounds real-arithmetic residual RMS bound 1+sqrt(2L) still applies. Removing Q/K RMS removes that operation's raw-score norm bound, while keeping the post-branch bound.",
+  "implementation_bridge": "Manual equation review and independent CPU/GPU checks; no formally verified PyTorch translation or floating-point error bound.",
+  "compile_commands": [
+    "lake build Transformer.RoPE.LeRoPE.Section3_LearnedFrequencies Transformer.SequenceModel.Rotary",
+    "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/LearnedRotary.lean",
+    "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/ScalableSoftmax.lean"
+  ]
+}

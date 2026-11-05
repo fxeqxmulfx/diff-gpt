@@ -11,6 +11,7 @@ import statistics
 from pathlib import Path
 
 from research.current_grokking.run import write
+from research.early99.experiments.initialization import verify_paired_initialization
 from research.early99.protocol import SEEDS, selected
 from research.early99.run import DEFAULT_OUTPUT, report, summarize
 
@@ -70,12 +71,7 @@ def paired_cell(row: dict, seed: int, baseline: Path, candidate: Path) -> dict:
             if base_metadata[key] != new_metadata[key]:
                 message = f"Unpaired {key}: {row['name']} seed {seed}"
                 raise ValueError(message)
-        # These candidates preserve every learned tensor, including the
-        # parameter-free Peri-RMS mechanism. Require matched initialization.
-        for key in ("initial_parameters_sha256", "parameters", "model_class"):
-            if base_metadata[key] != new_metadata[key]:
-                message = f"Parameter-preserving experiment changed {key}"
-                raise ValueError(message)
+        verify_paired_initialization(base_metadata, new_metadata)
     result = {"case": row["name"], "tier": row["tier"], "seed": seed}
     for prefix, cell, metadata in (
         ("baseline", base, base_metadata),

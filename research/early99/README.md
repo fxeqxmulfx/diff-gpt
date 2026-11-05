@@ -429,5 +429,54 @@ The user's learning-rate question motivates a separately
 [declared LR ×1 sensitivity trial](results/round2/csa-lr-plan.json), halving only
 the rate. Its additional native-eager/CUDA-capture check passed; the 18-cell
 screen follows the completed LR ×2 centering screen. Both centering rates use
-scientific source revision `51e15ed`. Final selection waits for this rate check;
-one unsuccessful rate does not establish the best performance of the mechanism.
+scientific source revision `51e15ed`. At LR ×1, **15/18** screen cells passed;
+all three square-sum seeds missed 99% at the original 100,000-update budget.
+Only one of six task medians improved against LR ×2, and none improved against
+the scaled parent. This arm also fails the declared gate. The complete
+[screen](results/round2/screen-peri-rms-scaled-csa-lr1.json) and
+[audit](results/round2/audit-csa-lr1-screen.json) preserve these outcomes.
+Two tested rates do not establish the best possible performance of centering.
+
+
+## SSMax and LeRoPE extensions
+
+The user's next request replaces causal centering with
+[Scalable-Softmax](https://arxiv.org/html/2501.19399v1). The
+[declared experiment](results/round2/ssmax-plan.json) uses the paper's fixed
+`s=1` variant: multiply the existing attention scores by `log(N)` for each
+query's complete visible key count. This retains positive, normalized weights
+and the original numerical centered-XSA evaluation. A matched second arm
+bypasses only parameter-free Q/K RMS; it keeps the same fixed temperature,
+initial weights and LR ×2. Both arms retain the scaled Peri-RMS parent and
+add no parameters. Queries are scaled after normalization and before masking,
+including the `N=1` case and shared-prefix caches.
+
+[LeRoPE](https://arxiv.org/html/2607.10134v1) is a separate
+[declared arm](results/round2/lerope-plan.json) on scaled Peri-RMS, with Q/K RMS
+and ordinary softmax. Frequencies become `base_frequency * exp(log_scale)`,
+with one zero-initialized scalar per band shared across all layers and heads.
+This adds **head_dim/2 parameters**, explicitly recorded alongside a separate
+hash of every unchanged parent tensor. Only the new frequency vector has zero
+weight decay and independent gradient-norm clipping at 1.0; its LR matches the
+other parameters. Original parameters retain their native AdamW treatment.
+Differentiable rotary tables are recomputed on each forward call.
+
+The two [checked fixtures](results/round2/attention-extension-guarantees.json)
+separate structural guarantees from training hypotheses. SSMax has a finite
+probability lower bound conditional on a gap above every competing logit;
+equal logits remain uniform. LeRoPE retains positive frequencies, the ordinary
+RoPE initialization, norm-preserving rotations and relative-position score
+structure. Its frequency and local-score derivatives are also dependency
+checked. These are real-arithmetic properties, without optimization or
+extrapolation promises. The existing scaled residual-state bound applies to
+all three new arms. LeRoPE here uses one-dimensional token positions and
+two-dimensional channel rotations; no second token coordinate is introduced.
+
+Each new candidate receives the same 18-cell screen, gate and original budgets.
+Every promoted arm must complete all 75 short cells before final selection;
+only the selected new winner receives the reused long regression diagnostic.
+
+All **69 relevant CPU/CUDA checks pass** for the frozen attention-extension
+implementation. The [validation record](results/round2/validation.json) includes
+the command, independent equations, optimizer/capture checks, and the
+loss-unit correction to the initial clipping-stress assertion.

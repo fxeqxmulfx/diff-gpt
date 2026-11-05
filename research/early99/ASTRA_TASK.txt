@@ -146,6 +146,29 @@ learning-rate question motivates the separately declared csa-lr-plan.json: test
 the same centering model at LR x1 after its LR x2 screen, changing only rate.
 Do not conclude that the architecture is unsuitable from a single rate.
 
+Next user-requested mechanism: Scalable-Softmax
+Evaluate arXiv:2501.19399v1 next in place of causal centering. Complete the
+already-running centering LR x1 screen and retain its evidence, then test the
+paper's parameter-free s=1 variant on the scaled Peri-RMS parent: multiply
+normalized queries by log(number of visible keys) before softmax. Keep XSA and
+remove the centering correction for this separate candidate. Follow the
+ssmax-plan.json declaration, verify dense/cached counts and the n=1 edge case,
+and state the logit-margin assumptions behind any concentration bound. Include
+this experiment in short-only selection before the final long diagnostic.
+
+SSMax Q/K ablation and LeRoPE extension
+The user additionally requests SSMax with and without Q/K normalization. Run
+both parameter-free s=1 arms with identical initial weights, fixed temperature
+and LR x2; bypass only Q/K RMS in the second arm. Compare both directly and
+retain the same declared screen and complete-suite selection requirements.
+Evaluate LeRoPE (arXiv:2607.10134v1) separately on scaled Peri-RMS with Q/K RMS
+and ordinary softmax. Learn one log-frequency multiplier per rotary band,
+shared across heads/layers, initialized to zero. Record its extra head_dim/2
+parameters explicitly; preserve and verify all original weights. Follow
+lerope-plan.json for the new frequency parameters' no-decay and independent
+clipping treatment, cache/capture checks, and rotation guarantees. Complete
+these requested mechanisms before freezing the short winner and long check.
+
 After selecting the best short-suite candidate, run the 30 long cells once as a
 regression check. Report regressions without tuning against that check. Keep all
 raw histories, checkpoints, fingerprints and candidate provenance. Commit the
