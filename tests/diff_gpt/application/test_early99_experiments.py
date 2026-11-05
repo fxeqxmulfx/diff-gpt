@@ -98,11 +98,13 @@ def test_candidate_plan_refuses_configuration_execution_and_source_changes(
     [
         (1.0, 0.98, "baseline", "constant"),
         (2.0, 0.98, "baseline", "constant"),
+        (2.5, 0.98, "baseline", "constant"),
         (3.0, 0.98, "baseline", "constant"),
         (2.0, 0.95, "baseline", "constant"),
         (3.0, 0.98, "baseline", "cosine"),
         (2.0, 0.98, "peri-rms", "constant"),
         (2.0, 0.98, "peri-rms-embedding", "constant"),
+        (2.0, 0.98, "peri-rms-embedding-scaled", "constant"),
     ],
 )
 def test_candidate_capture_preserves_rng_and_matches_native_updates(
@@ -112,6 +114,9 @@ def test_candidate_capture_preserves_rng_and_matches_native_updates(
     schedule: str,
 ) -> None:
     """Both batch shapes and evaluation preserve state; replay counts real steps."""
+    # Scientific cells use fresh processes. Do not share Dynamo's finite
+    # recompilation budget between unrelated parameterized test variants.
+    torch.compiler.reset()
     case = Case(
         "candidate-graph-check",
         "arithmetic",

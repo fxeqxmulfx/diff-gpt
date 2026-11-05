@@ -1,0 +1,129 @@
+{
+  "checked_at_utc": "2026-11-05T19:14:10.025870+00:00",
+  "fixture": "research/early99/guarantees/PeriBounds.lean",
+  "fixture_sha256": "af1c5cf75426a505cc27f8021750b2c4f18ea9e65d92428e3e93c9739ecce3e0",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Basic.lean": "448f7d315a423d5a8f933b2d78b6d6662f346eb6a424d4f7e44111ee41b7b877",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "commands": [
+    {
+      "command": "lake build Transformer.GPTMini.RMSNorm",
+      "cwd": "/home/misha/lean_projects/transformer",
+      "exit_code": 0,
+      "output": "Build completed successfully (2767 jobs)."
+    },
+    {
+      "command": "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/PeriBounds.lean",
+      "cwd": "/home/misha/lean_projects/transformer",
+      "exit_code": 0,
+      "output_file": "research/early99/results/round2/lean-check.txt"
+    }
+  ],
+  "axioms": {
+    "Early99.residualTrace_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99.embedding_trace_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99.unit_depth_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99.scaled_depth_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99.scaled_depth_rms_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.GPTMini.rmsNormEps_norm_le": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.GPTMini.rmsNormEps_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99.scaled_rms_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "warnings": 0,
+  "unproved_placeholders": 0,
+  "hypotheses": [
+    "Real Euclidean vectors of positive width d; epsilon > 0.",
+    "Nonnegative residual coefficient; positive integer layer count L for 1/sqrt(2L).",
+    "Embedding and each attention/FFN branch use parameter-free finite-epsilon RMS.",
+    "Scaling occurs AFTER output RMS; two residual additions per layer."
+  ],
+  "actual_fp32_epsilon": 1.1920928955078125e-07,
+  "proven_properties": [
+    {
+      "name": "finite_epsilon_rms",
+      "statement": "||N_epsilon(x)||_2 <= sqrt(d)",
+      "source": "Transformer.GPTMini.rmsNormEps_norm_le"
+    },
+    {
+      "name": "arbitrary_initial_trace",
+      "statement": "||h_k||_2 <= ||h_0||_2 + k*alpha*sqrt(d)",
+      "source": "Early99.residualTrace_bound"
+    },
+    {
+      "name": "normalized_embedding_trace",
+      "statement": "||h_k||_2 <= (1+k*alpha)*sqrt(d)",
+      "source": "Early99.embedding_trace_bound"
+    },
+    {
+      "name": "unit_branch_depth",
+      "statement": "RMS(h_2L) <= 1+2L",
+      "source": "Early99.unit_depth_bound"
+    },
+    {
+      "name": "scaled_branch_depth",
+      "statement": "RMS(h_2L) <= 1+sqrt(2L) when alpha=1/sqrt(2L)",
+      "source": "Early99.scaled_depth_rms_bound"
+    },
+    {
+      "name": "normalizer_lipschitz_reference",
+      "statement": "||N_epsilon(x)-N_epsilon(y)|| <= (2/sqrt(epsilon))*||x-y||",
+      "source": "Transformer.GPTMini.rmsNormEps_lipschitz",
+      "note": "An existing, non-tight bound for one RMS operation; not a bound on the entire network or training dynamics."
+    },
+    {
+      "name": "scaled_normalizer_lipschitz",
+      "statement": "||alpha*N_epsilon(x)-alpha*N_epsilon(y)|| <= (2*alpha/sqrt(epsilon))*||x-y|| for alpha >= 0",
+      "source": "Early99.scaled_rms_lipschitz",
+      "note": "The raw attention/FFN map can add its own sensitivity; this is not a whole-network bound."
+    }
+  ],
+  "implementation_mapping": "The trace takes arbitrary raw branch vectors along the realized forward pass, allowing dependence on all causal tokens. First-position zeroing is represented by raw zero; guarded prefix selection chooses another branch/state with the same uniform bound. PyTorch-to-Lean correspondence is reviewed algebraically and supported by equation/caching tests, not proved by a compiler-verification theorem.",
+  "checks": "Each new theorem with hypotheses has an explicit nonzero one-dimensional example using the actual FP32 epsilon. Source statements and proof dependencies were inspected.",
+  "limitations": [
+    "The theorems concern real arithmetic, not roundoff/overflow in floating-point execution.",
+    "Embedding normalization acts on lookup activations; tied readout weight norms and logits remain unconstrained by these bounds alone.",
+    "No uniform bound on the full network Jacobian, optimizer dynamics, successful generalization, or epochs to 99% is claimed.",
+    "An RMS Lipschitz bound proportional to 1/sqrt(epsilon) can be large near zero; bounded activations do not imply small gradients."
+  ],
+  "empirical_decisions": "The unchanged screen and full-suite selection rules still determine speed claims. Mathematical benefits and any measured regressions are reported separately.",
+  "lean_output_sha256": "7c08a1aa5287cc4d46626991c91f32770c476aeb6b0738157ac4fdbcff0e9908"
+}

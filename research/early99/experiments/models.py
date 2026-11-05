@@ -6,6 +6,8 @@ from diff_gpt.domain.model.mini_block import RMSNormEmbedding, RMSNormProjection
 from diff_gpt.domain.model.rms_norm import RMSNorm
 
 if TYPE_CHECKING:
+    import torch
+
     from diff_gpt.domain.model.gpt import GPT
 
 
@@ -40,3 +42,32 @@ def install_embedding_rms(model: GPT) -> None:
     embedding = RMSNormEmbedding(model.token_embedding_table)
     embedding.norm = RMSNorm(model.n_embd)
     model.token_embedding_table = embedding
+
+
+class ScaledPeriProjection(RMSNormProjection):
+    """Apply a fixed residual coefficient after the existing output RMS."""
+
+    def __init__(self, projection: RMSNormProjection, scale: float) -> None:
+        """Retain the exact matrix, bias and repaired normalization module."""
+        super().__init__(projection)
+        self.norm = projection.norm
+        self.residual_scale = scale
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        """Normalize the branch before scaling; a pre-norm scale would cancel."""
+        return super().forward(value) * self.residual_scale
+
+
+def install_residual_scaling(model: GPT) -> None:
+    """
+    Scale the two normalized branches per layer by 1/sqrt(2L).
+
+    Source: transformer/MODEL_ARCHITECTURE.md at 8890a985, fixed additive
+    residual scaling after output RMS. This candidate retains the benchmark's
+    exact initial projection matrices, rather than importing the older
+    recipe's separately redrawn depth-scaled initialization.
+    """
+    scale = (2 * model.n_layer) ** -0.5
+    for block in model.blocks:
+        for branch in (block.sa, block.ffwd):
+            branch.c_proj = ScaledPeriProjection(branch.c_proj, scale)

@@ -10,7 +10,11 @@ import torch
 
 from diff_gpt.domain.model.gpt import GPT
 from research.current_grokking.train import Logits, Stepper
-from research.early99.experiments.models import install_embedding_rms, install_peri_rms
+from research.early99.experiments.models import (
+    install_embedding_rms,
+    install_peri_rms,
+    install_residual_scaling,
+)
 from research.early99.protocol import exposure
 
 if TYPE_CHECKING:
@@ -49,7 +53,12 @@ class Configuration:
         if not all(math.isfinite(beta) and 0 <= beta < 1 for beta in self.betas):
             message = "AdamW moment coefficients must be finite and in [0, 1)"
             raise ValueError(message)
-        if self.model_variant not in {"baseline", "peri-rms", "peri-rms-embedding"}:
+        if self.model_variant not in {
+            "baseline",
+            "peri-rms",
+            "peri-rms-embedding",
+            "peri-rms-embedding-scaled",
+        }:
             message = "Unknown model variant"
             raise ValueError(message)
         if self.schedule not in {"constant", "cosine"}:
@@ -102,7 +111,11 @@ class Configuration:
                 "baseline": "frozen_public_gpt",
                 "peri-rms": "peri_rms_public_gpt",
                 "peri-rms-embedding": "peri_rms_embedding_public_gpt",
+                "peri-rms-embedding-scaled": "peri_rms_embedding_scaled_public_gpt",
             }[self.model_variant],
+            "residual_scale": (2 * case.layers) ** -0.5
+            if self.model_variant == "peri-rms-embedding-scaled"
+            else 1.0,
             "optimizer_factory": "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
@@ -152,6 +165,13 @@ def peri_rms_embedding_model(task: Task, case: Case, device: str) -> Logits:
     return model
 
 
+def peri_rms_scaled_model(task: Task, case: Case, device: str) -> Logits:
+    """Add fixed depth scaling after the embedding-normalized Peri-RMS branches."""
+    model = peri_rms_embedding_model(task, case, device)
+    install_residual_scaling(model.model)
+    return model
+
+
 def native_adamw(
     model: Logits,
     rate: torch.Tensor,
@@ -188,6 +208,7 @@ def configured_factories(configuration: Configuration) -> Factories:
             "baseline": baseline_model,
             "peri-rms": peri_rms_model,
             "peri-rms-embedding": peri_rms_embedding_model,
+            "peri-rms-embedding-scaled": peri_rms_scaled_model,
         }[configuration.model_variant]
     )
 

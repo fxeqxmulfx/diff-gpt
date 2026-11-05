@@ -240,6 +240,16 @@ constant LR ×2.5 and fixed depth scaling after the embedding-normalized Peri-RM
 branches, each as a separate change. The task now explicitly values stronger
 proved mathematical guarantees alongside first-99 performance, with exact
 assumptions and a clear distinction between forward bounds and learning claims.
+Both refinements passed all 18 screen cells and advance to the complete short
+suite. LR ×2.5 improved three task medians, with 9 earlier, 5 tied and 4 later
+cells against LR ×2. Scaled Peri-RMS improved four task medians, with 11 earlier,
+4 tied and 3 later cells. Its recall median ratio is 0.9375 but the worst seed
+is still 5× slower; smaller-prime squared division has median ratio 1.3333.
+The [LR ×2.5 screen](results/round2/screen-adamw-lr2p5.json),
+[scaled screen](results/round2/screen-peri-rms-scaled-lr2.json), and
+[scaled-versus-embedding comparison](results/round2/screen-peri-rms-scaled-lr2-vs-peri-embedding.json)
+preserve every pair. Full 75-cell evaluation is required before a new winner
+can be selected; these screens are not aggregate speed claims.
 
 The round-2 factories record explicit moment coefficients; their default settings
 still match the frozen baseline. CUDA checks cover the baseline, LR ×2, LR ×3
@@ -247,19 +257,24 @@ and LR ×2 with beta2 0.95 against native eager AdamW. Adding the cosine and
 Peri-RMS mechanisms expanded the combined integrity, oracle, CPU and CUDA suite
 from 33 to 38 passing tests. The embedding follow-up passes **41 tests**, adding
 explicit tied-weight/RNG checks, a native embedding equation and cached
-generation for the additional model. See [validation](results/round2/validation.json).
+generation for the additional model. The LR ×2.5 and scaled Peri-RMS refinements
+bring this to **45 passing tests**, including scaling after output RMS and nine
+configurations checked against native eager updates. See
+[validation](results/round2/validation.json).
 
 Candidate source/configuration archives are immutable. The current driver
 therefore rejects training into outputs made by older driver revisions. Their
 histories remain readable by the comparison tool. Replaying round 1 requires
 its archived sources or commit `fde92f2`; constant LR ×3 and beta2 0.95 use
-`de711da`; the cosine and branch-only Peri-RMS experiments use `5389a30`.
+`de711da`; the cosine and branch-only Peri-RMS experiments use `5389a30`;
+the embedding-normalized Peri-RMS experiment uses `6e31141`.
 Use a fresh output directory for a repeat; do not replace an existing plan or
 expected hashes.
 
 ```bash
 # Current candidate plans; these commands do not train.
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-embedding-lr2.json
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/adamw-lr2p5.json
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-scaled-lr2.json
 
 # Separate report destinations preserve both controls.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr3 --tier short --output runs/early99/candidates/adamw-lr3/comparisons/baseline
@@ -269,3 +284,51 @@ OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.ea
 Short-suite observations alone determine selection. The long suite has already
 been observed in round 1; a later check of a new winner is a reused regression
 diagnostic, not new holdout evidence, and cannot affect selection or tuning.
+
+## Mathematical guarantees and the scaled candidate
+
+The complete scaled candidate is Peri-RMS + centered XSA + SwiGLU + per-head
+Q/K RMS normalization + residual scaling **after output RMS** + tied
+embedding/readout weights. Every RMSNorm is parameter-free, including the
+embedding and final normalization. RoPE, fixed attention temperature and guarded
+prefix stabilization remain as in the frozen GPT. Embedding RMS acts on lookup
+activations; the readout still uses the shared raw embedding matrix.
+
+Write `N(x) = x / sqrt(mean(x²) + epsilon)`. Each of the two branches in a layer
+contributes `alpha * N(branch_output)`, where `alpha = 1/sqrt(2L)` for `L` layers.
+The [Lean fixture](guarantees/PeriBounds.lean) proves, for positive width and
+epsilon and nonnegative alpha:
+
+- `||N(x)||₂ <= sqrt(width)` (from the checked transformer normalization module).
+- Arbitrary initial state: `||h_k||₂ <= ||h_0||₂ + k*alpha*sqrt(width)`.
+- Normalized embedding: `RMS(h_k) <= 1 + k*alpha`.
+- After `L` layers: `RMS(h_2L) <= 1 + sqrt(2L)` with the scaled branches,
+  compared with `1 + 2L` for unit coefficients.
+
+The raw branch sequence may depend on all causal inputs. First-position zeroing
+and guarded selection of another prefix branch/state preserve the same uniform
+bound. These are real-arithmetic trace proofs; the link to the PyTorch code is
+an algebraic review and equation/cached-generation tests, not a formally verified
+translation. The scientific FP32 epsilon is `1/8388608`. All six new theorems
+have concrete nonzero examples. Their dependency audits contain only
+`propext`, `Classical.choice` and `Quot.sound`.
+
+The imported normalization module also proves a global Lipschitz bound
+`2/sqrt(epsilon)` for a single RMS operation; the fixture proves that scaling
+after RMS multiplies this constant by `alpha`. This is a non-tight bound and can
+be large near zero. None of these results bounds unconstrained tied readout
+weights, the full network Jacobian, floating-point roundoff, or optimization
+and grokking. Empirical speed claims still require the complete fixed benchmark.
+The [proof record](results/round2/guarantees.json) pins the external source,
+toolchain, statements, assumptions and [axiom output](results/round2/lean-check.txt).
+
+Verify using the existing transformer checkout at commit `8890a985` with its
+pinned Lean 4.35.0 and Mathlib dependencies:
+
+```bash
+cd /home/misha/lean_projects/transformer
+lake build Transformer.GPTMini.RMSNorm
+lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/PeriBounds.lean
+```
+
+The fixture lives in this repository; the external project's sources are unchanged.

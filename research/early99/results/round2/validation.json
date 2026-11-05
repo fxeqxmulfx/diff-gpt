@@ -70,5 +70,30 @@
     ],
     "ruff": "passed",
     "previous_extension_source_revision": "5389a30"
+  },
+  "refinements": {
+    "combined_cpu_and_cuda": {
+      "passed": 45,
+      "seconds": 104.52,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py"
+    },
+    "focused_cpu": {
+      "passed": 7,
+      "seconds": 1.5
+    },
+    "initial_test_failure": {
+      "passed": 44,
+      "failed": 1,
+      "reason": "Nine parameterized compiler variants exceeded the per-process Dynamo recompile_limit=8. This was a test-isolation failure before scientific training.",
+      "resolution": "Reset torch.compiler state at the start of each capture test, matching the scientific runner's fresh process per cell. No scientific compile setting changed."
+    },
+    "checks": [
+      "LR x2.5 captured updates match native eager AdamW",
+      "fixed coefficient is applied after both branch norms",
+      "scaled candidate preserves weights, RNG and tied embedding",
+      "dense/cached causality and all nine capture configurations pass"
+    ],
+    "ruff": "passed",
+    "previous_embedding_source_revision": "6e31141"
   }
 }
