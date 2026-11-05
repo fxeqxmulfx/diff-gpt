@@ -1,0 +1,13 @@
+{
+  "question": "Does preserving branch amplitude through a larger output-RMS epsilon fix shallow residual generalization?",
+  "parent": "Shifted SwiGLU, original hidden width43, Peri-RMS, zero-initialized scalar post-RMS gates, 1/sqrt(D), peak LR0.01. Reuse all12 original-width rate-study controls (6/12passes). Do not combine width growth into this single-change test.",
+  "variant": "peri_rezero",
+  "learning_rate": 0.01,
+  "control_epsilon": 1.1920928955078125e-7,
+  "new_branch_epsilons": [0.001, 0.1, 1.0],
+  "expected_new_cells": 36,
+  "change": "Only branch output RMS epsilon changes. Input RMS remains FP32 machine epsilon; no attention, embedding or Q/K norm is part of this residual learner. All original parameters, initialization, sampler, data, depths4/16, strengths0.25/1, seeds0/1/2, optimizer, 512updates, cadence32 and relative-MSE target0.05 remain fixed. The output coefficient stays after RMS.",
+  "mathematics": "For every positive epsilon, RMS(x)=x/sqrt(mean(x^2)+epsilon) retains norm <=sqrt(d). The already checked normalization-only Lipschitz bound2/sqrt(epsilon) tightens as epsilon grows. Its relative radial derivative epsilon/(mean(x^2)+epsilon) also increases. These facts do not bound the full branch Jacobian or prove better learning. A trainable unbounded scalar gate still needs its own magnitude bound for a uniform residual-state claim.",
+  "selection": "Complete all36new cells and retain the12controls. Rank coverage first, geometric mean of first crossing only with all12passes, otherwise worst final error over all12. No changed budget or softened success threshold.",
+  "scope": "Adaptive synthetic diagnostic, not fresh held-out evidence or a full-GPT benchmark. Original failures remain preserved. No long-suite outcomes are consulted."
+}
