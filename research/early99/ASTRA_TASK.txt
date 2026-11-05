@@ -1,0 +1,112 @@
+Optimize the model or optimizer for earlier 99% held-out accuracy
+
+Objective
+Find a model-internal or optimizer change that reduces the number of training
+epochs before the first observed 99% exact held-out accuracy on the SHORT suite.
+A single historical crossing counts. Do not require a delayed learning plateau,
+continued retention, or a favorable final checkpoint.
+
+User's fixed benchmark
+- research/early99/suite.json contains exactly the 35 requested nonconstant tasks.
+- Short: 25 tasks whose historical seed-1 crossing was within 60 seconds.
+- Long: 10 additional tasks whose crossing was after 60 and within 300 seconds.
+- Each task uses model/shuffle seeds 0, 1, 2, with fixed data seed 1.
+- Short therefore has 75 runs; long has 30. Optimize on short. Keep long for a
+  subsequent regression check; do not tune candidates against long results.
+- The selection is based on a seed-1 screen, not proof that all three seeds pass.
+  A fresh three-seed baseline is still required.
+
+Current state
+All old sweep dispatchers, trainers, auditors and compiler descendants were
+stopped at the user's request. The GPU was verified free. The interrupted
+associative-division-n8-l2-w0 checkpoint is preserved at 64,000 updates under
+runs/current-grokking/. Do not restart that old 165-case queue.
+No scientific training has been started for the new 35-task suite.
+
+Baseline
+Public GPT: commit 01f18f86787511279fe52fe41883495fce0e3105.
+The 15 model-source hashes are recorded in the suite manifest. Baseline optimizer
+is native torch.optim.AdamW, betas (0.9, 0.98), epsilon 1e-8, the recorded learning
+rates/weight decay, and a 50-update completed-step warmup. CUDA uses native fused
+AdamW and verified capture-neutral graphs. FP32 matmul precision is highest;
+the repaired RMS backward uses its existing FP64 calculation.
+
+The current GPT includes SwiGLU, repaired RMS backward, Q/K RMS, fixed attention
+temperature, centered XSA and guarded prefix stabilization. Earlier ablations
+rejected or skipped Schedule-Free AdamW, embedding RMS, Peri output norm, scaled
+initialization, residual scaling and SDPA under their tested settings. Consult
+research/recall_ablation/ before repeating these blindly. Revisit a failure only
+with a concrete hypothesis and a controlled comparison.
+
+Run the baseline before claiming improvements
+1. Read research/early99/README.md and suite.json.
+2. Run the benchmark integrity tests:
+   .venv/bin/pytest -q tests/diff_gpt/application/test_early99_benchmark.py
+3. Write the plan without starting training:
+   OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.run --write-plan
+4. When executing this optimization task, establish all 75 short baseline cells:
+   OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.run --run --tier short
+5. Produce the explicit three-seed report:
+   OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.run --report --tier short
+
+Metric and fair comparison
+The threshold is >=0.99 exact sequences on the complete frozen primary held-out
+split, using free generation where the task requires it. The numeric vector
+probes use exact generated vectors here, not their old MSE criterion. Token
+accuracy, train accuracy, a partial held-out batch and teacher-forced answer
+accuracy cannot substitute for the declared metric.
+
+Epochs = actual training examples presented / fixed training-set size. With
+S=ceil(N/B) updates per epoch, U completed updates expose
+floor(U/S)*N + min((U mod S)*B,N) examples. This handles the short final batch and
+N smaller than B. Include the zero-rate first update; exclude CUDA capture warmup.
+The first-success observation and preceding observation provide the epoch bracket.
+Observation cadence is fixed to min(original interval, one epoch in updates).
+Do not compare the finer new stopping resolution to historical reference epochs
+as though that were a model improvement.
+
+The 60/300-second thresholds freeze membership; they are not new run timeouts.
+Keep the recorded update budgets. A run that misses its budget is censored,
+never a zero-epoch success or a discarded row. Record every seed, misses and
+execution errors. A later drop does not undo the user's first-crossing success.
+Compare identical cadence, data, batch order, dtype and evaluation between
+baseline and candidate. Seconds include setup/scoring and are secondary; epochs
+are the primary objective. Account for resumed clocks separately.
+
+Candidate implementation boundary
+The ready baseline entrypoint deliberately reuses the verified current-GPT/native
+AdamW runner. Its frozen model-source check rejects arbitrary model edits.
+Before candidate training, introduce explicit model/optimizer factory boundaries
+in research/early99 and separate candidate configurations/output directories.
+Preserve the baseline factory and frozen reference. Do not bypass its verifier
+by replacing expected model hashes, modifying the task manifest or changing data.
+
+Keep task widths/layers/heads, contexts, tokenizers, labels, split fingerprints,
+batches, shuffle seeds, evaluation cadence and budgets fixed. You may change
+internal model mechanisms, initialization or optimizer/schedule settings as an
+explicit candidate. Record learning rate, warmup, weight decay, moments and any
+new hyperparameters in its metadata. Report parameter counts and runtime so
+capacity/compute increases are visible. Snapshot candidate code and settings.
+
+Ensure a new optimizer has correct training/evaluation behavior and that graph
+capture does not consume hidden updates or alter initialization/moments/RNG.
+An eager candidate is acceptable if needed, with that runtime difference recorded.
+Verify changed capture/update behavior against issued operations before relying
+on its measurements. Keep all unmodified task oracles and existing integrity
+tests passing.
+
+Search and acceptance
+Make one interpretable change per experiment. Use a few short-suite tasks for
+quick rejection, then evaluate every short task in all three paired seeds for a
+candidate worth keeping. Do not report only favorable seeds or selected tasks.
+Prioritize coverage of successful task/seed cells, then earlier epochs. Report
+paired candidate/baseline epoch ratios, per-task three-seed median and worst case.
+The aggregate geometric mean requires all 75 expected cells to pass; if they do
+not, show coverage and all censored failures instead of a filtered mean.
+
+After selecting the best short-suite candidate, run the 30 long cells once as a
+regression check. Report regressions without tuning against that check. Keep all
+raw histories, checkpoints, fingerprints and candidate provenance. Commit the
+benchmark/candidate changes and concise JSON/CSV comparison results. Finish with
+the best configuration, measured epoch improvements, coverage and remaining
+failures; distinguish measured results from hypotheses.

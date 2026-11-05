@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-05",
+  "short_tasks": 25,
+  "long_tasks": 10,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "short_runs": 75,
+  "long_runs": 30,
+  "full_scientific_baseline_started": false,
+  "checks": [
+    {
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py -k 'not cuda'",
+      "passed": 17,
+      "deselected": 1
+    },
+    {
+      "check": "Rebuild all 35 actual datasets on CPU and compare frozen fingerprints/training sizes",
+      "passed": 35,
+      "training_started": false
+    },
+    {
+      "check": "CLI write-plan and short/long/all reports",
+      "expected_cells": [
+        75,
+        30,
+        105
+      ],
+      "all_pending": true
+    },
+    {
+      "check": "ruff check research/early99 research/current_grokking/report.py tests/diff_gpt/application/test_early99_benchmark.py",
+      "status": "passed"
+    }
+  ],
+  "old_sweep_stopped": {
+    "completed_cases": 126,
+    "explicitly_skipped_cases": 9,
+    "interrupted_case": "associative-division-n8-l2-w0",
+    "last_observed_updates": 64500,
+    "preserved_checkpoint_updates": 64000,
+    "remaining_target_pids": []
+  },
+  "historical_epochs_note": "historical_seed1.csv uses the old observations, exact sampled examples and short tails. It is not the new finer-cadence three-seed baseline."
+}

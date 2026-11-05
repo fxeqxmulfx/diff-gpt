@@ -17,6 +17,7 @@ FIVE_MINUTES_SECONDS = 300
 def collect(root: Path) -> dict:
     """Report the whole predeclared matrix, including every unfinished cell."""
     plan = json.loads((root / "plan.json").read_text())
+    stopped = (root / "STOPPED.json").exists()
     rows, families = [], defaultdict(Counter)
     for case in plan["cases"]:
         for seed in plan["seeds"]:
@@ -60,8 +61,7 @@ def collect(root: Path) -> dict:
                 row["resumed"] = bool(result["metadata"].get("resumptions"))
                 history_path = directory / "history.jsonl"
                 observations = [
-                    json.loads(line)
-                    for line in history_path.read_text().splitlines()
+                    json.loads(line) for line in history_path.read_text().splitlines()
                 ]
                 accuracies = [
                     (
@@ -152,6 +152,8 @@ def collect(root: Path) -> dict:
             elif (directory / "status.json").exists():
                 status = json.loads((directory / "status.json").read_text())
                 row.update(status="in_progress", completed=status["step"])
+                if stopped:
+                    row["status"] = "stopped_at_user_request"
                 if list(directory.glob("error-*.json")):
                     row["status"] = "interrupted_or_execution_error"
             elif list(directory.glob("error-*.json")):
@@ -174,6 +176,9 @@ def collect(root: Path) -> dict:
     return {
         "model": plan["model"],
         "optimizer": plan["optimizer"],
+        "execution_state": "stopped_at_user_request"
+        if stopped
+        else "active_or_finished",
         "planned_runs": len(rows),
         "counts": dict(counts),
         "observed_target_crossings": counts["passed"],
