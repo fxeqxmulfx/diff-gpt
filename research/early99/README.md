@@ -221,25 +221,45 @@ branch-only norms, versus 0.578 in the baseline. Adding embedding RMS makes it
 that adds only parameter-free embedding RMS to Peri-RMS, retaining the tied
 weight, unit residual coefficients and LR ×2. These initial scales do not
 establish why training failed or prove that the follow-up learns faster.
+The follow-up configuration is
+[`peri-rms-embedding-lr2`](configs/peri-rms-embedding-lr2.json).
+
+The embedding-normalized screen completed **18/18 passes**, recovering all six
+branch-only Peri-RMS misses. It improved two task medians relative to LR ×2:
+larger-prime squared division (ratio 0.2947) and square-sum (0.8807). Recall
+(3.125), smaller-prime squared division (1.3333), and numeric transport (1.3333)
+were slower; the boolean median tied. It therefore did not pass the predeclared
+three-task promotion gate. The [screen](results/round2/screen-peri-rms-embedding-lr2.json)
+and [parent comparison](results/round2/screen-peri-rms-embedding-lr2-vs-peri-rms.json)
+retain all outcomes. The [training/held-out diagnosis](results/round2/peri-generalization-diagnosis.json)
+shows that the failed recall seeds had reached 99% training accuracy, while
+square-sum reached 100% training and about 98.72–98.79% held-out accuracy.
+
+The [next declared refinements](results/round2/refinement-plan.json) test a
+constant LR ×2.5 and fixed depth scaling after the embedding-normalized Peri-RMS
+branches, each as a separate change. The task now explicitly values stronger
+proved mathematical guarantees alongside first-99 performance, with exact
+assumptions and a clear distinction between forward bounds and learning claims.
 
 The round-2 factories record explicit moment coefficients; their default settings
 still match the frozen baseline. CUDA checks cover the baseline, LR ×2, LR ×3
 and LR ×2 with beta2 0.95 against native eager AdamW. Adding the cosine and
 Peri-RMS mechanisms expanded the combined integrity, oracle, CPU and CUDA suite
-from 33 to **38 passing tests**, including independent schedule/branch equations
-and cached generation. See [validation](results/round2/validation.json).
+from 33 to 38 passing tests. The embedding follow-up passes **41 tests**, adding
+explicit tied-weight/RNG checks, a native embedding equation and cached
+generation for the additional model. See [validation](results/round2/validation.json).
 
 Candidate source/configuration archives are immutable. The current driver
 therefore rejects training into outputs made by older driver revisions. Their
 histories remain readable by the comparison tool. Replaying round 1 requires
 its archived sources or commit `fde92f2`; constant LR ×3 and beta2 0.95 use
-`de711da`. Use a fresh output directory for a repeat; do not replace an existing
-plan or expected hashes.
+`de711da`; the cosine and branch-only Peri-RMS experiments use `5389a30`.
+Use a fresh output directory for a repeat; do not replace an existing plan or
+expected hashes.
 
 ```bash
 # Current candidate plans; these commands do not train.
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/adamw-lr3-cosine200.json
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-lr2.json
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-embedding-lr2.json
 
 # Separate report destinations preserve both controls.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr3 --tier short --output runs/early99/candidates/adamw-lr3/comparisons/baseline

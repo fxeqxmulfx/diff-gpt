@@ -50,5 +50,25 @@
     "ruff": "passed",
     "fixed_baseline_sources_unchanged": true,
     "prior_experiment_source_revision": "de711da"
+  },
+  "embedding_followup": {
+    "combined_cpu_and_cuda": {
+      "passed": 41,
+      "seconds": 42.97,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py"
+    },
+    "focused_cpu_checks": {
+      "passed": 5,
+      "seconds": 1.51
+    },
+    "checks": [
+      "exact original state dict and RNG retained after embedding/branch normalization",
+      "embedding weight remains the exact shared readout parameter",
+      "embedding output matches independent native functional RMS",
+      "dense and cached generation agree with repeated prefixes",
+      "seven candidate settings match issued native eager updates and preserve capture/evaluation/recapture state"
+    ],
+    "ruff": "passed",
+    "previous_extension_source_revision": "5389a30"
   }
 }

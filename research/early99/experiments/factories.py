@@ -10,7 +10,7 @@ import torch
 
 from diff_gpt.domain.model.gpt import GPT
 from research.current_grokking.train import Logits, Stepper
-from research.early99.experiments.models import install_peri_rms
+from research.early99.experiments.models import install_embedding_rms, install_peri_rms
 from research.early99.protocol import exposure
 
 if TYPE_CHECKING:
@@ -49,7 +49,7 @@ class Configuration:
         if not all(math.isfinite(beta) and 0 <= beta < 1 for beta in self.betas):
             message = "AdamW moment coefficients must be finite and in [0, 1)"
             raise ValueError(message)
-        if self.model_variant not in {"baseline", "peri-rms"}:
+        if self.model_variant not in {"baseline", "peri-rms", "peri-rms-embedding"}:
             message = "Unknown model variant"
             raise ValueError(message)
         if self.schedule not in {"constant", "cosine"}:
@@ -98,9 +98,11 @@ class Configuration:
         effective = self.training_case(case)
         return {
             "configuration": asdict(self),
-            "model_factory": "frozen_public_gpt"
-            if self.model_variant == "baseline"
-            else "peri_rms_public_gpt",
+            "model_factory": {
+                "baseline": "frozen_public_gpt",
+                "peri-rms": "peri_rms_public_gpt",
+                "peri-rms-embedding": "peri_rms_embedding_public_gpt",
+            }[self.model_variant],
             "optimizer_factory": "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
@@ -143,6 +145,13 @@ def peri_rms_model(task: Task, case: Case, device: str) -> Logits:
     return model
 
 
+def peri_rms_embedding_model(task: Task, case: Case, device: str) -> Logits:
+    """Add embedding RMS to the branch-normalized model with the same weights."""
+    model = peri_rms_model(task, case, device)
+    install_embedding_rms(model.model)
+    return model
+
+
 def native_adamw(
     model: Logits,
     rate: torch.Tensor,
@@ -175,9 +184,11 @@ class Factories:
 def configured_factories(configuration: Configuration) -> Factories:
     """Select an explicit model factory from the archived configuration."""
     return Factories(
-        model=baseline_model
-        if configuration.model_variant == "baseline"
-        else peri_rms_model
+        model={
+            "baseline": baseline_model,
+            "peri-rms": peri_rms_model,
+            "peri-rms-embedding": peri_rms_embedding_model,
+        }[configuration.model_variant]
     )
 
 

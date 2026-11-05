@@ -21,7 +21,14 @@ All old sweep dispatchers, trainers, auditors and compiler descendants were
 stopped at the user's request. The GPU was verified free. The interrupted
 associative-division-n8-l2-w0 checkpoint is preserved at 64,000 updates under
 runs/current-grokking/. Do not restart that old 165-case queue.
-No scientific training has been started for the new 35-task suite.
+The fresh baseline and the LR x2 incumbent have completed all 105 cells each.
+LR x2 passes all 75 short cells with 40.1% fewer geometric-mean epochs than
+baseline. Its long coverage is 26/30 versus baseline's 29/30; preserve these
+regressions. Further experiments and their complete negative results are in
+research/early99/results/round2/. Continue seeking an additional short-suite
+boost, using the unchanged baseline and incumbent measurements as controls.
+The long suite is now an already observed regression diagnostic, not fresh
+holdout evidence. Do not tune candidates using its outcomes.
 
 Baseline
 Public GPT: commit 01f18f86787511279fe52fe41883495fce0e3105.
@@ -100,9 +107,35 @@ paired candidate/baseline epoch ratios, per-task three-seed median and worst cas
 The aggregate geometric mean requires all 75 expected cells to pass; if they do
 not, show coverage and all censored failures instead of a filtered mean.
 
+Mathematical guarantees: explicit user priority
+Models with stronger mathematical guarantees are valuable. Pursue and report
+these guarantees alongside empirical improvements, and favor stronger proven
+properties when comparing otherwise suitable candidates. If mathematical
+control and measured speed trade off, make that tradeoff explicit rather than
+silently ignoring either criterion.
+
+For each proposed model mechanism, state exactly what is guaranteed, its
+assumptions, and its proof or checked reference. Useful targets include
+finite-epsilon normalization bounds, hidden-state growth across residual
+layers, gradient/Jacobian bounds and conditioning, and preservation of causal
+or cached computation. Use the actual implemented equations and parameters.
+The transformer project at /home/misha/lean_projects/transformer is available
+for source inspection and formalization; follow its local workflow for changes.
+
+Distinguish proved real-arithmetic properties, verified finite-precision
+implementation behavior, and measured learning outcomes. A bound on normalized
+activations alone does not prove stable optimization, successful grokking, or
+an earlier 99% crossing. Keep every fixed benchmark condition and report
+coverage, epoch regressions and compute costs even for mathematically attractive
+models. Preserve prior screen decisions; declare any changed selection policy
+before using it for new experiments.
+
 After selecting the best short-suite candidate, run the 30 long cells once as a
 regression check. Report regressions without tuning against that check. Keep all
 raw histories, checkpoints, fingerprints and candidate provenance. Commit the
 benchmark/candidate changes and concise JSON/CSV comparison results. Finish with
 the best configuration, measured epoch improvements, coverage and remaining
-failures; distinguish measured results from hypotheses.
+failures, plus established mathematical guarantees and their limits; distinguish
+measured results from hypotheses. A retained incumbent already has its completed
+long check; evaluate a newly selected short winner once on the same long suite
+and explicitly label that suite as reused.

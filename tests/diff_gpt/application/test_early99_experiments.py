@@ -102,6 +102,7 @@ def test_candidate_plan_refuses_configuration_execution_and_source_changes(
         (2.0, 0.95, "baseline", "constant"),
         (3.0, 0.98, "baseline", "cosine"),
         (2.0, 0.98, "peri-rms", "constant"),
+        (2.0, 0.98, "peri-rms-embedding", "constant"),
     ],
 )
 def test_candidate_capture_preserves_rng_and_matches_native_updates(

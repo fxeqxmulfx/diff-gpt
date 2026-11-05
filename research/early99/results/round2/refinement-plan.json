@@ -1,0 +1,45 @@
+{
+  "declared_at_utc": "2026-11-05T18:35:04.719047+00:00",
+  "objective": "Find an additional full-short-suite improvement beyond LR x2; continue after the completed negative screens.",
+  "candidates": [
+    {
+      "configuration": {
+        "name": "adamw-lr2p5",
+        "learning_rate_multiplier": 2.5
+      },
+      "parent": "adamw-lr2",
+      "single_change": "Increase the constant post-warmup learning-rate multiplier from 2 to 2.5.",
+      "hypothesis": "LR x2 improves the full suite while LR x3 loses overall; an intermediate rate may retain arithmetic speed without the larger overshoot regressions."
+    },
+    {
+      "configuration": {
+        "name": "peri-rms-scaled-lr2",
+        "learning_rate_multiplier": 2.0,
+        "model_variant": "peri-rms-embedding-scaled"
+      },
+      "parent": "peri-rms-embedding-lr2",
+      "single_change": "Multiply each already normalized attention/FFN branch by the fixed coefficient 1/sqrt(2*layers) before residual addition.",
+      "hypothesis": "The embedding-normalized Peri-RMS variant restores coverage but slows recall and small-prime division. A smaller normalized branch may preserve more of the residual signal. This coefficient comes from the inspected transformer architecture, not from long-suite outcomes.",
+      "source": "/home/misha/lean_projects/transformer/MODEL_ARCHITECTURE.md at 8890a98585ecc9e54792f7580883f97e5a63d755",
+      "adaptation": "Preserve the exact initial matrices and tied weights; apply scaling after repaired RMS. Do not import the source recipe's projection reinitialization or Schedule-Free optimizer."
+    }
+  ],
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Select only after all advancing candidates have completed 75 short cells. Run a new short winner on the previously observed long regression suite once, without tuning or reselection from long.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory."
+}

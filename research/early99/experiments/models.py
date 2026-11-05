@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from diff_gpt.domain.model.mini_block import RMSNormProjection
+from diff_gpt.domain.model.mini_block import RMSNormEmbedding, RMSNormProjection
 from diff_gpt.domain.model.rms_norm import RMSNorm
 
 if TYPE_CHECKING:
@@ -25,3 +25,18 @@ def install_peri_rms(model: GPT) -> None:
             projection = RMSNormProjection(branch.c_proj)
             projection.norm = RMSNorm(projection.out_features)
             branch.c_proj = projection
+
+
+def install_embedding_rms(model: GPT) -> None:
+    """
+    Normalize the embedding while preserving its shared readout parameter.
+
+    Source: the embedding/final-normalization row and forward equations in
+    transformer/MODEL_ARCHITECTURE.md at 8890a985. This isolated follow-up adds
+    only embedding RMS to the branch-normalized candidate. The older recipe's
+    depth scaling and optimizer are not imported. Use the existing repaired
+    RMS backward and native dtype epsilon at this additional normalization.
+    """
+    embedding = RMSNormEmbedding(model.token_embedding_table)
+    embedding.norm = RMSNorm(model.n_embd)
+    model.token_embedding_table = embedding

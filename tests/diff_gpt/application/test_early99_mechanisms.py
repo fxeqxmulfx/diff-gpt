@@ -11,7 +11,7 @@ from diff_gpt.domain.model.gpt import GPT
 from diff_gpt.domain.model.kv_cache import KVCache
 from research.current_grokking.protocol import Case
 from research.early99.experiments.factories import Configuration
-from research.early99.experiments.models import install_peri_rms
+from research.early99.experiments.models import install_embedding_rms, install_peri_rms
 
 
 def test_cosine_uses_actual_exposure_after_warmup_and_holds_floor() -> None:
@@ -65,7 +65,11 @@ def test_peri_rms_preserves_weights_rng_and_matches_branch_equations() -> None:
     )
 
 
-def test_peri_rms_keeps_prefix_causality_and_cached_generation() -> None:
+@pytest.mark.parametrize("embedding_normalized", [False, True])
+def test_peri_rms_keeps_prefix_causality_and_cached_generation(
+    *,
+    embedding_normalized: bool,
+) -> None:
     """Dense and cached generation must agree through repeated-prefix tokens."""
     torch.manual_seed(7)
     model = GPT(
@@ -78,6 +82,8 @@ def test_peri_rms_keeps_prefix_causality_and_cached_generation() -> None:
         pad_vocab_size_to=1,
     )
     install_peri_rms(model)
+    if embedding_normalized:
+        install_embedding_rms(model)
     model.eval()
     tokens = torch.tensor([[2, 2, 2, 4, 8, 1], [3, 3, 7, 2, 6, 0]])
     cache = KVCache(batch_size=2, num_heads=2, seq_len=8, head_dim=8, num_layers=2)
@@ -89,3 +95,31 @@ def test_peri_rms_keeps_prefix_causality_and_cached_generation() -> None:
         prefix, _ = model(tokens[:, :3])
     assert_close(dense[:, :3], prefix, rtol=1e-5, atol=1e-5)
     assert_close(cached, dense, rtol=1e-4, atol=1e-5)
+
+
+def test_embedding_rms_preserves_tying_rng_and_matches_functional_reference() -> None:
+    """An added embedding norm must not replace or redraw the shared weight."""
+    torch.manual_seed(5)
+    model = GPT(
+        vocab_size=11,
+        n_embd=16,
+        n_head=2,
+        n_layer=2,
+        block_size=8,
+        use_checkpoint=False,
+        pad_vocab_size_to=1,
+    )
+    original = copy.deepcopy(model.state_dict())
+    rng = torch.get_rng_state().clone()
+    install_peri_rms(model)
+    install_embedding_rms(model)
+    assert_close(torch.get_rng_state(), rng, rtol=0, atol=0)
+    assert_close(model.state_dict(), original, rtol=0, atol=0)
+    assert model.token_embedding_table.weight is model.lm_head.weight
+    tokens = torch.tensor([[2, 2, 4, 8]])
+    expected = F.rms_norm(
+        F.embedding(tokens, model.lm_head.weight),
+        (16,),
+        eps=torch.finfo(torch.float32).eps,
+    )
+    assert_close(model.token_embedding_table(tokens), expected, rtol=0, atol=0)
