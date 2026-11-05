@@ -1,0 +1,26 @@
+{
+  "fixture": "research/transformer_gradient_stress/FrequencyGradient.lean",
+  "fixture_sha256": "6d6b45a94b3f3fcffa3f3dc69c3ac0f3bba9c20c7cd1416d257d984e82b04fe2",
+  "source_implementation_commit": "ed3c65f",
+  "transformer_project": "/home/misha/lean_projects/transformer",
+  "transformer_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "lean": "4.35.0",
+  "mathlib_commit": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "command": "lake env lean /home/misha/python_projects/gpt/research/transformer_gradient_stress/FrequencyGradient.lean",
+  "exit_code": 0,
+  "warnings": 0,
+  "extra_axioms": [],
+  "allowed_axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "checked_new_theorems": [
+    "tanh_decay",
+    "sech_squared_decay",
+    "stable_sech_squared",
+    "bounded_frequency_hasDerivAt",
+    "bounded_frequency_derivative_positive"
+  ],
+  "scope": "Exact real-arithmetic derivative equivalence and positivity for the unchanged bounded-frequency function. No theorem of floating-point accuracy, representable optimizer progress, or learning success."
+}
