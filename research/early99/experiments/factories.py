@@ -1,0 +1,127 @@
+"""Explicit model and optimizer construction, without changing the baseline."""
+
+from __future__ import annotations
+
+import math
+from dataclasses import asdict, dataclass, replace
+from typing import TYPE_CHECKING
+
+import torch
+
+from diff_gpt.domain.model.gpt import GPT
+from research.current_grokking.train import Logits, Stepper
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from research.current_grokking.interfaces import Task
+    from research.current_grokking.protocol import Case
+
+
+@dataclass(frozen=True)
+class Configuration:
+    """One task-independent optimizer setting; data and scoring are immutable."""
+
+    name: str = "baseline-factory"
+    learning_rate_multiplier: float = 1.0
+
+    def __post_init__(self) -> None:
+        """Reject unsafe output names and invalid rates before allocating a model."""
+        if not self.name or any(
+            c not in "abcdefghijklmnopqrstuvwxyz0123456789-" for c in self.name
+        ):
+            message = "Configuration name allows lowercase letters, digits and hyphens"
+            raise ValueError(message)
+        if (
+            not math.isfinite(self.learning_rate_multiplier)
+            or self.learning_rate_multiplier <= 0
+        ):
+            message = "Learning-rate multiplier must be finite and positive"
+            raise ValueError(message)
+
+    def training_case(self, case: Case) -> Case:
+        """Override only the allowed optimizer field, leaving the task intact."""
+        return replace(
+            case, learning_rate=case.learning_rate * self.learning_rate_multiplier
+        )
+
+    def metadata(self, case: Case) -> dict:
+        """Record all effective optimizer and schedule hyperparameters."""
+        effective = self.training_case(case)
+        return {
+            "configuration": asdict(self),
+            "model_factory": "frozen_public_gpt",
+            "optimizer_factory": "native_adamw",
+            "optimizer": "torch.optim.AdamW",
+            "learning_rate": effective.learning_rate,
+            "betas": [0.9, 0.98],
+            "epsilon": 1e-8,
+            "weight_decay": effective.weight_decay,
+            "warmup_updates": effective.warmup,
+            "warmup_uses_completed_updates": True,
+            "schedule": "linear warmup from zero, then constant",
+            "dtype": "torch.float32",
+            "matmul_precision": "highest",
+            "rms_backward": "unchanged FP64 calculation",
+        }
+
+
+def baseline_model(task: Task, case: Case, device: str) -> Logits:
+    """Preserve public-GPT construction, initialization and parameter ordering."""
+    return Logits(
+        GPT(
+            task.vocab,
+            case.width,
+            block_size=task.context,
+            n_head=case.heads,
+            n_layer=case.layers,
+            use_checkpoint=False,
+            pad_vocab_size_to=1,
+        ).to(device)
+    )
+
+
+def native_adamw(
+    model: Logits, rate: torch.Tensor, case: Case, device: str
+) -> torch.optim.AdamW:
+    """Construct native AdamW with the baseline's exact implementation settings."""
+    return torch.optim.AdamW(
+        model.parameters(),
+        lr=rate,
+        betas=(0.9, 0.98),
+        weight_decay=case.weight_decay,
+        eps=1e-8,
+        capturable=device == "cuda",
+        fused=device == "cuda",
+        foreach=False if device != "cuda" else None,
+    )
+
+
+@dataclass(frozen=True)
+class Factories:
+    """Inject model/optimizer construction explicitly into candidate training."""
+
+    model: Callable = baseline_model
+    optimizer: Callable = native_adamw
+
+
+class FactoryStepper(Stepper):
+    """Reuse verified capture, evaluation and updates with an explicit optimizer."""
+
+    def __init__(
+        self,
+        model: Logits,
+        task: Task,
+        case: Case,
+        device: str,
+        *,
+        configuration: Configuration,
+        factories: Factories,
+        compiled: bool = True,
+    ) -> None:
+        """Set the effective schedule before the original update path is built."""
+        effective = configuration.training_case(case)
+        super().__init__(model, task, effective, device, compiled=compiled)
+        # AdamW construction consumes no updates or RNG. The original Stepper
+        # owns capture and evaluation; this factory owns the scientific optimizer.
+        self.optimizer = factories.optimizer(model, self.rate, effective, device)

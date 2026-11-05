@@ -31,9 +31,10 @@ the optimization measure. A resumed run's clock resets; its epoch counter does
 not. Misses remain budget-censored. Per-task median/worst and aggregate geometric
 mean require all expected seeds to pass.
 
-All previous sweep processes were stopped at the user's request. No scientific
-training for this new three-seed suite has been started. Historical seed-1
-crossings in the manifest are references, not a completed three-seed baseline.
+All previous sweep processes were stopped at the user's request; the old queue
+remains stopped. The fresh short baseline is now complete: **75/75 passed**.
+Historical seed-1 crossings in the manifest remain references, not comparison
+baselines.
 [`historical_seed1.csv`](historical_seed1.csv) gives the available epoch counts;
 [`validation.json`](validation.json) records the harness checks.
 
@@ -58,6 +59,56 @@ An existing output rejects changed suite/driver sources. The baseline reuses
 the verified public GPT/native AdamW runner; it preserves its frozen model check.
 
 The optimization handoff is [`ASTRA_TASK.txt`](ASTRA_TASK.txt). Candidate
-model/optimizer factories belong in this benchmark's experiment layer, with
-separate output directories and recorded configurations. The baseline model
-reference and task/data/scoring contracts must remain intact.
+model/optimizer factories are in [`experiments/factories.py`](experiments/factories.py),
+with separate output directories and recorded configurations. The original
+baseline runner, model reference, manifest and data/scoring code are unchanged.
+The candidate loop reuses the original sampler, stepper, evaluators and stopping
+logic. Exact CPU checkpoint equivalence and CUDA capture/update checks cover
+weights, moments, RNG, short batches, zero-rate first updates and recapture.
+
+## Measured short-suite result
+
+The selected candidate is [`configs/adamw-lr2.json`](configs/adamw-lr2.json): multiply
+every task's native AdamW learning rate by **2**. Betas remain `(0.9, 0.98)`, epsilon
+`1e-8`, weight decay `0.1`, and warmup 50 completed updates. Model architecture,
+initialization, parameter counts, dtype and all task/scoring settings match the
+baseline. This is the best of the baseline and one candidate tested, not an
+exhaustive search.
+
+| Short suite, all 75 paired cells | Baseline | AdamW LR ×2 |
+| --- | ---: | ---: |
+| Exact held-out first-99 coverage | 75/75 | 75/75 |
+| Geometric mean first-99 epochs | 57.1653 | 34.2499 |
+| Summed trainer seconds | 2066.37 | 1297.23 |
+
+The geometric mean paired epoch ratio is **0.599139**: **40.1% fewer epochs**.
+There are **55 earlier, 7 tied and 13 later** cells. The worst regression is
+`power-division-p193-k2`, seed 2, at **5.8×** baseline epochs. Key-value recall and
+some larger-prime division tasks also regress. Per-task three-seed medians and
+worst cases, all paired ratios and observation brackets are retained in
+[`results/adamw-lr2-short.json`](results/adamw-lr2-short.json),
+[`cell CSV`](results/adamw-lr2-short.csv) and
+[`task CSV`](results/adamw-lr2-short-tasks.csv).
+
+Trainer seconds include model/data setup, compilation, exhaustive scoring and
+final test scoring; they exclude dispatcher/process startup and the separate CPU
+data preflight. No measured short cell was resumed. Parameter counts are unchanged
+in every pair, ranging from 100,736 to 1,183,488 depending on the fixed task.
+
+The 15-cell screen and its regressions are in
+[`results/screen-adamw-lr2.json`](results/screen-adamw-lr2.json). The selection was
+frozen in [`results/selection.json`](results/selection.json) before starting any
+long-suite training. The long check is in progress: one fresh baseline and one
+candidate run for each of its 30 cells, with no tuning against that check.
+
+```bash
+# Candidate source/configuration archives reject changes within an existing output.
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --run --configuration research/early99/configs/adamw-lr2.json --tier short
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr2 --tier short
+
+# Full integrity, oracle, CPU equivalence and CUDA capture checks: 31 passed.
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py
+```
+
+All raw histories, checkpoints, source snapshots and fingerprints remain under
+`runs/early99/baseline` and `runs/early99/candidates/adamw-lr2`.

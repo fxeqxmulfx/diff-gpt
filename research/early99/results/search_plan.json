@@ -1,0 +1,18 @@
+{
+  "objective": "First observed >=0.99 exact primary held-out accuracy; prioritize successful cells, then epochs",
+  "baseline": "runs/early99/baseline",
+  "initial_candidate": "research/early99/configs/adamw-lr2.json",
+  "single_change": "Multiply each task's native AdamW learning rate by 2; retain all other optimizer, schedule and model settings",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p97-k2",
+    "arithmetic-square-sum",
+    "gpt-probe-key-value-binding",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [0, 1, 2],
+  "screen_policy": "Use original budgets and record every result. Proceed to all 75 short cells if coverage is at least baseline and most of the fully paired screen tasks have a lower three-seed median epoch ratio. Screen-only observations are never reported as suite improvements.",
+  "selection_policy": "Choose using all 75 short cells: successful-cell coverage first, then paired per-task three-seed medians and worst cases. Report a geometric mean only if all 75 pairs pass. Keep all slower cells and censored failures visible.",
+  "long_policy": "After fixing the selected configuration, run each of the 30 long baseline cells and 30 candidate cells once for a paired regression check. Do not change the selection based on long results.",
+  "validation": "Original integrity/oracle tests; exact CPU baseline/factory checkpoint equivalence; CUDA capture neutrality, eager/native update equivalence, evaluation state preservation and resume-moment preservation"
+}

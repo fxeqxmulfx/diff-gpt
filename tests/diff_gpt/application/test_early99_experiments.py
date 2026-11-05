@@ -1,0 +1,196 @@
+"""Candidate isolation, baseline equivalence and issued-update accounting."""
+
+from __future__ import annotations
+
+import copy
+from dataclasses import replace
+from typing import TYPE_CHECKING
+
+import pytest
+import torch
+from torch.testing import assert_close
+
+from research.current_grokking.data import arithmetic
+from research.current_grokking.protocol import Case
+from research.current_grokking.run import run as baseline_run
+from research.current_grokking.train import Stepper
+from research.early99.experiments import compare
+from research.early99.experiments.factories import (
+    Configuration,
+    Factories,
+    FactoryStepper,
+    baseline_model,
+)
+from research.early99.experiments.run import prepare_output
+from research.early99.experiments.trainer import run
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+UPDATES = 8
+SEEDS = 3
+GRAPH_UPDATES = 6
+
+
+def test_factory_loop_matches_original_weights_moments_and_scores(
+    tmp_path: Path,
+) -> None:
+    """The extracted baseline factory must preserve an actual short-tail run."""
+    case = Case(
+        "factory-equivalence",
+        "arithmetic",
+        {"operation": "div", "prime": 7},
+        width=16,
+        heads=2,
+        batch=8,
+        observe=1,
+        max_updates=UPDATES,
+        after_target=0,
+    )
+    original = baseline_run(case, 1, tmp_path / "original", "cpu", compiled=False)
+    candidate = run(case, 1, tmp_path / "candidate", "cpu", compiled=False)
+    for key in ("completed", "first_target", "final_test", "optimizer_steps_verified"):
+        assert candidate[key] == original[key]
+    for key in ("train", "validation"):
+        assert candidate["endpoint"][key] == original["endpoint"][key]
+    checkpoints = [
+        torch.load(
+            tmp_path / directory / case.name / "seed1/checkpoint.pt", weights_only=True
+        )
+        for directory in ("original", "candidate")
+    ]
+    for key in ("model", "optimizer", "sampler", "cpu_rng"):
+        assert_close(checkpoints[0][key], checkpoints[1][key], rtol=0, atol=0)
+    replay = run(case, 1, tmp_path / "candidate", "cpu", compiled=False, resume=True)
+    assert replay["endpoint"] == candidate["endpoint"]
+    with pytest.raises(ValueError, match="Resume changes experiment"):
+        run(
+            case,
+            1,
+            tmp_path / "candidate",
+            "cpu",
+            compiled=False,
+            resume=True,
+            configuration=Configuration("adamw-lr2", 2),
+        )
+
+
+def test_candidate_plan_refuses_configuration_execution_and_source_changes(
+    tmp_path: Path,
+) -> None:
+    """A run cannot silently replace its hyperparameters or code archive."""
+    configuration = Configuration("adamw-lr2", 2)
+    prepare_output(tmp_path, configuration, "cpu", compiled=False)
+    prepare_output(tmp_path, configuration, "cpu", compiled=False)
+    with pytest.raises(ValueError, match="settings/sources changed"):
+        prepare_output(tmp_path, Configuration(), "cpu", compiled=False)
+    with pytest.raises(ValueError, match="settings/sources changed"):
+        prepare_output(tmp_path, configuration, "cuda", compiled=False)
+    archive = tmp_path / "experiment_source/research/early99/experiments/factories.py"
+    archive.write_text("changed")
+    with pytest.raises(ValueError, match="Archived experiment source changed"):
+        prepare_output(tmp_path, configuration, "cpu", compiled=False)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
+@pytest.mark.parametrize("multiplier", [1.0, 2.0])
+def test_candidate_capture_preserves_rng_and_matches_native_updates(
+    multiplier: float,
+) -> None:
+    """Both batch shapes and evaluation preserve state; replay counts real steps."""
+    case = Case(
+        "candidate-graph-check",
+        "arithmetic",
+        {"operation": "div", "prime": 7},
+        width=32,
+        batch=8,
+        warmup=3,
+    )
+    task = arithmetic(case, "cuda")
+    configuration = Configuration("graph-check", multiplier)
+    torch.manual_seed(1)
+    model = baseline_model(task, case, "cuda")
+    initial = copy.deepcopy(model.state_dict())
+    stepper = FactoryStepper(
+        model,
+        task,
+        case,
+        "cuda",
+        configuration=configuration,
+        factories=Factories(),
+        compiled=True,
+    )
+    cpu_rng, cuda_rng = torch.get_rng_state(), torch.cuda.get_rng_state()
+    stepper.prepare([8, 5])
+    assert_close(model.state_dict(), initial, rtol=0, atol=0)
+    assert_close(torch.get_rng_state(), cpu_rng, rtol=0, atol=0)
+    assert_close(torch.cuda.get_rng_state(), cuda_rng, rtol=0, atol=0)
+    assert all(int(state["step"]) == 0 for state in stepper.optimizer.state.values())
+    torch.manual_seed(1)
+    reference = baseline_model(task, case, "cuda")
+    eager = Stepper(
+        reference,
+        task,
+        replace(case, learning_rate=case.learning_rate * multiplier),
+        "cuda",
+        compiled=False,
+    )
+    for completed, size in enumerate([8, 8, 5, 8, 8, 5]):
+        before_eval = copy.deepcopy(stepper.optimizer.state_dict())
+        stepper.evaluate("validation")
+        assert_close(stepper.optimizer.state_dict(), before_eval, rtol=0, atol=0)
+        stepper.step(torch.arange(size), completed)
+        eager.rate.fill_(
+            case.learning_rate * multiplier * min(1.0, completed / case.warmup)
+        )
+        reference.train()
+        eager.update(torch.arange(size, device="cuda"))
+    torch.cuda.synchronize()
+    assert all(
+        int(state["step"]) == GRAPH_UPDATES
+        for state in stepper.optimizer.state.values()
+    )
+    assert_close(model.state_dict(), reference.state_dict(), rtol=2e-5, atol=2e-6)
+    assert_close(
+        stepper.optimizer.state_dict(),
+        eager.optimizer.state_dict(),
+        rtol=2e-5,
+        atol=2e-6,
+    )
+    # Preparing a resumed optimizer must preserve already nonzero moments too.
+    saved_model, saved_optimizer = (
+        copy.deepcopy(model.state_dict()),
+        copy.deepcopy(stepper.optimizer.state_dict()),
+    )
+    saved_rng = torch.cuda.get_rng_state()
+    stepper.prepare([8, 5])
+    assert_close(model.state_dict(), saved_model, rtol=0, atol=0)
+    assert_close(stepper.optimizer.state_dict(), saved_optimizer, rtol=0, atol=0)
+    assert_close(torch.cuda.get_rng_state(), saved_rng, rtol=0, atol=0)
+
+
+def test_comparison_keeps_censoring_and_suppresses_filtered_mean(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two fast seeds cannot hide the third seed's budget miss."""
+    monkeypatch.setattr(compare, "selected", lambda _: [{"name": "fixture"}])
+
+    def cell(row: dict, seed: int, baseline: Path, candidate: Path) -> dict:
+        del baseline, candidate
+        return {
+            "case": row["name"],
+            "seed": seed,
+            "baseline_status": "passed",
+            "candidate_status": "budget_exhausted" if seed == SEEDS - 1 else "passed",
+            "baseline_first99_epochs": 4,
+            "candidate_first99_epochs": None if seed == SEEDS - 1 else 2,
+            "epoch_ratio": None if seed == SEEDS - 1 else 0.5,
+        }
+
+    monkeypatch.setattr(compare, "paired_cell", cell)
+    result = compare.comparison(tmp_path, tmp_path, "short")
+    assert result["expected_cells"] == SEEDS
+    assert result["candidate_passed"] == SEEDS - 1
+    assert result["geometric_mean_epoch_ratio"] is None
+    assert result["tasks"][0]["candidate_median_first99_epochs"] is None
+    assert len(result["failures_and_pending"]) == 1

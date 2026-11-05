@@ -1,0 +1,28 @@
+{
+  "baseline": {
+    "completed": 75,
+    "passed": 75,
+    "resumed": 0
+  },
+  "baseline_model_reference_unchanged": true,
+  "benchmark_initial": {
+    "passed": 9
+  },
+  "capture_checks": [
+    "baseline and doubled rate: parameters and CPU/CUDA RNG unchanged by capture preparation",
+    "both full and short-tail batch shapes",
+    "six issued updates including zero-rate first update match native eager AdamW weights and moments",
+    "held-out evaluation does not alter moments",
+    "recapture preserves nonzero moments and RNG for resume"
+  ],
+  "combined_cpu": {
+    "deselected_cuda": 3,
+    "passed": 28
+  },
+  "combined_host_cuda": {
+    "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py",
+    "passed": 31,
+    "seconds": 36.35
+  },
+  "ruff": "passed"
+}
