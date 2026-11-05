@@ -68,6 +68,7 @@ class Configuration:
             "peri-rms-embedding-scaled-ssmax-noqk",
             "peri-rms-embedding-scaled-lerope",
             "peri-rms-embedding-scaled-ssmax-lerope",
+            "peri-rms-embedding-scaled-ssmax-lerope-log-angle",
         }:
             message = "Unknown model variant"
             raise ValueError(message)
@@ -133,6 +134,9 @@ class Configuration:
                 "peri-rms-embedding-scaled-ssmax-lerope": (
                     "peri_rms_scaled_ssmax_lerope_public_gpt"
                 ),
+                "peri-rms-embedding-scaled-ssmax-lerope-log-angle": (
+                    "peri_rms_scaled_ssmax_lerope_log_angle_public_gpt"
+                ),
             }[self.model_variant],
             "residual_scale": (2 * case.layers) ** -0.5
             if self.model_variant.startswith("peri-rms-embedding-scaled")
@@ -174,6 +178,16 @@ class Configuration:
                         "frequency_gradient_clip_norm": 1.0,
                         "frequency_learning_rate_multiplier": 1.0,
                         "original_parameter_gradient_clipping": None,
+                        **(
+                            {
+                                "position_map": "p * log(p + 1)",
+                                "position_origin": 0,
+                                "position_scope": "each token's global causal position",
+                                "score_scaling": "unchanged SSMax log(visible keys)",
+                            }
+                            if self.model_variant.endswith("-log-angle")
+                            else {}
+                        ),
                     },
                 }
                 if self.model_variant in LEROPE_VARIANTS
@@ -272,6 +286,15 @@ def peri_rms_scaled_ssmax_lerope_model(task: Task, case: Case, device: str) -> L
     return model
 
 
+def peri_rms_scaled_ssmax_lerope_log_angle_model(
+    task: Task, case: Case, device: str
+) -> Logits:
+    """Add the declared p*log(p+1) angle map to the SSMax/LeRoPE parent."""
+    model = peri_rms_scaled_ssmax_model(task, case, device)
+    model.model = LearnedRoPEGPT(model.model, log_positions=True)
+    return model
+
+
 def native_adamw(
     model: Logits,
     rate: torch.Tensor,
@@ -338,6 +361,9 @@ def configured_factories(configuration: Configuration) -> Factories:
             "peri-rms-embedding-scaled-lerope": peri_rms_scaled_lerope_model,
             "peri-rms-embedding-scaled-ssmax-lerope": (
                 peri_rms_scaled_ssmax_lerope_model
+            ),
+            "peri-rms-embedding-scaled-ssmax-lerope-log-angle": (
+                peri_rms_scaled_ssmax_lerope_log_angle_model
             ),
         }[configuration.model_variant],
         optimizer=native_lerope_adamw

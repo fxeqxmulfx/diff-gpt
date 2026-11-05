@@ -13,6 +13,7 @@ LEROPE_CLASS = "research.early99.experiments.learned_rope.LearnedRoPEGPT"
 LEROPE_VARIANTS = {
     "peri-rms-embedding-scaled-lerope",
     "peri-rms-embedding-scaled-ssmax-lerope",
+    "peri-rms-embedding-scaled-ssmax-lerope-log-angle",
 }
 
 

@@ -180,6 +180,19 @@ short suites when integrating new code. After this extension, complete the
 original goal: every promoted 75-cell short suite, frozen selection, one reused
 long diagnostic, full failure accounting, guarantees and reproducible commits.
 
+User-requested Log-Scaled LeRoPE with SSMax
+Pause the current full-short queue at a complete scientific-cell boundary, run
+the new screen, then continue the unfinished queue. Follow
+ssmax-lerope-log-angle-plan.json: retain the complete SSMax + LeRoPE + Q/K RMS
+parent and change only its rotary position map from p to p*log(p+1), with p
+the zero-based global position of each individual token. SSMax still scales
+scores by log(visible keys). Preserve ordinary LeRoPE and combined controls.
+Verify singleton, causal and cached behavior, frequency gradients, capture and
+optimizer treatment. Report the retained rotation/norm bounds and the loss of
+ordinary relative-position invariance: the identity now uses warped offsets.
+Apply the unchanged 18-cell screen and 75-cell promotion rule before final
+selection and the single reused long diagnostic. Preserve every old result.
+
 After selecting the best short-suite candidate, run the 30 long cells once as a
 regression check. Report regressions without tuning against that check. Keep all
 raw histories, checkpoints, fingerprints and candidate provenance. Commit the
@@ -189,3 +202,13 @@ failures, plus established mathematical guarantees and their limits; distinguish
 measured results from hypotheses. A retained incumbent already has its completed
 long check; evaluate a newly selected short winner once on the same long suite
 and explicitly label that suite as reused.
+
+Continue research after completing this round
+The user's latest instruction is to continue research after the current round
+finishes. First complete its frozen selection, one reused long diagnostic,
+reports and commits. Then declare another short-suite research round using
+the short results and mathematical analysis to choose interpretable changes.
+Carry forward the best measured configuration, all negative results and the
+fixed benchmark. Do not use the long diagnostic to choose or tune candidates.
+This instruction supersedes the earlier restriction on additional branches
+after completion; finish the current round before starting the next one.

@@ -24,7 +24,11 @@ from research.early99.experiments.initialization import (
 
 @pytest.mark.parametrize(
     "model_variant",
-    ["peri-rms-embedding-scaled-lerope", "peri-rms-embedding-scaled-ssmax-lerope"],
+    [
+        "peri-rms-embedding-scaled-lerope",
+        "peri-rms-embedding-scaled-ssmax-lerope",
+        "peri-rms-embedding-scaled-ssmax-lerope-log-angle",
+    ],
 )
 def test_pairing_allows_only_declared_extra_frequency_vector(
     model_variant: str,
@@ -67,7 +71,11 @@ def test_pairing_allows_only_declared_extra_frequency_vector(
 @pytest.mark.parametrize("loss_gain", [1, 10_000])
 @pytest.mark.parametrize(
     "model_variant",
-    ["peri-rms-embedding-scaled-lerope", "peri-rms-embedding-scaled-ssmax-lerope"],
+    [
+        "peri-rms-embedding-scaled-lerope",
+        "peri-rms-embedding-scaled-ssmax-lerope",
+        "peri-rms-embedding-scaled-ssmax-lerope-log-angle",
+    ],
 )
 def test_lerope_captured_updates_clip_only_frequencies_and_restore_both_groups(
     loss_gain: int,

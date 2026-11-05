@@ -23,7 +23,14 @@ class LearnedFrequencies(nn.Module):
     parameters; no claim of identical parameter count to the parent is made.
     """
 
-    def __init__(self, head_dim: int, positions: int, reference: torch.Tensor) -> None:
+    def __init__(
+        self,
+        head_dim: int,
+        positions: int,
+        reference: torch.Tensor,
+        *,
+        log_positions: bool = False,
+    ) -> None:
         """Create zero log-scales and fixed angle factors without a random draw."""
         super().__init__()
         self.log_scales = nn.Parameter(reference.new_zeros(head_dim // 2))
@@ -32,6 +39,11 @@ class LearnedFrequencies(nn.Module):
         angles = torch.outer(
             torch.arange(positions, dtype=torch.float32), 10000**-exponents
         )
+        if log_positions:
+            # Separate user-proposed variant: warp each token's own global
+            # position, never the total sequence length or a query's key table.
+            # p=0 gives zero; frozen cached keys retain the same angles.
+            angles = angles * torch.arange(1, positions + 1).float().log()[:, None]
         self.register_buffer("base_angles", angles.to(reference), persistent=False)
 
     def forward(self, start: int, end: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -43,11 +55,14 @@ class LearnedFrequencies(nn.Module):
 class LearnedRoPEGPT(PrefixStableGPT):
     """Retain guarded GPT computation, replacing only the source of rotary tables."""
 
-    def __init__(self, model: GPT) -> None:
+    def __init__(self, model: GPT, *, log_positions: bool = False) -> None:
         """Reuse parent parameters and append one shared frequency vector."""
         super().__init__(model)
         self.lerope = LearnedFrequencies(
-            model.n_embd // model.n_head, model.block_size, model.rope_cos
+            model.n_embd // model.n_head,
+            model.block_size,
+            model.rope_cos,
+            log_positions=log_positions,
         )
 
     def forward(

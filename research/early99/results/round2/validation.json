@@ -187,5 +187,34 @@
     "formal_record": "research/early99/results/round2/attention-extension-guarantees.json",
     "scientific_source_revision": "57aa3c9",
     "candidate_plan_sha256": "4979a9b6227008193946e1ea8b8edd960159f07c40b09b9c1936a907e92b1915"
+  },
+  "log_scaled_lerope_with_ssmax": {
+    "checked_at_utc": "2026-11-05T21:56:39.439858+00:00",
+    "combined_cpu_and_cuda": {
+      "passed": 86,
+      "seconds": 196.85,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_attention_extensions.py tests/diff_gpt/application/test_early99_lerope_training.py tests/diff_gpt/application/test_early99_causal_centering.py tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py --show-capture=no"
+    },
+    "focused_cpu": {
+      "passed": 26,
+      "cuda_deselected": 6,
+      "seconds": 2.01
+    },
+    "checks": [
+      "Independent p*log(p+1) angles, singleton and finite-difference learned-frequency derivatives",
+      "Combined SSMax equations including clipped XSA and input gradients",
+      "Norm and warped-position identities; unequal ordinary unit gaps verified",
+      "Dense/token/chunk/shared-prefix and future-token equivalence",
+      "Original tensors, RNG, tied weights and exact added-capacity pairing",
+      "New variant native-vs-captured GPU updates at ordinary and clipping-stress loss scales; live rate shared by both optimizer groups",
+      "All inherited benchmark, data, cadence and candidate tests"
+    ],
+    "ruff": "passed",
+    "formal_record": "research/early99/results/round2/log-angle-guarantees.json",
+    "candidate_plan_sha256": "102d6b77174133b628dfdd8b08d0bdbafedb7f6ead595e249319ba6022a4d69a",
+    "combined_parent_source_revision": "57aa3c9",
+    "combined_parent_replay_checkout": "/tmp/early99-combined-replay-57aa",
+    "combined_parent_plan_replay_verified": true,
+    "queue_pause_record": "research/early99/results/round2/log-angle-pause.json"
   }
 }

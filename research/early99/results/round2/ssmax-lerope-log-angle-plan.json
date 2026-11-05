@@ -1,0 +1,55 @@
+{
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Complete the requested next mechanism before final short-only selection. A newly selected winner receives one reused 30-cell long diagnostic, without tuning or reselection.",
+  "declared_at_utc": "2026-11-05T21:50:40.050370+00:00",
+  "configuration": {
+    "name": "peri-rms-scaled-ssmax-lerope-log-angle-lr2",
+    "learning_rate_multiplier": 2.0,
+    "model_variant": "peri-rms-embedding-scaled-ssmax-lerope-log-angle"
+  },
+  "user_direction": "Pause the current queue, test Log-Scaled LeRoPE with SSMax retained, then continue the original goal.",
+  "parent": "peri-rms-scaled-ssmax-lerope-lr2",
+  "secondary_parent": "peri-rms-scaled-lerope-lr2",
+  "sources": [
+    "https://arxiv.org/html/2501.19399v1",
+    "https://arxiv.org/html/2607.10134v1"
+  ],
+  "single_change": "Replace the linear token-position map p with p*log(p+1) inside learned rotary angles. Keep the existing SSMax+LeRoPE parent's frequency parameters, SSMax scale, normalization, optimizer and all task settings.",
+  "parameters": "Same original tensors, zero alpha vector and head_dim/2 added capacity as the direct LeRoPE parent. The deterministic angle map changes initial outputs intentionally; no identity-to-parent output claim. No additional learned parameter.",
+  "optimizer": "Native fused AdamW with the same LR x2, moments and warmup. Only the new log-frequency vector has weight decay 0 and independent gradient L2 clipping at 1.0; original parameters retain weight decay 0.1 and their original unclipped update. Paper-inspired mechanism, not a reproduction of its complete language-model training recipe.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory. LeRoPE explicitly excepts the declared new head_dim/2 scalars and their optimizer group; original dimensions, parameters and initialization remain matched.",
+  "parent_comparison": "Retain direct paired comparisons with SSMax+LeRoPE, plus SSMax+QK, LeRoPE alone, scaled Peri-RMS, LR x2 and baseline.",
+  "guarantees": "Arbitrary-angle isometry, positive learned frequencies, Q/K score bound, conditional SSMax margin bound and Peri-RMS residual bound remain. Rotary dot products depend on warped displacement w(t)-w(s), w(p)=p*log(p+1); translation invariance in ordinary token offsets is not claimed. No convergence, frequency-range, gradient improvement or extrapolation claim.",
+  "validation": "Independent position-angle and combined SSMax equations, singleton, finite-difference frequency gradients, original tensor/RNG/tie preservation, warped-offset identity, future-token causality, dense/token/chunk/shared-prefix agreement, strict capacity pairing, and native-vs-captured updates including both optimizer groups and clipping.",
+  "execution_order": "At user request, pause the current full-short dispatcher at a complete scientific-cell boundary. Validate and run this 18-cell screen first. Then resume every previously promoted short suite from its frozen source, and include this candidate's 75-cell suite if it passes the unchanged gate. Freeze final short-only selection only after all required suites, then one reused long diagnostic.",
+  "stop_rule": "Complete this declared round, frozen selection, one reused long diagnostic, reporting and commits. At the user's subsequent explicit request, continue a separately declared short-suite research round afterward; never use long outcomes to tune.",
+  "source": {
+    "origin": "User-proposed extension of LeRoPE, not a claim from either cited paper.",
+    "references": [
+      "https://arxiv.org/html/2607.10134v1",
+      "https://arxiv.org/html/2501.19399v1"
+    ]
+  },
+  "mechanism": "Retain SSMax s=1, Q/K RMS and the full scaled embedding-normalized Peri-RMS/XSA/SwiGLU/tied-weight parent. Change only each token's rotary angle from p*theta_m*exp(alpha_m) to p*log(p+1)*theta_m*exp(alpha_m), with zero-based global token position p. This is not the full input length or a query-dependent re-rotation of cached keys. SSMax independently retains log(number of visible keys) on scores.",
+  "implementation": "Multiply the float32 baseline angle table by log(p+1) before the learned exp(alpha) factor. Natural logarithm; p=0 has zero angle. Recompute differentiable cosine/sine each forward. Frozen-weight cached keys use their own absolute positions, so token, chunk and shared-prefix results must agree.",
+  "guarantee_targets": "Arbitrary-angle isometry, positive learned frequencies, Q/K score bound, conditional SSMax margin bound and Peri-RMS residual bound remain. Rotary dot products depend on warped displacement w(t)-w(s), w(p)=p*log(p+1); translation invariance in ordinary token offsets is not claimed. No convergence, frequency-range, gradient improvement or extrapolation claim.",
+  "old_source_snapshots": {
+    "components": "7cff292",
+    "combined": "57aa3c9"
+  }
+}

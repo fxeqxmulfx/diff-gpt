@@ -1,0 +1,32 @@
+{
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "external_source_edits": false,
+  "checked_at_utc": "2026-11-05T21:56:39.439533+00:00",
+  "mechanism": "User-proposed Log-Scaled LeRoPE with SSMax retained; w(p)=p*log(p+1), zero-based global per-token p.",
+  "fixture": "research/early99/guarantees/LogScaledRotary.lean",
+  "fixture_sha256": "ab603d8befb14a02a4ddd42ee76c6e9f43a50ca4152fddc4c4c61305d27b28dd",
+  "output": "research/early99/results/round2/log-angle-lean-check.txt",
+  "output_sha256": "fd4551237965eafda20b36cd3d7308350acf87309938d11cb949cf3047bc189d",
+  "exit_code": 0,
+  "warnings": 0,
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "theorems": [
+    "Early99.LogScaledRotary.log_position_zero",
+    "Early99.LogScaledRotary.warped_rotation_norm",
+    "Early99.LogScaledRotary.warped_relative",
+    "Early99.LogScaledRotary.unequal_unit_gaps"
+  ],
+  "statement": "First-token angle is zero. Arbitrary learned rotations preserve norm. Rotary scores depend on w(t)-w(s); the two unit gaps between positions 0,1 and 1,2 are provably unequal in warped coordinates.",
+  "assumptions": "Arbitrary finite real angles, frequencies and vectors; the same fixed learned frequencies are used for query/key rotations during cached decoding. Norm preservation does not require a linear position map. Positive base and finite real log-scales retain the inherited frequency positivity.",
+  "nonvacuity": "Four rotary bands/eight channels, arbitrary nonzero-capable vectors and log-scales, distinct positions 3 and 8, positive base 1/10000. The unequal-gap theorem uses explicit positions 0,1,2.",
+  "inherited": "PeriBounds residual RMS <= 1+sqrt(2L); NormalizedScores SSMax score <= log(N)*abs(g)*d with eps,d>0 and N>=1; ScalableSoftmax conditional margin bound unchanged. Their existing records and assumptions remain applicable.",
+  "limitations": "Ordinary relative-token-distance invariance is not claimed. Unequal warped gaps are a coordinate counterexample, not a claim that all vector scores differ. No full-network derivative, convergence, grokking, extrapolation or floating-point theorem. The exponential learned-frequency range remains unbounded. Singleton and causal/cache correctness are additionally checked numerically.",
+  "compile_command": "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/LogScaledRotary.lean",
+  "implementation_bridge": "Manual equation review plus independent position/equation, finite-difference, cache and native-vs-captured optimizer tests; no formal PyTorch translation."
+}

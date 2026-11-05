@@ -617,3 +617,38 @@ Training had used absolute paths throughout and was unaffected. Correcting the
 temporary audit helper's result paths produced a clean 75-cell audit, with no
 retraining or resumed cells. Final selection waits for the remaining three
 promoted attention candidates; no new long diagnostic has run.
+
+## Log-Scaled LeRoPE with SSMax retained
+
+The user requested a further experiment before resuming the current queue:
+**SSMax + Log-Scaled LeRoPE**, under the
+[declared plan](results/round2/ssmax-lerope-log-angle-plan.json).
+Its direct parent is the combined SSMax + LeRoPE candidate. The only change
+is the per-token angle `p * log(p+1) * base_frequency * exp(log_scale)`, where
+`p` is each token's zero-based global position. SSMax separately retains
+`log(visible keys)` on scores. All normalization, residual scaling, tied weights,
+frequency parameters, LR and optimizer treatment remain matched. Initial
+weights match, but initial outputs intentionally change with the angle map.
+
+The [queue pause record](results/round2/log-angle-pause.json) preserves its
+boundary at 65/75 completed no-Q/K short cells. Only dispatchers were paused;
+the active cell finished normally, so no training clock or scientific cell was
+interrupted. Earlier arms retain their frozen source snapshots. The combined
+parent can now replay from `57aa3c9` in `/tmp/early99-combined-replay-57aa`.
+After this new 18-cell screen, resume the unfinished full suites and include
+this arm's full 75 cells if it meets the unchanged gate.
+
+All **86 relevant CPU/CUDA checks pass**, including independent angle equations,
+frequency gradients, cached decoding and both ordinary and clipping-stress
+updates. The [Lean fixture](guarantees/LogScaledRotary.lean) and
+[proof record](results/round2/log-angle-guarantees.json) check the zero first
+angle, norm preservation, and rotary identity with warped displacement
+`w(t)-w(s)`. Equal unit token gaps can have unequal warped gaps. Ordinary
+relative-position invariance is therefore not claimed. Existing Q/K score,
+conditional SSMax-margin and scaled residual-state bounds still apply;
+none establishes improved learning or extrapolation.
+
+After completing this round's frozen short selection, reused long diagnostic,
+reports and commits, the user's latest instruction is to continue research in
+a separately declared short-suite round. Long outcomes remain regression
+evidence and cannot guide the next candidates.

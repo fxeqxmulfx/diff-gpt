@@ -1,6 +1,7 @@
 """Independent equations and cache checks for SSMax and shared LeRoPE."""
 
 import copy
+import math
 
 import pytest
 import torch
@@ -43,11 +44,17 @@ def cache(batch: int) -> KVCache:
 
 
 @pytest.mark.parametrize(
-    ("qk_norm", "learned"), [(True, False), (False, False), (True, True)]
+    ("qk_norm", "learned", "log_angle"),
+    [
+        (True, False, False),
+        (False, False, False),
+        (True, True, False),
+        (True, True, True),
+    ],
 )
 @pytest.mark.parametrize("clipping_epsilon", [1e-12, 0.25])
 def test_ssmax_matches_independent_masked_logits_and_gradients(
-    clipping_epsilon: float, *, qk_norm: bool, learned: bool
+    clipping_epsilon: float, *, qk_norm: bool, learned: bool, log_angle: bool
 ) -> None:
     """Check explicit masked SSMax/XSA equations and their input gradients."""
     model = prepared(torch.float64)
@@ -61,7 +68,7 @@ def test_ssmax_matches_independent_masked_logits_and_gradients(
     att.xsa_epsilon = clipping_epsilon
     value = torch.randn(2, 7, 16, dtype=torch.float64, requires_grad=True)
     if learned:
-        wrapped = LearnedRoPEGPT(model)
+        wrapped = LearnedRoPEGPT(model, log_positions=log_angle)
         with torch.no_grad():
             wrapped.lerope.log_scales.copy_(torch.tensor([0.2, -0.1, 0.6, 0.3]))
         cos, sin = wrapped.lerope(0, 7)
@@ -103,9 +110,9 @@ def adapted(kind: str) -> GPT | LearnedRoPEGPT:
     """Set nonzero learned frequencies before testing cached execution."""
     model = prepared().eval()
     if "lerope" in kind:
-        if kind == "ssmax-lerope":
+        if kind.startswith("ssmax-"):
             install_scalable_softmax(model)
-        model = LearnedRoPEGPT(model)
+        model = LearnedRoPEGPT(model, log_positions=kind.endswith("-log-angle"))
         with torch.no_grad():
             model.lerope.log_scales.copy_(torch.tensor([0.2, -0.1, 0.6, 0.3]))
     else:
@@ -113,7 +120,9 @@ def adapted(kind: str) -> GPT | LearnedRoPEGPT:
     return model
 
 
-@pytest.mark.parametrize("kind", ["ssmax", "ssmax-noqk", "lerope", "ssmax-lerope"])
+@pytest.mark.parametrize(
+    "kind", ["ssmax", "ssmax-noqk", "lerope", "ssmax-lerope", "ssmax-lerope-log-angle"]
+)
 def test_caches_positions_and_future_causality(kind: str) -> None:
     """Check global positions, causal support and selected readout rows."""
     model = adapted(kind)
@@ -146,7 +155,9 @@ def test_caches_positions_and_future_causality(kind: str) -> None:
         )
 
 
-@pytest.mark.parametrize("kind", ["ssmax", "ssmax-noqk", "lerope", "ssmax-lerope"])
+@pytest.mark.parametrize(
+    "kind", ["ssmax", "ssmax-noqk", "lerope", "ssmax-lerope", "ssmax-lerope-log-angle"]
+)
 def test_shared_prefix_includes_global_position(kind: str) -> None:
     """Shared prompt groups use their full global positions and key counts."""
     model = adapted(kind)
@@ -214,3 +225,69 @@ def test_learned_rotations_preserve_norm_and_relative_scores() -> None:
     ) * model.lerope.log_scales.exp()
     shifted_k = apply_rope(k, angles.cos(), angles.sin())
     assert_close(rotated_q @ rotated_k, q @ shifted_k, rtol=1e-14, atol=1e-14)
+
+
+def test_log_angles_match_independent_equation_and_frequency_derivative() -> None:
+    """Check the new position map, its singleton, and a full-model derivative."""
+    parent = prepared()
+    install_scalable_softmax(parent)
+    state = copy.deepcopy(parent.state_dict())
+    rng = torch.get_rng_state().clone()
+    model = LearnedRoPEGPT(parent, log_positions=True)
+    assert_close(torch.get_rng_state(), rng, rtol=0, atol=0)
+    assert model.token_embedding_table.weight is model.lm_head.weight
+    for name, value in state.items():
+        assert_close(model.state_dict()[name], value, rtol=0, atol=0)
+    model.double()
+    with torch.no_grad():
+        model.lerope.log_scales.copy_(torch.tensor([0.2, -0.1, 0.6, 0.3]))
+    cos, sin = model.lerope(0, 9)
+    expected = (
+        torch.tensor(
+            [
+                [p * math.log1p(p) * 10000 ** (-2 * m / 8) for m in range(4)]
+                for p in range(9)
+            ],
+            dtype=torch.float64,
+        )
+        * model.lerope.log_scales.exp()
+    )
+    # The implementation deliberately keeps the benchmark's float32 base tables.
+    assert_close(cos, expected.cos(), rtol=2e-6, atol=2e-6)
+    assert_close(sin, expected.sin(), rtol=2e-6, atol=2e-6)
+    assert_close(cos[0], torch.ones(4, dtype=torch.float64), rtol=0, atol=0)
+    assert_close(sin[0], torch.zeros(4, dtype=torch.float64), rtol=0, atol=0)
+    tokens = torch.tensor([[2, 4, 8, 1, 3], [3, 7, 2, 6, 4]])
+    output = model(tokens)[0][:, -1, 3].sum()
+    gradient = torch.autograd.grad(output, model.lerope.log_scales)[0]
+    minimum_signal = 1e-6
+    assert gradient.norm() > minimum_signal
+    reference = []
+    for i in range(4):
+        with torch.no_grad():
+            original = model.lerope.log_scales[i].item()
+            model.lerope.log_scales[i] = original + 1e-5
+            plus = model(tokens)[0][:, -1, 3].sum()
+            model.lerope.log_scales[i] = original - 1e-5
+            minus = model(tokens)[0][:, -1, 3].sum()
+            model.lerope.log_scales[i] = original
+        reference.append((plus - minus) / 2e-5)
+    assert_close(gradient, torch.stack(reference), rtol=1e-5, atol=1e-8)
+
+
+def test_log_angles_preserve_rotation_but_use_warped_position_difference() -> None:
+    """Preserve norm and warped-offset identities; equal token gaps can differ."""
+    model = adapted("ssmax-lerope-log-angle").double()
+    q, k = torch.randn(8, dtype=torch.float64), torch.randn(8, dtype=torch.float64)
+    cos, sin = model.lerope(0, 9)
+    rq, rk = apply_rope(q, cos[3], sin[3]), apply_rope(k, cos[8], sin[8])
+    assert_close(rq.norm(), q.norm(), rtol=1e-14, atol=1e-14)
+    delta = model.lerope.base_angles[8] - model.lerope.base_angles[3]
+    delta = delta * model.lerope.log_scales.exp()
+    assert_close(
+        rq @ rk, q @ apply_rope(k, delta.cos(), delta.sin()), rtol=1e-14, atol=1e-14
+    )
+    assert not torch.allclose(
+        model.lerope.base_angles[2] - model.lerope.base_angles[1],
+        model.lerope.base_angles[1] - model.lerope.base_angles[0],
+    )
