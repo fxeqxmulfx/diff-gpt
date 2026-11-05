@@ -1,0 +1,57 @@
+{
+  "declared_at_utc": "2026-11-05T19:30:29.311334+00:00",
+  "configuration": {
+    "name": "peri-rms-scaled-csa-lr2",
+    "learning_rate_multiplier": 2.0,
+    "model_variant": "peri-rms-embedding-scaled-csa"
+  },
+  "parent": "peri-rms-scaled-lr2",
+  "single_change": "Subtract the uniform mean over visible causal keys from each attention weighted value average, before the existing clipped own-direction XSA projection.",
+  "architecture": "Peri-RMS + XSA + SwiGLU + per-head Q/K RMS + scaling after output RMS + tied embedding/readout + parameter-free RMS including embedding + causal attention centering.",
+  "sources": [
+    {
+      "url": "https://arxiv.org/html/2306.01610",
+      "version": "v1",
+      "title": "Centered Self-Attention Layers",
+      "location": "Section 3.2: gamma=-1 correction outside softmax; Section 5 limitations"
+    },
+    {
+      "url": "https://arxiv.org/html/2410.07799v3",
+      "version": "v3",
+      "title": "Mind the Gap: a Spectral Analysis of Rank Collapse and Signal Propagation in Attention Layers",
+      "location": "Sections 2.4 and 3.2; equations (7)-(9), (15)-(18); Section 4 scope of initialization analysis"
+    }
+  ],
+  "intended_equation": "For query i (zero-based), C_ij=A_ij-1/(i+1) if j<=i, else 0. Compute y_i=sum_j C_ij*v_j; then existing clipped XSA projection of y_i along own v_i; then original output projection, RMS and 1/sqrt(2L) residual coefficient.",
+  "numerical_evaluation": "Subtract a shared anchor from values in both weighted and uniform averages; zero row sum makes the anchor cancel. This is distinct from the existing centered-XSA algebraic rearrangement.",
+  "causal_adaptation": "Use the visible prefix mean, including the current value, in dense, chunked and shared-prefix cached execution. The full-sequence uniform matrix from the papers would expose future values in this GPT. No extra trainable parameters or change to learned initial matrices.",
+  "hypotheses": "Removing the uniform token-mixing component may preserve distinctions and improve first-99 learning. XSA already suppresses a different component (the own-value direction), so the combined effect must be measured.",
+  "theory_scope": "Prove zero row sums, annihilation of constant value signals and the centering identity with explicit causal support. Existing Peri-RMS hidden-state bounds still apply to arbitrary raw branches. The papers' asymptotic unmasked random-initialization spectral results do not establish absence of rank collapse, bounded full-network gradients or faster grokking for this causal trained model. The causal uniform-prefix matrix is lower triangular and generally full rank, not the papers' global rank-one uniform matrix; row-sum-zero alone is not a spectral-gap theorem.",
+  "implementation_checks": [
+    "independent dense matrix equation including clipped own values",
+    "strict prefix causality and future-input gradients",
+    "dense versus token/chunk/shared-prefix cached logits",
+    "identical parameter tensors, tying and RNG",
+    "native eager versus CUDA-captured issued updates and neutral capture"
+  ],
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "screen_policy": "Keep original budgets. Require 18/18 passes and improvement in at least three of the six per-task median paired epoch ratios versus LR x2 to advance. Preserve every screen row. No screen-only aggregate geometric mean is reported.",
+  "parent_comparison": "Preserve all 18 pairs against peri-rms-scaled-lr2 to isolate attention centering; screen gate still uses LR x2.",
+  "full_suite_policy": "Evaluate all 75 paired short cells for every candidate that advances. Prefer complete coverage, then lower full-suite geometric-mean epochs. Compare against both original baseline and LR x2; include all per-task medians/worst cases, slower seeds and censoring. If no candidate improves on LR x2, retain the incumbent and report the negative results.",
+  "long_policy": "Wait for this newly requested candidate too before final short selection. Complete all currently running fixed candidates; do not use long outcomes for tuning. A new final winner receives one reused 30-cell long diagnostic.",
+  "invariants": "Unchanged frozen model sources, task manifest, data, seeds, batch order, dimensions, dtype, warmup, weight decay, evaluation cadence and update budgets; separately archived code/configuration for every new output directory.",
+  "staging_policy": "Develop outside the recursively hashed scientific source trees while the preceding two full suites run. Integrate only after their frozen execution has finished, then test and freeze a fresh output plan. Older runs replay from their archived sources/9e57d7e."
+}

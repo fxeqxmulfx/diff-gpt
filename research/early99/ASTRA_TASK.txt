@@ -130,6 +130,19 @@ coverage, epoch regressions and compute costs even for mathematically attractive
 models. Preserve prior screen decisions; declare any changed selection policy
 before using it for new experiments.
 
+User-requested attention-centering extension
+Evaluate the causal adaptation of Centered Self-Attention Layers
+(arXiv:2306.01610) and Mind the Gap (arXiv:2410.07799v3) as an isolated addition
+to the scaled embedding-normalized Peri-RMS candidate. Subtract the visible
+prefix's uniform value mean after softmax attention and before XSA; retain
+Q/K RMS, SwiGLU, tied weights and post-RMS residual scaling. This changes the
+attention function, unlike the baseline's numerical centered-XSA rearrangement.
+Use the separately declared csa-plan.json, prove the applicable algebraic
+properties, verify causal/cached behavior and preserve the unchanged benchmark.
+Do not apply unmasked asymptotic spectral conclusions to this causal trained
+model without proving their hypotheses. Include this requested experiment in
+short-suite selection before running a new winner's long diagnostic.
+
 After selecting the best short-suite candidate, run the 30 long cells once as a
 regression check. Report regressions without tuning against that check. Keep all
 raw histories, checkpoints, fingerprints and candidate provenance. Commit the

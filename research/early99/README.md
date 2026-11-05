@@ -348,3 +348,41 @@ With finite epsilon, scaling a vector before RMS is not exactly canceled; it
 changes epsilon's relative effect. Applying the coefficient after RMS is what
 makes the stated branch-size and Lipschitz bounds apply to the intended residual
 coefficient.
+
+## Further short-suite result and causal centering
+
+Constant LR ×2.5 completed **75/75 short passes** with geometric-mean first-99
+exposure **33.2585 epochs**. Its paired ratio is **0.971054** versus LR ×2
+(2.9% fewer epochs) and **0.581796** versus the original baseline (41.8% fewer).
+Against LR ×2, 38 cells are earlier, 13 tied and 24 later; the worst regression
+is 5.7895× on modulus-193 fifth-power division, seed 1 (19 → 110 epochs).
+Summed trainer time is 1181.87 seconds, including setup and scoring. Parameters
+and initial matrices match in every pair. The
+[full LR ×2 comparison](results/round2/adamw-lr2p5-vs-lr2-short.json),
+[baseline comparison](results/round2/adamw-lr2p5-vs-baseline-short.json), matching
+CSV files, and [checkpoint audit](results/round2/audit-lr2p5-full-short.json)
+retain every cell. Final selection waits for the scaled model and the newly
+requested attention experiment; no new long cells have been run.
+
+The user supplied [Centered Self-Attention Layers](https://arxiv.org/html/2306.01610)
+and [Mind the Gap](https://arxiv.org/html/2410.07799v3), and requested adding the
+mechanism to attention. Both motivate subtracting the uniform mixing component
+after softmax. The [separate experiment plan](results/round2/csa-plan.json)
+adds **causal prefix-mean subtraction** to the scaled Peri-RMS parent, before
+its existing own-direction XSA projection. For query `i`, it mixes values with
+`C_ij = A_ij - 1/(i+1)` for `j <= i`, and zero for future positions. Output RMS
+and residual scaling follow the projection as before.
+
+This changes the attention function. The baseline's numerical centered XSA
+only rearranges its evaluation. The causal correction also differs from the
+papers' global rank-one uniform matrix: each query has its own prefix average.
+Their initialization and asymptotic spectral results do not establish a
+spectral-gap or training guarantee for this causal, trained model.
+
+The [new Lean fixture](guarantees/CausalCentering.lean) proves zero row sums,
+the weighted-minus-uniform-mean identity, constant-signal cancellation, anchor
+invariance of the linear mixing stage, and prefix-only dependence for fixed
+causal weights. Nonzero examples accompany the hypotheses. The
+[proof record](results/round2/csa-guarantees.json) and
+[axiom output](results/round2/csa-lean-check.txt) retain the exact scope.
+The existing Peri-RMS state bounds still apply to its normalized branch outputs.

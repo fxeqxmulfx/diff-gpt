@@ -1,0 +1,31 @@
+{
+  "checked_at_utc": "2026-11-05T19:40:27.414917+00:00",
+  "fixture": "research/early99/guarantees/CausalCentering.lean",
+  "fixture_sha256": "f4239518e5f85a8c9117e81f503da210415c205390b6173645bef871feb30712",
+  "command": "lake env lean /home/misha/python_projects/gpt/research/early99/guarantees/CausalCentering.lean",
+  "cwd": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "toolchain": "leanprover/lean4:v4.35.0",
+  "exit_code": 0,
+  "warnings": 0,
+  "axiom_output": "research/early99/results/round2/csa-lean-check.txt",
+  "axiom_output_sha256": "d0b9d2116bd1d2204f004e00641a0156362dead6b280eec640f45e8209e4d473",
+  "theorems": [
+    "centered_row_sum",
+    "mixing_eq_mean_difference",
+    "mixing_constant",
+    "mixing_anchor_invariant",
+    "mixing_prefix_congr"
+  ],
+  "namespace": "Early99.CSA",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "hypotheses": "A nonempty visible prefix Fin(n+1). Weights sum to one for zero-row-sum, constant-signal cancellation and anchor invariance. Prefix congruence uses fixed causal weights and values agreeing at all positions <= n.",
+  "proven": "Causal mixing has zero row sum; equals the weighted average minus uniform prefix mean; annihilates constant values; permits evaluation on differences from a common anchor; consumes no value beyond the query prefix.",
+  "nonvacuity": "Concrete normalized nonuniform weights, nonzero value vectors, different unseen suffixes and a nonzero mixing result on unequal values.",
+  "limits": "Real arithmetic identities only. The weights themselves must be computed causally. The linear-stage anchor invariance does not imply translation invariance of the complete Q/K- and own-value-dependent attention function. No causal spectral-gap, finite-precision, optimizer convergence or grokking theorem is asserted.",
+  "inherited_bounds": "The PeriBounds fixture applies unchanged because every new raw branch still passes through output RMS and 1/sqrt(2L) scaling."
+}
