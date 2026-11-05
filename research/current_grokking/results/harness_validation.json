@@ -73,6 +73,21 @@
       "passed": 3,
       "deselected": 5,
       "details": "Known-answer fixtures score 100% for variable-length copy/reversal; deliberate early EOS scores 0%. Numeric free-generation scorer regression also passes. These fixtures are not trained-model evidence."
+    },
+    {
+      "check": "Read-only trained public-GPT CUDA generation and causal-prefix diagnostic",
+      "case": "suite-copy-repeat",
+      "examples": 16,
+      "train_free_generation_sequence_accuracy": 1.0,
+      "train_teacher_forced_sequence_accuracy": 1.0,
+      "prefix_lengths": [
+        2,
+        4,
+        8
+      ],
+      "cropped_argmax_matches": true,
+      "future_perturbation_max_logit_difference": 0.0,
+      "details": "See generation_inference_audit.json. This is a sampled trained-model diagnostic, not a held-out success."
     }
   ],
   "scorer_corrections_before_affected_training": [
