@@ -95,5 +95,29 @@
     ],
     "ruff": "passed",
     "previous_embedding_source_revision": "6e31141"
+  },
+  "causal_centering": {
+    "combined_cpu_and_cuda": {
+      "passed": 51,
+      "seconds": 109.33,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_causal_centering.py tests/diff_gpt/application/test_early99_experiments.py tests/diff_gpt/application/test_early99_mechanisms.py tests/diff_gpt/application/test_early99_benchmark.py tests/diff_gpt/application/test_current_grokking.py tests/diff_gpt/application/test_current_grokking_adapters.py"
+    },
+    "focused_cpu_after_assertion_cleanup": {
+      "passed": 5,
+      "seconds": 1.58
+    },
+    "checks": [
+      "independent masked zero-sum attention matrix equation",
+      "XSA clipping tested with nonuniform scores and a measurable signal; scientific epsilon remains 1e-12",
+      "future-input gradients are exactly zero",
+      "constant value signals cancel before XSA",
+      "dense, token-wise, chunked and shared-prefix cached logits agree",
+      "parameter tensors, tying and RNG match the parent",
+      "all ten candidate settings match native eager issued updates; capture, evaluation and recapture are neutral"
+    ],
+    "ruff": "passed",
+    "previous_refinement_source_revision": "9e57d7e",
+    "candidate_plan_sha256": "12301eb7cc82f3467490b475289989af94fa670ebb6ab2e4b1c4ea2a245384c3",
+    "formal_record": "research/early99/results/round2/csa-guarantees.json"
   }
 }

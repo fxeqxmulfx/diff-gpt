@@ -273,8 +273,7 @@ expected hashes.
 
 ```bash
 # Current candidate plans; these commands do not train.
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/adamw-lr2p5.json
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-scaled-lr2.json
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.run --write-plan --configuration research/early99/configs/peri-rms-scaled-csa-lr2.json
 
 # Separate report destinations preserve both controls.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99.experiments.compare --candidate runs/early99/candidates/adamw-lr3 --tier short --output runs/early99/candidates/adamw-lr3/comparisons/baseline
@@ -386,3 +385,31 @@ causal weights. Nonzero examples accompany the hypotheses. The
 [proof record](results/round2/csa-guarantees.json) and
 [axiom output](results/round2/csa-lean-check.txt) retain the exact scope.
 The existing Peri-RMS state bounds still apply to its normalized branch outputs.
+
+Scaled Peri-RMS also completed **75/75 short passes**. Its geometric-mean
+first-99 exposure is **28.3606 epochs**, with paired ratios **0.828049** versus
+LR ×2 (17.2% fewer epochs) and **0.496116** versus the original baseline (50.4%
+fewer). Against LR ×2, 47 cells are earlier, 9 tied and 19 later. The worst
+regression is 6× on the hard depth probe, seed 1 (0.4 → 2.4 epochs); recall seed
+2 takes 5× as many epochs. Summed trainer time is **1371.78 seconds**, about
+5.7% above LR ×2, so the epoch improvement has a runtime tradeoff. All learned
+tensors, initial states and parameter counts remain matched. See the
+[full comparison](results/round2/peri-rms-scaled-lr2-vs-lr2-short.json),
+[baseline comparison](results/round2/peri-rms-scaled-lr2-vs-baseline-short.json),
+and [checkpoint/source audit](results/round2/audit-peri-scaled-full-short.json).
+
+The LR ×2.5 and scaled Peri-RMS scientific source revision is `9e57d7e`.
+Causal-centering work uses a subsequent source snapshot. Continue or replay
+older outputs from their pinned revision; never replace their plans or hashes.
+An isolated checkout at `/tmp/early99-refinement-replay-9e57` has verified that
+it reproduces the recorded LR ×2.5 plan and can run an earlier winner's long
+cells with `--output` and `--baseline` pointing at the existing absolute paths.
+
+The causal-centering candidate is implemented in
+[`experiments/causal_centering.py`](experiments/causal_centering.py), selected by
+[`peri-rms-scaled-csa-lr2.json`](configs/peri-rms-scaled-csa-lr2.json).
+All **51 CPU/CUDA checks pass**, including an independent matrix reference,
+future-gradient exclusion, constant-signal cancellation, cache equivalence and
+native eager versus captured updates. Its frozen 18-cell screen starts after
+the complete scaled-parent short suite, as requested. The screen retains the
+same six tasks, three seeds, promotion rule, evaluation cadence and budgets.

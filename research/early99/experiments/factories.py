@@ -10,6 +10,7 @@ import torch
 
 from diff_gpt.domain.model.gpt import GPT
 from research.current_grokking.train import Logits, Stepper
+from research.early99.experiments.causal_centering import install_causal_centering
 from research.early99.experiments.models import (
     install_embedding_rms,
     install_peri_rms,
@@ -58,6 +59,7 @@ class Configuration:
             "peri-rms",
             "peri-rms-embedding",
             "peri-rms-embedding-scaled",
+            "peri-rms-embedding-scaled-csa",
         }:
             message = "Unknown model variant"
             raise ValueError(message)
@@ -112,10 +114,25 @@ class Configuration:
                 "peri-rms": "peri_rms_public_gpt",
                 "peri-rms-embedding": "peri_rms_embedding_public_gpt",
                 "peri-rms-embedding-scaled": "peri_rms_embedding_scaled_public_gpt",
+                "peri-rms-embedding-scaled-csa": (
+                    "peri_rms_embedding_scaled_csa_public_gpt"
+                ),
             }[self.model_variant],
             "residual_scale": (2 * case.layers) ** -0.5
-            if self.model_variant == "peri-rms-embedding-scaled"
+            if self.model_variant
+            in {"peri-rms-embedding-scaled", "peri-rms-embedding-scaled-csa"}
             else 1.0,
+            **(
+                {
+                    "attention_centering": {
+                        "kind": "causal-prefix-mean",
+                        "coefficient": 1.0,
+                        "placement": "after softmax value averaging, before XSA",
+                    }
+                }
+                if self.model_variant == "peri-rms-embedding-scaled-csa"
+                else {}
+            ),
             "optimizer_factory": "native_adamw",
             "optimizer": "torch.optim.AdamW",
             "learning_rate": effective.learning_rate,
@@ -172,6 +189,13 @@ def peri_rms_scaled_model(task: Task, case: Case, device: str) -> Logits:
     return model
 
 
+def peri_rms_scaled_csa_model(task: Task, case: Case, device: str) -> Logits:
+    """Add causal prefix centering to the unchanged scaled Peri-RMS parent."""
+    model = peri_rms_scaled_model(task, case, device)
+    install_causal_centering(model.model)
+    return model
+
+
 def native_adamw(
     model: Logits,
     rate: torch.Tensor,
@@ -209,6 +233,7 @@ def configured_factories(configuration: Configuration) -> Factories:
             "peri-rms": peri_rms_model,
             "peri-rms-embedding": peri_rms_embedding_model,
             "peri-rms-embedding-scaled": peri_rms_scaled_model,
+            "peri-rms-embedding-scaled-csa": peri_rms_scaled_csa_model,
         }[configuration.model_variant]
     )
 

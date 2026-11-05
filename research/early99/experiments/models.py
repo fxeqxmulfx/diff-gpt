@@ -54,7 +54,7 @@ class ScaledPeriProjection(RMSNormProjection):
         self.residual_scale = scale
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
-        """Normalize the branch before scaling; a pre-norm scale would cancel."""
+        """Normalize the branch before applying its declared residual coefficient."""
         return super().forward(value) * self.residual_scale
 
 
