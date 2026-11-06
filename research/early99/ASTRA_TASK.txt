@@ -319,8 +319,12 @@ arm; preserve baseline, LR x2 and no-QK comparisons and every failure. Select a
 new shared-model winner only with full coverage and a lower all-75 geometric
 mean than the Q/K parent, then one reused long diagnostic without tuning.
 All nine CPU/CUDA implementation checks and all 90 declared normalized-score
-stress cases passed before training. The two 18-cell screens are now running
-under research.early99_score_scale_reporting.run_screens. Do not duplicate them.
+stress cases passed before training. Both 18-cell screens are complete and
+audited: half-scale improves four paired task medians, quarter-scale improves
+three, so both advance. Half-scale has 13 earlier/4 tied/1 later cells; quarter
+has 9 earlier/3 tied/6 later, with a 6.23x recall regression. Complete both full
+75-cell suites using research.early99_score_scale_reporting.run_full. Do not
+discard the less favorable promoted arm or launch a duplicate active queue.
 Keep this study's Python, configurations and plan frozen until training/audits
 finish. Source archiving includes the declared plan; reporting and audits live
 in the separate research/early99_score_scale_reporting package.

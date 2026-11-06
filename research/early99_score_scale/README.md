@@ -82,7 +82,7 @@ and all **90 score probes** passed the predeclared bounds and accuracy limits.
 Maximum probability error was `6.4692e-7`; maximum relative gradient error was
 `1.5498e-5`. The [validation record](results/validation.json) and
 [complete stress rows](results/score-stress.json) preserve the evidence and scope.
-The half-scale screen is complete; the quarter-scale screen is running.
+Both 18-cell screens are complete and audited; both meet the declared gate.
 No complete-suite learning improvement is established yet.
 
 Run both screens or regenerate their four-control reports with
@@ -114,5 +114,34 @@ comparisons are retained beside the
 [parent screen](results/screen-peri-rms-scaled-ssmax-gain-half-lr2-vs-parent.json).
 The [checkpoint audit](results/audit-peri-rms-scaled-ssmax-gain-half-lr2-screen.json)
 verifies all 18 cells and 31 archived sources, with no resumptions, execution
-errors or capacity changes. Complete the quarter-scale screen, then run every
-promoted arm on all 75 short cells with these same frozen sources.
+errors or capacity changes.
+
+## Quarter-scale screen
+
+Quarter-scale also passes **18/18**, improving **3/6 paired task medians** and
+meeting the declared gate. It has **9 earlier, 3 tied and 6 later** cells versus
+the Q/K parent. Its largest regression is key-value binding at **6.2308×** the
+parent's epochs. A tighter score bound does not remove the learning tradeoff.
+
+| Task | Parent median epochs | Quarter-scale median epochs | Median paired ratio | Worst paired ratio |
+|---|---:|---:|---:|---:|
+| Boolean AND | 3 | 3 | 1.0000 | 1.3333 |
+| Division p193 | 35 | 31 | 0.9714 | 1.1111 |
+| Division p97 | 28 | 16 | 0.5357 | 0.5714 |
+| Key-value binding | 16 | 70 | 4.3750 | 6.2308 |
+| Square sum | 311 | 141 | 0.4534 | 0.5144 |
+| Linear transport | 2 | 5 | 2.0000 | 2.5000 |
+
+The [complete parent screen](results/screen-peri-rms-scaled-ssmax-gain-quarter-lr2-vs-parent.json)
+and adjacent baseline/LR ×2/no-QK reports retain every row and regression.
+Its [checkpoint audit](results/audit-peri-rms-scaled-ssmax-gain-quarter-lr2-screen.json)
+also verifies all 18 cells and 31 archived sources, with no errors, resumptions
+or capacity changes.
+
+Both arms now advance to **all 75 short cells** with the same frozen sources.
+The [full-suite driver](../early99_score_scale_reporting/run_full.py) reconstructs
+both promotion decisions, runs each full suite, checks its checkpoints and all
+four paired comparisons, then freezes a shared-model choice. It performs no
+long training before that choice. Reproduce with
+`python -m research.early99_score_scale_reporting.run_full --run` in the environment
+above; do not launch a duplicate active queue.
