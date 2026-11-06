@@ -1156,3 +1156,21 @@ The independent80-digit Decimal oracle passes three checks, including full
 input/gamma/beta finite differences and exact singleton/zero cases. Commit the
 validated sources and proof records before the declared160 native CPU cases.
 All failed proof-development attempts remain preserved; no model was modified.
+
+Complete local normalization comparison; no architecture selected
+Frozen source2be94d2 completes all160 CPU cases and480 vector comparisons, with
+no execution errors or nonfinite vectors. All160 forward outputs pass;146cases
+and466vector comparisons pass the declared0.001/exact-zero gradient criterion.
+Existing repaired-backward RMS passes80/80. NativeLayerNorm passes66/80:
+FP32 input gradients miss six cases, and affine-scale gradients miss eight
+exact-zero cases, including two FP64 residuals of2.34e-15and2.03e-13. Preserve
+absolute errors alongside relative ones. The shifted.02 FP32 input-gradient
+errors reach16.46percent atwidth256; tiny unit-radial gradients also lose direction.
+Both implementations use epsilon2^-23. This is an implementation comparison,
+not an intrinsic-normalizer ranking or a learning result. The current RMS already
+has its repaired FP64 backward; nativeLayerNorm has its own CPU arithmetic.
+Every represented input and all480 Decimal reference vectors are reconstructed
+by the separate audit. Keep all failures and the eight real-arithmetic bounds.
+A future LayerNorm model requires a separately declared implementation check;
+no normalizer, initializer or fixed75 winner is selected here. Capacity/gain
+training and the deferred full-stack numerical repairs remain unchanged.
