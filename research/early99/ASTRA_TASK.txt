@@ -1201,3 +1201,13 @@ After proofs andindependent referencevalidation, check18 syntheticCPUtraces,
 64updates each, retaining allparameters/moments andfailures. This adds no model
 training, task score orinitializerselection. Keep capacity, usualgain andthe
 explicitly deferred Muon/full-stack repair work in their existing order.
+
+AdamW history and native-path scaling proved before synthetic execution
+Allthree statements compile withoutwarnings orextraaxioms. Foroneconstantc>0
+across the suppliedgradient history, nativeAdamW at(c*g,epsilon) hasthesame
+parameterpath as(g,epsilon/c), given commoninitialparameters,rates anddecay;
+retainedmoment paths carryfactorsc andc^2. Preserve this changed-epsilon premise.
+It doesnot equate arbitrary old/new model gradients ortheir training paths.
+The independentDecimal reference passes bothclosed-form checks, including
+zero-rate moment insertion. Thefailed record-equality elaboration isretained.
+Commit validatedsources beforeall18 syntheticCPUtraces; no modelrun isadded.

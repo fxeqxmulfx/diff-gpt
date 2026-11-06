@@ -19,3 +19,15 @@ The model studies remain frozen. This supplement neither selects an initializer
 nor predicts convergence; a model intervention can change gradient directions
 and future gradients. Optimizer epsilon `1e-8` is separate from RMS epsilon
 `2^-23`. CPU arithmetic checks do not certify fused or captured CUDA execution.
+
+The [three statements](Bounds.lean) compile with no warnings or extra axioms;
+the failed record-equality elaboration attempt is preserved. For a supplied
+history `g`, a constant `c>0` and optimizer epsilon `eps>0`, the exact result is
+`AdamW(c*g, eps) = AdamW(g, eps/c)` for the parameter path when initial weights,
+rate schedule and decay agree. The corresponding moment paths are multiplied
+by `c` and `c²`. This includes the zero-rate first update's moment insertion.
+
+The [reference checks](results/reference-validation.json) pass both independent
+cases: a constant-gradient closed-form trajectory with varying warmup rates,
+and an exact rational signed-input example with zero betas. All synthetic sources
+and this evidence must be committed before the 18 native traces execute.

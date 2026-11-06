@@ -1,0 +1,54 @@
+{
+  "checked_at_utc": "2026-11-06T23:16:31.845359+00:00",
+  "exit_code": 0,
+  "statements": 3,
+  "warnings": 0,
+  "extra_axioms": [],
+  "axioms": {
+    "AdamWGradientScaling.moment_scale": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "AdamWGradientScaling.history_scale": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "AdamWGradientScaling.native_path_scale": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "source_sha256": {
+    "research/adamw_gradient_scaling/Bounds.lean": "830b5d7242a832b379601c4d2877057e90001189a5a1b7609696d65a52d7f9c5",
+    "research/adamw_gradient_scaling/check.py": "1bb53c92b0640456fd3691ff41746a9c09384c1dea4bf31f88477920d384907f",
+    "research/stored_rope_guarantees/check.py": "c32daf88d0de108448294d6e088456e752f157c9b01c2d1fd9198894eea2a809"
+  },
+  "plan_sha256": "0fb80ec77fbeab55835ec3686de7401f224c6c604349da20565d93abf150b978",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_source_sha256": {
+    "src/Transformer/Grokking/AdamW/ScalarRecurrence.lean": "0d976bbd80c814e79fb8ea6af8a2d91e613edec05c0a71abe14de552769dc397",
+    "src/Transformer/Grokking/AdamW/LossDirection.lean": "3d2e33d5b738192d73e2216e9c5149d5788bb91aa31a6e9a366bfb5ad90755d5",
+    "src/Transformer/Grokking/AdamW/FirstStep.lean": "b792175ffd71289db19eae35057ef5b8d29eedfc6722089cd4a0dcc938741301",
+    "src/Transformer/Grokking/EffectiveTheory/Section3_Conservation.lean": "e1d8a6d5e6ff3eb055a0e5e6e10e4795ccfc26554db52915244f64e94ee2f96d",
+    "src/Transformer/Grokking/EffectiveTheory/Section3_QuotientGradient.lean": "7545545515eb91d8f0e674b76040f5c3108c3ab6a2d2ba0cc4de726cbeeb10ba",
+    "src/Transformer/Grokking/AdamW/PartialReset.lean": "06217823c198c347f6d51e69d3527bb33aff71a0e5fc5c6167ae9b17e5f7aec7",
+    "src/Transformer/Grokking/AdamW/MomentBounds.lean": "95fd2cdf91f8026212ede11987e7717bbe48c3f2641a5332b686ded1cf201e80",
+    "src/Transformer/Grokking/AdamW/MomentRecurrence.lean": "fbae52cf2dd5cc79dd61703a67c456dd889de2068992454fa77acfb6e64258bd",
+    "src/Transformer/Grokking/AdamW/SecondStep.lean": "916d64753b1f1d3fb2f68eed227d346e4dedd812efafc7b12ef7323cb19f1a6b",
+    "src/Transformer/Grokking/AdamW/LossDescent.lean": "9cdfdd36153f97dc80f1bcb54094782e8b359b8aa81b2747d73f1bccccb054b2",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "attempt": "research/adamw_gradient_scaling/results/lean-attempt-20261106T231629687770.json",
+  "attempt_sha256": "3bed5771ba90d8b99593aa32f6039a67c14e73a66a546b2b107e7836ddef01c8",
+  "limitations": [
+    "Real-arithmetic identities concern a fixed positive factor across every supplied gradient in one coordinate and matching moment histories. A ratio of whole-layer gradient RMS values does not satisfy that condition.",
+    "Model initialization changes parameters and may change gradient directions, future gradients, tied-weight pathways and finite-epsilon RMS functions. These proofs do not identify two such training trajectories.",
+    "Optimizer epsilon is1e-8 and is distinct from the model RMS epsilon2^-23. Preserve both explicitly.",
+    "Synthetic CPU native AdamW checks do not validate fused or captured CUDA kernels, train a model, evaluate task data, choose an initializer or prove convergence.",
+    "Keep the current27-cell capacity queue and subsequent3-seed usual-gain study unchanged. Muon and full-stack numerical-repair preparation remain deferred."
+  ]
+}
