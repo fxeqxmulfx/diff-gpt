@@ -1018,3 +1018,37 @@ Depth,heads,values,XSAandreadoutcanstilladdexpressivepower. ThisdoesnotprovePeri
 orembeddingnormalizationwrong. Itmotivates theauthorizedusualgaintest while
 retainingtheuserpreferredstructureandtiedweights. ThefirstfailedLeanattemptis
 retained; nooptimizerupdates,modelforwardsorheldoutscoresoccurredinthesupplement.
+
+User expands normalization choices to learned affine parameters
+The user explicitly allows RMSNorm orLayerNorm toinclude trainableparameters.
+Parameter-free normalization is therefore no longer a constraint on future
+candidates. Keep the preferredPeri+embeddingnormalizationstructure andtied
+embedding/readoutweights. Treatnormalizertype andlearnedscale/bias as declared
+interventions;recordaddedparameters andinitialization. Preserve thealreadyfrozen
+capacityandusualgainruns exactly. Future guarantees must explicitlyinclude any
+learnedscale/bias bounds; do notapply parameter-freeoutputbounds unchanged to an
+unconstrainedaffinenormalizer. No normalization variant has been trained yet.
+
+Learnable parameters and initialization are open research choices
+The user allows learned parameters inothermodelparts anddelegates the choice to
+controlled evidence. Prioritize the fixedusualattentiongain test; boundedlearned
+attentiontemperature,normalizationaffineparameters andresidualscales arepossible
+futureisolatedinterventions. Keep Peri+embeddingnormalizationandtiedweights as
+preferredfoundation; donotcombineunmeasuredchanges ordeclareanychoicebestyet.
+The user also asks whether eachmodelpart needsdifferent randominitialization.
+Audit actualinitializationandpercomponentactivation/gradientscales first,then
+freeze anisolatedinitializationstudy ifwarranted. Tiedembedding/readoutmustkeep
+one shared draw. Currentcode usesNormal(0,.02)forfinalmatrices anddoesnotredraw
+the tiedmatrix twice; SwiGLUreplacements receive their ownhistorical draws.
+Width-dependentfanin andpost-RMSconditioning makeauniformstd a validhypothesis,
+not evidenceof aninitializationbug. Keep therunningcapacityandusualgainprotocols
+unchanged; no initializationcandidatehasbeen trained.
+
+Usualgain implementation andCPUvalidation complete
+The isolatednativeadapter restoresonlytheexisting1/sqrt(d)parentgain. Allthree
+initializations exactlymatchinversecontrols inweights/order,RNGandsharedbuffers;
+removingonlytheinversegainoverride givesexactforwardandallparametergradientparity.
+FiveCPUchecks pass,includingrealinterruptedcheckpointcontinuation andreadiness/
+sourcearchiveguards. OneactualCUDAcheck remainspending untilthecapacityqueueends.
+Requireall6checks andcommittedcapacityoutcomes beforethreescientificruns. The
+runnerkeepsseparateoutputs,sourcearchives,locks,errorrecordsanddurablejournals.
