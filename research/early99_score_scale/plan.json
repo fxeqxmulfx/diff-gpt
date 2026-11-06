@@ -1,0 +1,99 @@
+{
+  "declared_at_utc": "2026-11-06T00:51:30.886008+00:00",
+  "round": "3: shared Q/K-normalized model, isolated SSMax score strength",
+  "round2_completion_commit": "1138c62",
+  "parent": "peri-rms-scaled-ssmax-lr2",
+  "configurations": [
+    {
+      "name": "peri-rms-scaled-ssmax-gain-half-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "score_multiplier": 0.5
+    },
+    {
+      "name": "peri-rms-scaled-ssmax-gain-quarter-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "score_multiplier": 0.25
+    }
+  ],
+  "short_evidence": {
+    "parent_gm_epochs": 24.327068672012203,
+    "parent_passes": 75,
+    "noqk_ablation_gm_epochs": 20.9797930738202,
+    "noqk_ablation_passes": 75,
+    "interpretation": "The short ablation changes both magnitude sensitivity and attention-score scale. Its speed advantage does not identify the cause. Test softer normalized attention while retaining uniform projection-independent score control."
+  },
+  "single_change": "Multiply the existing SSMax attention gain by a fixed scalar m=1/2 or m=1/4 after Q/K RMS. This is effective SSMax s=m, not the previous parameter-free s=1 default.",
+  "equation": "scores_ij = m * log(i+1) * g_h * dot(R_i RMS(q_i), R_j RMS(k_j)), j<=i. All cached positions use full visible key count.",
+  "invariants": "Keep Q/K RMS, scaled Peri-RMS, embedding RMS, centered XSA, SwiGLU, ordinary fixed RoPE, tied weights, parameter-free normalization, all original tensors/RNG, LR x2, AdamW settings, data, model dimensions, batch order, cadence, thresholds and original update budgets.",
+  "scope": "No LeRoPE or activation/residual/numerical-repair changes are combined with this score-only trial. Their prior positive and negative results remain retained.",
+  "guarantee": "With epsilon>0, width d>0, N>=1 and m>=0, abs(score)<=m*log(N)*abs(g_h)*d independently of Q/K projection-weight norms. For m<=1 this is no larger than the parent bound. It is not a margin, whole-network Jacobian, learning or floating-point guarantee.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/peri-rms-scaled-ssmax-lr2",
+  "screen_policy": "Require 18/18 passes and improved median paired epochs in at least 3 of the 6 tasks versus the Q/K-normalized parent. Keep every row, miss and error. No screen geometric mean. This parent-control gate is declared before new training, distinct from round 2 LR x2 gating.",
+  "full_policy": "Run all 75 short cells for each arm passing its screen. Select a new shared-model winner only with full coverage and a lower all-75 geometric mean than the Q/K parent. Retain the parent if no arm improves. Compare every eligible arm with baseline, LR x2, parent and the measured no-QK ablation; keep their separate overall and shared-model rankings.",
+  "long_policy": "After all promoted short suites, freeze the shared-model choice. If a new shared-model winner is selected, run it once on the reused 30-cell diagnostic at original budgets. Never use long outcomes to choose scales, screen tasks, candidates, thresholds or subsequent tuning.",
+  "stress_policy": "Before benchmark training, verify initialization/capacity/RNG, independent forward and gradients, singleton and causal/dense/chunked/shared caches, Q/K magnitude and context-length score bounds, and native CUDA graph capture/update equivalence. Preserve failures rather than claim universal stability.",
+  "source_policy": "All previous scientific Python and plans remain unchanged. New source, configs, plan and hashes are archived independently; reuse the existing training loop and scorer with explicit factories.",
+  "control_plans_sha256": {
+    "peri-rms-scaled-ssmax-lr2": "f2e2838bd0e3892a2cdc0818cebd1822b77fc281bf327a383150ec09a68a5479",
+    "adamw-lr2": "eb55f026d26144db633be17ec41b6ded461a69906b93f98327f74b0490bade9c",
+    "peri-rms-scaled-ssmax-noqk-lr2": "8549242296e7d1b00780be299b01be715784de068a450f7cae4e470c44797d94"
+  },
+  "frozen_round2_selection_sha256": "ec56a5245f2c9626eab67e1d809bc8c6b7889010adf2cf3e774698cb5db24c81",
+  "not_used_for_design": "Completed long diagnostic outcomes. The score-strength hypothesis and Q/K retention are based on short evidence, mathematical control and the user direction.",
+  "score_stress": {
+    "scope": "One normalized SSMax row in FP32 versus the same finite-epsilon equation in FP64; existing full-stack extreme failures are not erased by reducing scores.",
+    "multipliers": [
+      0.5,
+      0.25
+    ],
+    "visible_keys": [
+      1,
+      2,
+      32,
+      512,
+      4096
+    ],
+    "head_widths": [
+      8,
+      32,
+      128
+    ],
+    "qk_input_scales": [
+      1e-09,
+      1.0,
+      1000000000.0
+    ],
+    "base_seed": 20261106,
+    "expected_cases": 90,
+    "fp32_epsilon": 1.1920928955078125e-07,
+    "maximum_probability_absolute_error": 2e-06,
+    "maximum_relative_gradient_error": 0.001,
+    "bound_slack": "1e-5 * max(1, theoretical bound)",
+    "learning_claim": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "checked_at_utc": "2026-11-06T00:59:33.712178+00:00",
+  "implementation_tests": {
+    "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_score_scale.py",
+    "passed": 9,
+    "seconds": 49.57,
+    "cuda_included": true
+  },
+  "archive_guard_after_plan_added_to_snapshot": {
+    "passed": 1,
+    "seconds": 1.22
+  },
+  "stress": {
+    "expected": 90,
+    "passed": 90,
+    "maximum_probability_absolute_error": 6.469191577984645e-07,
+    "maximum_relative_gradient_error": 1.5497996645811663e-05
+  },
+  "ruff": "passed",
+  "source_sha256": {
+    "research/early99_score_scale/__init__.py": "b7cc675a5603467e588dfcafc015baa4d3d106d18992b239ecce063ab79e6f02",
+    "research/early99_score_scale/factories.py": "4dec1dbfac71796ea897de4f1def134cd5e5c150c1e85bd135428c74c8202c0e",
+    "research/early99_score_scale/run.py": "2e2beb05138ea4b8970232a6c0feccb46c26440b5bf2c11c76c798120cfedfc3",
+    "research/early99_score_scale/stress.py": "8629ce39c215fd5b623cd20dcd4c87fe537af5b4a7ab96c70dc28336f944ee37"
+  },
+  "plan_sha256": "2e28832eea7094903d43cb5bd89d39943f31ebb5e440fa40e08bb0c0073b00f5",
+  "test_source_sha256": "bba5a7a4833e9be4e65aa6a2a25e444247b32ce6159605353208a10b9526adc5",
+  "notes": "All 9 implementation checks passed. The later archive-only addition includes the declared plan in immutable snapshots; its guard test was rerun. No scientific benchmark cell has run yet."
+}
