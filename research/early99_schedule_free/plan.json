@@ -1,0 +1,74 @@
+{
+  "declared_at_utc": "2026-11-06T06:54:57.020347+00:00",
+  "round": "5: user-requested Schedule-Free AdamW on the shared inverse-width architecture",
+  "user_request": "let's try schedule free adamw",
+  "parent": "peri-rms-scaled-ssmax-inverse-width-lr2",
+  "parent_short_gm_epochs": 16.266050125508265,
+  "configurations": [
+    {
+      "name": "peri-rms-inverse-width-sf-adamw-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width",
+      "optimizer_kind": "schedule_free_adamw",
+      "optimizer_internal_warmup": 0
+    },
+    {
+      "name": "peri-rms-inverse-width-sf-adamw-lr4",
+      "learning_rate_multiplier": 4.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width",
+      "optimizer_kind": "schedule_free_adamw",
+      "optimizer_internal_warmup": 0
+    }
+  ],
+  "change": "The LR2 arm changes only the optimizer from native AdamW to the existing repository ScheduleFreeAdamW, retaining the actual inverse-width model factory. LR4 is a separately declared learning-rate comparison within Schedule-Free. No numerical repair, activation, residual, LeRoPE or normalization change is combined.",
+  "optimizer_semantics": "Use src/diff_gpt/domain/optimizer/schedule_free.py exactly, pinned by hash. Modern1.3+style bias correction divides second moment; decay acts at the query y; running average x uses squared maximum effective rate weights (r0,power2). Gradient point y=(1-beta1)z+beta1*x. Evaluate and save model parameters at x, with complete basez/secondmoment/step/maximum/total/mode state. beta1=.9,beta2=.98,epsilon1e-8,original case weight decay.",
+  "warmup": "Retain the frozen50completed-update linear warmup, including the first zero-rate update. Disable optimizer internal warmup (0) to avoid double warmup. External effective rate=originalcaseLR*multiplier*min(1,completed/50), then constant. No cosine/decay scheduler.",
+  "execution": "Keep FP32highest, same compiled loss on CUDA and original task evaluators. Execute the existing foreach optimizer eagerly outside CUDA update graphs because its mode and scalar averaging state are host-controlled. No optimizer update during preparation; no hidden warmup/capture steps. Original read-only evaluation graphs may be reused with x weights in the same parameter storage. Record the execution/runtime distinction; speed in seconds is not a gate.",
+  "invariants": "All75short/30longcells, fixed data seed1, seeds0/1/2 and batchseeds+10000, task model sizes, matrices/RNG/parameterorder/count, tokens/labels/splits/evaluation cadence, full primary heldout exact-sequence/free-generation scoring, original update budgets and first>=99crossing criterion remain unchanged. Main shared model retainsQ/KRMS. Averageweights remain physically tied.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2",
+  "screen_policy": "Complete both18cell screens. Each arm independently advances only with18/18passes and improved median paired epoch ratios on at least3of6tasks versus the inverse-width nativeAdamW parent. Keep all seeds, misses and execution errors; no screen geometric mean. Do not stop the second declared rate based on first-arm results.",
+  "full_policy": "Complete every75short cell for every promoted arm before selection. Prioritize75/75coverage, then complete-suite geometric mean; require a lower mean than inverse-width parent to select a new shared winner. Retain all paired medians/worst/regressions against inverse-width, quarter-scale, LR2, originalbaseline andnoQK. No successful-only aggregate. Preserve all failed or nonpromoted candidates.",
+  "long_policy": "Finish and report the existing inverse-width long diagnostic before new benchmark training; implementation/validation may proceed independently now. Freeze and commit any new short-only winner after all promoted short suites. Evaluate only that new winner once on the reused30longcells; if parent retained, do not rerun its diagnostic. Never use old or new long outcomes for candidate choice/rates/tuning.",
+  "pretraining_validation": "Reuse full repository optimizer tests; verify scalar/explicit3sequence agreement with external completed-step warmup, exact initial model/RNG/capacity, correct x heldout scoring and repeated mode idempotence, checkpoint x+fulloptimizer+sampler resumption, no hidden preparation updates, real CUDA compiled/eager update equivalence including shorttail batches. Compare copied trainer AST against original except constructor,accurateoptimizer metadata,mode/counter/checkpoint handling. Snapshot all tested source before screen.",
+  "mathematical_scope": "All existing inverse-width real score/sensitivity/selectivity bounds continue to apply at every weight state. Inspect/check actual local Transformer.ScheduleFree.AdamW packed-update/evaluation identities; these justify algebra of y,z,x and average recovery. Do not transfer convex-objective convergence guarantees to this nonconvex transformer or claim better grokking from iterate averaging alone.",
+  "historical_negative_control": "The completed recall_ablation study rejected Schedule-Free on an earlier architecture/setting. Preserve it; this new study changes neither its result nor its scope and does not assume that the new normalized architecture reverses it.",
+  "source_policy": "New sibling scientific and reporting packages. Preserve every earlier scientificPython/config/plan/proof/result and current long launcher hash. Reuse the existing optimizer unchanged; introduce explicit newstepper/trainer boundaries only in newpackage. Archive optimizer source and all model/data/trainer dependencies; checkpoint auditing must understand x/y mode and base/second states.",
+  "priority": "User-requested optimizer experiment takes priority over the not-yet-declared inverse-width numeric repair. Preserve its50case failures for later repair; do not silently integrate a repair here.",
+  "sources": {
+    "official_repository": "https://github.com/facebookresearch/schedule_free",
+    "paper": "https://arxiv.org/abs/2405.15682",
+    "local_optimizer": "src/diff_gpt/domain/optimizer/schedule_free.py",
+    "local_lean": "/home/misha/lean_projects/transformer/src/Transformer/ScheduleFree/AdamW"
+  },
+  "evidence_sha256": {
+    "research/early99_dimension_gain/results/shared-selection.json": "dfa88e7d98a789281983f58a4eb15dcbf190f0dd908eaed686022895ac626e28",
+    "research/early99_dimension_gain/results/selection-integrity.json": "91b7eb9742213dbc61709011f9900f1a02b0ab39555d2a431717b10e4a14a736",
+    "src/diff_gpt/domain/optimizer/schedule_free.py": "e9946bcc2c94bc2b13b501e3ec8ed8f00ffbbc40b7956cab21fb901bd4129008",
+    "research/recall_ablation/results/summary.json": "85fe996f0b3ed07f3df0bbb611c36a267fd8e0ce4e47e13e494091dda7e4d685"
+  }
+}

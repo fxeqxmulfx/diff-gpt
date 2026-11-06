@@ -571,3 +571,18 @@ robustness. The audit repeats all50forward/backward cells exactly and verifies
 frequency cases. Preserve these results under research/inverse_width_stack_stress.
 Any repair must be separately declared; do not alter the frozen benchmark winner
 or its running long diagnostic. No learning or phase-accuracy conclusion follows.
+
+Latest user request: Schedule-Free AdamW
+research/early99_schedule_free/plan.json declares the unchanged inverse-width
+shared architecture with the existing ScheduleFreeAdamW optimizer at LR x2andx4.
+Keep betas0.9/0.98,epsilon1e-8,originalweightdecay and completed-step50updatewarmup;
+internal optimizer warmup is0. Score/save averagedxweights; trainatyweights with
+completez/secondmoment/averaging/mode state. Verify independent update equations,
+evaluation and resume semantics, CUDA behavior and the unchanged protocol before
+training. Complete both18cell screens, all75cells for every promoted arm, then
+freeze selection and run only a new winner on reusedlong30. Finish the current
+inverse-width diagnostic before new benchmark training. Its interrupted cell is
+being resumed from1000updates with18completedcells preserved; the discarded50
+updates and old elapsed times are archived for explicit recovery accounting.
+The not-yet-declared numerical repair is deferred to prioritize this user request.
+Do not integrate it into the optimizer experiment or forget its10stressfailures.
