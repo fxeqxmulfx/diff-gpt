@@ -1145,3 +1145,14 @@ including input and affine gradients; retain all numerical failures at0.001.
 No model is changed or selected, no training or task scores are added, and the
 fixed capacity/gain ordering remains intact. The deferred full-stack numerical
 repair and Muon work are not resumed by this normalization supplement.
+
+Normalizer-choice proofs and independent reference validated
+All eight target statements compile without warnings or extra axioms. For fixed
+gamma/beta with every abs(gamma_i)<=G>=0, both RMS and LayerNorm have output
+bound G*sqrt(d)+norm(beta) and input Lipschitz bound G/sqrt(epsilon). LayerNorm
+also removes constant coordinate shifts. Do not infer a fixed uniform bound
+through unconstrained parameter training, or which normalizer learns better.
+The independent80-digit Decimal oracle passes three checks, including full
+input/gamma/beta finite differences and exact singleton/zero cases. Commit the
+validated sources and proof records before the declared160 native CPU cases.
+All failed proof-development attempts remain preserved; no model was modified.

@@ -1,0 +1,74 @@
+{
+  "checked_at_utc": "2026-11-06T22:49:41.103713+00:00",
+  "exit_code": 0,
+  "statements": 8,
+  "warnings": 0,
+  "extra_axioms": [],
+  "axioms": {
+    "LayerNormAffine.center_energy": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.center_nonexpansive": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.layerNorm_radius": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.layerNorm_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.layerNorm_shift": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.diagonal_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.affine_rms_bounds": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "LayerNormAffine.affine_layerNorm_bounds": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "source_sha256": {
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "research/layernorm_affine_guarantees/Centering.lean": "a69d28fe81812e19d82d000090763a080883220fb245f4cfeedb035f9d52bc78",
+    "research/layernorm_affine_guarantees/Affine.lean": "ed56ac1321ee54e67fcd81a714c8ea4292740920ae5d63322933e4c32c56feaa",
+    "research/layernorm_affine_guarantees/check.py": "5b82b844af578cb3c60abcfec7b1bce3fa7fc13f7b416d94ce2e50d91d7ee9bb",
+    "research/stored_rope_guarantees/check.py": "c32daf88d0de108448294d6e088456e752f157c9b01c2d1fd9198894eea2a809"
+  },
+  "plan_sha256": "ccf1d9eea465137e9738f1c48a9c916bec895d885ac56ce6ec715121b97bfe0b",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Basic.lean": "448f7d315a423d5a8f933b2d78b6d6662f346eb6a424d4f7e44111ee41b7b877",
+    "src/Transformer/GPTMini/Config.lean": "1f382b8889de13bac205e4b938bc8418e3956a3eae1a1b460394e7fef3fccf59",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "attempt": "research/layernorm_affine_guarantees/results/lean-attempt-20261106T224933584986.json",
+  "attempt_sha256": "8abcfe7e53f8caf46acdc94c2efc198f469bf4f4cbbaee8cb4720759bd7ba9b9",
+  "limitations": [
+    "Bounds are for real arithmetic with positive width and epsilon. They do not imply stable optimization, preserved information, earlier grokking or generalization.",
+    "The affine input bounds hold at fixed gamma/beta with the stated bounds. No uniform bound along unconstrained parameter training is inferred.",
+    "No Peri, embedding, tied-readout or benchmark source changes; no optimizer updates or new task scores; no initializer or normalizer selected.",
+    "Local CPU numerical failures, if any, concern the tested implementations. They do not refute the real-arithmetic norm bounds or prove the whole architecture unsuitable.",
+    "The old ten full-stack numerical failures and deferred Muon/repair studies remain unchanged. Capacity and usual-gain experiment order is preserved."
+  ]
+}
