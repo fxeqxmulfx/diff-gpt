@@ -35,6 +35,14 @@ applied branch RMS by the RMS of the state to which that branch is added.
 | Scaled Peri-RMS alone | 0.01868–0.02122 | 22.5508–26.0577 | 0.9998–1.4844 |
 | Both | 0.99983–0.99986 | 0.4760–0.5001 | 0.4356–0.6422 |
 
+![Every initial branch-to-residual RMS observation](results/initial-scales.png)
+
+The [SVG figure](results/initial-scales.svg) includes all observations on a log
+scale. Colors identify tasks; black bars show medians across the 18 initialized
+models in each arm. [Figure metadata](results/figure.json) pins the data, plotting
+source and rendered files. It uses the existing system Matplotlib installation
+and does not modify the training environment.
+
 Embedding RMS alone makes the skip state much larger relative to the initial
 branches. Scaled Peri-RMS alone makes the first attention branch much larger
 relative to the original embedding. Their combination changes that balance again.
@@ -48,4 +56,5 @@ measurements rather than real-arithmetic or GPU trajectory guarantees.
 
 ```bash
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.core_initial_scale.audit
+MPLCONFIGDIR=/tmp/gpt-core-initial-scale-mpl /usr/bin/python3 research/core_initial_scale/plot.py
 ```
