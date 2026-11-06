@@ -1,0 +1,76 @@
+{
+  "checked_at_utc": "2026-11-06T00:42:32.287162+00:00",
+  "fixture": "research/normalization_guarantees/RMSLipschitz.lean",
+  "fixture_sha256": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Basic.lean": "448f7d315a423d5a8f933b2d78b6d6662f346eb6a424d4f7e44111ee41b7b877",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "implementation_source_sha256": {
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca"
+  },
+  "command": "lake env lean /home/misha/python_projects/gpt/research/normalization_guarantees/RMSLipschitz.lean",
+  "cwd": "/home/misha/lean_projects/transformer",
+  "exit_code": 0,
+  "warnings": 0,
+  "extra_axioms": [],
+  "axioms": {
+    "Early99Normalization.radialScalar_hasDerivAt": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Normalization.radialScalar_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Normalization.radialMap_nonexpansive": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Normalization.rmsNormEps_eq_scaled_radial": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Normalization.rmsNormEps_lipschitz_improved": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Normalization.scaled_rmsNormEps_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "lean_output_sha256": "1e9a34cee0987f56838de905e9633d7d694eeee23951e00d43ac0c7ca413c85a",
+  "hypotheses": [
+    "Real Euclidean vectors of positive integer width d.",
+    "epsilon > 0.",
+    "For the scaled result alpha is any fixed real scalar; it need not be nonnegative."
+  ],
+  "proven_properties": [
+    {
+      "name": "rmsNormEps_lipschitz_improved",
+      "statement": "||N_epsilon(x)-N_epsilon(y)|| <= ||x-y||/sqrt(epsilon)"
+    },
+    {
+      "name": "scaled_rmsNormEps_lipschitz",
+      "statement": "||alpha*N_epsilon(x)-alpha*N_epsilon(y)|| <= abs(alpha)*||x-y||/sqrt(epsilon)"
+    }
+  ],
+  "actual_fp32_epsilon": 1.1920928955078125e-07,
+  "nonvacuity": "Each of six statements has a positive-parameter example. RMS examples use width 8 and exact epsilon 1/8388608, with arbitrary vectors.",
+  "mapping": "The final theorems use the existing Transformer.GPTMini.rmsNormEps definition directly. Equation-level correspondence to the parameter-free PyTorch function is reviewed, not a formally verified compiler translation.",
+  "scope": "Improved real-arithmetic estimate for the unchanged normalizer and fixed post-RMS scalar. No floating-point, full-network, optimization, or learning-success guarantee.",
+  "preservation": "Supplemental proof only; no scientific Python, plans, results, frozen selection or original guarantee records changed."
+}

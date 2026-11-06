@@ -90,8 +90,10 @@ do not certify floating-point behavior or convergence of the complete GPT.
 - Parameter-free finite-epsilon RMS has Euclidean norm at most `sqrt(d)`.
   Normalized embeddings and two normalized branches per layer, each scaled by
   `1/sqrt(2L)`, give residual-state RMS at most **`1+sqrt(2L)`**.
-  A separate checked Lipschitz bound for one scaled RMS operation is
-  `2*alpha/sqrt(epsilon)`; it does not bound the raw branch map's sensitivity.
+  The frozen record gives `2*alpha/sqrt(epsilon)` for one scaled RMS operation.
+  A [supplemental Lean proof](../normalization_guarantees/README.md) improves this
+  to `abs(alpha)/sqrt(epsilon)` for the unchanged real function; it does not
+  bound the raw branch map's sensitivity or alter the frozen records.
 - Q/K RMS bounds SSMax scores independently of projection-weight norms:
   `|score| <= log(N)*|g|*d` for `N>=1` visible keys and fixed score gain `g`.
   **The selected no-Q/K ablation loses this score bound**, while retaining the
