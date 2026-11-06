@@ -294,6 +294,16 @@ results without promoting an unsupported shared-model replacement. Continue the
 subsequent research; keep every frozen source, original short selection and
 completed long diagnostic unchanged.
 
+The supplemental research/stress_audits/generalization.py reconstructs all96
+activation/initialization histories, including reused controls. All96 cross the
+unchanged0.05 training-relative-MSE threshold, while34 cross it on held-out data.
+The median final held-out/train error ratio is11.91. Preserve this generalization
+gap when diagnosing further repairs: finite arithmetic and fitting the training
+set are insufficient. This post-hoc analysis changes no criterion, checkpoint
+selection or training; it does not identify a causal defect or establish that
+regularization will help. All histories and checkpoints are bound by hashes in
+research/stress_audits/results/residual-generalization.json.
+
 Supplemental normalization guarantee
 research/normalization_guarantees/RMSLipschitz.lean proves the improved global
 real-arithmetic bound 1/sqrt(epsilon), and abs(alpha)/sqrt(epsilon) after a fixed

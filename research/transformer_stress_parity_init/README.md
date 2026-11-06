@@ -26,6 +26,16 @@ successful-only geometric mean is reported. There is no new shared-model
 recommendation. This adaptive synthetic comparison is not fresh transfer
 evidence or a full-GPT improvement.
 
+A supplemental [history analysis](../stress_audits/results/residual-generalization.json)
+reconstructs all 96 cells, including the reused controls. **All 96 cross the
+0.05 training-error threshold, but only 34 cross it on held-out data.** The
+median final held-out/train error ratio is 11.91. The remaining failures
+therefore include a substantial generalization gap; fitting the finite training
+set is insufficient. This does not identify the causal defect or prove that
+regularization will fix it. The analysis adds no training, changes no pass
+criterion and binds every existing history and checkpoint by hash. Reproduce
+with `.venv/bin/python -m research.stress_audits.generalization`.
+
 Four checks verify unchanged matrices, random draws and capacity, recovery of
 the parent function at initial one with active residual gates, the unchanged
 training-loop AST, and the incomplete-selection guard. The complete

@@ -1,0 +1,2043 @@
+{
+  "scope": "Post-hoc reconstruction of existing histories only. No new training, changed observations, checkpoint selection or original pass criterion. Train crossings are diagnostic and never replace held-out crossings. This checks recorded histories and binds checkpoints by hash; it does not repeat the earlier checkpoint forward replay.",
+  "interpretation": "A training/held-out gap shows that fitting the finite training set is insufficient. It does not by itself identify a causal architecture defect or prove that more regularization will help. These are adaptively reused synthetic tasks, not fresh transfer evidence.",
+  "threshold_relative_mse": 0.05,
+  "updates": 512,
+  "complete_grid_verified": true,
+  "overall": {
+    "cells": 96,
+    "train_threshold_crossings": 96,
+    "heldout_threshold_crossings": 34,
+    "mean_final_train_relative_mse": 0.00650762883580073,
+    "mean_final_heldout_relative_mse": 0.07809663631860604,
+    "median_final_heldout_train_ratio": 11.909916954703556,
+    "worst_final_heldout_relative_mse": 0.1634384097813471
+  },
+  "groups": [
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.007773609942281637,
+      "mean_final_heldout_relative_mse": 0.08530812677322451,
+      "median_final_heldout_train_ratio": 11.008437177153862,
+      "worst_final_heldout_relative_mse": 0.09002245042124764
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 6,
+      "mean_final_train_relative_mse": 0.0018248988504896216,
+      "mean_final_heldout_relative_mse": 0.04417537873874769,
+      "median_final_heldout_train_ratio": 23.89761472673608,
+      "worst_final_heldout_relative_mse": 0.049606701559092886
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.012549827197936833,
+      "mean_final_heldout_relative_mse": 0.10820832098829249,
+      "median_final_heldout_train_ratio": 8.712140039394855,
+      "worst_final_heldout_relative_mse": 0.1553362479757124
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 3,
+      "mean_final_train_relative_mse": 0.00606521241115231,
+      "mean_final_heldout_relative_mse": 0.08984070326276636,
+      "median_final_heldout_train_ratio": 13.8512666605242,
+      "worst_final_heldout_relative_mse": 0.1353405388513051
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 4,
+      "mean_final_train_relative_mse": 0.005245770402354318,
+      "mean_final_heldout_relative_mse": 0.048579917395654613,
+      "median_final_heldout_train_ratio": 9.469970080146217,
+      "worst_final_heldout_relative_mse": 0.05327888675790936
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 6,
+      "mean_final_train_relative_mse": 0.0015398102621420778,
+      "mean_final_heldout_relative_mse": 0.032348991835250265,
+      "median_final_heldout_train_ratio": 21.150074058096358,
+      "worst_final_heldout_relative_mse": 0.038568702609224834
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.012459382872877983,
+      "mean_final_heldout_relative_mse": 0.11450210750201961,
+      "median_final_heldout_train_ratio": 9.202957207737326,
+      "worst_final_heldout_relative_mse": 0.1634384097813471
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.005731405016246323,
+      "mean_final_heldout_relative_mse": 0.0985445162215184,
+      "median_final_heldout_train_ratio": 17.388672887143308,
+      "worst_final_heldout_relative_mse": 0.1440458269003099
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.006053684986458311,
+      "mean_final_heldout_relative_mse": 0.06693082540192731,
+      "median_final_heldout_train_ratio": 11.173828376511198,
+      "worst_final_heldout_relative_mse": 0.07562694282334823
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 6,
+      "mean_final_train_relative_mse": 0.001614591766107316,
+      "mean_final_heldout_relative_mse": 0.04180941913967253,
+      "median_final_heldout_train_ratio": 25.928945086253304,
+      "worst_final_heldout_relative_mse": 0.04592099336966995
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.012007038385068045,
+      "mean_final_heldout_relative_mse": 0.10818238760811137,
+      "median_final_heldout_train_ratio": 8.751268204996993,
+      "worst_final_heldout_relative_mse": 0.15870640859999124
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 3,
+      "mean_final_train_relative_mse": 0.005779625978514503,
+      "mean_final_heldout_relative_mse": 0.09073859413280504,
+      "median_final_heldout_train_ratio": 14.743337365888799,
+      "worst_final_heldout_relative_mse": 0.13937680697771773
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.007164207653938891,
+      "mean_final_heldout_relative_mse": 0.08072910758590722,
+      "median_final_heldout_train_ratio": 11.205926781661343,
+      "worst_final_heldout_relative_mse": 0.08819138633979984
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 3,
+      "mean_final_train_relative_mse": 0.001822326644977202,
+      "mean_final_heldout_relative_mse": 0.04691075391919678,
+      "median_final_heldout_train_ratio": 25.545676688523763,
+      "worst_final_heldout_relative_mse": 0.05265883584197575
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 0,
+      "mean_final_train_relative_mse": 0.011195580095952897,
+      "mean_final_heldout_relative_mse": 0.10450922982386186,
+      "median_final_heldout_train_ratio": 8.856452907886194,
+      "worst_final_heldout_relative_mse": 0.1497289122621242
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "cells": 6,
+      "train_threshold_crossings": 6,
+      "heldout_threshold_crossings": 3,
+      "mean_final_train_relative_mse": 0.0052950889063134166,
+      "mean_final_heldout_relative_mse": 0.08822780076874058,
+      "median_final_heldout_train_ratio": 15.76990953699175,
+      "worst_final_heldout_relative_mse": 0.13656151651989223
+    }
+  ],
+  "input_artifact_sha256": {
+    "research/transformer_stress_parity_init/results/summary.json": "4cf22fe18a02a1b481fe794fa7bdcf427259db4eefd555d35a0fed67f0e888b1",
+    "runs/transformer-stress/parity-init-v1/manifest.json": "45ff4629707e01d56feb8c1c541c1a7f22581014bfbc0a22809afc03241d5004",
+    "research/stress_audits/generalization.py": "5e75f7cb77f9f1da94a438be733840bec1bd42ec436ad8948eb3f18a2bffa96c",
+    "research/transformer_stress_parity/results/audit.json": "f4425eac8577df356367f004ea429d6a4088b4327f40978c9d48653bc41596c7",
+    "research/transformer_stress_parity_init/results/audit.json": "448998772466da4820d2659a90aeacd37789ec276431e7fb9d075881a0c27ec8"
+  },
+  "cells": [
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.006700444210807499,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08067425034637038,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 12.040134625141217,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "46a383c23b58752f8945afeb9df266f61102dfe99e5e0ad6f7aefc6e1f0fa280",
+        "history.json": "c3b5b0bb6e753cb02f101976b2fc8d7cda7ee0421e89c03435a099e6d1c507e8",
+        "checkpoint.pt": "31da440fbbda66c3f22759cc29fb1e80e9f2cb496996cfa3d54dc303e6406da7"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.007385920479817214,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08551787557072975,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.578499362999658,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "70fb4b75c21c5086705e2ede6a8b54ae179acbd67f458f8c2c8c4ba79359f4df",
+        "history.json": "6ec207d49fa8ae579ed40e7774c8dd44b346a0f3d4378eb46e4d442d6f640b73",
+        "checkpoint.pt": "4d62512b354b42fbf3f01825cef3db4306172d5917f65b4f1044ac22112627df"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.007416398448081309,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08105089153069261,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.928605319427144,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "dea5b02339f18bf66654649325f3bf99af307de6007d470590e5e9feeb0fbeb1",
+        "history.json": "64555c4584bbac267b0598436275934cb0dde810ccfcc2888d7b95ca04d28c6e",
+        "checkpoint.pt": "5e69e41c210279e79a761f394b2c32d33c99a676782a81d419d501d063c2c5c3"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.008753331994532702,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08689674050940584,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.927275757812135,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "594b25460ce2e160d3430046ebba6c019769f7e868b0f1092daf488db9d21ac0",
+        "history.json": "c034fbde51c38fc278d3f4be614f0ffbc1647c4997ee49223cdc3f21bbe667d4",
+        "checkpoint.pt": "f21279172cfee6fd9ed2dd3bb4a6c4e71a861d19182727de46ddd932db1dc3c6"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.008477517557930293,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.09002245042124764,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.618963606514285,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "2bbebae7949b122f65f6c692f329b36b4a49b862861bb56d0f6d1fb2678a2e21",
+        "history.json": "48c9a99ecda7ff3692f872da318e4c72b3d269d61b2b256a8b49995b4b26b8a4",
+        "checkpoint.pt": "3d56f2c40dfd371cd9e7d36bb734d031db675038e97fb96c164be26824cb27a2"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.007908046962520806,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08768655226090087,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.088269034880579,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "698127c573512322807d6bff8c543327060bc596b68da9d9f16b7180c3be3e91",
+        "history.json": "565c914fe5019feaded5f49a67874928dd5f3c8dd547f10fa85188575a67acc9",
+        "checkpoint.pt": "a730cce7b1e86d91dc34dbd18038df15ff8334e0d75dd36504761002a2afe261"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0016393738127291632,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.039164684332961504,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 23.890026807102476,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "ab1fae5ef021595f30232bc3fa360dd2c9d34b9968e07ee9c2054dbb21f80b61",
+        "history.json": "1d077d7a81d6ad67c2dac646fecfc9a290c74e718b0974bf4ec4a4e43a09952a",
+        "checkpoint.pt": "066ac4bf49e7d3896744aecc59131d870a0b75b7acdfa5796f536f047c5f7385"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0018478843967048913,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.0377679288005885,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 20.438469456171326,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "77561c4dc67fac8408285889a52fc711667045e8dc2f779354564fc8a6d2b209",
+        "history.json": "a6787bfbebb7b095d2da62d6564e704dbe9d216b4cc68b90dcfcd2a07cd0c6c4",
+        "checkpoint.pt": "4f48cc12304cbf7990af0a02cf81e4c0d2ad7da9c6731217ae91efc27b77e628"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0018056250774355002,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.04024284134234038,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 22.28748473049379,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "54710bb5cfc375dd89bc68d2b763c5fbda539e1490800ccf991094738c878be8",
+        "history.json": "e9491c1a050c4ecf99cc04036f9de6cd1fdcbebbc6845a0125795f47947fb12e",
+        "checkpoint.pt": "da4ba4eeb52d1da208204e4e1a0ceb79c528d41fcd8fc4b8dc0d30fed4dd18ee"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0015749443564562595,
+      "heldout_first_threshold_updates": 352,
+      "final_heldout_relative_mse": 0.048820222211797284,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 30.998061621457136,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "9ff74f69414b37a148d4860a0d14792bee5db49ccea4c66559ad32671793a1fd",
+        "history.json": "e16f1daa19b65c66d94e9c9727170f7c78c28686c02f4595eaec0961c68a4797",
+        "checkpoint.pt": "0325e9cb4e7de0d72317f7486b48ab12c5b22c5418b264f9d5db8f0e8a6e7242"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.002068582932226897,
+      "heldout_first_threshold_updates": 480,
+      "final_heldout_relative_mse": 0.04944989418570558,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 23.905202646369684,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "f83a175c2c73a63668468864c2185a4847608c122d86b3d0386ba2b1b6072aa4",
+        "history.json": "5e2032635c0f112f04e03f0bfc513651adf6b561a41fd30e0c259e83842e0fb7",
+        "checkpoint.pt": "b12182f44ecc57ccd3c53b89d847104218a63202a7055e14b48149d790e5416a"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.002012982527385019,
+      "heldout_first_threshold_updates": 480,
+      "final_heldout_relative_mse": 0.049606701559092886,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 24.643384075238284,
+      "directory": "runs/transformer-stress/rates-v1/lr0.01/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "9fba93f1c457ee1137d34dab5b01835f4006983446243b4a5849e49ba4026b02",
+        "history.json": "abee6025e03e4488d03c126846f2b20eb63c4a7cecd5eb8a72ae7bcb76712b31",
+        "checkpoint.pt": "e47b1c288af49f5bfc67a7d9e44aa27e5b8e7e61c7f51de3f3596070df4fa89d"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.004535369405736921,
+      "heldout_first_threshold_updates": 288,
+      "final_heldout_relative_mse": 0.04542847087213563,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 10.016487480528452,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "d62c465a75eda102c2622230c8fdf8feed81b1fc94c45481d9b3ff4fd7d5abee",
+        "history.json": "8163ed5b3096b7972ee15da513799ed1297b3ac362a92ddd711763c2a47b411e",
+        "checkpoint.pt": "34509db69b6f96f98feeceaab247327eec07a86b2ccff5659055530039f2b34b"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.005705753393274789,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.05327888675790936,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.33774789858736,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "527b4d24d654efbea0ffd29f58ee593f7c0bbcaf3abea8ce7efa619a481c862c",
+        "history.json": "365efb9ece71cfc01653753d312ce8120e8b263d643af77347aaae786df1ae81",
+        "checkpoint.pt": "3e1988fc9fc4c82fd3abd205be18ac7f046ccb95390322bf3481b1194852dd25"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.004745762470252978,
+      "heldout_first_threshold_updates": 320,
+      "final_heldout_relative_mse": 0.04889454894030245,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 10.302780479802664,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "d1ced29ec2d2e81053ee5fd17c4a74c78d5099123b64701ad7b2df26a29114ab",
+        "history.json": "ff9eb564ee6c1c30b555d40cfa5019848c80f52ddc6af12cc657ee5f79bfff6e",
+        "checkpoint.pt": "bd8c645d2a9eb3cbe8f93e6c564f53dc1df821d80928ee072cbfd6ac18c83581"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.005221695165554565,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.05013972091167084,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.602192261705074,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "391edc48c84eada610da9ddaaddf484b9e045c1157c3b3583767b3ad93df29d7",
+        "history.json": "56ba6a0849181e08fc6cfd1fd5af72ca73014b17ff27c38146114697e66ef8c8",
+        "checkpoint.pt": "34781b8b30d4b66975ae2d0f5b5a2ebf74442324ec81199ea050ba8296d4b46f"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.005612370186240359,
+      "heldout_first_threshold_updates": 512,
+      "final_heldout_relative_mse": 0.04958421939235294,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 8.834809135348332,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "05c7ad015e2f2ca393d7cde7e1fe4ea06c6d5584fe604d78d3063d8cb7b1a0d9",
+        "history.json": "05a93f89f25eba649e6090912fb24c3e41cacad612853c8bef12d91ef50dc080",
+        "checkpoint.pt": "e8ba8fafcd834e1a893363d063b030988ea13aa1ccb24fef441eb91d7c7d7fc5"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.005653671793066296,
+      "heldout_first_threshold_updates": 352,
+      "final_heldout_relative_mse": 0.044153657499556465,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 7.8097312889133095,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "673c0224de1136bfed492e9a8ed21903f7bcdda6042a6c6b364b2cd5b71c39f6",
+        "history.json": "c27ee8fdcd3c33b97be6072187a04d35ccc7727ec609f0df1f685b147c3ce54e",
+        "checkpoint.pt": "64f78b7371bccbda639213ae7db2e34a0323c4feab9dc8419df7d7a9fda05124"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0011556152531624843,
+      "heldout_first_threshold_updates": 96,
+      "final_heldout_relative_mse": 0.027535790891975914,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 23.82781883210767,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "1d85a3f61855d219ef3771a797e3a1bded8429584fef85fd7344d5f2d42312fa",
+        "history.json": "e57720791bfba1845d00877697eedae606ee12050b138c82b3a7edc3301bcde1",
+        "checkpoint.pt": "9b1667fd220d8a7ac2288da7b1e7fed49e4eae558c8a92e913c5ceb5db121820"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0011293495418382056,
+      "heldout_first_threshold_updates": 96,
+      "final_heldout_relative_mse": 0.028717989633198004,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 25.428787606762263,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "a6818ff8bfa745b496e3809e45ac93214691eca06b0c900513ff686824dc98e9",
+        "history.json": "c33f24371422abf3d0521a972ee7c61a4633a73c370cbcf531b1592099b34688",
+        "checkpoint.pt": "4c2c500fe914dc2c26fea22f1e05a3ab7f43d0b4fdcb4f5686d73a665c5aaea5"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0013276960521535245,
+      "heldout_first_threshold_updates": 96,
+      "final_heldout_relative_mse": 0.028421563377373317,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 21.406679135087817,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "bb4b3adbe483297edb035a62ae7444e7caec2d9d94803eed059f1fdc867e93da",
+        "history.json": "8783746e3b4b1ec04ea33fcb018e8179c65b47a9802d3fc0b2a74f7369701bcd",
+        "checkpoint.pt": "02534e319c303fb63641fa04622e5d0041a8087a61377757af7b7e53d22018cf"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0018459693143395486,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.038568702609224834,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 20.893468981104895,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "48bf8ecaf804dc362339049923a0dcdb4fdfd1ad3b1838c7d4ab91a721716ec1",
+        "history.json": "f26f261f721d03b866f66e9e1f31a8727dd6f3628dd4c782a26a2d0f56444d15",
+        "checkpoint.pt": "011ac624d5b91b4f75dda29e80c2e12decab84aa48a04aeeca8edeb73e44c0e0"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0018641854656405844,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.03520764911603044,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 18.88634460731199,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "4ad0539840fcfc0d7ce486a50ed7e1389addcf9df4efaec08a2ed51cb13e8e81",
+        "history.json": "e96028e2076173c430a7f7910b713fa7c7d3e3830a5f16da0b44fb8d04f0442c",
+        "checkpoint.pt": "9f349086a1a6704f00cdd512b3315275bc568c5f1e95ad5d6504937e1976e5e1"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0019160459457181194,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.03564225538369907,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 18.60198366503191,
+      "directory": "runs/transformer-stress/parity-v1/original_odd/learned_even/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "ffb3b7aa128d7c6c128bc7cf4b968ee765beabb455a92ee27a86686ee979bf56",
+        "history.json": "3a6010bd64d9e3397bf5932aeca89d2d40e2b70fa8384b23fe310eac96265ef6",
+        "checkpoint.pt": "5a7df9f649f21b6462c40e78694993c767feae3ab557493bc040ce01809a5c4b"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.006976211502837424,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06212471306372356,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.905222130730364,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "499fe9e67bf6b2bee1375eec68672b7b276337f5307d4de2f6e861a429fa91d1",
+        "history.json": "8ded6fa157bbf37b5a9ccba18afd4f32cb5cb8f4ee83e1eafe94581302f4f181",
+        "checkpoint.pt": "dca499abb7610069f4bf5c849c129c60673343392164f64b4233dd7668379d2c"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.008259117953590033,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06437846979401009,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 7.794835980763099,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "84df4c78bf141b96b778d40fc6f150a9f1f5bc37cf8df46945e197a818c802cf",
+        "history.json": "d1ac08dd6f71dabe2ab4272edeb204fb41173eee000c713fc9e70bf5520ebf8f",
+        "checkpoint.pt": "6f3e37a3b6ee3204f038ad85ed7902cb432510668ffef09ab6c1cd7cf3b0d777"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.007675206152624688,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06310226226714134,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.221572295561375,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "7f9d685b0f7719a7f753c4ed5dd95b0c4e6bf2623a73742073e48223795731c6",
+        "history.json": "1d03c973e0665da3cff7c142f6d259c818d38545b7790c427973249b6a91d419",
+        "checkpoint.pt": "23e55ff7f3619ef5cb89306bba4f8cc69531fff13b5b1dddb1b0026f12322fdd"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 192,
+      "final_train_relative_mse": 0.016846111062887296,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1493848016594084,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.867613486682366,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "5c3eba07b20d9399031c3164fcd55ac049ec41c765af5453d92c5a1f08f66a4a",
+        "history.json": "c3406b4ff6c7acfa5e81e6eaca43a443fbeec10be29fc98d33e92b6f749b3b14",
+        "checkpoint.pt": "9fa09822ad65101a6bdfb52bf8a7427a9d8a4d13b44cdff748fc5096ae2db432"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 192,
+      "final_train_relative_mse": 0.018153827346620507,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1553362479757124,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.556666592107344,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "88f914eaea6d03ed78de50b1b23af9262904ca67dd233dfe065eef205458a9ad",
+        "history.json": "9257091f1a3c7a4e8f3eb61ffb3e52bd443a9148c552e2fdc5e82bc99cfc644d",
+        "checkpoint.pt": "f5022d8af6f4a2e5c041820d77be83290992d733b99219891a0eb845da7935eb"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 192,
+      "final_train_relative_mse": 0.017388489169061046,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.15492343116975915,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.909539504180213,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "5a2d5aae85d540a0d1adc43441ffe2389f24decd5dc03b8c4667a991eca52d14",
+        "history.json": "2cc51e7fc3ed1b272658ae567764dcc63a104f9f758d8ef3be35c2048c7a04c2",
+        "checkpoint.pt": "07897a4be0a184a6c7faaac41a262fc6af30d0cf62a5ceaa876bf307890f02da"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.004014531933684379,
+      "heldout_first_threshold_updates": 288,
+      "final_heldout_relative_mse": 0.04403928485955619,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 10.96996750481411,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "da9ce156f2665d3c68825427256db2402ab6157f5078a441bda13635c05874fc",
+        "history.json": "1c51a8a2e0d6f14949d3a5630146253e1270908da22e650df58ab793ecf2e89d",
+        "checkpoint.pt": "77f3da6779aee7cdcc25f14f857e32b79981c05a7e1125fb6a3a8bd7f0b47e3b"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.0036292509924014515,
+      "heldout_first_threshold_updates": 288,
+      "final_heldout_relative_mse": 0.04535569696206038,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 12.497261020806063,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "7baf795b50dc22da8c643ee8a24ac42a82e95dd4371e443a961b62796c3e8e7e",
+        "history.json": "ffdc4130e4668d373f8f84617a367533e38a82b3eee2b5f37a43f2c99ce0ff84",
+        "checkpoint.pt": "71f4a2afad86bba74b683bd1cbf43b9740a8728156810b59964f6ffd11672442"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.003977346424989704,
+      "heldout_first_threshold_updates": 352,
+      "final_heldout_relative_mse": 0.04450804336738023,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 11.190386406307429,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "6ea81aa6084353c95a2ac2c467d3e4caaade1e37ca43ea343da14f9905b94cda",
+        "history.json": "58353870a85a5366368fe3de3568afe73b1671613ee0421e631de1bddd3fa91d",
+        "checkpoint.pt": "8c88e5b379c2653d9de7e4cfd811f4121b916b07bbf079af5673f1a23eca6580"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.008541741082183255,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1353405388513051,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 15.84460797267719,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "170a3b8182c87a185b8ac136ce38c236a86d5f6d77c9c3367987fccf312212c6",
+        "history.json": "cddfdb28220e6f11329090d074ec456a8dfa0c4f06e514a3199e7f144abe60d0",
+        "checkpoint.pt": "5c01bfc8a338e87a832b42f2793016c10184a5f7518d3a9c72d47b9b5a6e4d7f"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.0073818086658358735,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1352857640385429,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 18.326912842467166,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "bb075bc173efca57717e8bcd8fad57a21b2fd41cf942d6824663a533cbd3e4be",
+        "history.json": "f5ee8b34b57e0b201d9497586c22c93eecaf748abd98553bcb60269034439800",
+        "checkpoint.pt": "acf2f6a4f547a10b00c525746106d538dc20346dd1f58cd1934e53d3d3560e45"
+      }
+    },
+    {
+      "initialization_arm": "shifted",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.008846595367819194,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.13451489149775336,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 15.205272300242337,
+      "directory": "runs/transformer-stress/parity-v1/mixed/shifted/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "1b5441785ce1e132e07eb8dead7e710f22701f3cb872c4d2213bfd4e11a72ea7",
+        "history.json": "e53ab6d27293143c57c96cda9b0f9ade2fac0db36cf8d50db702ab608239303e",
+        "checkpoint.pt": "1d54c773a9f014e7cc3e4d9778d3d8911c35fd860cfdb687d35fa48964053f99"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.007922458387565575,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07406105797990621,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.348241966931152,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "751fe604624fe5922ee8aa8fa9af02f11bef869dea2aae20dbfb7f7a3b45f62b",
+        "history.json": "32bbccb37f8fee07b876d627fc378b9b721b44dae98baff1aa4d1a3e4947e2f0",
+        "checkpoint.pt": "a122dedc495e9afb6e96a7a05fd2e28c14b4f3b66b49ddeb4d3b2a3579fd8582"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.00781859514605744,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07235532864967639,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.254262089035507,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "fd5060b14d821cce6e4061cbcfe735443ec54cfd94b3ddd51ff8487b583e6b7e",
+        "history.json": "6b4e564427f98e43f4086339057fec6e8b221e2eea6c340decc3c59255b208f4",
+        "checkpoint.pt": "b06e6793faad320f9c135e038de9896adeff0891ded63056f9a6e8378b0c54e5"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.008055162201524928,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07107102236458833,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.823040503285437,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "2b2c9a37019d907d133496a32972c15d7e3337c7a3df5984072247fc87240c48",
+        "history.json": "d4e40ce67dbbb1b2831368ca9b175978e645c266f811e531685b05add32bb94e",
+        "checkpoint.pt": "b244d86b20da3c45b828dc633a6b7b350453d0f93ac00e52c1bcc10f3d57ca98"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 224,
+      "final_train_relative_mse": 0.016897398730304145,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.15980746264299173,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.457518591686524,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "7c6ec0f32a63adbef42f6ad657298b5e765853fc4a388272200a309e9ac8b5db",
+        "history.json": "4aa96d07d8009e2b040bb812255c616b8afa7997fb8a53e7e523923e2857bcbc",
+        "checkpoint.pt": "3bf69ee240df5fa5a30c73add0b0212c89913c233010bba5068738c61edb3881"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 224,
+      "final_train_relative_mse": 0.018078753490432767,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1634384097813471,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.040358333766669,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "d8ccad90504525f0af76c6999fe3adb90032b013ffe22c5241927aff1a893e8f",
+        "history.json": "e093347634c2db99a442a81a8ba550e85f45d296ceff35945ded97f7b6a878cf",
+        "checkpoint.pt": "aaeb2846fb1eb777f4472bc76ffdfbd031d6f2da1257e714161e7a8c5bcb277d"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 224,
+      "final_train_relative_mse": 0.015983929281383043,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.14627936359360788,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.151652326439145,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "1cd6a593f2b8fe58b5b31e79df0ba832ca1735f02bb6a236e8e47788f60fdd94",
+        "history.json": "322179cba27f90865c35d84bfc9e789bbfa9158bab4853a4e57ac812294fe322",
+        "checkpoint.pt": "c7f77a9913b3e3877f62503eeb8edfc94e79b68c0c33dda00142ae10d2d11a1e"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.0033428005567033106,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.05090903104110501,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 15.229455116314744,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "1ea3c22899f3d13740a3ff6c2508fd313015012e132f93a4972a3677f449b737",
+        "history.json": "dbbe7f904968454510ebb91c62314ed72dd77bc0c2b9eb256cbe5bd04ac851ba",
+        "checkpoint.pt": "ffc348ae998c91ce23da83db80da1483f3cd3fdb075d61a6427dbd89a8bbff4a"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.0032631884672613327,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.0550226759718556,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 16.86162982122635,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "ce08dd10b063cfdac034780c5bd57d5ef9fe32ad915a9decb3165f3ebf41ab2a",
+        "history.json": "354dd33f4c415e4be89ed14dbaf46b949e04bdb406f7c5d80a2ea42ae4d5bdf5",
+        "checkpoint.pt": "aa9ab5be0ec5a9c6445904217fe64f37f262294f33e395186ca9f526409e93ca"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.004298408801513815,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.05679142778851568,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 13.212197911123498,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "09a501910bb7856e391b98b953ee32374d1b73abce98003dcd5d57d582c474f3",
+        "history.json": "8aedb56a97089ae18699a4686c748196840491eea1414e4765c98d8427f5d983",
+        "checkpoint.pt": "4ac53e3f7d959abe2edcb1f9f38743b9ce9b87b5c4f14554c845fd1f26fd5d6b"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.007479776892251088,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.14110705551193067,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 18.8651423090059,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "c3369c402f0cdb8d48668ea96932611b8da4798fb648850714c7edd8e524b031",
+        "history.json": "e681b6d23b87ea138099f329d21dc326dc5d3e829092e38d39a55cfe2f0a65b8",
+        "checkpoint.pt": "beb49ec8e8806b180edc1825ffd98d20e7f90cfdb57cd5560cd693a40c218b2c"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.008003647774450244,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.14339108011539353,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 17.915715953060264,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "eb7d532c0ea014a27af093112c81a24828e16a777cb4f4e5abf95dc48b00e8f8",
+        "history.json": "10aea816a03ab2684b1127dad08db55da90c63c136b165de3eb015dd9a365009",
+        "checkpoint.pt": "fa0128c06817a4d5baa6f654c1de5c7d3a439393ed0beeeaf55f51d8342ac905"
+      }
+    },
+    {
+      "initialization_arm": "learned0",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.008000607605298148,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1440458269003099,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 18.004360919403187,
+      "directory": "runs/transformer-stress/parity-v1/mixed/learned_even/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "474e528e9bf13af75737a03ee88cf7780fa610abe27fd7292c98ce85ad8f296f",
+        "history.json": "5ddcd647c197594d55b212eee337993159cf42c9bd7d59f2092d51cc72bb1e86",
+        "checkpoint.pt": "573089b537753a555d53c81a2fc756ce9afc8fea09e3fc16df8ce6d64f24c919"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.005368343898409045,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.061001363539226944,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.363162400476098,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "0e4aa35a504b39d7c65c8ebcb42828139cb46e235c2c396aeb59e7ae38049a4f",
+        "history.json": "37efccfc3c76c2a7c302a61360bad103b6c8109da09c6e1f81ec2c421d78bd8a",
+        "checkpoint.pt": "1603a7a490f615807d451763ed366a66b90ba3d346882170a661f83dc32f4d28"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.005889145324212208,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07218525989457827,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 12.257340568214712,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "b4efd1be8d60062fb01c4999de47b8d4efa27f2b36811de040b7d478774a8eda",
+        "history.json": "058e5b5671407293e61de46149ce3bf4477214037b0c960a0c78c95334b15e13",
+        "checkpoint.pt": "ac710b667a665769df20ba3983346e4f851efa4deb1e2cc369e9094c370db771"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.005144165994614283,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.062411879853218485,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 12.132555582102325,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "897d9fa735d6b1c182d2f2de6f70dc7a6ee9b1491514d7432de7c9d2800d7dd7",
+        "history.json": "b5d100794114dd1b5b7e9a450807f89e23774142b9a072ad6b8fa906e4ea2340",
+        "checkpoint.pt": "eed42158c600314d6191547f4e3d8ee915e7c4185fa9c270d7ffa6915bbbea28"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.006386696058786178,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06167342606529432,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.656546279582255,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "c29b46ca861386118f2ead3264d3aec64e98056225bc4706849732733ff1b6ac",
+        "history.json": "a82fbb8719b5f3481add2c8e3ea13185b56bf618c48c5e837ab31ad304f352b5",
+        "checkpoint.pt": "4a865834a7aef876ed6a194dad077e59ab7fc7b4502d2ba6c70070395e2c8844"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.007280755269844119,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07562694282334823,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.387238688901487,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "ee6db55444bbd8087173ff0813ef63e2460845d17806ee71ec16aa6556670eee",
+        "history.json": "58558c245e5a2eb227d7c3fc4ec2c38db6e00750f4cf5a8fd030dc5d39f31c6a",
+        "checkpoint.pt": "c4586b4326df5de2ec268e9dd1917930fbc2746367caca1a5dcf238c06fe966a"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.00625300337288403,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06868608023589758,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.984494352546298,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "aace151dfa1fdc17712d1779fad5d08f30b36766952b6149ad195a77225afb56",
+        "history.json": "5a3f1e3a111335416f7507acb1cabbbedaf4b369cacd194f4bf08551e22482dd",
+        "checkpoint.pt": "333433b41064ae24ada9fe1852b93765f3e0a5ec53d6d52d901ffbbaf8f2d7a1"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.001229346723279959,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.037968899683427364,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 30.88542797928027,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "7bb76b6d1205fd041630db4d1247f15915a0e16dee4a1090c5484cce51c9794a",
+        "history.json": "e7d233d79a72aef1984bc9768e34207fd5b5de983b9fb622f18bb1b58e55c13b",
+        "checkpoint.pt": "1086ac1ca21091c043523d6feca78e86a7cc0042c1ee5c7e21687fe976831d1b"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0014241619184327432,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.03580070207312844,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 25.13808409687451,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "01dc6ffc76443f90dce4b60ccda85d796847541c514bb873f6d06d6599c1b798",
+        "history.json": "093bf018d225c008eac21552f76611e973ee9ca9dcd7b789b29d5991bb9fafd3",
+        "checkpoint.pt": "42eb5e50252c583b4427614777b4d83c24dcf8fe690a3f084693df9415b15f03"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0018985500509662886,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.039936423731624815,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 21.035223017322465,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "082890e5f326198600505e8ba1ad4b20a9529478bbd19c3a29e6e189efbb0e5c",
+        "history.json": "5ba8a1f0cb91e598956928516b612c1176dbe315449ac04f37758f4af487fb0b",
+        "checkpoint.pt": "51f851f9e273580bd41002e28e39b84d0a1f2a7874aaad18944fcf4351ce3213"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0013722956980385674,
+      "heldout_first_threshold_updates": 256,
+      "final_heldout_relative_mse": 0.04555215720710434,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 33.194126653761565,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "2fcad8f8066afc1505c8ddf84598c880425a99f32cf42c42e5d7f3ade5b7cf94",
+        "history.json": "99615fb67822aa0b3f93a1b273e2b5665a63ab9942e104aa74a3c53cb3d08e5f",
+        "checkpoint.pt": "ea5cd8585211ed27e28ba304f605c9c191520cb406bc136ea58663b652cfe723"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0017094936484115077,
+      "heldout_first_threshold_updates": 256,
+      "final_heldout_relative_mse": 0.045677338773080285,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 26.719806075632096,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "42869682cd94a17a888f8e29eda4a323fd8ec14bb1210c7aa96118e405ea46f9",
+        "history.json": "aae4736f28728ac939d83db3252243ad6fbc3c6aecc6bc0a4ee514411df8a64f",
+        "checkpoint.pt": "af9a1066a5a5a8cad2de1c7c4284b8bf0c2a7e7be3ed7d2e0aece3ff901a73e5"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.002053702557514829,
+      "heldout_first_threshold_updates": 256,
+      "final_heldout_relative_mse": 0.04592099336966995,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 22.36009942220582,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/original_odd/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "1bda9345dafd2c0e5a4186d0177bbd8192ee12d51497aec333b2d6870a8b5694",
+        "history.json": "4d123430469bc026f588d9fa4515652e55ff64bbe5b07fd73be6413c34960ac8",
+        "checkpoint.pt": "fb409d906dea705f5c7a9960e718e269e317e3eebc07c844432d9088f7451000"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.00707734481445005,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.060007633564331676,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.478834243290237,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "a5b785b91d4959f788b11af9d4b09ec3e64b3d0959893b121d0817de58631bc2",
+        "history.json": "71001e6a2665df87f84fe198020cde197e3468241db4f4560eb519ecf620ab10",
+        "checkpoint.pt": "29d7cefb90ea72e4d933977848a99d21178f43bec017ea6075640cd91f95886a"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.007046328749799868,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.061599101640417146,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.742013582912477,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "fdcb2a981daa6e38a557729e6bd772ce7e1284a3e3c634bd867f8ed8d7c52b6d",
+        "history.json": "afad7b858b7c7c9de8a33e811571667d2d41e012fad03b5eecba5d6ceb26c68f",
+        "checkpoint.pt": "177601e25f81814582aecbfb53202c7e94623699a4718ad0a12821aeb310e0d2"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.007868574714423648,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06451731940369261,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.199365418164975,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "af0db90879889f776793cc1776d2254d80fe3581bb3ca3bc424e8b436baf0ea6",
+        "history.json": "c914a915f13e5cc58e659bff43613db87436a99bafba6772deb60f57fe255910",
+        "checkpoint.pt": "ab75d4907c4064e913ec99262bf89d2edbe7655150f69a6e90106a7a7eb09a47"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.015573368450703892,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1514596751346502,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.725556523887706,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "9d2b9526c6f6344086eb4c5eeae823433ec2b6dcc8a18cfcd2631e3b05b702ab",
+        "history.json": "aad175076c2303436da0f6ce137a0bcd33e74ad47be381f8e4645aea557541bf",
+        "checkpoint.pt": "6ac5e4ace8b7df04e47af71c9ee0b6ec881bbdd43de7530aa6951903596fc953"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.01703425422398194,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.15870640859999124,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.316897970006456,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "d38483eddf311e59ced3f7e1e378b20eeed457712ed19bb68a97c6366874972c",
+        "history.json": "462ff80e5a2796f4f8ebb6a737387c68ade71763a0835e026bdc98c3097078f8",
+        "checkpoint.pt": "aa5701d516fae57d8d90dff3bfd81bf65d6cfb228c99f0ea62f6d4d393601453"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.017442359357048874,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.15280418730558537,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.760522827081507,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "e4ca00b4cbd34eaed2c62f351322aa11849d0dddcebf92ce622ef07cbd13e5a6",
+        "history.json": "96eb7208e4f789e24c56d3df637fdb2ce8bb6a3cf65c4661f9a3da4a538e4c81",
+        "checkpoint.pt": "22c661c6ada73d9b22444dce6196ff214a58ad4e6b32e460a942c845c9bc3d7e"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.0030224493452528332,
+      "heldout_first_threshold_updates": 288,
+      "final_heldout_relative_mse": 0.04191751675813443,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 13.86872432584241,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "d0704a648ba6b390f194964e364d3068323074ebb1030566b70c0e4d9f58732c",
+        "history.json": "82937ae65a888e832fba6932beb2dc3823cdeb6fe20e87452de39c34afab0d16",
+        "checkpoint.pt": "cae320d7d80d22c9a858aac7b9c4cbdefdeea0d41e39080485a6e7c1b85e5f59"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.0031138167367878796,
+      "heldout_first_threshold_updates": 320,
+      "final_heldout_relative_mse": 0.043543544800709516,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 13.983978018445535,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "25fb3f4cbbc32882bf645d707870242a35ad2d481044e1ff62b729e3f696da8d",
+        "history.json": "6a3b145f3fd3491c0d27494a591421c7521bdd7921350fa401d93983504dceb3",
+        "checkpoint.pt": "cac83085f4811fa2ad2e21a0c3d9cd6fd2f43eaaa77b1f3af0200e858b147db1"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.004325244479934015,
+      "heldout_first_threshold_updates": 352,
+      "final_heldout_relative_mse": 0.044957397809665255,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 10.39418650627377,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "031776d927b6fd2c26742f447f4bc212b74029eda7d2d2c7765fe8ae15af492e",
+        "history.json": "63c8a1501e82ff02c6bd28b07bd3381f2ab0d24e71bc562695667ead5f8bc885",
+        "checkpoint.pt": "66f1f04d5072085a0df6c07157c78fd5bb0c2395ba3e58a30f513bae55c6dd25"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.007903260426620016,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.13937680697771773,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 17.63535546775914,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "ae2bb18cfb85e7bc35d0ea760345726ebe0188ee09ef04275f51b5cc10c9e051",
+        "history.json": "b0d46ae118aa8446e56189913b7689df50379a086b20f4c457b6dd05836478b1",
+        "checkpoint.pt": "7a92413785ce2d2c59762b977dbcb70dc7756521e2d80616d9adc99db52bd248"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.007420606740615015,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.13678045705681688,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 18.432516617297605,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "e1dc21de0ac3f4722caa1e3d79f0a62f46ab9cf8f7063d86e3e0db6cce322147",
+        "history.json": "c0eb23132cd49de4634ffcc009ec0e983a7af11e041d6fc082b3196191892245",
+        "checkpoint.pt": "371c889144eeab77f012d023fcaa68e05e5e5b1b637ea168ed85c37976e545e9"
+      }
+    },
+    {
+      "initialization_arm": "learned0.5",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.008892378141877258,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.13785584139378643,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 15.502696713332062,
+      "directory": "runs/transformer-stress/parity-init-v1/init0.5/mixed/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "ef044b4f7873f9a5e0d5abac0c589f322387fe187dfdad70fbd137f598391846",
+        "history.json": "e6475a81e4894e67175cfcc0db69a253367b3608dfbf3c2cdc9ff9dc31751eff",
+        "checkpoint.pt": "eea443ddbe9e0f4039b561ab4ffe1eb5984cf13155cf813f98d369be7347a407"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0062724484195109485,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07524805663612212,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.996600307155507,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "5a24147ae9e42ac24b7a57fcb7c04fcee99def4b141f475ce206e3474a2a6e4b",
+        "history.json": "83cf12160621812bd90c97e72a4093bb6e0819af5ac8a5e98a8530b6647f252c",
+        "checkpoint.pt": "894036888112157d2b4e590c1d557e7cb2a4812c9d819b723c8139b8e4c56004"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0071068744956732655,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08402623734422908,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.823233602251605,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "2b15f1267cc5d650bf53e68a7e9cf996f1bbbca4c508ea36b0bddfb12eb5b2ae",
+        "history.json": "bb53bfe724eabcdf47b2051c9924895fd989fa66072e58d5956604144596eae6",
+        "checkpoint.pt": "2ffa02ac39e343651c2dc240404abfd14ac228cf85eac3221d5242538a9f3c92"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.006714446083674076,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.07463148356608489,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.115061858572153,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "056db7b5c14d190c52ad7723e1b8d193447382ba58b43751b76e68869a7a0072",
+        "history.json": "69fb9b7bf1b629a4bd97cca68bffeee5d48d2a38454fa41e21b4e161052e3834",
+        "checkpoint.pt": "b9ac7fa0b7f66cbb8cfbd230f8be9ab18d02db223e5b77ab9a9a45381eccfc63"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.007664443907066341,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08004617401897911,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.443833236900517,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "6198e6928c51b404ccd245e2aeae7624c5197e4923056b29639a6be818a46172",
+        "history.json": "6daa1ded985776958ff7984e78305149c3928e35cd71d5e63b6eb468a209d091",
+        "checkpoint.pt": "add06b8140fd3b2316dc1c0e389e7ec694ca9237699c75d8fef664db2462a2dd"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.007947859447070216,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08819138633979984,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.09624382855807,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "1165800833d58116b7b60cadffcc9779e5d6c01e2ca44f5f13e009bda62893f8",
+        "history.json": "ca3535169a0b9d76f03e69bb59067e59e079e0874d437a9e6bb1412f7b8a4d66",
+        "checkpoint.pt": "6ebf89ee69b8b5915b9432eb6f614a024b685f5ed7f5ebc395a15930e5d89af3"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0072791735706384956,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.08223130761022827,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 11.296791704750532,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "28081683265bfd070ffd544d44db03834d7783843a04ae4ac7d61412c0ec140d",
+        "history.json": "46ce9dc9a594e3aac42108384a560fa5c6a385408f311b61d5422fc280e3482e",
+        "checkpoint.pt": "b12f9fc06a993225ef6254c15264025e901b2e4432f3eda035b227f762ae1258"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0014746081238451432,
+      "heldout_first_threshold_updates": 160,
+      "final_heldout_relative_mse": 0.04339779709834457,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 29.430054260912247,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "261d145c61276d32e07876dd7ddd4586b9e324215c4093119cdd25fbe638d8fe",
+        "history.json": "0d6c8c1e934065a73946782a3efc46e3e1c01b9fb6165ff7888f13c00bf8d874",
+        "checkpoint.pt": "9974cbddc4f56a271bc3903168cc020ee46944aa2214cbb06f9db266ea2bfdad"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0018452628362663833,
+      "heldout_first_threshold_updates": 128,
+      "final_heldout_relative_mse": 0.040315007741677636,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 21.84784029100651,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "244fa110b6d693fce79868ff4a5f72c9bdaed2d911cc5a443cdd6d6052809463",
+        "history.json": "e44c1f2089d758d716764d617f595acc07c77dd3ec7334780b4b73c3042738c8",
+        "checkpoint.pt": "456a2a6d6cc2bee164bf88165330a6a53cff2289371e6161e014b3f4207b2096"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.0017117574967590442,
+      "heldout_first_threshold_updates": 160,
+      "final_heldout_relative_mse": 0.04318600334811331,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 25.229042916347392,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "ef16f6673492cc51977409231bfb3b7a463f0e35a0f6288a11d368fa8b5feb42",
+        "history.json": "1b85c89f89d804bfeb7f55f3ee76a96b140eb50d0d65868ff571e20a05a422b7",
+        "checkpoint.pt": "4adcaee6024e257e3e2f3c68a6c0b42c591981f9fd51d2aca0fa70eb71c1d90b"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.00166618309026678,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.050836154591571585,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 30.510545262724985,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "3d07528645a88f44a94f1dc598e745e2996b0ee9816881662b4fef5ecaa85011",
+        "history.json": "3f7167686ffa04e000b08382d23b55cd647c3e1fcf92840460a76462a39994b4",
+        "checkpoint.pt": "3686581cbfca7de80b25d8edf353b07657f4471911cc8c63a9a6beb3c547418d"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.001974716256349329,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.05107072489349785,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 25.86231046070013,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "0d0c5eb03111dca2c880a077ed51f624d4d7a34934e302e61dea35fa1375c4cb",
+        "history.json": "4c9d505ac365d9b3efb86147737a5de0a1cfd76c90581aea9d194e5e723366d3",
+        "checkpoint.pt": "34a1d3138032d0b8d7516a72946dfff1598a083e96fc54e30de20b2219a3defe"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "original_odd",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 64,
+      "final_train_relative_mse": 0.002261432066376533,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.05265883584197575,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 23.285614732769933,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/original_odd/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "d561e7a5f188b1c140e6ff5a57e0c2223f34acf1397fa65fe23ac5b2bfadf2dd",
+        "history.json": "f73335fd3ac31d9834c670914c79c16291548a7f2ed547a84629301e21ec112b",
+        "checkpoint.pt": "9db0442897017c7aaf569d92a338b9d1fe015f46c497be1d17b01e05ed4994d7"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.007197255267388759,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.061045634503252934,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.481793716537297,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d4-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "c642b454ee521fb1c5221b633d910110ba39d83a4c52d141dd0d495a4b87ca5f",
+        "history.json": "0934d0ae8ddaff64be58f1c15b6880a2e1d029cc32dac4be68675e53bf632183",
+        "checkpoint.pt": "56d357a8562b89ee0cb0e67e92bd737ef2fcdc8caf0e5c72e6a58c9442af6177"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.007047051675164221,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.06000630402049499,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.515093515203525,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d4-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "0b7b53b22baebab4435a625100e4ddd969c67d974b6f13f66c5e04d8a20336fa",
+        "history.json": "e7071e51ff0a8428ef95f33bfbf0a46928e5d21d936a5c50d6ed494ac44ef99c",
+        "checkpoint.pt": "355b724e5c4f7819b96b7b7f8fa0aea8abad47b263e1c055d8279a1a72d7ed38"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.007264852226731375,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.059934843966934194,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 8.249974272897257,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d4-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "ff52a48d64c29e807f7f3c25afaaf205b867966c2dc3a5ca0bf42f7d9a18a963",
+        "history.json": "91c1b9321a861830ec6717c10f5ac89c9491719abf9a458b184df3350dd2f46e",
+        "checkpoint.pt": "8e701a78db2d99d788188446bb193b198a53b6dfe719e115ec7759fc31955e75"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.014917264218728205,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1497289122621242,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.03729035476517,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d4-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "fe032a7dd70ea8924ad99272366f7b9b28738401fe4dade891a9b68d76b2311d",
+        "history.json": "007db515e0b21b9c0a2cd9f64228233446aa6cab089f1fc307b9b965349d1deb",
+        "checkpoint.pt": "d5dd501d013101d14b54ea5c51e29208ddfadca23f74d1c74703cc85aef8b6a2"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.014563368683048528,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.14748515499366224,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 10.127131861004937,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d4-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "0cd6c043cc120f8aaa063d192e9e91def74d58db40a8c0558dc533b3bbacf187",
+        "history.json": "956e2e0a64323260ad0d56d613a773e9c3ea6bbc665ae1738817dc1183cc8a49",
+        "checkpoint.pt": "eadefa0d5c6f88a16067cca0e43f8a8cb9bc0ae561b0a4bbd9c5cf43de29ebdc"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 4,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 160,
+      "final_train_relative_mse": 0.016183688504656294,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1488545291967026,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 9.197812300568865,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d4-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "5e463e35b2c94616782be974be47d89e4a3c74727a4de9789bca0d2dfba87439",
+        "history.json": "4628e3bba7e5ddcdbb10ec9c24a44a26b5a1146ea4d36566e29305f1a3ae98dd",
+        "checkpoint.pt": "bef44e999654903fe21b123dbc8365243045398d9f03099f70aa12711cfca281"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 0,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.0033565868609497667,
+      "heldout_first_threshold_updates": 160,
+      "final_heldout_relative_mse": 0.04034013140913427,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 12.0181997607295,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d16-a0.25-seed0",
+      "artifact_sha256": {
+        "result.json": "e2880db8dddbc123144c370b637e8d3ab0faf9b62836a1350b0321766452fd00",
+        "history.json": "65ca691b4ffb130838ba482041f2953fd05cbd025401f34fa3ae491f00d28b8c",
+        "checkpoint.pt": "b1a39f9a0c9cbc6285ae0e0f3a923d56e9e3af46704435e0def5616e03a9b8a3"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 1,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.0033025960352860008,
+      "heldout_first_threshold_updates": 160,
+      "final_heldout_relative_mse": 0.041002508384184816,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 12.41523575578145,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d16-a0.25-seed1",
+      "artifact_sha256": {
+        "result.json": "29f49ab8b7cbbbe60a271badf6d18408a7d9c4de2d281fd1f9108902b4e924f2",
+        "history.json": "658c2236d9d9e5351d94f8c007d8e23e8ee9fa13914291bc8bd4c47133936347",
+        "checkpoint.pt": "876ed3f0cac744a5375461a2b7efafd783e671dd9d40166a252086af7155f0da"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 0.25,
+      "seed": 2,
+      "train_first_threshold_updates": 96,
+      "final_train_relative_mse": 0.003960576600060548,
+      "heldout_first_threshold_updates": 192,
+      "final_heldout_relative_mse": 0.04121206256055445,
+      "heldout_status": "passed",
+      "final_heldout_train_ratio": 10.405571390772852,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d16-a0.25-seed2",
+      "artifact_sha256": {
+        "result.json": "7b39dbc545a2a3cbd451f866d27cab48bb6cb05f1ceee87a916beceaa2e126b7",
+        "history.json": "f264cc2e62ac5939c1db842ce9b24c0a0eb960adbda45cec564856dce1f56557",
+        "checkpoint.pt": "7c6db646e630a9ef568e55a2590858a53a2df94c57a186b973b0a9a4fe08782d"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 0,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.0071018010920847864,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.13627678207208144,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 19.189045187982924,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d16-a1.0-seed0",
+      "artifact_sha256": {
+        "result.json": "49218ae747b1a6eb3e21e71c7526ce2c9188a09803c558249d22d81560845be5",
+        "history.json": "f5bffc014d0c50ec28f6cee9d609f384cade0adb68cffbfed2ed757f0ee729e8",
+        "checkpoint.pt": "0332b2354b1fe96e2f3b1bb718ce24037258f0e2f138972d98f5fc8d8a13eb3f"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 1,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.00714062702688629,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.13656151651989223,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 19.12458331820205,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d16-a1.0-seed1",
+      "artifact_sha256": {
+        "result.json": "3bcbe80a586705817f11c87a5e8352cda60252df30ced661ec366d92402b67cf",
+        "history.json": "45a77e43b49733a562d7226225283c2d49600f4d344dfe5f17ab6d9b2a5f3ade",
+        "checkpoint.pt": "41576a9028840ab348ef4cddcf0609b319a949f562eb298f7c29be25557d0995"
+      }
+    },
+    {
+      "initialization_arm": "learned1",
+      "teacher": "mixed",
+      "branches": 16,
+      "strength": 1.0,
+      "seed": 2,
+      "train_first_threshold_updates": 128,
+      "final_train_relative_mse": 0.006908345822613109,
+      "heldout_first_threshold_updates": null,
+      "final_heldout_relative_mse": 0.1339738036665963,
+      "heldout_status": "budget_miss",
+      "final_heldout_train_ratio": 19.393036640994353,
+      "directory": "runs/transformer-stress/parity-init-v1/init1/mixed/d16-a1.0-seed2",
+      "artifact_sha256": {
+        "result.json": "33ffcc8c2a7f9a810eef7759671d3d143318c04622dbfef378ff59cc54274adb",
+        "history.json": "90514dc0ec9e5917cc2a30f7d3a79317acc092fca31f43b12f70858f17f48113",
+        "checkpoint.pt": "6481e0644c56b4f4dfced03d389763d5cad6ca1e9aa08f2438269b277e38a87d"
+      }
+    }
+  ]
+}
