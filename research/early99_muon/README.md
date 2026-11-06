@@ -65,3 +65,12 @@ has no warnings. The old zero-norm normalization theorem is not used to claim
 scale invariance below this implementation's epsilon floor. These are real scalar
 bounds and conditional matrix algebra, distinct from the finite-precision checks
 and the forthcoming learning measurements.
+
+The first completed arm, hybrid Muon LR×2, passes18/18 but improves only2/6task
+medians, so it does not advance. Parent-relative median ratios are1.75forAND,
+0.3214for division193,1.0for division97,0.55for key/value binding,2.0336for
+square-sum and1.0for linear transport. Square-sumseed2 is the worst slowdown:
+123to500epochs(4.065×). All18checkpoints and62frozen source files pass the
+[arm audit](results/audit-hybrid-lr2-screen.json), with no training errors,
+resumptions or replay intervals. The other three declared arms remain in progress;
+there is no full-suite optimizer selection yet.
