@@ -1,0 +1,16 @@
+{
+  "checked_at_utc": "2026-11-06T01:37:23.209846+00:00",
+  "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_score_reporting.py",
+  "passed": 11,
+  "seconds": 1.26,
+  "ruff": "passed",
+  "source_sha256": {
+    "research/early99_score_scale_reporting/verify_results.py": "5a5063b827c84a372b6b5f7c68f0105fe763811922327a8afd17dc7f56571d8f",
+    "research/early99_score_scale_reporting/run_long.py": "e74b8443494df08f4f41c8c38d21270a4b773cf502c5c94042ccbb000c189236",
+    "research/early99_score_scale_reporting/run_full.py": "e56069b8579d21a12a28314ee2d2874c5f5f65e60ecdf497b5ee52f8fb2ed56d",
+    "research/early99_score_scale_reporting/audit.py": "960d76cf46c6897888fdca9270289d6c9babdd92ccb9a424761f96865c05c9a1",
+    "research/early99_score_scale_reporting/run_screens.py": "62e0bf9c22128aa3c8dbf24946af7f09955967a2b6264cd38569a025811cdd43",
+    "tests/diff_gpt/application/test_early99_score_reporting.py": "14f1db3b58756275531810835395dca14fcfe0fe68874210e0f254147d4ac91f"
+  },
+  "checks": "Reporting-only guards. No scientific runner or plan changed. Both completed screens, all four half-scale full comparisons and 15 guarantee/validation artifacts were directly reconstructed; final selection awaits the quarter-scale full suite."
+}

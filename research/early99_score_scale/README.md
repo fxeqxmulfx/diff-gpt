@@ -83,7 +83,8 @@ Maximum probability error was `6.4692e-7`; maximum relative gradient error was
 `1.5498e-5`. The [validation record](results/validation.json) and
 [complete stress rows](results/score-stress.json) preserve the evidence and scope.
 Both 18-cell screens are complete and audited; both meet the declared gate.
-No complete-suite learning improvement is established yet.
+The half-scale arm has also completed and passed its full 75-cell suite;
+quarter-scale is still running. Final shared-model selection awaits both arms.
 
 Run both screens or regenerate their four-control reports with
 `python -m research.early99_score_scale_reporting.run_screens --run` or
@@ -145,3 +146,51 @@ four paired comparisons, then freezes a shared-model choice. It performs no
 long training before that choice. Reproduce with
 `python -m research.early99_score_scale_reporting.run_full --run` in the environment
 above; do not launch a duplicate active queue.
+
+## Half-scale complete short result
+
+Half-scale passes **75/75**, with geometric mean **18.5238 epochs**: **23.9%
+fewer than the Q/K parent**, **45.9% fewer than LR ×2**, **67.6% fewer than
+baseline**, and **11.7% fewer than the previous no-Q/K ablation**. It retains
+Q/K RMS and adds no parameters. Its summed trainer time, including setup and
+scoring, is 1110.40 seconds; wall time does not select the candidate.
+
+Against the parent, 53 cells cross earlier, 12 tie and 10 cross later. The
+largest regression is division p193, seed 1, **9 → 64 epochs (7.1111×)**.
+The [parent comparison](results/peri-rms-scaled-ssmax-gain-half-lr2-vs-parent-short.json)
+and adjacent baseline/LR ×2/no-Q/K JSON/CSV reports retain every cell and each
+task's median and worst ratio. Its [75-cell checkpoint audit](results/audit-peri-rms-scaled-ssmax-gain-half-lr2-full-short.json)
+verifies 31 archived sources, original capacity/initialization, native optimizer
+state, first crossings and all histories, with no errors or resumptions. The
+four comparisons were independently reconstructed from raw histories.
+
+The [score guarantee record](results/score-guarantees.json) specializes existing
+checked Lean theorems to each new coefficient and links the improved RMS
+Lipschitz proof. It explicitly records the weaker conditional concentration
+bound. These algebraic specializations are not a new Lean compilation or a
+formally verified translation of the PyTorch implementation.
+
+## Audit and subsequent long diagnostic
+
+The separate [report verifier](../early99_score_scale_reporting/verify_results.py)
+reconstructs all screens, complete comparisons, selection and coverage from raw
+histories. It checks source/configuration/proof hashes and every declared
+numerical stress row, error flag and aggregate. After both full suites finish,
+run `python -m research.early99_score_scale_reporting.verify_results --freeze`
+to create `results/selection-integrity.json`, then commit the audited decision.
+
+The [long launcher](../early99_score_scale_reporting/run_long.py) requires that
+complete frozen decision and its commit before running a newly selected shared
+winner once. It rejects duplicate live launchers, uses the unchanged scientific
+runner and original budgets, and reconstructs all long comparisons afterward.
+Use `python -m research.early99_score_scale_reporting.run_long --run` only after
+the full short decision is committed. It compares baseline, LR ×2 and the
+previous no-Q/K ablation, whose long suites already exist. The Q/K parent has
+no long suite, so no paired long comparison against that parent is claimed.
+All misses remain visible; incomplete coverage prevents a complete geometric
+mean. Long outcomes cannot alter the choice or tune subsequent candidates.
+
+The reporting guards are tested separately in
+[test_early99_score_reporting.py](../../tests/diff_gpt/application/test_early99_score_reporting.py),
+including missing/changed selection, undeclared configurations, pending cells,
+censored rows, misleading stress summaries and overwriting completed evidence.

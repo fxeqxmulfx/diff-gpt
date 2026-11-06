@@ -1,0 +1,99 @@
+{
+  "reviewed_at_utc": "2026-11-06T01:27:11.393989+00:00",
+  "scientific_source_commit": "dfecdc9",
+  "implementation_file": "research/early99_score_scale/factories.py",
+  "implementation_sha256": "4dec1dbfac71796ea897de4f1def134cd5e5c150c1e85bd135428c74c8202c0e",
+  "declared_plan_sha256": "2e28832eea7094903d43cb5bd89d39943f31ebb5e440fa40e08bb0c0073b00f5",
+  "kind": "Algebraic specializations of existing checked Lean theorems; not a new compilation or a formally verified PyTorch translation.",
+  "proof_record": "research/early99/results/round2/attention-extension-guarantees.json",
+  "proof_record_sha256": "4e48eb398fa9a1f0bd5a0a1c205d4331001e80109618277121b09c8fe56763f6",
+  "proof_references": {
+    "qk_scores": {
+      "checked_at_utc": "2026-11-05T20:54:47.364041+00:00",
+      "fixture": "research/early99/guarantees/NormalizedScores.lean",
+      "fixture_sha256": "4a789a11e8ef68a650cc8ef47b8b631ffd941609b26fab72253bf572ef9907e4",
+      "output": "research/early99/results/round2/qk-score-lean-check.txt",
+      "output_sha256": "c07d0cb19d4cbef870ee55ad6e47eb99e1a6a568be08b0d23a5081e1802003f5",
+      "exit_code": 0,
+      "warnings": 0,
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "theorems": [
+        "Early99.NormalizedScores.normalized_norm",
+        "Early99.NormalizedScores.normalized_dot",
+        "Early99.NormalizedScores.normalized_score",
+        "Early99.NormalizedScores.ssmax_score"
+      ],
+      "statement": "For head width d>0 and eps>0, arbitrary rotary angles preserve each Q/K RMS norm bound sqrt(d); the Q/K dot product is bounded in absolute value by d. With fixed gain g, ordinary scores are bounded by abs(g)*d and s=1 SSMax scores by log(N)*abs(g)*d for N>=1.",
+      "assumptions": "Positive width and epsilon; arbitrary finite raw projected queries/keys, rotary angles and fixed real gain. Both queries and keys receive the implemented RMS normalization before the SSMax scale.",
+      "implemented_gain": "exp(log_alpha)/head_dim, with a fixed buffer initialized at 0.5*log(head_dim). Ideal exact initialization gives g=1/sqrt(d); the theorem permits the actual rounded buffer-derived gain too.",
+      "limitations": "The no-Q/K arm has no corresponding bound independent of learned projection norms. These upper bounds do not ensure a positive winning-logit gap, bounded full-network derivatives, numerical overflow protection or earlier grokking.",
+      "nonvacuity": "Positive scientific epsilon 1/8388608, width 8, nonzero angles 2 and 3, four visible keys, unrestricted vectors."
+    },
+    "ssmax": {
+      "fixture": "research/early99/guarantees/ScalableSoftmax.lean",
+      "fixture_sha256": "e15f2240fd6c0fc1a73336e8a477a2163f164f6e9072a7db8959ac2a82c4a6b1",
+      "output": "research/early99/results/round2/ssmax-lean-check.txt",
+      "output_sha256": "91d51033d289ac1d25620047998a61cd6ad3eb0cf9b1b1631539d04bb57e08bf",
+      "exit_code": 0,
+      "warnings": 0,
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "source": "https://arxiv.org/html/2501.19399v1",
+      "equations": "(2), (9)",
+      "theorems": [
+        "Early99.ScalableSoftmax.probability_row",
+        "Early99.ScalableSoftmax.softmax_margin",
+        "Early99.ScalableSoftmax.ssmax_margin",
+        "Early99.ScalableSoftmax.constant_logits"
+      ],
+      "statement": "For N>=1 visible keys and s>=0, if every competing logit is at most z_i-gap, p_i >= 1/(1+(N-1)*exp(-s*log(N)*gap)). This is the exponential form of 1/(1+(N-1)*N^(-s*gap)). All rows are nonnegative and sum to one; equal logits give exactly 1/N.",
+      "assumptions": "Nonempty finite row. The gap is measured in the original fixed-temperature scores before SSMax. The proof explicitly checks every other key. No uniform positive gap across growing contexts is inferred from Q/K normalization or the architecture.",
+      "nonvacuity": "Unequal logits [2,0], s=1 and gap=2; singleton row; concrete probability-row witness.",
+      "limitations": "The finite bound is proved, not an asymptotic theorem for trained networks. Concentration as N grows additionally requires a sufficiently large gap maintained across contexts. No unconditional focus, improved learning, or finite-precision guarantee follows."
+    }
+  },
+  "hypotheses": [
+    "Positive finite real epsilon and positive head width d.",
+    "Nonempty causal row with N>=1 visible keys.",
+    "Both raw queries and keys receive parameter-free RMS before norm-preserving fixed rotations.",
+    "Fixed original head gain g=exp(log_alpha)/d; the theorem allows its actual buffer-derived real value.",
+    "The fixed coefficient m is exactly 1/2 or 1/4 in both dense and cached paths."
+  ],
+  "score_bound": {
+    "statement": "abs(score)<=m*log(N)*abs(g)*d, independent of Q/K projection-weight norms.",
+    "derivation": "Instantiate Early99.NormalizedScores.ssmax_score with gain=m*g. Since m>=0, abs(m*g)=m*abs(g).",
+    "half_parent_bound_ratio": 0.5,
+    "quarter_parent_bound_ratio": 0.25
+  },
+  "probability_contract": {
+    "statement": "Nonnegative weights sum to one; equal original scores yield exactly 1/N.",
+    "reference": "Early99.ScalableSoftmax.probability_row and constant_logits with s=m."
+  },
+  "conditional_margin": {
+    "statement": "If z_target-z_j>=delta for every competing key before score scaling, p_target>=1/(1+(N-1)*exp(-m*log(N)*delta)).",
+    "reference": "Early99.ScalableSoftmax.ssmax_margin with s=m.",
+    "tradeoff": "For the same positive original gap, reducing m weakens this lower bound. No trained uniform gap is established.",
+    "elementary_asymptotic_observation": "For a fixed positive delta, m*delta>1 is sufficient for this lower bound to approach one as N grows; half-scale requires delta>2 and quarter-scale delta>4. This limit observation is not presented as an additional Lean theorem."
+  },
+  "inherited_bounds": {
+    "residual_rms": "1+sqrt(2L), with two branches per layer, normalized embedding and post-RMS alpha=1/sqrt(2L).",
+    "normalization_lipschitz": "1/sqrt(epsilon), or abs(alpha)/sqrt(epsilon) after a fixed scalar.",
+    "normalization_proof_record": "research/normalization_guarantees/results/guarantees.json",
+    "normalization_proof_record_sha256": "852131b5a7dd32f94d0a82183c6f83edac2b3ffeccf50e524bd9c58e0e65a1f6"
+  },
+  "numeric_validation": "All 90 predeclared normalized-row stress cases and 9 CPU/CUDA implementation checks passed; see results/score-stress.json and results/validation.json. These are finite tests, not mathematical roundoff guarantees.",
+  "limitations": [
+    "No convergence, grokking, epoch improvement or larger-task generalization theorem.",
+    "No uniform whole-network Jacobian bound or control of unconstrained tied readout weights.",
+    "No theorem of floating-point overflow/underflow protection. Earlier extreme full-stack failures are not erased by changing this coefficient.",
+    "A tighter score upper bound does not imply stronger attention concentration or an ideal universal architecture."
+  ],
+  "compilation_repeated": false
+}

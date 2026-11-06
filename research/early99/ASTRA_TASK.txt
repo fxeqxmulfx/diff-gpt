@@ -328,3 +328,14 @@ discard the less favorable promoted arm or launch a duplicate active queue.
 Keep this study's Python, configurations and plan frozen until training/audits
 finish. Source archiving includes the declared plan; reporting and audits live
 in the separate research/early99_score_scale_reporting package.
+
+The half-scale full short suite is now complete and audited: 75/75 passes,
+geometric mean 18.5237965738 epochs, 23.9% fewer than the Q/K parent and 45.9%
+fewer than LR x2. Its four control comparisons were reconstructed from raw
+histories. Keep all ten parent-relative regressions, including division-p193
+seed 1 at 9 -> 64 epochs (7.1111x). Quarter-scale remains in progress and must
+complete before shared selection. After both suites, use the separate reporting
+verifier to freeze selection-integrity.json, commit it with the decision, then
+run only the new shared winner once using the guarded long launcher. Compare
+the three controls with existing long data; the Q/K parent has no long suite.
+Do not promote from the partial queue or tune using long outcomes.

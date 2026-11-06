@@ -24,7 +24,7 @@ short winner has substantial long regressions; no long geometric mean is
 reported and no reselection or tuning uses those outcomes.
 **Q/K RMS remains in the shared-model research
 candidate**; the small-benchmark winner is an ablation, not a universal-model
-recommendation. SSMax/QK is the strongest completed Q/K-normalized arm at
+recommendation. SSMax/QK is round two's strongest Q/K-normalized arm at
 **24.3271 epochs**, **29.0% fewer** than LR ×2.
 
 The [reporting audit](../early99_reporting/README.md) reconstructs every screen
@@ -39,9 +39,12 @@ The [next declared study](../early99_score_scale/README.md) retains **Q/K RMS**,
 reducing the SSMax score coefficient to one-half or one-quarter. Both arms
 passed all 18 screen cells and their audits; half-scale improves four paired
 task medians and quarter-scale three versus the Q/K parent. Both full 75-cell
-suites are now queued, with half-scale running first. All nine CPU/CUDA checks
-and 90 score-stress cases passed before training. The completed round-two
-selection remains unchanged.
+suites are required. Half-scale has completed and passed **75/75** at **18.5238
+geometric-mean epochs**, **23.9% fewer than its Q/K parent** and **45.9% fewer than
+LR ×2**, with 10 parent-relative regressions and a worst ratio of 7.1111×.
+Quarter-scale is running; shared-model selection waits for its complete suite.
+All nine CPU/CUDA checks and 90 score-stress cases passed before training. The
+completed round-two selection remains unchanged.
 
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
