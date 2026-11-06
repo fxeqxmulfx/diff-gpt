@@ -1,0 +1,135 @@
+{
+  "declared_at_utc": "2026-11-06T21:35:46.913039+00:00",
+  "user_request": "You can also retest with usual 1/sqrt(d)",
+  "objective": "Test whether restoring the usual Q/K-normalized attention gain recovers the failing cubic-sum task while preserving the full normalized SSMax stack.",
+  "execution_order": "After all 27 declared cubic-capacity runs finish and their complete outcomes are audited and committed. Do not interrupt or alter that grid.",
+  "task": {
+    "case": {
+      "after_target": 0,
+      "batch": 256,
+      "data": {
+        "operation": "sum-cube",
+        "prime": 97
+      },
+      "data_seed": 1,
+      "heads": 4,
+      "kind": "arithmetic",
+      "layers": 1,
+      "learning_rate": 0.001,
+      "max_updates": 100000,
+      "metric": "sequence_accuracy",
+      "name": "arithmetic-sum-cube",
+      "observe": 19,
+      "target": 0.99,
+      "warmup": 50,
+      "weight_decay": 0.1,
+      "width": 128
+    },
+    "data_fingerprints": {
+      "train": "46c16e9ce5b4d78a14cff7f63aea5ade52ffed486ae0b8679eb1d340d5ce60f4",
+      "validation": "68756b674469bdb4549ec0967a5628067b937b599d52da0b4af69553920d922f"
+    },
+    "heldout_examples": 4705,
+    "historical_seed1": {
+      "batch": 256,
+      "complete_epochs": 3552,
+      "epochs": 3552.6530612244896,
+      "examples_seen": 16711680,
+      "first99_accuracy": 0.9904357066950054,
+      "first99_seconds_including_setup": 100.90890625199972,
+      "first99_updates": 67500,
+      "history_path": "runs/current-grokking/arithmetic-sum-cube/seed1/history.jsonl",
+      "train_examples": 4704,
+      "updates": 67500,
+      "updates_per_epoch": 19
+    },
+    "name": "arithmetic-sum-cube",
+    "selection": "validation",
+    "tier": "long",
+    "train_examples": 4704
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "new_training_cells": 3,
+  "configuration": {
+    "name": "cubic-current-usual-gain-lr2",
+    "learning_rate_multiplier": 2.0,
+    "model_variant": "peri-rms-embedding-scaled-ssmax",
+    "schedule": "constant",
+    "beta1": 0.9,
+    "beta2": 0.98
+  },
+  "model_factory": "research.early99.experiments.factories.peri_rms_scaled_ssmax_model",
+  "intervention": "Restore the existing parent attention_gain: exp(log_alpha)/d, representing 1/sqrt(d), instead of inverse_width_gain=1/d. Keep the exact parent computation and record its actual FP32 value. Keep SSMax log(visible keys), Q/K RMS, fixed RoPE, XSA, SwiGLU, Peri-RMS, embedding RMS, scaled residuals, tied weights and parameter-free RMS.",
+  "capacity": {
+    "layers": 1,
+    "width": 128,
+    "heads": 4,
+    "head_width": 32,
+    "unique_parameters": 208896
+  },
+  "controls": {
+    "original_lr1": "runs/early99/baseline",
+    "original_lr2": "runs/early99/candidates/adamw-lr2",
+    "normalized_lr2": "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2"
+  },
+  "control_artifacts_sha256": {
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/checkpoint.pt": "a5190d45d0955fce81df8798aafbfdc1656dbb4d96ce10d9a8c2f48d71a91281",
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/early99_result.json": "617c656b5914f665ae8567b93d1ca6c1f83dfeedcca373e555e36834d5ce99dc",
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/history.jsonl": "b34f38a56a2c9abea2a2b3aa1726faa727d08fb3f977c5fc4cb9012875b2df7d",
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/protocol.json": "0055d6a535209d2354509607ffde07056475540e2b4e592018237c9b559f7874",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/checkpoint.pt": "734d37f34acf979ca39f435cb4545e75f2e646e78a9a3819fe3105592c4684df",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/early99_result.json": "8f20364d9470dafe277293e4d24c6f0771e33e89b1f111fe5be5b57c0dbded05",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/history.jsonl": "ef88d819592ae0cbaa86ab57784371a745e2c0be90b7855d1dd9cebe681d356c",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/protocol.json": "ab626cadb730fbaa3cb3d42832c1e33afc176cb48a263f2f76a7ee6fb01a3f63",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/checkpoint.pt": "628222ca3bba64ec06feea297773e1cef7aa162c18df3e96929ba40a95f7f048",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/early99_result.json": "09e42ec3ee7795c66d18c6d28b25e050f7c83a07b3420762d8d52b028ea427d0",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/history.jsonl": "5d44ec1aa16cca012b2dd58c963cdc5d21599b4c03046edc777b311cdf950d23",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/protocol.json": "88efa1a66eb655c35aa84b211cc9fbaef8e81b0faa2733b5c986d923e3d655f2",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/checkpoint.pt": "e1b848bc4ffc86e18083693b3ea9a4a4b69553d5e0486072e2c676bcd7ba2672",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/early99_result.json": "d49d686e95fad43c8cb5d882d4d2cdacc179646d9aedf86bba4bf721f1939a62",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/history.jsonl": "3f2274781841c28d600163bde7632f34130b6838082deee3c0ffb05cd706a82f",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/protocol.json": "e4d1ace875b4a607e58b3270243ec825d7b773749597b093110e7f80cb5c132d",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/checkpoint.pt": "07b23d813b5eb857c8ec25886045615eb48098e9cf9885d3f22cb96d20cd3501",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/early99_result.json": "75d431f46184205ae8ef240ee5ae7d078a91e7e561ef4d4279c0ec7155517fef",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/history.jsonl": "7277b0c54246b38ecfb5ce530fce666c502b92d53dd916972718d517556188e7",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/protocol.json": "4dd17ee39642ece0a6dd19d65a5471bcf69728c7a33808ff1e762621019c13a8",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/checkpoint.pt": "ca495222dd89a2a2649be89d1181edb4be093f96ccab615ed04bc5ad770f853b",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/early99_result.json": "22ec54fcbdac524088da3f4a983ddab0449f78e2d25d29f4853794649e988e2b",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/history.jsonl": "85c6613a58e5ebf1ed5743303c889ec50c253c33bd038b0faea5208a5dd1a73e",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/protocol.json": "b20c77300a15b095e9033fb45ffac88b548d96aee1927598b887402bd60cfcc4",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/checkpoint.pt": "d8a181c65fff3c295ddf9c6b931f1159cdd8e941b4e27bfae52731d6de0b7f02",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/early99_result.json": "7557d110cb82f34569380c546be7a6182674be4ccdb2a0beb7c51a88c93158c4",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/history.jsonl": "e69d24ad39b9b8617841c0ece051cd8f837150389181c8cddfe95ec382eaf2b6",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/protocol.json": "9471be7f54ff49da034fc5d6d7f106c6122e5e08a44871491d6c60773c425d5b",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/checkpoint.pt": "4b7591e06360165106cbe48a242eda08a902cd1eaa2ccaefca7a9ce7b2335177",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/early99_result.json": "3f19bc257ead5bfd650e3dd856e83d7152ea00a0ab921919607c00b79a3c4651",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/history.jsonl": "c939cec01bd4e7e175efe8d29b4eff60f4810923afa92606b037fa586b13a066",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/protocol.json": "e738c45ee8ec7ec1e3a58864bf0c3d652b42addd259ab4dce3397832807d64e0",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/checkpoint.pt": "2ad09ac147dab4fd8447d417d2c461f98359d3e323f77e659766dff2ac764b48",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/early99_result.json": "2a33a1f5f1b5b4beeb52f6bac6627887a2ab344b33574d3ec6d5a6bf68b3bc7c",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/history.jsonl": "5a8451675a3320b7b58698f3fd7ddb79a1760627bb068e6463468299483f40b2",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/protocol.json": "e4f229b3e8ac25aebe5698337baf6f6c8b84b1edab47601686c36dcf28422110"
+  },
+  "evidence_sha256": {
+    "research/early99/experiments/factories.py": "02891e8d9c2113dfe407238d37bb6d998a32ce146eca8f5aed0dfaa104c90681",
+    "research/early99/experiments/scalable_softmax.py": "4ec54ddeb8f29dee12f2e01f6de339533db3111d68d8da5f212c45a5927a8e6a",
+    "research/early99_dimension_gain/factories.py": "0c1309238bf0cae46015d505c6e1d9ba81b8a0a2730ba28ad36d6950d74921ca",
+    "research/early99_cosine/trainer.py": "6cc5f54986550d743cdc4aa6b43d6c5fed26774c92097453778b627ea3d957e2",
+    "research/cubic_capacity/plan.json": "1816738579ecf35618907faacaa011d48cf0a26acd48714a2b73d51800ca2349",
+    "research/transformer_path_diagnostic/results/summary.json": "f25cf9b717aafa42599dc44db1ac6933e67a9a4c87a4c010656d1337dc3ef620",
+    "research/cubic_capacity/results/validation.json": "896ae85b9826da99bf4a75a4df96433d4755152a2ff29f808086da44718d204e"
+  },
+  "validation": [
+    "Exact initialized parameters, shared buffers, RNG, data and sample order for all three seeds against the frozen inverse-width control; keep all seeds.",
+    "Forward/gradient parity with the existing full normalized usual-gain parent; verify Q/K RMS and exact gain implementation.",
+    "Use the unchanged journaled native AdamW loop; validate genuine compiled/captured updates and continuation before scientific execution.",
+    "Audit every checkpoint, observation, source, optimizer moment and replay bound."
+  ],
+  "outcome_policy": "Compare 3/3 coverage before speed. Preserve every budget miss, error or interruption. Require every paired seed for aggregate ratios; no filtered means. Reuse all nine original and inverse-width current-size controls. Do not rerun them.",
+  "scope": "One retrospectively chosen task with an explicitly authorized scale intervention. This is not a fresh long-suite holdout, a capacity test or a new fixed75 benchmark winner. A positive result would motivate a separately frozen shared-model experiment under the original selection protocol.",
+  "next": "Report all three seeds and the nine controls, then use the capacity and scale evidence to choose the next hypothesis test; keep unfinished Muon and numerical repair recorded."
+}
