@@ -984,3 +984,37 @@ results exist in the preserved candidates. Executeafter the complete27-cell
 capacitystudy is auditedandcommitted; validateandfreeze the adapter first.
 The three newruns are now explicitlyauthorized regardlessofcapacity outcome.
 This single-taskmechanism test cannotchange the fixed75selection byitself.
+
+User clarifies the structural normalization preference
+Keep Peri-normalization plus embedding normalization as the preferred structure.
+The user requires strong evidence before proposing to remove that structure.
+They explicitly clarify that the normalizer itself is open: RMSNorm orLayerNorm
+may be investigated. Do not equate this preference with a proof of optimization
+or generalization. Current failures and directionalgradient metrics do notprove
+that Peri/embedding normalization is the cause. A proposedremoval needs an
+isolated reproduciblecomparison andclearmechanism; a mathematicalcounterexample
+must target a specificclaimedproperty,not label thewholearchitecture wrong.
+The runningcapacitygrid and queuedusualattentiongain test retain their frozen
+RMS implementations. AnyLayerNormalternative requires its own isolatedplan
+andvalidation; do not quietly swap it into an alreadydeclared experiment.
+
+User constraint: keep tied embedding/readout weights
+The user explicitly adds "Also keep tied embedding". Preserve the same shared
+parameter object for embedding lookup and output readout in allupcomingvariants,
+including anynormalizercomparison. Normalizertype remainsopen; removingPeri or
+embeddingnormalization requiresstrongevidence. The currentcapacitygrid and
+usualgainplan already retainexactweighttying,withuniqueparameterchecks.
+
+Two-token attention probability envelope proved
+research/two_token_attention_bounds proves4Leanstatements,standardaxiomsonly,
+nowarnings. Two scores boundedbyBimply probabilitybetween1/(1+exp(2B))and
+exp(2B)/(1+exp(2B)). Finite-epsilonQ/KRMSandstoredRoPEenergyboundMgiveinverseSSMax
+scoreboundMlogN,independentofheadwidth. AtN2,M1,theexactprobabilityintervalis
+[1/5,4/5]; withthepriorcertifiedstoredtableM1+2^-20,upperboundisapproximately
+.8000002115. Actualgain/table/contextchecks coverallfourcapacityshapes,with
+usualSSMaxupperboundabout.9996073andoriginalsoftmaxabout.9999878. These arereal
+arithmeticenvelopes,notroundedforwardcertificatesorconvergence/unsolvabilityproofs.
+Depth,heads,values,XSAandreadoutcanstilladdexpressivepower. ThisdoesnotprovePeri
+orembeddingnormalizationwrong. Itmotivates theauthorizedusualgaintest while
+retainingtheuserpreferredstructureandtiedweights. ThefirstfailedLeanattemptis
+retained; nooptimizerupdates,modelforwardsorheldoutscoresoccurredinthesupplement.

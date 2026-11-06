@@ -1,0 +1,28 @@
+{
+  "declared_at_utc": "2026-11-06T21:38:33.395074+00:00",
+  "question": "What restriction does inverse-width Q/K-normalized SSMax impose on two-token attention, and does changing depth or total width at fixed head width remove it?",
+  "scope": "Supplemental real-arithmetic proof and explicit formula evaluation only. No training, optimizer updates, new held-out scores, scientific queue changes or winner selection.",
+  "statements": [
+    "Express the existing two-score softmax as a logistic function of the score difference.",
+    "For both scores in [-B,B], prove probability in [1/(1+exp(2B)),exp(2B)/(1+exp(2B))].",
+    "For ideal inverse-width SSMax two-token score bound B=log(2), prove exact probability bounds 1/5 and 4/5.",
+    "Specialize the existing finite-epsilon RMS and stored-RoPE SSMax score bound to gain 1/d, cancelling head width and retaining log(N)*M."
+  ],
+  "expected_statements": 4,
+  "stored_pair_bound": {
+    "numerator": 1048577,
+    "denominator": 1048576
+  },
+  "application": "Read the actual fixed task context and head width. Record the two-token probability envelopes for inverse-width SSMax, usual-gain SSMax, and the original softmax using ideal and previously certified stored-table constants. Report the formulas and explicit floating approximation of constants.",
+  "limits": "The probability interval is a real-arithmetic envelope, not a floating-point certificate, lower bound on useful gradients, proof of necessary attention sharpness, inability to solve the task, or explanation of observed generalization. Each head is covered separately; mixing heads, values, XSA, residuals and deeper layers can still add expressive power. The same score bound persists across the declared capacity shapes, but the complete model does change.",
+  "sources_sha256": {
+    "research/stored_rope_guarantees/Bounds.lean": "fe95643b32f4e6f3ecab298921c932e271504c628058d351deed931851c41801",
+    "research/stored_rope_guarantees/results/guarantees.json": "6928785566ccc5763aa8950c3610a4d7b8b45ad21d87ddbe9ae445440893bb6c",
+    "research/stored_rope_guarantees/results/application.json": "505aec717db783865fb62c0d769aea1e0e1dd31debf56fa0452ee432978e8620",
+    "research/early99/experiments/scalable_softmax.py": "4ec54ddeb8f29dee12f2e01f6de339533db3111d68d8da5f212c45a5927a8e6a",
+    "research/early99_dimension_gain/factories.py": "0c1309238bf0cae46015d505c6e1d9ba81b8a0a2730ba28ad36d6950d74921ca",
+    "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+    "research/cubic_capacity/plan.json": "1816738579ecf35618907faacaa011d48cf0a26acd48714a2b73d51800ca2349",
+    "research/cubic_usual_gain/plan.json": "fd3a79dbedc9ae665b85d352f6807097a6acd52fd4bbd0f6f3ed6f3e4dda6f8e"
+  }
+}
