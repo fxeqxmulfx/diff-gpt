@@ -176,8 +176,37 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.ea
 MPLCONFIGDIR=/tmp/gpt-core-curves-mpl /usr/bin/python3 research/early99_core_ablations_reporting/plot_key_value.py
 ```
 
-Status: all three screens are complete and audited from source `00b6224`.
-Both normalization-only arms are rejected; SSMax alone qualifies for the full
-75-run short suite, reusing its 18 completed screen cells without rerunning them.
-No full-suite result or new winner is established yet.
-The incomplete Muon study and proposed numerical repair remain deferred.
+The full SSMax-only suite completes **75/75**, with geometric mean **29.5982
+epochs**. The 18 screen cells were reused; none was rerun. Its complete
+[comparison with original LR×2](results/core-ssmax-lr2-vs-lr2-short.json) shows
+13.58% fewer epochs, with 51 earlier crossings, nine ties and 15 later crossings.
+It does not improve the global inverse-width incumbent: its mean is 81.96%
+higher, with 17 earlier crossings, seven ties and 51 later crossings. All paired
+cells, task medians, worst cases and recorded runtimes remain in the five reports.
+
+| Control | Control geometric-mean epochs | SSMax-only/control ratio |
+|---|---:|---:|
+| Original baseline | 57.1653 | 0.5178 |
+| Original LR×2 | 34.2499 | 0.8642 |
+| Embedding + scaled Peri-RMS | 28.3606 | 1.0436 |
+| Embedding + scaled Peri-RMS + SSMax | 24.3271 | 1.2167 |
+| Shared inverse-width incumbent | 16.2661 | 1.8196 |
+
+The [full checkpoint audit](results/audit-core-ssmax-lr2-full-short.json) checks
+all 75 histories, checkpoints, protocol records and 68 frozen source files.
+There are no errors, resumptions or replayed updates. Final weights and complete
+AdamW moments are finite, with nonnegative second moments. The
+[selection integrity record](results/selection-integrity.json) reconstructs all
+five complete comparisons and the three screen decisions from raw evidence.
+
+The [frozen selection](results/shared-selection.json) retains inverse-width.
+Its existing 19/30 long diagnostic is retained; this study launches no duplicate
+diagnostic and has no long measurement for SSMax-only. The
+[closure record](results/study-complete.json) verifies the complete declared study,
+including all screen failures, implementation/proof checks and the ten still
+unresolved inverse-width numerical stress failures.
+
+The next user-requested work diagnoses gradient paths in existing old/new models
+on one previously observed failing task. Larger-model training was explicitly
+deferred in favor of those diagnostics. The unfinished Muon study and proposed
+numerical repair remain queued after the requested investigation.

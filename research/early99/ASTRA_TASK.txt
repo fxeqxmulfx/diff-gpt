@@ -868,3 +868,34 @@ full75SSMax,which must reuse its18completed cells. Compare its complete result
 to the global inverse-width incumbent; only a newly frozen shared winner gets
 one reusedlong30diagnostic. Muon and numerical repair remain deferred while
 this architecture study continues. No new shared winner is established yet.
+
+Original-model single-addition study completed
+SSMax-only completes75/75at29.5982328325geometric-mean epochs,13.58%fewer than
+originalLR2but81.96%more than the globalinverse-widthincumbent16.2660501255.
+AgainstLR2there are51earlier,9tied,15later crossings; againstinverse-width17earlier,
+7tied,51later. The18screen cells were reused. All75checkpoints,histories,protocols,
+68sources andcompleteAdamWmoments audit clean,with noerrors,resumptions orreplay.
+The five complete comparisons and shortselection are independently reconstructed
+and committed at4efa860. Retain inverse-width anditscompleted19/30long diagnostic;
+no new or duplicate long diagnostic follows. Both normalization-only screens and
+allfour Peri-only misses remain recorded. Finalize andcommit the complete closure.
+
+Latest user request: diagnose gradient paths before enlarging models
+The user requests one task where the new model fails, comparing old/new gradient
+paths and metrics for every transformer component, and explicitly selects
+"Diagnose existing models first" rather than larger-model training. Prioritize
+this descriptive investigation next. Use arithmetic-sum-cube, retaining allthree
+seeds: original baseline passes3/3, originalLR2passes1/3, inverse-widthLR2passes0/3.
+Include both original learning rates so the baseline/new rate difference remains
+visible. Freeze the diagnostic inputs, existing checkpoint hashes and metrics
+before measurement. Compare matched initial weights and saved final checkpoints,
+on training examples only, with no optimizer updates or held-out tuning. Separate
+actual task-loss gradients from fixed unit logit-probe gradients; report activation
+and gradient scales, attention concentration, normalization sites, XSA/SwiGLU,
+residual branch/identity paths and tied embedding/readout contributions. Validate
+that instrumentation preserves forward values and every parameter gradient.
+This task was chosen retrospectively from the observed long failures; differing
+checkpoint ages and outcomes do not establish causal training dynamics. Preserve
+the frozen benchmark selection and existing failures. Larger models remain a
+hypothesis, not an authorized training queue. Muon and numerical repair remain
+unfinished and queued after this requested diagnostic.
