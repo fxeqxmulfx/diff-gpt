@@ -1,0 +1,66 @@
+{
+  "declared_at_utc": "2026-11-06T04:37:07.839762+00:00",
+  "question": "Does preserving small branch magnitudes while bounding large ones improve both residual teachers under the original learning budget?",
+  "parent_completion_commit": "53d6c49",
+  "motivation": "The best completed learned-even, all-bias, decay0.1 residual configuration passes17/24. Every strong mixed-teacher case still fails despite fitting training data. Post-RMS maps almost every nonzero raw branch toward unit RMS, discarding radial information and having real global Lipschitz bound1/sqrt(epsilon). Test one amplitude-preserving alternative; this diagnosis is a hypothesis, not a causal finding.",
+  "single_change": "Replace branch-output RMS only by P(z)=z/max(1,sqrt(mean(z^2))). This is Euclidean projection onto the radius sqrt(d) ball. Keep input RMS at the original FP32 epsilon, learned-even activation initialized at zero, hidden/output biases, zero-initialized ReZero gates after the branch operation divided by sqrt(depth), all matrices and RNG draws. Use FP64 norm/division intermediates and cast back, recording this implementation choice. Do not change the full GPT.",
+  "projection_modes": [
+    "ball"
+  ],
+  "control_projection_mode": "rms",
+  "activation_variant": "learned_even",
+  "bias_mode": "all",
+  "even_gain_initial": 0.0,
+  "projection_rms_radius": 1.0,
+  "variant": "peri_rezero",
+  "teachers": [
+    "original_odd",
+    "mixed"
+  ],
+  "learning_rate": 0.01,
+  "weight_decay": 0.1,
+  "expected_new_cells": 24,
+  "reused_control_cells": 24,
+  "total_comparison_cells": 48,
+  "unchanged_protocol": "Both fixed sphere-input teachers; depths4/16, strengths0.25/1, seeds0/1/2; dimension16/hidden43; train512 and heldout512, data seed1; batch64, full512updates even after crossing, cadence32,warmup16; native AdamW betas0.9/0.98,epsilon1e-8,weight_decay0.1 on all parameters;initial matrix std0.1;first heldout relativeMSE<=0.05;CPU FP32highest,one thread. Preserve data,thresholds,budgets,initial parameter tensors/order/count and batch order.",
+  "controls": "Reuse all24 learned-even/all-bias cells from the completed bias study, including7misses. This follows that study's already declared pooled selection, without teacher-specific architecture choice. No augmentation or new data. Keep the earlier soft-epsilon negative experiments; ball projection is a different function that is exactly identity inside the ball.",
+  "selection": "Require all48 exact cells. Rank both modes across both teachers by pooled coverage, then geometric-mean first-crossing updates only if all24 pass; otherwise worst final heldout relativeMSE,median tie-break. Retain each paired seed and both teacher totals. No successful-only aggregate or relaxed0.05 threshold.",
+  "validation": "Before training, verify all original parameters/RNG/capacity and initial identity; active-gate forward/backward against independent reference; zero,inside,outside and boundary projection behavior; analytic VJP and bounded/nonexpansive behavior in80 numeric cases; exact unchanged training AST except constructor; retained24controls and complete-grid selection. Freeze tested source and proof evidence before training. Audit all24checkpoints by full split re-evaluation plus optimizer,sampler,initial states,histories and crossings.",
+  "numeric_grid": {
+    "widths": [
+      1,
+      2,
+      16,
+      64,
+      256
+    ],
+    "scales": [
+      0.0,
+      1e-30,
+      1e-09,
+      0.1,
+      1.0,
+      10.0,
+      1000000000.0,
+      1e+30
+    ],
+    "dtypes": [
+      "float32",
+      "float64"
+    ],
+    "seed": 20261106,
+    "cases": 80,
+    "forward_absolute_tolerance": 1e-06,
+    "gradient_absolute_tolerance": 1e-06,
+    "nonexpansive_slack": 2e-06
+  },
+  "mathematical_scope": "Prove real branch radius and identity-inside-ball properties and, if established, global Euclidean nonexpansiveness1. Derive post-gate and residual norm bounds explicitly. The projection is nonsmooth on the boundary; test the implemented exterior derivative selection, do not claim classical differentiability there. Input RMS, learned FFN, freely learned gates and whole-network/learning are not uniformly controlled by the projection theorem.",
+  "source_policy": "New sibling package, preserve all frozen sources. Copy the original bias training loop changing only constructor/import and function name; all capacity metadata retained. Archive exact source,plan,tests,numeric/proof evidence before training. Separate audits outside the frozen training package.",
+  "scope": "Adaptive synthetic residual follow-up, independent of the ongoing inverse-width early99 long diagnostic. No long-suite outcome motivates, selects or tunes this experiment.",
+  "evidence_sha256": {
+    "research/transformer_stress_bias/plan.json": "f3ccc96326d283439fef0d624c28b92687debffe64b03c54bf5adb3b1330b0ee",
+    "research/transformer_stress_bias/results/summary.json": "d77cdb0dd18f1d52a15bd9069f2b09fbb7a48ad1a34f02e10b745cef48b0f387",
+    "research/transformer_stress_bias/results/audit.json": "1558c369178a8715a1e27f2a6f15e93aa100e7eb95b60d2cb121c5f5f293e987",
+    "research/transformer_stress_epsilon/results/summary.json": "6d2c89dcd5988ff080d005e63c39fe40b745042f0dd68ab5dd96b59282deb730"
+  }
+}
