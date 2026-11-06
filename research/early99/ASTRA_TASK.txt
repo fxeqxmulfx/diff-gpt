@@ -358,3 +358,15 @@ SSMax gamma=m*log(N)*g makes both constants linear in m. The softmax factor four
 is conservative. This does not control the projection matrix, simultaneous key
 or angle changes, values, XSA, readout, floating-point errors or learning. The
 new proof is supplemental; original proof records and frozen selection remain.
+
+The subsequent SoftmaxLipschitz.lean and AttentionSensitivityImproved.lean
+strengthen this estimate for the same model. Seven additional statements compile
+with zero warnings and only standard axioms. The softmax infinity-to-one
+Lipschitz constant is one instead of the previous checked four. Consequently
+the query-only probability bound is C*norm(q-q2). When every projected key
+changes by norm at most E>=0, the entire row changes in l1 by at most
+C*(norm(q-q2)+E), with phases fixed and no extra factor for the number of keys.
+Examples use actual FP32 epsilon, quarter-scale ideal gain and nonempty rows.
+These remain bounds on projected vectors; projection matrices, values, XSA,
+readout, learned phase changes, floating-point and learning are not controlled.
+The earlier valid bounds and all frozen selection records remain unchanged.

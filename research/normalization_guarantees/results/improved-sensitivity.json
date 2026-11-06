@@ -1,0 +1,109 @@
+{
+  "checked_at_utc": "2026-11-06T02:10:04.607004+00:00",
+  "checks": [
+    {
+      "fixture": "research/normalization_guarantees/SoftmaxLipschitz.lean",
+      "fixture_sha256": "3702c8c60e5c7468aac65323475a1154ae64f9bf3f1c9dfc8f54e61569e62e5f",
+      "output": "research/normalization_guarantees/results/softmax-lipschitz-lean-check.txt",
+      "output_sha256": "54647558f256f442ddb4f8e8876f3a72fba458efac02ff5081afb6558f97cacb",
+      "exit_code": 0,
+      "warnings": 0,
+      "extra_axioms": [],
+      "axioms": {
+        "Early99SoftmaxLipschitz.affine_derivative": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99SoftmaxLipschitz.subset_derivative_bound": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99SoftmaxLipschitz.subset_lipschitz": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99SoftmaxLipschitz.softmax_l1_lipschitz": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ]
+      }
+    },
+    {
+      "fixture": "research/normalization_guarantees/AttentionSensitivityImproved.lean",
+      "fixture_sha256": "993568752d6562c75c6c311401174237f56f54f622d2d6ff208fc06cc9f1e1de",
+      "output": "research/normalization_guarantees/results/attention-improved-lean-check.txt",
+      "output_sha256": "eb0871b3a143a892410b80a8dc0fbf117e3b734d36050daa42acbc93f98d62dc",
+      "exit_code": 0,
+      "warnings": 0,
+      "extra_axioms": [],
+      "axioms": {
+        "Early99AttentionSensitivityImproved.query_lipschitz": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99AttentionSensitivityImproved.score_pair_lipschitz": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99AttentionSensitivityImproved.joint_lipschitz": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ]
+      }
+    }
+  ],
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "local_dependency_sha256": {
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "research/normalization_guarantees/AttentionSensitivity.lean": "a789f2de4a10282d8e266a337ff3554f95176c2c9dc101e8a3dc1983d4f6afc7"
+  },
+  "external_source_sha256": {
+    "src/Transformer/Perspective/Softmax.lean": "6f8117f0d9cca80d140a2aaa6691953a8bbd7bc6be02f0a612d4812714ee9fe5",
+    "src/Transformer/Homogenized/SoftmaxDerivatives.lean": "49792cc18926e0af62c196802020c3849275b07f3a311e6079198979907caa84",
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/SequenceModel/Rotary.lean": "41365fb1e51eec1d61b2bb3f6feacd11b9e76b0752cbdb9ef360bcb097b581a3",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "reviewed_implementation_sha256": {
+    "research/early99_score_scale/factories.py": "4dec1dbfac71796ea897de4f1def134cd5e5c150c1e85bd135428c74c8202c0e",
+    "research/early99/experiments/scalable_softmax.py": "4ec54ddeb8f29dee12f2e01f6de339533db3111d68d8da5f212c45a5927a8e6a",
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca"
+  },
+  "commands": [
+    "mkdir -p /tmp/early99-sensitivity/research/normalization_guarantees",
+    "lake env lean -R /home/misha/python_projects/gpt -o /tmp/early99-sensitivity/research/normalization_guarantees/RMSLipschitz.olean /home/misha/python_projects/gpt/research/normalization_guarantees/RMSLipschitz.lean",
+    "lake env bash -c 'export LEAN_PATH=\"/tmp/early99-sensitivity:$LEAN_PATH\"; lean -R /home/misha/python_projects/gpt -o /tmp/early99-sensitivity/research/normalization_guarantees/AttentionSensitivity.olean /home/misha/python_projects/gpt/research/normalization_guarantees/AttentionSensitivity.lean'",
+    "lake env lean -R /home/misha/python_projects/gpt -o /tmp/early99-sensitivity/research/normalization_guarantees/SoftmaxLipschitz.olean /home/misha/python_projects/gpt/research/normalization_guarantees/SoftmaxLipschitz.lean",
+    "lake env bash -c 'export LEAN_PATH=\"/tmp/early99-sensitivity:$LEAN_PATH\"; lean -R /home/misha/python_projects/gpt /home/misha/python_projects/gpt/research/normalization_guarantees/AttentionSensitivityImproved.lean'"
+  ],
+  "cwd": "/home/misha/lean_projects/transformer",
+  "softmax_statement": "For N>0, M>=0 and every abs(u_j-v_j)<=M, sum_j abs(softmax(u)_j-softmax(v)_j)<=M. This improves the earlier checked constant 4 to 1; no optimality theorem is claimed.",
+  "proof_argument": "A subset probability mass along an affine score path has derivative bounded by 2*M*p*(1-p)<=M/2. The mean value theorem bounds subset mass differences. The subset of positive endpoint differences turns twice its mass difference into the full l1 distance.",
+  "attention_hypotheses": [
+    "Finite real projected query/key vectors of positive width d; epsilon>0.",
+    "A nonempty row with fixed rotary phases and fixed gain gamma.",
+    "For the joint result every raw projected key changes by Euclidean norm at most E, with E>=0."
+  ],
+  "attention_query_statement": "With C=abs(gamma)*sqrt(d)/sqrt(epsilon), sum_j abs(p_j(q,K)-p_j(q2,K))<=C*norm(q-q2), improving the earlier bound 4*C.",
+  "attention_joint_statement": "sum_j abs(p_j(q,K)-p_j(q2,K2))<=C*(norm(q-q2)+E), where E uniformly bounds projected-key changes before RMS. There is no extra factor N.",
+  "ssmax_specialization": "gamma=m*log(N)*g. For m>=0,N>=1, C=m*log(N)*abs(g)*sqrt(d)/sqrt(epsilon). The original ideal initialization g=1/sqrt(d) cancels the width factor. The theorem also covers the actual rounded buffer gain as a real fixed scalar.",
+  "nonvacuity": "Every one of the seven statements has an example. Softmax examples include a genuine two-key score change and proper subset. Attention examples use width 8, four keys, actual epsilon 1/8388608, quarter-scale SSMax ideal gain, nonzero or position-varying phases and arbitrary input vectors.",
+  "limitations": [
+    "Unchanged real model; this improves the mathematical estimate, not measured behavior.",
+    "No bound on unbounded projection matrices before the projected vectors, learned phase changes, value changes, XSA or readout.",
+    "No whole-transformer conditioning, floating-point, convergence or learning theorem.",
+    "Small epsilon still permits large sensitivity constants; smaller score gain still weakens the separate concentration lower bound for a fixed margin.",
+    "Equation correspondence to PyTorch is reviewed rather than a verified translation."
+  ],
+  "preservation": "All scientific Python/configurations/plans, prior proof records, short selection and active long diagnostic remain unchanged."
+}

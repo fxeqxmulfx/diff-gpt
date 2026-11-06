@@ -60,41 +60,53 @@ and its hashes remain intact; it correctly records the earlier, looser bound.
 
 ## Normalized attention sensitivity
 
-[AttentionSensitivity.lean](AttentionSensitivity.lean) adds four checked
-statements for the same real RMS and split-half rotary equations. For a fixed
-nonempty visible row, fixed keys and fixed rotary phases, let
+[AttentionSensitivityImproved.lean](AttentionSensitivityImproved.lean) bounds
+the same real RMS, split-half rotary and softmax equations. For a fixed
+nonempty visible row and fixed rotary phases, let
 
 ```text
 score_j(q) = gamma * <RMS-and-rotate(q), RMS-and-rotate(key_j)>
 p(q) = softmax(score(q))
 C = abs(gamma) * sqrt(head_width) / sqrt(epsilon).
 
-|score_j(q) - score_j(q')| <= C * ||q-q'||
-sum_j |p_j(q) - p_j(q')| <= 4*C * ||q-q'||.
+|score_j(q) - score_j(q')| <= C * ||q-q'||              (fixed keys)
+sum_j |p_j(q,K) - p_j(q',K)| <= C * ||q-q'||           (fixed keys)
+sum_j |p_j(q,K) - p_j(q',K')| <= C * (||q-q'|| + E)    (each key changes <= E).
 ```
 
-Here `q` is the **projected query before its RMS**, and keys remain fixed. The
-bound does not contain an extra factor equal to the number of keys. For the
+Here `q` and the keys are **projected vectors before their RMS**. The joint
+bound permits every key to change by Euclidean norm at most `E`. Neither
+bound contains an extra factor equal to the number of keys. For the
 implemented SSMax gain `gamma = m*log(N)*g`, it grows with `log(N)` and scales
 linearly with `m`. Half-scale and quarter-scale reduce these displayed constants
 by factors of two and four relative to the same parent. With ideal original
-gain `g=1/sqrt(head_width)`, the width factor cancels. The factor four in the
-softmax bound is conservative, not claimed optimal.
+gain `g=1/sqrt(head_width)`, the width factor cancels.
 
 The proof establishes that arbitrary fixed rotations preserve differences,
 then combines the improved RMS Lipschitz estimate, the normalized key's norm
-bound, Cauchy–Schwarz and the existing checked softmax infinity-to-one estimate.
-All four statements compile with **zero warnings and only standard axioms**.
-Examples use positive width, the actual FP32 epsilon, nonzero phases and a
-nonempty row. The [proof record](results/attention-sensitivity.json) and
-[compiler output](results/attention-sensitivity-lean-check.txt) preserve the
-exact commands, dependencies and source hashes. The recorded commands compile
-the unchanged RMS dependency into `/tmp`; neither compilation
-edits the external Lean project.
+bound and Cauchy–Schwarz. [SoftmaxLipschitz.lean](SoftmaxLipschitz.lean) proves
+the stronger infinity-to-one estimate
+`sum(abs(softmax(u)-softmax(v))) <= max(abs(u-v))`, improving the previously
+checked constant four to one. It bounds each subset's probability-mass
+derivative by half the maximum logit speed, applies the mean value theorem,
+then uses the subset where the endpoint difference is positive. No optimality
+theorem is claimed.
 
-This controls one probability row under query perturbations. It does not
-control changes in the keys, value path, learned angles, XSA, unbounded query
-projection or readout matrices, or the whole network. Small epsilon still
+All **seven new statements** compile with **zero warnings and only standard
+axioms**. Every statement has an example; attention examples use the actual
+FP32 epsilon and quarter-scale ideal gain, with positive width, nonempty rows
+and varying phases. The [new proof record](results/improved-sensitivity.json)
+contains the exact commands, dependencies and compiler-output hashes. Builds
+use temporary artifacts and do not edit the external Lean project.
+
+The earlier four-statement [attention proof](AttentionSensitivity.lean), its
+[record](results/attention-sensitivity.json) and compiler output remain intact.
+Its looser `4*C` query bound is still true. The new proof improves that bound
+to `C` and adds simultaneous query/key control; it changes no model behavior.
+
+These results control one probability row under projected query/key
+perturbations. They do not control the value path, learned angles, XSA,
+unbounded projection or readout matrices, or the whole network. Small epsilon still
 allows large constants. It adds no finite-precision or learning guarantee and
 does not remove the weaker concentration bound at smaller score coefficients.
 The short-suite selection and its frozen proof records remain unchanged.

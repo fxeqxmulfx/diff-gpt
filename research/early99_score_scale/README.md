@@ -245,8 +245,11 @@ censored rows, misleading stress summaries and overwriting completed evidence.
 The short selection and evidence were committed as **`8256d95`** before the
 [long launch](results/long-launch.json). Its selected configuration and source
 hashes remain fixed. The supplemental
-[attention sensitivity proof](../normalization_guarantees/README.md#normalized-attention-sensitivity)
-now also bounds changes in one probability row with fixed keys and rotations.
+[attention sensitivity proofs](../normalization_guarantees/README.md#normalized-attention-sensitivity)
+now also bound changes in one probability row under projected query/key
+perturbations with fixed rotations. Seven additional checked statements improve
+the earlier softmax constant from four to one and extend the query-only result
+to uniformly bounded changes in all keys. They change no model behavior.
 It is separate from the already frozen selection manifest and changes no model
 or experiment. Long outcomes will be reported once the complete diagnostic and
 checkpoint audits finish.
