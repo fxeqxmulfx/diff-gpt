@@ -1,0 +1,9 @@
+Transformer.ScheduleFree.AdamW.trainingStep_pack.{u_1} {ι : Type u_1} (p : Parameters) (t : ℕ) (s : State ι)
+  (g : ι → ℝ) : trainingStep p t (pack p s) g = pack p (step p t s g)
+Transformer.ScheduleFree.AdamW.evaluation_pack.{u_1} {ι : Type u_1} (p : Parameters) (s : State ι)
+  (hβ : p.adam.betaOne ≠ 0) : evaluation p (pack p s) = s.evaluation
+Transformer.ScheduleFree.AdamW.trainingRun_pack.{u_1} {ι : Type u_1} (p : Parameters) (oracle : ℕ → (ι → ℝ) → ι → ℝ)
+  (point : ι → ℝ) (t : ℕ) : trainingRun p oracle point t = pack p (run p oracle point t)
+'Transformer.ScheduleFree.AdamW.trainingStep_pack' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Transformer.ScheduleFree.AdamW.evaluation_pack' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Transformer.ScheduleFree.AdamW.trainingRun_pack' depends on axioms: [propext, Classical.choice, Quot.sound]

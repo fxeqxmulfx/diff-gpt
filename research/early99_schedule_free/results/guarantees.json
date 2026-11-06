@@ -1,0 +1,47 @@
+{
+  "checked_at_utc": "2026-11-06T07:14:55.528634+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "checked_library_identities": 3,
+  "actual_hyperparameter_examples": 3,
+  "axioms": {
+    "Transformer.ScheduleFree.AdamW.trainingStep_pack": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.ScheduleFree.AdamW.evaluation_pack": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Transformer.ScheduleFree.AdamW.trainingRun_pack": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "source_sha256": {
+    "research/early99_schedule_free/CheckedIdentities.lean": "8a15c5edace07d0c301c36b1cf4a8ad5a530557e9a937e67e7c02f4189a700c3"
+  },
+  "output": "research/early99_schedule_free/results/lean-check.txt",
+  "output_sha256": "488b888dcd46c5ebc8e50e1f378b30186b6ddff647029886d428aea398f9e572",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "external_source_sha256": {
+    "src/Transformer/ScheduleFree/AdamW/Basic.lean": "41e62611bb68ddcf3258f1876ad421c18336604f79ac8bf52cbe2714d3f1ea7f",
+    "src/Transformer/ScheduleFree/AdamW/BiasCorrection.lean": "dbd7f6db55c2dcbb498da6671f5d274e88b2d87ab880b2b1bd81646b9631986b",
+    "src/Transformer/ScheduleFree/AdamW/Defs.lean": "2067a6d0914611d184e634976452360753a0c97784c0c1488adae05564b6dbd0",
+    "src/Transformer/ScheduleFree/AdamW/Invariants.lean": "9b71adf997579381db4b4521ef92202267d2b40ad5ae01b9567b97e8940f2381",
+    "src/Transformer/ScheduleFree/AdamW/PaperComparison.lean": "7bb8defc420ca32399b2df181dea4f3611ccfb41d0a82742e6203ab419af80f9",
+    "src/Transformer/ScheduleFree/Section4_AdamW.lean": "bfa692ae69532d092b7a46d9f50687b48df3691ad1b0ecd10ab545fe5a652b71",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "observed_command": "lake env lean /home/misha/python_projects/gpt/research/early99_schedule_free/CheckedIdentities.lean",
+  "mapping": "Modern upstream two-buffer update. Effective external completed-step rate is supplied with internal warmup0. beta1=.9,beta2=.98,epsilon1e-8,decay at y. Packing depends only on constant beta1; per-step identity applies to each externally supplied rate. Local maximum starts0 versus upstream formal initial sentinel-1: nonnegative first rate makes their first maxima identical.",
+  "scope": "trainingStep_pack and evaluation_pack are real algebraic identities. Fixed-parameter trainingRun_pack is checked for context, not directly claimed for the external warmup. No convergence, finite-precision, full PyTorch equivalence or learning guarantee. Numerical update/mode/resume tests are separate.",
+  "model_guarantees_retained": "All prior inverse-width Q/K normalization real bounds apply pointwise at x or y; no architecture changed."
+}
