@@ -1,0 +1,35 @@
+{
+  "declared_at_utc": "2026-11-06T18:38:48.895564+00:00",
+  "purpose": "Check the existing RMSNorm implementation against the newly proved adjacent-map scalar identity and derivative; no model or optimizer change.",
+  "widths": [
+    1,
+    64,
+    128,
+    256
+  ],
+  "amplitudes": [
+    0.0,
+    9.5367431640625e-07,
+    0.02,
+    1.0
+  ],
+  "dtypes": [
+    "float32",
+    "float64"
+  ],
+  "epsilon": {
+    "numerator": 1,
+    "denominator": 8388608
+  },
+  "relative_error_limit": 0.001,
+  "oracle": "Independent Python binary64 evaluation of a/sqrt(a^2+e) and a/sqrt((1+e)*a^2+e^2), with derivatives e/(a^2+e)^(3/2) and e^2/((1+e)*a^2+e^2)^(3/2). Evaluate at the actual represented input amplitude, with the fixed FP32 epsilon also in FP64 runs.",
+  "observation": "Existing RMSNorm forward and autograd of its mean output along the unit-RMS all-ones direction. Check one map and two adjacent maps at every cell. Exactly zero oracle outputs require exactly zero observed outputs.",
+  "expected_cases": 32,
+  "source_sha256": {
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "research/rms_composition_guarantees/Bounds.lean": "594b49f1d27c08024ff9443fa3a627c4e1a7e08622fb3b9c09d476af54ef3adf",
+    "research/rms_composition_guarantees/results/guarantees.json": "b3755836f493284a3451cefb192a7e2dc5d455918eb31dc60faa7784dbc22521"
+  },
+  "limitations": "These are local CPU value/directional-gradient checks. They do not certify floating-point arithmetic generally, arbitrary directions, the full model, the unresolved numerical stress failures, or training behavior.",
+  "optimizer_updates": 0
+}
