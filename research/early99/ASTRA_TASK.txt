@@ -899,3 +899,34 @@ checkpoint ages and outcomes do not establish causal training dynamics. Preserve
 the frozen benchmark selection and existing failures. Larger models remain a
 hypothesis, not an authorized training queue. Muon and numerical repair remain
 unfinished and queued after this requested diagnostic.
+
+Follow-up user authorization: larger depth and width after the diagnostic
+After completing and reporting the existing-model gradient diagnostic, test
+larger models on the same cubic-sum task: depth alone, width alone, and both
+together. Compare original and normalized architectures across allthree seeds,
+retaining both originalLR1andLR2controls because rate already changes coverage.
+Keep head width fixed at32when widening, so inverse-width attention gain does
+not change with the capacity intervention. Freeze the separate capacity plan,
+validation, parameter counts and complete run grid before new training. Reuse
+the nine completed current-size cells. This retrospectively chosen one-task
+capacity study does not change the fixed75-cell benchmark, select its winner,
+or turn its already observed long task into fresh holdout evidence. Keep all
+budgets, data, seeds and failures visible. The prior deferral of larger-model
+training is superseded by this explicit follow-up request. Muon and numerical
+repair remain queued after the requested diagnostic and capacity investigation.
+
+Existing-model gradient diagnostic completed
+research/transformer_path_diagnostic completes60state/batch measurements and120
+objective backwards on cubic-sum. All120forward/parameter-gradient parity checks
+are exact; all360residual/tied-weight decompositions reconstruct with zero error.
+Allgradients andunmaskedactivations arefinite, with56observed sites inoriginal and
+62innormalized. At matchedinitialization the paired normalized/old unit-probe
+Q/KgradientRMS ratios are0.11665/0.11616,versus0.76735forV; rawembeddingoutput
+gradientRMS remains similar(.10239vs.10152). Finalnormalized attention is more
+uniform(entropy/logN median.9555vsoldLR1.7404andoldLR2.3938). Its finalFFNbranch/
+identity unit-probegradientratio is1.954vs6.252/29.769. Retain allseeds,batches,
+componentCSVrows anddifferentcheckpointages. These are directional local metrics,
+not globalJacobian bounds or a causal explanation. Fivevalidationchecks pass;
+the degenerate-probe failure, exception-type mismatch and source-preflight
+rejection are retained. Continue the now-authorized depth/width capacity study
+after committing this complete diagnostic; no optimizer update was made here.
