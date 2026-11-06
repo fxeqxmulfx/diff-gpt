@@ -264,3 +264,26 @@ Independent component stress fixes and their proofs/results are recorded in
 research/transformer_stress_fixes, with separate rate/width/epsilon follow-ups.
 Complete their audits and preserve any unresolved learning failures while the
 original long diagnostic finishes. Continue research afterward as requested.
+
+Further stress repair evidence
+The bounded-frequency gradient repair in research/transformer_gradient_stress
+preserves every tested forward output and all other parameter gradients. Its
+18 scalar checks and all 65 full-stack cases pass; five extreme-frequency cases
+recover nonzero derivatives lost by native tanh backward. Five Lean statements
+verify the unchanged real derivative. This is a numerical repair, not a learning
+or representable-optimizer-progress guarantee; complete evidence is committed.
+
+The learned even-path SwiGLU study in research/transformer_stress_parity improves
+the original residual teacher from 6/12 to 10/12 passes but loses the parent's
+three passes on a separately declared mixed odd/even teacher (3/12 to 0/12).
+All 48 comparison rows, 36 new checkpoints and five activation identities are
+audited and committed. Preserve both remaining original failures and the new
+regressions; this is not a universal-model replacement. A separately frozen
+initialization-only study in research/transformer_stress_parity_init completed
+coefficients 0.5 and 1 on both teachers, with the same data and budgets, retaining
+all 48 prior controls and 48 new cells. Initial 0.5 recovers the mixed-teacher
+passes but loses the four original-task gains; initial 1 loses three additional
+original-task passes. Neither fixes the tradeoff. Preserve these full audited
+results without promoting an unsupported shared-model replacement. Continue the
+original long diagnostic and subsequent research; keep every frozen source,
+original short selection and original long budget unchanged.

@@ -101,3 +101,12 @@ The deeper 16-branch model fits the teacher better; all six 4-branch cases
 still miss. A separately frozen rate study in `../transformer_stress_rates/`
 tests whether this is a fixed-budget optimization issue. These results do not
 yet establish a full-GPT improvement or justify calling the architecture ideal.
+
+The [frequency-gradient follow-up](../transformer_gradient_stress/README.md)
+repairs a subtler failure that finite-gradient checks missed: native tanh
+backward rounds tiny true derivatives to zero. All 18 scalar and 65 full-stack
+checks pass with identical forward logits and unchanged other gradients.
+The [activation follow-up](../transformer_stress_parity/README.md) improves the
+original learning test to 10/12 passes but introduces mixed-teacher regressions.
+These results preserve the distinction between numerical correctness and
+successful learning across tasks.

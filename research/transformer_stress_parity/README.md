@@ -56,6 +56,11 @@ and [checker output](results/lean-check.txt) report zero warnings and only
 standard Lean axioms. These statements do not assert learning success or
 odd symmetry of the full attention transformer.
 
+The [initialization follow-up](../transformer_stress_parity_init/README.md)
+tests coefficients 0.5 and 1 on both unchanged teachers. Neither retains the
+original-task gains while recovering the mixed-teacher passes; all negative
+results and the initial-zero control are preserved.
+
 ```bash
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.transformer_stress_parity.run
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python research/stress_audits/parity.py
