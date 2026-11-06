@@ -1,0 +1,74 @@
+{
+  "declared_at_utc": "2026-11-06T22:22:05.057363+00:00",
+  "motivation": "User asks whether individual model blocks need different initialization scales. Examine the exact local effect of scaling a linear map immediately before the existing finite-epsilon RMS.",
+  "objective": "Separate changes to normalized forward values, physical-parameter gradients and radial/tangent conditioning; no initialization candidate or learning claim.",
+  "proof_targets": [
+    "Lift the existing finite-epsilon identity R_eps(s*z)=R_(eps/s^2)(z), s>0, to a fixed linear parameter-to-activation map A.",
+    "Given a derivative D of loss(R_(eps/s^2)(A(w))) at w, the physical-parameter derivative of loss(R_eps(A(w))) at s*w is (1/s)*D. Keep the derivative hypothesis explicit.",
+    "Prove the matching coordinate RMS VJP rescaling identity, with nonnegative mean-square energy, positive epsilon and positive scale.",
+    "Increasing scale s>=1 makes the radial/tangent coefficient ratio eps/(s^2*m+eps) no larger; this is not a full-network condition number or an optimizer guarantee."
+  ],
+  "reused_lemmas": [
+    "Transformer.AttentionResiduals.rmsNormEps_coordinates",
+    "Transformer.Residual.rms_backward_coefficient_ratio"
+  ],
+  "numerical_grid": {
+    "device": "cpu",
+    "widths": [
+      32,
+      128,
+      256
+    ],
+    "amplitudes": [
+      0.0,
+      9.5367431640625e-07,
+      0.02,
+      1.0
+    ],
+    "positive_scales": [
+      0.25,
+      1.0,
+      4.0,
+      16.0
+    ],
+    "dtypes": [
+      "float32",
+      "float64"
+    ],
+    "epsilon": {
+      "numerator": 1,
+      "denominator": 8388608
+    },
+    "expected_cases": 96,
+    "relative_error_limit": 0.001,
+    "linear_input": [
+      1.0,
+      -1.0
+    ],
+    "construction": "v repeats [1,1,-1,-1], t repeats [1,-1,1,-1], so both have unit RMS and are exactly orthogonal. W has columns a*v/2 and -a*v/2. The fixed linear input gives z=a*v. Compare independent physical parameter leaves s*W at epsilon and W at epsilon/s^2.",
+    "upstream_gradients": [
+      "radial v",
+      "tangent t",
+      "mixed (v+t)/2"
+    ],
+    "references": "Independent binary64 closed forms for outputs and radial/tangent VJPs, evaluated at represented amplitudes. Compare all physical-matrix gradients and the inverse-scale identity. Exact-zero reference vectors require exact zeros.",
+    "policy": "Keep every case and all failures. Do not loosen the threshold. Source validation and mathematical proof precede the numerical check."
+  },
+  "sources_sha256": {
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "research/stored_rope_guarantees/check.py": "c32daf88d0de108448294d6e088456e752f157c9b01c2d1fd9198894eea2a809"
+  },
+  "external_sha256": {
+    "src/Transformer/AttentionResiduals/QueryCoordinates.lean": "69dbee7a771b7219bc581f4efa3b1e3f3671a8d102c5e039f3893fde568f7922",
+    "src/Transformer/Residual/RMSBackward.lean": "4363cbb83edd49a67a5094a12f217ef132a27a32ffa3be141bd3559b1c4ce3c5",
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "limits": [
+    "Real-arithmetic proofs retain finite epsilon. Numerical checks concern only the declared moderate-scale CPU grid, not a floating-point proof.",
+    "The linear map, downstream scalar loss and cotangent are fixed for each local comparison. Internal SwiGLU scales, simultaneous model changes, tied embedding/readout paths and optimizer trajectories are outside the identity.",
+    "The counterpart uses epsilon/s^2. Fixed-epsilon RMS is not exactly scale invariant, and inverse gradient scaling is not an exact same-epsilon training statement.",
+    "No optimizer updates, new task data or held-out scores, best initializer selection, current capacity/gain alteration, or repair of the ten unresolved full-stack numerical failures."
+  ]
+}
