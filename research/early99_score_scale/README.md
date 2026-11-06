@@ -11,8 +11,11 @@ choice is quarter-scale SSMax, with Q/K RMS retained:** **75/75 passes** and
 **17.3257 geometric-mean epochs**, **49.4% fewer than LR ×2** and **28.8% fewer
 than the Q/K parent**. It is also 17.4% earlier than the previous no-Q/K ablation
 on the complete aggregate. Its worst slowdown against LR ×2 is **17.5×**;
-every regression is retained. The single reused long diagnostic is running;
-short selection does not establish a universal replacement.
+every regression is retained. The completed reused long diagnostic passes
+**21/30**, versus **26/30 for LR ×2**, **29/30 for baseline**, and **20/30 for
+the previous no-Q/K ablation**. All 105 selected-arm checkpoints and all three
+long comparisons are audited. The short gain does not establish a universal
+replacement; all nine long misses remain recorded.
 
 The [plan](plan.json) was declared after round two's results were committed as
 `1138c62`, and before new benchmark training. Short results motivate the test:
@@ -217,7 +220,7 @@ resumptions. Together with half-scale, all eight complete paired comparisons
 were independently reconstructed before choice was frozen. The old round-two
 selection is unchanged; the new shared-model choice retains Q/K RMS throughout.
 
-## Audit and subsequent long diagnostic
+## Final audit and reused long diagnostic
 
 The separate [report verifier](../early99_score_scale_reporting/verify_results.py)
 reconstructs all screens, complete comparisons, selection and coverage from raw
@@ -250,9 +253,8 @@ now also bound changes in one probability row under projected query/key
 perturbations with fixed rotations. Seven additional checked statements improve
 the earlier softmax constant from four to one and extend the query-only result
 to uniformly bounded changes in all keys. They change no model behavior.
-It is separate from the already frozen selection manifest and changes no model
-or experiment. Long outcomes will be reported once the complete diagnostic and
-checkpoint audits finish.
+These supplemental results are separate from the already frozen selection
+manifest and change no model or experiment.
 
 A supplemental [selectivity bound](../normalization_guarantees/README.md#attention-selectivity-ceiling)
 also limits the probability any single key can receive from bounded normalized
@@ -260,3 +262,72 @@ scores. It makes the sensitivity/concentration tradeoff explicit, including a
 checked width-four limit on concentrated quarter-scale
 attention. Width four is outside this benchmark's head widths; the result
 changes no experiment and is not a whole-model learning impossibility.
+
+The single long diagnostic is **complete and audited**. It used the frozen
+quarter-scale configuration, scientific source `dfecdc9`, original budgets and
+all three seeds. No long outcome changed selection or tuned the candidate.
+The suite was already observed in earlier rounds; it remains reused regression
+evidence, not a fresh holdout. The Q/K parent has no long suite.
+
+| Long configuration | Passes / 30 | Trainer seconds |
+|---|---:|---:|
+| Original baseline | 29 | 3628.01 |
+| LR ×2 control | 26 | 3238.05 |
+| Previous no-Q/K ablation | 20 | 4550.23 |
+| **Selected quarter-scale, Q/K retained** | **21** | **4577.80** |
+
+Every quarter-scale miss exhausts the original **100,000-update** budget:
+
+| Task | Censored seeds | Censor epochs per cell |
+|---|---|---:|
+| `arithmetic-sum-pow4` | 1, 2 | 5263.1633 |
+| `arithmetic-sum-cube` | 0, 1, 2 | 5263.1633 |
+| `recurrence-fibonacci-k1-c2-lgt` | 0, 2 | 10000.0000 |
+| `basis-parity24` | 0, 1 | 80.0000 |
+
+These exposures are censoring points, not successful crossings. The
+[long summary](results/long-summary.json) retains final accuracy for every
+miss. **No long geometric mean or successful-only aggregate is reported.**
+
+| Comparison | Common passes: earlier / tied / later | Newly missed | Recovered | Both missed | Worst successful-pair slowdown |
+|---|---:|---:|---:|---:|---:|
+| Original baseline | 13 / 0 / 8 | 8 | 0 | 1 | 8.0294× |
+| LR ×2 | 13 / 1 / 6 | 6 | 1 | 3 | 6.6474× |
+| Previous no-Q/K ablation | 12 / 1 / 6 | 1 | 2 | 8 | 2.2696× |
+
+Against LR ×2, quarter-scale recovers `arithmetic-sum-pow4`, seed 0, at
+4372 epochs. Newly censored cells are power-four seed 2, cube seed 0,
+Fibonacci seeds 0/2 and parity-24 seeds 0/1. Its largest successful-pair
+slowdown is `basis-recall-easy`, seed 0: **8.6272 → 57.3488 epochs (6.6474×)**.
+Against the previous no-Q/K ablation, it recovers power-four seed 0 and recall
+seed 0, but newly misses parity-24 seed 1. The largest successful-pair slowdown
+versus baseline is parity-20 seed 1, **6.8 → 54.6 epochs (8.0294×)**; versus
+no-Q/K it is parity-20 seed 2, **23 → 52.2 epochs (2.2696×)**.
+
+The complete [baseline](results/peri-rms-scaled-ssmax-gain-quarter-lr2-vs-baseline-long.json),
+[LR ×2](results/peri-rms-scaled-ssmax-gain-quarter-lr2-vs-lr2-long.json), and
+[no-Q/K](results/peri-rms-scaled-ssmax-gain-quarter-lr2-vs-noqk-long.json)
+comparisons include all 30 rows, paired epochs, per-task summaries and adjacent
+CSV files. These control comparisons combine several model differences; they
+do not isolate the cause of a long regression.
+
+The [105-cell checkpoint audit](results/audit-peri-rms-scaled-ssmax-gain-quarter-lr2-complete.json)
+finds **96 passes, nine budget misses, zero execution errors and zero
+resumptions**, with all 31 scientific source files unchanged. It checks saved
+weights, optimizer steps/settings, complete histories, initialization pairing,
+data, seeds, cadence and original scoring. The
+[completion audit](results/complete-audit.json) binds every long artifact and
+records **eight reconstructed full-short comparisons and three reconstructed
+long comparisons**. The supplemental proof audit separately verifies 21
+statements and their scope.
+
+Reproduce the completed reports without training:
+
+```bash
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_score_scale_reporting.run_long --report
+```
+
+The frozen short choice remains quarter-scale SSMax with Q/K RMS. Its learning
+and coverage tradeoffs remain part of the result. Subsequent experiments must
+use separately declared plans based on short evidence, component stress
+diagnoses and mathematics, without tuning against this long diagnostic.

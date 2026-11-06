@@ -1,0 +1,730 @@
+{
+  "selected_name": "peri-rms-scaled-ssmax-gain-quarter-lr2",
+  "diagnostic": "Reused 30-cell long regression suite; no tuning or reselection.",
+  "frozen_selection_sha256": "6d2722ef9b396b958859ccf4c9e46d9ab57d921c14eeb03a900cd2c88caad66c",
+  "selection_integrity_sha256": "49b6bfe5d4816899dc2656d1833d4db83095e2894b7230a46d5cd9891a69bed5",
+  "candidate_plan_sha256": "522ace904afde1d7e23a108ac2f717b8a8ddc0fc8ebd34f57560bfd0279c0da1",
+  "winner": {
+    "passed": 21,
+    "expected": 30,
+    "trainer_seconds_including_setup_scoring": 4577.795352096116,
+    "censored": [
+      {
+        "case": "arithmetic-sum-pow4",
+        "seed": 1,
+        "candidate_censor_epochs": 5263.163265306122,
+        "candidate_final_heldout_accuracy": 0.9011689691817216
+      },
+      {
+        "case": "arithmetic-sum-pow4",
+        "seed": 2,
+        "candidate_censor_epochs": 5263.163265306122,
+        "candidate_final_heldout_accuracy": 0.9738575982996812
+      },
+      {
+        "case": "arithmetic-sum-cube",
+        "seed": 0,
+        "candidate_censor_epochs": 5263.163265306122,
+        "candidate_final_heldout_accuracy": 0.926673751328374
+      },
+      {
+        "case": "arithmetic-sum-cube",
+        "seed": 1,
+        "candidate_censor_epochs": 5263.163265306122,
+        "candidate_final_heldout_accuracy": 0.9846971307120085
+      },
+      {
+        "case": "arithmetic-sum-cube",
+        "seed": 2,
+        "candidate_censor_epochs": 5263.163265306122,
+        "candidate_final_heldout_accuracy": 0.9156216790648246
+      },
+      {
+        "case": "recurrence-fibonacci-k1-c2-lgt",
+        "seed": 0,
+        "candidate_censor_epochs": 10000.0,
+        "candidate_final_heldout_accuracy": 0.9829931972789115
+      },
+      {
+        "case": "recurrence-fibonacci-k1-c2-lgt",
+        "seed": 2,
+        "candidate_censor_epochs": 10000.0,
+        "candidate_final_heldout_accuracy": 0.9866071428571429
+      },
+      {
+        "case": "basis-parity24",
+        "seed": 0,
+        "candidate_censor_epochs": 80.0,
+        "candidate_final_heldout_accuracy": 0.9379084967320261
+      },
+      {
+        "case": "basis-parity24",
+        "seed": 1,
+        "candidate_censor_epochs": 80.0,
+        "candidate_final_heldout_accuracy": 0.6601307189542484
+      }
+    ]
+  },
+  "winner_geometric_mean_epochs": null,
+  "controls": {
+    "baseline": {
+      "passed": 29,
+      "expected": 30,
+      "trainer_seconds_including_setup_scoring": 3628.009674072993,
+      "censored": [
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 0,
+          "baseline_censor_epochs": 10000.0,
+          "baseline_final_heldout_accuracy": 0.9863945578231292
+        }
+      ]
+    },
+    "lr2": {
+      "passed": 26,
+      "expected": 30,
+      "trainer_seconds_including_setup_scoring": 3238.0514002580894,
+      "censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 0,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.8809776833156217
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 1,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.879702444208289
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 1,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.9640807651434644
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 2,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.8712008501594048
+        }
+      ]
+    },
+    "noqk": {
+      "passed": 20,
+      "expected": 30,
+      "trainer_seconds_including_setup_scoring": 4550.22707015698,
+      "censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 0,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.9188097768331562
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 1,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.971307120085016
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 2,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.8729011689691817
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 0,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.9774707757704569
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 1,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.9674814027630181
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 2,
+          "baseline_censor_epochs": 5263.163265306122,
+          "baseline_final_heldout_accuracy": 0.9005313496280553
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 0,
+          "baseline_censor_epochs": 63.8992,
+          "baseline_final_heldout_accuracy": 0.67578125
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 0,
+          "baseline_censor_epochs": 10000.0,
+          "baseline_final_heldout_accuracy": 0.9842687074829932
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 2,
+          "baseline_censor_epochs": 10000.0,
+          "baseline_final_heldout_accuracy": 0.9846938775510204
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 0,
+          "baseline_censor_epochs": 80.0,
+          "baseline_final_heldout_accuracy": 0.42810457516339867
+        }
+      ]
+    }
+  },
+  "comparisons": {
+    "baseline": {
+      "geometric_mean_epoch_ratio": null,
+      "common_passes": 21,
+      "earlier": 13,
+      "tied": 0,
+      "later": 8,
+      "recovered": [],
+      "newly_censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 2489.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 2627.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 3531.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 3197.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 4315.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 7961.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 10000.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 21.2,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 80.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 31.4,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 80.0,
+          "epoch_ratio": null
+        }
+      ],
+      "both_censored": [
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 10000.0,
+          "candidate_censor_epochs": 10000.0,
+          "epoch_ratio": null
+        }
+      ],
+      "worst_observed_ratio": 8.029411764705882,
+      "largest_regressions": [
+        {
+          "case": "basis-parity20",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 6.8,
+          "candidate_first99_epochs": 54.6,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 8.029411764705882
+        },
+        {
+          "case": "basis-parity20",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 11.8,
+          "candidate_first99_epochs": 52.2,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 4.423728813559322
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 18.2112,
+          "candidate_first99_epochs": 57.3488,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 3.1490950623791947
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 2334.0,
+          "candidate_first99_epochs": 4372.0,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.873179091688089
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 13.4192,
+          "candidate_first99_epochs": 19.1696,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.42852032908072
+        }
+      ]
+    },
+    "lr2": {
+      "geometric_mean_epoch_ratio": null,
+      "common_passes": 20,
+      "earlier": 13,
+      "tied": 1,
+      "later": 6,
+      "recovered": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": 4372.0,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": null
+        }
+      ],
+      "newly_censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 4634.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 3574.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 3577.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 10000.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 2681.0,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 10000.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 28.6,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 80.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 52.8,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 80.0,
+          "epoch_ratio": null
+        }
+      ],
+      "both_censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 1,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 1,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 2,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        }
+      ],
+      "worst_observed_ratio": 6.64744065281899,
+      "largest_regressions": [
+        {
+          "case": "basis-recall-easy",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 8.6272,
+          "candidate_first99_epochs": 57.3488,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 6.64744065281899
+        },
+        {
+          "case": "basis-parity20",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 15.2,
+          "candidate_first99_epochs": 52.2,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 3.43421052631579
+        },
+        {
+          "case": "basis-parity20",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 22.2,
+          "candidate_first99_epochs": 54.6,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 2.4594594594594597
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 8.3072,
+          "candidate_first99_epochs": 19.1696,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 2.307588597842835
+        },
+        {
+          "case": "basis-parity16",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 6.0,
+          "candidate_first99_epochs": 10.6,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.7666666666666666
+        }
+      ]
+    },
+    "noqk": {
+      "geometric_mean_epoch_ratio": null,
+      "common_passes": 19,
+      "earlier": 12,
+      "tied": 1,
+      "later": 6,
+      "recovered": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": 4372.0,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": null
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": 57.3488,
+          "baseline_censor_epochs": 63.8992,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": null
+        }
+      ],
+      "newly_censored": [
+        {
+          "case": "basis-parity24",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": 51.8,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": 80.0,
+          "epoch_ratio": null
+        }
+      ],
+      "both_censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 1,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 2,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 1,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 2,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 5263.163265306122,
+          "candidate_censor_epochs": 5263.163265306122,
+          "epoch_ratio": null
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 10000.0,
+          "candidate_censor_epochs": 10000.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 2,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 10000.0,
+          "candidate_censor_epochs": 10000.0,
+          "epoch_ratio": null
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 0,
+          "baseline_status": "budget_exhausted",
+          "candidate_status": "budget_exhausted",
+          "baseline_first99_epochs": null,
+          "candidate_first99_epochs": null,
+          "baseline_censor_epochs": 80.0,
+          "candidate_censor_epochs": 80.0,
+          "epoch_ratio": null
+        }
+      ],
+      "worst_observed_ratio": 2.2695652173913046,
+      "largest_regressions": [
+        {
+          "case": "basis-parity20",
+          "seed": 2,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 23.0,
+          "candidate_first99_epochs": 52.2,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 2.2695652173913046
+        },
+        {
+          "case": "basis-parity20",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 34.2,
+          "candidate_first99_epochs": 54.6,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.5964912280701753
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 1378.0,
+          "candidate_first99_epochs": 1884.0,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.367198838896952
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 1,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 14.5376,
+          "candidate_first99_epochs": 19.1696,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.3186220559101915
+        },
+        {
+          "case": "arithmetic-abs-diff",
+          "seed": 0,
+          "baseline_status": "passed",
+          "candidate_status": "passed",
+          "baseline_first99_epochs": 37.0,
+          "candidate_first99_epochs": 41.0,
+          "baseline_censor_epochs": null,
+          "candidate_censor_epochs": null,
+          "epoch_ratio": 1.1081081081081081
+        }
+      ]
+    }
+  },
+  "qk_parent_long_unavailable": true,
+  "checkpoint_audit_sha256": "98a3645fa149c9e6fbcb24f392e9634a96991b32000e3343c8be4a96b9d8ef49",
+  "long_launch_sha256": "f0557d200ea5fefa912c46b7b188088f547f6822299e157c5e2e304c0f5ad078",
+  "long_outcomes_used_for_selection_or_tuning": false
+}
