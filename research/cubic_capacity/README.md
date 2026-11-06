@@ -72,11 +72,24 @@ show every seed and both complete splits; [SVG](results/partial-group-cubic-dept
 and the [paired comparison CSV](results/partial-group-cubic-depth-original-lr1.csv)
 are also available. Earlier individual seed audits remain preserved.
 
-This completes **3/27 new cells**, not the capacity study. Adding depth under
-this particular original-model recipe did not improve coverage within the
-fixed budget. Width, the higher learning rate and the enlarged normalized model
-remain pending. The dispatcher continues with two layers at original LR 0.002;
-the remaining 24 cells and the subsequent usual-gain test keep their declared order.
+That contrast accounts for the first three new cells. Adding depth under this
+particular original-model recipe did not improve coverage within the fixed budget.
+The higher-rate three-seed contrast, width and enlarged normalized-model results
+remain incomplete.
+
+The fourth completed cell, two layers at original LR 0.002, **passes seed 0 at
+4,604 epochs** (87,476 updates). Its one-layer LR 0.002 control passes at 3,574
+epochs: the deeper model takes **28.82% more epochs** with **94.06% more parameters**.
+The [paired single-cell audit](results/partial-cell-cubic-depth-original-lr2-seed0.json)
+checks both full trajectories, checkpoints, optimizer states, sources and
+initialized tensors, with no resumption or replay. The crossing bracket is
+(4,603, 4,604] epochs; final exact held-out accuracy is 4,658/4,705 = 99.0011%.
+
+The same two-layer seed exhausted its budget at LR 0.001, using the exact same
+initialized parameter tensors. This is a single-seed learning-rate observation;
+the other two seeds must finish before interpreting the LR 0.002 group's coverage.
+**4/27 new cells** are complete. Seed 1 at depth two and LR 0.002 is running;
+the remaining 23 cells and the subsequent usual-gain test keep their declared order.
 
 The partial reporter requires all three seeds and writes separate artifacts
 that cannot close the full study. Its incomplete-group guard rejected the
@@ -86,6 +99,12 @@ and figure without retraining:
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr1
 MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr1
+```
+
+Reproduce the later single-seed pair without retraining:
+
+```sh
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 0
 ```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:

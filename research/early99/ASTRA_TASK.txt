@@ -1229,3 +1229,18 @@ update gap: direction,momenthistory,epsilon andparameter-relativeupdates matter.
 Theusualgain experiment stilltests achangedattentionfunction andscoreenvelope.
 No initializer isnamedbest; keepcapacity/gain order,preferredPeri/embeddingnorm
 andtiedweights, andthedeferredMuon/full-stackrepair workunchanged.
+
+Fourth capacity outcome: originaldepthLR2 seed0 passes
+The originaldepth2,width128 model atLR0.002 reaches4658/4705 exactheldout after
+87476updates,firstobserved4604epochs,withpreviousobservation4603epochs below99.
+Its one-layer LR0.002 seed0 control passes at3574epochs: depth takes28.81925percent
+moreepochs with94.05637percent moreparameters. Bothnative checkpoints, all
+observations, moments, initialized tensors, sourcearchives andexecution exposure
+pass the unchangeddeepaudit, withnoresumption orreplay. Runtime ratiosremain
+omitted becausehistoricalcontrols predate thedurablejournal. AtLR0.001,thissame
+two-layer seed exhausted100000updates withtheexactsame initializedtensors.
+Keep thissingle-seed learning-rate observation separatefromgroupcoverage claims.
+Four of27 newcells arecomplete; originaldepthLR2seed1 isrunning. All23 remaining
+cells andthelaterusualgain CUDAvalidation/three-seed test retainthedeclaredorder.
+The partialcell reporter writescomplete_group=false,complete_study=false; it
+cannotreplace thefull36-cell audit orselect anewfixed75 winner.
