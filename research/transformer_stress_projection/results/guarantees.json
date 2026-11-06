@@ -1,0 +1,56 @@
+{
+  "checked_at_utc": "2026-11-06T04:41:09.598585+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "statements": 6,
+  "axioms": {
+    "ResidualProjection.identity_inside": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "ResidualProjection.radius_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "ResidualProjection.variational": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "ResidualProjection.nonexpansive": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "ResidualProjection.scaled_sensitivity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "ResidualProjection.residual_radius": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "source_sha256": {
+    "research/transformer_stress_projection/Guarantees.lean": "b358ceca10474543a11d42330801c09f1daa27e5839ae8c907c169123e4ab034"
+  },
+  "output": "research/transformer_stress_projection/results/lean-check.txt",
+  "output_sha256": "72750e483646e243ec4d133ad7d0614f34634b726808e6c74e0e77b140c10848",
+  "observed_command": "lake env lean -R /home/misha/python_projects/gpt /home/misha/python_projects/gpt/research/transformer_stress_projection/Guarantees.lean",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "external_source_sha256": {
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    ".lake/packages/mathlib/Mathlib/Analysis/InnerProductSpace/Basic.lean": "82474b89f5565ab39507c3a9ac48044d6f266407c36dbc2d20be1e5a12ccf89d"
+  },
+  "hypotheses": "Real inner product space; positive radius. Actual width16 uses radius4 and RMS radius1. No differentiability hypothesis on the boundary.",
+  "mapping": "Reviewed radial formula r/max(r,norm(x)) times x equals x/max(1,RMS(x)) at r=sqrt(d). This is not a formal PyTorch translation.",
+  "limitations": "No floating-point, full-network, learned-gate or learning guarantee. Numerical and model validation are still pending; training has not started."
+}
