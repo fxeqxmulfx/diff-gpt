@@ -1,0 +1,36 @@
+{
+  "declared_at_utc": "2026-11-06T18:31:59.649125+00:00",
+  "question": "How does adding embedding RMS before first-block input RMS affect real local and global input sensitivity?",
+  "proof": "Use the existing rmsNormEps and radialRMS definitions. Check the exact scalar identity R_e(R_e(a)) = a/sqrt((1+e)*a^2+e^2), its unit-RMS vector mapping, global vector Lipschitz constant1/e and scalar/vector directional derivative1/e at zero. Reuse the already checked one-operation constant1/sqrt(e).",
+  "expected_statements": [
+    "radial_comp_eq",
+    "double_on_unit_direction",
+    "double_lipschitz",
+    "radial_double_zero_derivative",
+    "double_zero_direction_derivative"
+  ],
+  "hypotheses": "Real arithmetic, epsilon>0 and vector width d>0. Unit-direction mapping and derivative require norm(v)^2=d. No assumption bounds a learned weight or training trajectory.",
+  "epsilon_application": {
+    "numerator": 1,
+    "denominator": 8388608,
+    "source": "Native FP32 machine epsilon used at the actual embedding and first input RMS sites."
+  },
+  "local_source_sha256": {
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "src/diff_gpt/domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+    "research/early99/experiments/models.py": "3e7e6f19bf9027f66e47a61975a846d1f8e4c426b8a9a70a63541919e76e2dbf",
+    "research/early99_core_ablations/plan.json": "d15616c3800581f90537f58aa68551c5af8f9ce6222f6f2737470278f271630e"
+  },
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Residual/GradientPaths.lean": "a74e1237046a7926a05ed896fae8fa9bc936133e2a7762a4bd09583563731a06",
+    "src/Transformer/Residual/RMSBackward.lean": "4363cbb83edd49a67a5094a12f217ef132a27a32ffa3be141bd3559b1c4ce3c5",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "external_commit": "90b1df2e270f56c78e9bc9b4e42a4cef9b63b74e",
+  "limitations": "Only two adjacent, equal-epsilon, equal-width real RMS maps. This is not a bound on the whole model, learned projections, residual/readout paths, numerical rounding, optimizer convergence or generalization. The zero-input derivative does not establish that the measured runs operate near zero or that this mechanism caused their failures.",
+  "optimizer_updates": 0,
+  "changes_to_experiments": false
+}
