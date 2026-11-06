@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/misha/python_projects/gpt/research/transformer_path_diagnostic/run.py", line 193, in <module>
+    main()
+    ~~~~^^
+  File "/home/misha/python_projects/gpt/research/transformer_path_diagnostic/run.py", line 51, in main
+    committed = subprocess.run(  # noqa: S603 -- Exact local committed source.
+                ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ["/usr/bin/git", "show", f"HEAD:{path.relative_to(ROOT)}"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        check=True,
+        ^^^^^^^^^^^
+        capture_output=True,
+        ^^^^^^^^^^^^^^^^^^^^
+    ).stdout
+    ^
+  File "/home/misha/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/bin/git', 'show', 'HEAD:research/transformer_path_diagnostic/results/validation.json']' returned non-zero exit status 128.

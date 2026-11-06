@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_probe_distinguishes_confidence_from_zero_jacobian ____________
+
+    def test_probe_distinguishes_confidence_from_zero_jacobian() -> None:
+        """A confident loss can have tiny gradients while the logit map remains live."""
+        parameter = torch.tensor([[30.0, -30.0, -30.0]], requires_grad=True)
+        loss = F.cross_entropy(parameter, torch.tensor([0]))
+        loss_gradient = torch.autograd.grad(loss, parameter)[0]
+        before = torch.get_rng_state().clone()
+        probe = probe_like(parameter, 17)
+        gradient = torch.autograd.grad((parameter * probe).sum(), parameter)[0]
+        assert torch.equal(before, torch.get_rng_state())
+>       assert probe.sum().item() == pytest.approx(0, abs=1e-7)
+E       assert nan == 0 ± 1.0e-07
+E
+E         comparison failed
+E         Obtained: nan
+E         Expected: 0 ± 1.0e-07
+
+tests/diff_gpt/application/test_transformer_path_diagnostic.py:72: AssertionError
+=========================== short test summary info ============================
+FAILED tests/diff_gpt/application/test_transformer_path_diagnostic.py::test_probe_distinguishes_confidence_from_zero_jacobian
+1 failed in 1.19s

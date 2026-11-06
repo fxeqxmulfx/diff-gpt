@@ -1,0 +1,37 @@
+{
+  "validated_at_utc": "2026-11-06T20:59:48.198253+00:00",
+  "passed": 5,
+  "failed": 0,
+  "skipped": 0,
+  "scientific_measurements_started": false,
+  "checks": [
+    "Analytic residual cancellation and rejection of missing paths",
+    "Independent tied matrix product derivative",
+    "Confidence-insensitive unit probe, including degenerate-draw recovery",
+    "Every-gradient and forward equality through two-layer original GPT",
+    "Every-gradient and forward equality through two-layer normalized GPT"
+  ],
+  "retained_failures": [
+    "Initial all-equal Rademacher draw centered to zero; redraw now explicit and bounded.",
+    "After adopting the existing integrity helper, negative test expected AssertionError instead of ValueError; the invalid decomposition was correctly rejected."
+  ],
+  "files_sha256": {
+    "research/transformer_path_diagnostic/trace.py": "89f58d516a53cabfde659bdcdb4bdcf3c0d65e400c6d935c71c6fa1c0ed83cce",
+    "research/transformer_path_diagnostic/diagnose.py": "00a73653798951be355f77340c8ecd78053f0e9c379b862be4743925f5eeb218",
+    "research/transformer_path_diagnostic/metrics.py": "f53a52f64c9074db44d15565ad8edc76e2f7d8bac2481ca0ebfad10c2789a000",
+    "research/transformer_path_diagnostic/run.py": "d22d2364f6a53521723062c633221a7a8301575b5e8844321168673c186c6625",
+    "research/transformer_path_diagnostic/__init__.py": "c3acc1ca17c630720b828b285c3340e31f208db29939bda7e695b58f0ac8d59f",
+    "research/transformer_path_diagnostic/plan.json": "4ffd0e4c20877523d85203209ded9d4cd1f658304be9fa5ca4f99234632e7044",
+    "tests/diff_gpt/application/test_transformer_path_diagnostic.py": "885d36feb157a5f805ddd312bfc0f659e34ced9dac1bdae10c83341f971defb6",
+    "research/transformer_path_diagnostic/results/validation.txt": "c8062b24e4d18be784708bc5601be051d9f0bc88dd72659d360f91273c8c4c78",
+    "research/transformer_path_diagnostic/results/validation.xml": "678853534e2dde2cacc78ff1ee631689a67a7bc557a40389f3147e185e3c74ed",
+    "research/transformer_path_diagnostic/results/validation-initial-failure.txt": "b2c644240d45040194a7e8fa773baa50f304fb8f4914e5d25c4fa8c2bd632f09",
+    "research/transformer_path_diagnostic/results/metrics-initial-failure.py.txt": "131eb00f95789a1dc24f6aa99d5426b7a85e0eb9d8bae1b6899767415fe27a9b",
+    "research/transformer_path_diagnostic/results/validation-exception-type-failure.txt": "c4df0d0b65c913bfedc1a38a2c2029e30d3c749a12e23a0bfdbe51550dd1112e",
+    "research/transformer_path_diagnostic/results/validation-exception-type-failure.xml": "6a6f22f2f24c1fe3ca033d6dccf4b47ae9fb1493985343af65afeb16257171d7",
+    "research/transformer_path_diagnostic/results/failure-log-originals.json": "1cb06441dc0bdb06674b7d442327a0f35afab4f6bb6f02c761a8f8f326f372db",
+    "research/transformer_path_diagnostic/results/measurement-preflight-failure.txt": "88873b61787689bab8c5668592f2d7c0bcd97a6ea75ae186f8b6b262a85a77fa"
+  },
+  "raw_failure_logs": "Exact original log texts/hashes retained in failure-log-originals.json; standalone log renderings strip terminal whitespace.",
+  "preflight_note": "An attempted launch before the source commit was made was rejected by the mandatory committed-source guard; no scientific measurement ran."
+}
