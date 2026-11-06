@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -22,6 +23,7 @@ def verify() -> dict:
         "guarantees.json": 6,
         "attention-sensitivity.json": 4,
         "improved-sensitivity.json": 7,
+        "attention-selectivity.json": 4,
     }
     for filename, expected_count in records.items():
         path = folder / filename
@@ -52,6 +54,16 @@ def verify() -> dict:
         ]:
             for relative, sha in record.get(key, {}).items():
                 verify_hash(base / relative, sha)
+        if "benchmark_head_width_task_counts" in record:
+            suite = read(ROOT / "research/early99/suite.json")
+            widths = Counter(
+                str(task["case"]["width"] // task["case"]["heads"])
+                for task in suite["tasks"]
+            )
+            require(
+                dict(widths) == record["benchmark_head_width_task_counts"],
+                "Reported benchmark head widths differ from the frozen suite",
+            )
         observed = {}
         for check in record.get("checks", [record]):
             fixture = ROOT / check["fixture"]

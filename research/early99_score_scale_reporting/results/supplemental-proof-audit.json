@@ -1,5 +1,5 @@
 {
-  "verified_at_utc": "2026-11-06T02:14:04.885267+00:00",
+  "verified_at_utc": "2026-11-06T02:57:26.430169+00:00",
   "checked_statements": {
     "guarantees.json": [
       "Early99Normalization.radialMap_nonexpansive",
@@ -23,15 +23,24 @@
       "Early99SoftmaxLipschitz.softmax_l1_lipschitz",
       "Early99SoftmaxLipschitz.subset_derivative_bound",
       "Early99SoftmaxLipschitz.subset_lipschitz"
+    ],
+    "attention-selectivity.json": [
+      "Early99AttentionSelectivity.quarter_width_four_ceiling",
+      "Early99AttentionSelectivity.softmax_bounded_ceiling",
+      "Early99AttentionSelectivity.softmax_gap_ceiling",
+      "Early99AttentionSelectivity.ssmax_normalized_ceiling"
     ]
   },
-  "total_statements": 17,
+  "total_statements": 21,
   "files_sha256": {
+    "research/normalization_guarantees/AttentionSelectivity.lean": "41a0913177b71fe2586f8613c06e4142ff881cd2ab5a006aa44d4765f0d802fd",
     "research/normalization_guarantees/AttentionSensitivity.lean": "a789f2de4a10282d8e266a337ff3554f95176c2c9dc101e8a3dc1983d4f6afc7",
     "research/normalization_guarantees/AttentionSensitivityImproved.lean": "993568752d6562c75c6c311401174237f56f54f622d2d6ff208fc06cc9f1e1de",
     "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
     "research/normalization_guarantees/SoftmaxLipschitz.lean": "3702c8c60e5c7468aac65323475a1154ae64f9bf3f1c9dfc8f54e61569e62e5f",
     "research/normalization_guarantees/results/attention-improved-lean-check.txt": "eb0871b3a143a892410b80a8dc0fbf117e3b734d36050daa42acbc93f98d62dc",
+    "research/normalization_guarantees/results/attention-selectivity-lean-check.txt": "8aa3475edf2ccb99beecdebbeb765099f88e6ccb775f05982ad66d9c6f221f4d",
+    "research/normalization_guarantees/results/attention-selectivity.json": "4723a1e11a89932316babec705b85a8a0a593fe8545b894bc208c624e7ebc0ee",
     "research/normalization_guarantees/results/attention-sensitivity-lean-check.txt": "8f693b920e9c6901f279ae140725c55fdfb8d405e8c6f34315c04963eb9ef942",
     "research/normalization_guarantees/results/attention-sensitivity.json": "47802f8772c363fd21237018029a0af6289c5c1c425e85e1372ab6aeb5fe5b41",
     "research/normalization_guarantees/results/guarantees.json": "852131b5a7dd32f94d0a82183c6f83edac2b3ffeccf50e524bd9c58e0e65a1f6",
@@ -39,7 +48,7 @@
     "research/normalization_guarantees/results/lean-check.txt": "1e9a34cee0987f56838de905e9633d7d694eeee23951e00d43ac0c7ca413c85a",
     "research/normalization_guarantees/results/softmax-lipschitz-lean-check.txt": "54647558f256f442ddb4f8e8876f3a72fba458efac02ff5081afb6558f97cacb"
   },
-  "verifier_sha256": "53137aecc93169d98471811ab9901a7cdf0552f10951918b4792e4cb8fefb5af",
+  "verifier_sha256": "aeccfb351f3773b81481a4cdb6513de065adecaea2dd0ccbff44543ff82b7103",
   "proof_compilation_repeated": false,
   "scientific_experiments_or_selection_changed": false,
   "scope": "Verify records of separately observed successful Lean checks, their actual printed axioms, source/dependency hashes and pinned toolchain. This does not prove implementation equivalence or learning success."

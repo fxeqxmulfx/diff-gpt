@@ -380,3 +380,16 @@ Examples use actual FP32 epsilon, quarter-scale ideal gain and nonempty rows.
 These remain bounds on projected vectors; projection matrices, values, XSA,
 readout, learned phase changes, floating-point and learning are not controlled.
 The earlier valid bounds and all frozen selection records remain unchanged.
+
+Supplemental attention selectivity limit
+AttentionSelectivity.lean adds four checked statements with zero warnings and
+only standard axioms. A row with N visible keys and abs(score)<=B has every
+probability at most1/(1+(N-1)*exp(-2*B)). Actual finite-epsilon Q/K RMS with
+arbitrary rotary phases gives B=m*log(N)*abs(g)*d, for positive width/epsilon
+and fixed m>=0 and gain g. The width4, m1/4, gain1/2 specialization gives
+p<=N/(2N-1), including64/127 at64keys. This documents the sensitivity/selectivity
+tradeoff; it does not prove a whole transformer cannot learn. The fixed suite
+uses head widths16/32/128, so width4is an out-of-suite mathematical limitation,
+not an explanation selected from long outcomes. The supplemental auditor now
+verifies21statements. Old proof records and all scientific experiments remain
+unchanged; details are in research/normalization_guarantees/README.md.

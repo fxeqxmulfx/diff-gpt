@@ -1,0 +1,82 @@
+{
+  "checked_at_utc": "2026-11-06T02:54:25.440790+00:00",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/SequenceModel/Rotary.lean": "41365fb1e51eec1d61b2bb3f6feacd11b9e76b0752cbdb9ef360bcb097b581a3",
+    "src/Transformer/Perspective/Softmax.lean": "6f8117f0d9cca80d140a2aaa6691953a8bbd7bc6be02f0a612d4812714ee9fe5",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "local_dependency_sha256": {
+    "research/early99/guarantees/NormalizedScores.lean": "4a789a11e8ef68a650cc8ef47b8b631ffd941609b26fab72253bf572ef9907e4",
+    "research/early99/suite.json": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436"
+  },
+  "reviewed_implementation_sha256": {
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+    "src/diff_gpt/domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba",
+    "research/early99/experiments/scalable_softmax.py": "4ec54ddeb8f29dee12f2e01f6de339533db3111d68d8da5f212c45a5927a8e6a",
+    "research/early99_score_scale/factories.py": "4dec1dbfac71796ea897de4f1def134cd5e5c150c1e85bd135428c74c8202c0e"
+  },
+  "checks": [
+    {
+      "fixture": "research/normalization_guarantees/AttentionSelectivity.lean",
+      "fixture_sha256": "41a0913177b71fe2586f8613c06e4142ff881cd2ab5a006aa44d4765f0d802fd",
+      "output": "research/normalization_guarantees/results/attention-selectivity-lean-check.txt",
+      "output_sha256": "8aa3475edf2ccb99beecdebbeb765099f88e6ccb775f05982ad66d9c6f221f4d",
+      "exit_code": 0,
+      "warnings": 0,
+      "extra_axioms": [],
+      "axioms": {
+        "Early99AttentionSelectivity.softmax_gap_ceiling": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99AttentionSelectivity.softmax_bounded_ceiling": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99AttentionSelectivity.ssmax_normalized_ceiling": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "Early99AttentionSelectivity.quarter_width_four_ceiling": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ]
+      },
+      "cwd": "/home/misha/lean_projects/transformer",
+      "command": "lake env bash -c 'export LEAN_PATH=\"/tmp/early99-selectivity:$LEAN_PATH\"; lean -R /home/misha/python_projects/gpt /home/misha/python_projects/gpt/research/normalization_guarantees/AttentionSelectivity.lean'"
+    }
+  ],
+  "dependency_build_command": "mkdir -p /tmp/early99-selectivity/research/early99/guarantees && lake env lean -R /home/misha/python_projects/gpt -o /tmp/early99-selectivity/research/early99/guarantees/NormalizedScores.olean /home/misha/python_projects/gpt/research/early99/guarantees/NormalizedScores.lean",
+  "statements": [
+    "If z_i-z_j <= G for every other visible key j, p_i <= 1/(1+(N-1)*exp(-G)).",
+    "If every visible score has absolute value <= B, p_i <= 1/(1+(N-1)*exp(-2*B)).",
+    "For actual finite-epsilon Q/K RMS and arbitrary rotary phases, m>=0 and any fixed real gain g: p_i <= 1/(1+(N-1)*exp(-2*m*log(N)*abs(g)*d)).",
+    "For head width4, m=1/4 and g=1/2, every key has p_i <= N/(2*N-1). The checked N=64 example gives64/127."
+  ],
+  "hypotheses": [
+    "Real arithmetic; a nonempty finite row of visible keys.",
+    "For normalized attention: positive integer head width d, epsilon>0 and m>=0.",
+    "No assumed winning gap; query/key inputs and rotary phases are arbitrary.",
+    "The general theorem accepts the actual rounded fixed gain as a real scalar. The width-four specialization explicitly requires gain1/2."
+  ],
+  "nonvacuity": "Every statement has a concrete example. Unequal two-key logits test the first two; normalized examples use actual FP32epsilon1/8388608, varying nonzero phases, widths8and4, and4or64visible keys.",
+  "benchmark_head_width_task_counts": {
+    "16": 10,
+    "32": 24,
+    "128": 1
+  },
+  "mapping": "Reviewed equation correspondence to the projected Q/K RMS, rotary, fixed score gain and visible-key log factor. Not a formal translation of PyTorch.",
+  "scope": "A probability ceiling for one softmax attention row. It does not bound XSA/readout amplification or prove that a full transformer cannot learn a task. Width4is outside the current fixed benchmark; no long result motivates or tunes this proof. No new model or training arm.",
+  "preservation": "Supplemental real-arithmetic analysis. Existing scientific sources, configurations, plans, selection and original proof records are unchanged."
+}

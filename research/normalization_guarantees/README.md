@@ -112,9 +112,52 @@ does not remove the weaker concentration bound at smaller score coefficients.
 The short-suite selection and its frozen proof records remain unchanged.
 
 The [supplemental audit](../early99_score_scale_reporting/results/supplemental-proof-audit.json)
-verifies all **17** statements across the RMS proof, initial attention proof
-and strengthened results. It checks the actual printed axiom lists, fixture
+verifies all **21** statements across the RMS proof, initial attention proof,
+strengthened sensitivity results and selectivity bounds below. It checks the
+actual printed axiom lists, fixture
 and compiler-output hashes, implementation references, external dependency
 revisions and Lean toolchain. It does not recompile the proofs or claim a
 verified PyTorch translation. Reproduce from the GPT repository root with
 `OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_score_scale_reporting.verify_supplemental`.
+
+## Attention selectivity ceiling
+
+[AttentionSelectivity.lean](AttentionSelectivity.lean) supplies the complementary
+**upper** bound on any one key's probability. For a nonempty row of `N` visible
+keys, if every score satisfies `abs(score_j) <= B`, then
+
+```text
+p_i <= 1 / (1 + (N-1)*exp(-2*B)).
+
+For Q/K RMS + arbitrary rotations + fixed SSMax coefficient m >= 0:
+B = m*log(N)*abs(g)*d.
+```
+
+The proof retains the selected key in the denominator, tightening the older
+`exp(2*B)/N` estimate. It applies to every projected query and key with
+`epsilon > 0`, positive head width `d`, and arbitrary rotary phases. It needs
+no assumed winning margin. The general theorem accepts any fixed real gain
+`g`, including the actual rounded buffer value; it does not silently replace
+that value by an exact `1/sqrt(d)`.
+
+With ideal gain `g=1/sqrt(d)`, algebraically rewriting the exponential gives
+`p_i <= 1/(1+(N-1)*N^(-2*m*sqrt(d)))`. Softer scores tighten sensitivity bounds
+while limiting the concentration that a single row can achieve. The checked
+specialization **`d=4, m=1/4, g=1/2`** gives **`p_i <= N/(2*N-1)`** for every
+positive epsilon. Its concrete 64-key example gives **`p_i <= 64/127`**, about
+**0.50394**, regardless of the projected vectors and phases. Finite epsilon
+can make the actual attainable maximum lower; this is an upper bound.
+
+This width-four example is **outside the fixed benchmark**. Its 35 task
+configurations use head widths 16 (10 tasks), 32 (24 tasks), and 128 (one task),
+as verified directly from the frozen suite. The result is a constraint on
+reusing the same gain at other widths, not an explanation inferred from long
+outcomes. A ceiling on one probability row does not prove a full transformer
+cannot solve a task: values, XSA, multiple layers and readout remain outside
+this statement.
+
+All **four statements** and their concrete examples compile with zero warnings
+and only `propext`, `Classical.choice`, and `Quot.sound`. The
+[record](results/attention-selectivity.json) includes source/output hashes,
+the dependency build command, exact hypotheses and implementation mapping.
+No model, scientific plan, training cell, or frozen selection changed.

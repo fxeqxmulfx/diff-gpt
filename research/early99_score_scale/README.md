@@ -253,3 +253,10 @@ to uniformly bounded changes in all keys. They change no model behavior.
 It is separate from the already frozen selection manifest and changes no model
 or experiment. Long outcomes will be reported once the complete diagnostic and
 checkpoint audits finish.
+
+A supplemental [selectivity bound](../normalization_guarantees/README.md#attention-selectivity-ceiling)
+also limits the probability any single key can receive from bounded normalized
+scores. It makes the sensitivity/concentration tradeoff explicit, including a
+checked width-four limit on concentrated quarter-scale
+attention. Width four is outside this benchmark's head widths; the result
+changes no experiment and is not a whole-model learning impossibility.
