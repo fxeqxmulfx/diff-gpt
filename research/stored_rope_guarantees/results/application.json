@@ -1,0 +1,1213 @@
+{
+  "verified_at_utc": "2026-11-06T17:15:41.871644+00:00",
+  "complete": true,
+  "expected_models": 35,
+  "checked_models": 35,
+  "passed_models": 35,
+  "table_pairs_checked_including_repeated_shapes": 7640,
+  "stored_coefficients_checked": 15280,
+  "declared_pair_energy_bound": {
+    "numerator": 1048577,
+    "denominator": 1048576,
+    "decimal_approx": 1.0000009536743164
+  },
+  "norm_multiplier_upper_approx": 1.0000004768370445,
+  "norm_multiplier_upper_exact": "sqrt(1048577/1048576)",
+  "score_multiplier_upper": {
+    "numerator": 1048577,
+    "denominator": 1048576,
+    "decimal_approx": 1.0000009536743164
+  },
+  "minimum_pair_energy": {
+    "numerator": 140737475854285,
+    "denominator": 140737488355328,
+    "decimal_approx": 0.9999999111747471
+  },
+  "maximum_pair_energy": {
+    "numerator": 1125899990935417,
+    "denominator": 1125899906842624,
+    "decimal_approx": 1.000000074689404
+  },
+  "maximum_witness": {
+    "case": "basis-depth-hard",
+    "position": 100,
+    "pair": 1,
+    "cos": {
+      "numerator": 7977071,
+      "denominator": 8388608,
+      "decimal_approx": 0.9509409666061401
+    },
+    "sin": {
+      "numerator": -10380819,
+      "denominator": 33554432,
+      "decimal_approx": -0.30937251448631287
+    },
+    "energy": {
+      "numerator": 1125899990935417,
+      "denominator": 1125899906842624,
+      "decimal_approx": 1.000000074689404
+    }
+  },
+  "failures": [],
+  "rows": [
+    {
+      "case": "suite-boolean-and-shift",
+      "tier": "short",
+      "head_width": 16,
+      "context": 67,
+      "table_shape": [
+        67,
+        8
+      ],
+      "table_pairs": 536,
+      "minimum_pair_energy": {
+        "numerator": 281474955004097,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999228828109
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990318601,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.0000000741415613
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/suite-boolean-and-shift/cos.bin": "918c24e278252fa4d2d288ac0a8bd3ec7870af0b32fdc61b36f3d5640efd304e",
+        "runs/stored-rope-guarantees/tables/suite-boolean-and-shift/sin.bin": "f97ce3fb51144874f0478740afef35bfaca500e24af147b79af8b6628f6368ba"
+      },
+      "data_fingerprints": {
+        "train": "1e7bf1a9f190bbbe3fa852952ddc7ac4998c31b5d333401eb7cfc06899104c81",
+        "validation": "aea5ea4fdeb70241da829299fa4d1793bd68dc673ec0941b06ee1d7380f736c7",
+        "test": "04b8ed610171e560825bdb456f1502c1edc2e5261a165ff7273a675552898f86",
+        "train_clean": "1e7bf1a9f190bbbe3fa852952ddc7ac4998c31b5d333401eb7cfc06899104c81",
+        "validation/length-32": "2b61a316448e5d3d7852eb81118ec77a736d70f66d6ac0055e995118f1e6c467",
+        "test/length-32": "108f4036870070384348caec5022c5da4b535ddf67c01c91b4a9548f85703fb7",
+        "validation/length-64": "06047fdd4a6acc8fd3b90a02f7365fa5dc8369352c8d4bdfd13da276be812627",
+        "test/length-64": "66dabcd6b5c145bc4046d312f8bc1d2648519b94c74bc5b08c41dad13d4a8461",
+        "validation/position_shift": "ef610afb88127a4bbb45fe10abc71a38d395c1e5b6a18e0bf62cd4690505539d",
+        "test/position_shift": "06ac63576f1c43dd99fbfba0c53a4f9e556c7dedd67f09a4503f0bdb81e3ef0c",
+        "validation/position-shift-length-32": "394eb2889ce1eed50a2d0115fea218aaab36dc83cbedde5bc5a1763d11a867c0",
+        "test/position-shift-length-32": "02aae52de36bcfb16daa468b09104751e2ab40f771bc3a2311e4e3758a0c8e63",
+        "validation/position-shift-length-64": "01efdb8ad14834e252fecdf714333367ba0fa96095ea78358230813344ef0150",
+        "test/position-shift-length-64": "4dd5cefe4a84dc32bfd85725e31b999839e3716e06ee830673480149b04d5fbc"
+      }
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "tier": "short",
+      "head_width": 16,
+      "context": 67,
+      "table_shape": [
+        67,
+        8
+      ],
+      "table_pairs": 536,
+      "minimum_pair_energy": {
+        "numerator": 281474955004097,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999228828109
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990318601,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.0000000741415613
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/suite-boolean-and-random/cos.bin": "918c24e278252fa4d2d288ac0a8bd3ec7870af0b32fdc61b36f3d5640efd304e",
+        "runs/stored-rope-guarantees/tables/suite-boolean-and-random/sin.bin": "f97ce3fb51144874f0478740afef35bfaca500e24af147b79af8b6628f6368ba"
+      },
+      "data_fingerprints": {
+        "train": "434e3d7ccc62907079ec9353d709aa8efeffb9774fdf805086acf02b5b754dfe",
+        "validation": "7a7471b0d2e76a3a594c30e411e3f842e051310c9dcfed422ea4c56411bbccce",
+        "test": "af8102b59714de3be6d2520902044c95ecd40ac4a9397d98c64afae87c3afbcf",
+        "train_clean": "434e3d7ccc62907079ec9353d709aa8efeffb9774fdf805086acf02b5b754dfe",
+        "validation/length-32": "da9d0429ab3a83edf356c62e6b15df8ecaef18c5ed0fd782dc67920fdd9d5ba2",
+        "test/length-32": "2eb2c671df52af94377207163102dcb432341888b6f4239a0f73f4f6bba5f33e",
+        "validation/length-64": "01c7c05ecdb5ff4b2874c84a1d9a08e9eaa8acc2f0e3e1be4aa0333164825544",
+        "test/length-64": "876c678392e3d0ef417f30e7484b3c9c118732213d1bda9768b25c2c8b38082f"
+      }
+    },
+    {
+      "case": "power-division-p97-k3",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/power-division-p97-k3/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/power-division-p97-k3/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "7028085bea9ec0dae01709a3d803f58987997d092b2f699e6641594421e61456",
+        "validation": "1ff7a7f36d5808ab06ddf9993b494e8cd14633cc215880b732141b3bb6c51cc6"
+      }
+    },
+    {
+      "case": "arithmetic-cube-plus",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-cube-plus/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-cube-plus/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "5a39b7ba4aaddcf098f2050be549c97c86507e3054080a2a51f8851acfeb005d",
+        "validation": "bf4c7be49e80ff1f0cd63165f2280e4796b650409838cf921d06e8ee87ff6847"
+      }
+    },
+    {
+      "case": "power-division-p193-k5",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/power-division-p193-k5/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/power-division-p193-k5/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "75b8e87c884c785804bff1fefe2de1b2d1c208dbb310c2068a4038dd0b8cc57c",
+        "validation": "62a76b96a666bde2c4e1501d6250cd96ca739413eddd5d8e1ea17153188a9b61"
+      }
+    },
+    {
+      "case": "power-division-p193-k2",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/power-division-p193-k2/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/power-division-p193-k2/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "0b902d368d30dc0a9d63f9eb1bea2c1acb77be4b05c9a020e5800df12ac9413e",
+        "validation": "4ed6a490741c84d4292904ff1ac2ad0d76e8c2b0bdf1ab00ac9abde0899d4a2b"
+      }
+    },
+    {
+      "case": "power-division-p97-k2",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/power-division-p97-k2/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/power-division-p97-k2/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "6eee702d9abcc1a8e2d3989c47ef3b3e706e8b61cacd405ef33e73ded1000449",
+        "validation": "da7f4bc69d291f35c143690050330bc45b6bb6ad9e4de8c470019512cce5a581"
+      }
+    },
+    {
+      "case": "arithmetic-square-times",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-square-times/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-square-times/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "f5a95e3ab21756628f0a5a542295d81e29fe502d7dd7c599371f2e7d96321f44",
+        "validation": "ecadf20498fab75afcc2e6e108cebf17ff510ac372197131124eef6867caf00c"
+      }
+    },
+    {
+      "case": "arithmetic-sub",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-sub/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-sub/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "40d5b08cdc50fb75cb5de92e736b0dbd0bba69a127ea2783edd7399dd6a05544",
+        "validation": "0c078f3f0aa6c5a5ca54d289f48845ba06b74508ec4a461ece5aca8438640877"
+      }
+    },
+    {
+      "case": "arithmetic-mul",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-mul/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-mul/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "1df54a2f5a425f9feba2efc6c544cb535b6b19e760eea7bf0a745073cc2ff3a9",
+        "validation": "60533903f3f25d2a9015d7538ac2d242cf2da427db274a157ac065458be38ccd"
+      }
+    },
+    {
+      "case": "arithmetic-add",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-add/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-add/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "282d0cf981fb1e002d8f2f422a383d96f526f2fb01231fa2ff4628d0677cb930",
+        "validation": "654c8f4f27a4ef6b12d283cc4f55a9e1a0a564db66e8153b9a0f78637093b1ff"
+      }
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "tier": "short",
+      "head_width": 16,
+      "context": 12,
+      "table_shape": [
+        12,
+        8
+      ],
+      "table_pairs": 96,
+      "minimum_pair_energy": {
+        "numerator": 281474958568765,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999355470557
+      },
+      "maximum_pair_energy": {
+        "numerator": 18446745292893712145,
+        "denominator": 18446744073709551616,
+        "decimal_approx": 1.0000000660921058
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/gpt-probe-key-value-binding/cos.bin": "f6265a67d7f8eaa104d415b0a6b8ee5d513700278fed692968838ddb406ed4ab",
+        "runs/stored-rope-guarantees/tables/gpt-probe-key-value-binding/sin.bin": "80cd845a15dcaebe01008fea825b9eeffde3e046f284f665b596a6a1655a860d"
+      },
+      "data_fingerprints": {
+        "train": "24a8459e9412acd4078e87faf4547d5e57c98668d2cb783879c25f822e6effce",
+        "validation": "c5c8e4ec3fb3e5a702d279c0e46a06768ee63b7a41f85eb7fbb31c275c4306e0",
+        "test": "0eb01c687f1d3c022e963aea4c61bb0ddd3cade3e59ec55d5c62ea44f2977240",
+        "validation/novel": "ae1562d7e6a7699871d3b61c1a0991e43278b224c0474ecdeef286587c4b158c"
+      }
+    },
+    {
+      "case": "power-division-p193-k3",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/power-division-p193-k3/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/power-division-p193-k3/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "4a278c120e22c642a89fd74a3d586a655a82632f27b29d584d7454467e503176",
+        "validation": "f72319c1662fa21fa1ee53c64f83a2118a72c1007474c83eec4cebccf1f674f7"
+      }
+    },
+    {
+      "case": "division-p193",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/division-p193/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/division-p193/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "a118b7c539d7f9481a5e57f5f44a0be6ffb570d9760bfd56b9fd06a457198f9d",
+        "validation": "0d44809124de002ee3ab53898df9b9073546cb938242ad818755ae48f69bacc8"
+      }
+    },
+    {
+      "case": "basis-depth-easy",
+      "tier": "short",
+      "head_width": 16,
+      "context": 128,
+      "table_shape": [
+        128,
+        8
+      ],
+      "table_pairs": 1024,
+      "minimum_pair_energy": {
+        "numerator": 140737475854285,
+        "denominator": 140737488355328,
+        "decimal_approx": 0.9999999111747471
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990318601,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.0000000741415613
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/basis-depth-easy/cos.bin": "2b43106df8ba674a7ca31420e4382913f8a49fa6181e5ca155424793ec22fd57",
+        "runs/stored-rope-guarantees/tables/basis-depth-easy/sin.bin": "b12d865f4921a82ee961d920a7f8b1a9a75106e24b5bbf0d66f6a7f000998046"
+      },
+      "data_fingerprints": {
+        "train": "48f78e7d0480fa720b2ff7edea1c6bf9901883b8891b7dd85fb2f6c445b21da8",
+        "validation": "5a846b3df5d222be8d9f1d33f3d0635172341a8a285c215e999c21b9260cbfa1",
+        "test": "1a23afae22f1964509cbed215d4ceb5dc0226a1b434bba43e097533ecde66834",
+        "test/length-128": "26dc54f3994b68cbf791e10a065d864262c8a9e123a6bfa47b487f02626ea77a",
+        "validation/novel": "fe2bee6b575952c8d72bb621b5b91e13d0ca46eccc513fb6da9f932015f56b4f"
+      }
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-square-sum/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-square-sum/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "77fb7895cd89d6366b0e3db51fbac183eafaae345be5f0ec5ccb215e6a2564d7",
+        "validation": "463fe4280b16baf1685fa8cebb47e5c1d076d9df2e07fb79606a8f62dab232b9"
+      }
+    },
+    {
+      "case": "gpt-probe-branch-amplitudes",
+      "tier": "short",
+      "head_width": 16,
+      "context": 98,
+      "table_shape": [
+        98,
+        8
+      ],
+      "table_pairs": 784,
+      "minimum_pair_energy": {
+        "numerator": 140737475854285,
+        "denominator": 140737488355328,
+        "decimal_approx": 0.9999999111747471
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990318601,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.0000000741415613
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/gpt-probe-branch-amplitudes/cos.bin": "7a761bed49dab179ef51f4a6e4938dba4e219f0a8108cdf30a616e3ff6f651da",
+        "runs/stored-rope-guarantees/tables/gpt-probe-branch-amplitudes/sin.bin": "7b266df7767841465dfe2380e6deb7081b58f2a0f1a1ce128fa408c76919e841"
+      },
+      "data_fingerprints": {
+        "train": "fd6adcefa9667c9c15bc0f70c560a8769916648ad4f6b103ee4c34d6acef75a7",
+        "validation": "826e422c3b383f8f7db6d3c3c7fb8a532c480112ece6841ea754fcd910ee02b8",
+        "test": "4e8d1a667d9b6871a48f7ad3e5132837fd79c7c072af07cfd7b1e45ce6dd3336"
+      }
+    },
+    {
+      "case": "power-division-p97-k5",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/power-division-p97-k5/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/power-division-p97-k5/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "1adcbe18bd4f13544f944034fdb0d27ab15cf67a11c15cf73a64b3de4575d85d",
+        "validation": "468182b67070f156094a7034783e13d205ec4ca755117b194b388533352cb8c2"
+      }
+    },
+    {
+      "case": "arithmetic-half-sum",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-half-sum/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-half-sum/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "5f339d8508c401e1744c3aa036f245994f7c19868ebe5d28cef851467825d215",
+        "validation": "283ba1be5b9f0d7b7f5c7bc957d5fa8c65b3734999566b171b0851aebd96ec12"
+      }
+    },
+    {
+      "case": "arithmetic-sum-square",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-sum-square/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-sum-square/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "1462fa6e36edd10911b40b8d88475b23e120e21c6a7f01e187a43d34b1cdaa40",
+        "validation": "65ed4ddba356fb0822e9ad11cad1410b727f0203d98a0236207f3c7778e30922"
+      }
+    },
+    {
+      "case": "basis-depth-hard",
+      "tier": "short",
+      "head_width": 32,
+      "context": 128,
+      "table_shape": [
+        128,
+        16
+      ],
+      "table_pairs": 2048,
+      "minimum_pair_energy": {
+        "numerator": 140737475854285,
+        "denominator": 140737488355328,
+        "decimal_approx": 0.9999999111747471
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990935417,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.000000074689404
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/basis-depth-hard/cos.bin": "e6332fef07b7be9035efa8ebf1f3c1201d172a2740835098c63a72abb49715fa",
+        "runs/stored-rope-guarantees/tables/basis-depth-hard/sin.bin": "f551634accad8fe62fd6ad7288f818e2131e76d1e4dbd73011d16bc93db6c39a"
+      },
+      "data_fingerprints": {
+        "train": "47c4bd51f0d410f759eaca11de8a400b4bdfa5ad8e33a4aa78647b1523d3adcf",
+        "validation": "424efffb187b08b05717b522b7b3e572b293fa9ce928cec78b8e8b9486aca2b7",
+        "test": "ad6fc146e5342e92541c43537bf1d8ec4b06b816332712f92c75e381b48f9e06",
+        "validation/length-128": "e397080d60f920d31d46f2466dc935133d986c40a90086a7a80599f9a133d6bb",
+        "test/length-128": "3db3004703f8489fb4d737ada32a2128d8af93f4d79d0191652a47f536940da2",
+        "validation/length-128/novel": "14fc2d41dd7bb8759c714f4dce1f98799622da71238769e3c5de5c62567f2374"
+      }
+    },
+    {
+      "case": "arithmetic-affine-product",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-affine-product/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-affine-product/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "776bb209788ba0b17c7c2caea7b8c3de691ac6bde6eb019805c28e40c3af65fd",
+        "validation": "ba8c8229e99f03bc74a8fd3ad168f79129176806cf001b4bd8e381cab133b07f"
+      }
+    },
+    {
+      "case": "arithmetic-perm-add",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-perm-add/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-perm-add/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "141bd56649270c29ecad10b73f75e9496c7bb4daa1063cdcbb70bf4c8ea8717d",
+        "validation": "611d347e5f00b42243effba86946f163bb047aac92ccb95eef44a601119e153f"
+      }
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "tier": "short",
+      "head_width": 16,
+      "context": 66,
+      "table_shape": [
+        66,
+        8
+      ],
+      "table_pairs": 528,
+      "minimum_pair_energy": {
+        "numerator": 281474955004097,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999228828109
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990318601,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.0000000741415613
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/gpt-probe-linear-transport/cos.bin": "7404ad7ae13f83c369e2c9bcd260ee9257d424c882c398980f059eb1676f854e",
+        "runs/stored-rope-guarantees/tables/gpt-probe-linear-transport/sin.bin": "66df0da1ba0d6ffb4e48f802e5f4d697b7dfa6191ecd4c29d915bc0bd41c8324"
+      },
+      "data_fingerprints": {
+        "train": "aaf411325c2ef555d459dfb522c7e62a1fb1173c73d787c7c121d9e3d338de85",
+        "validation": "59e000b54321f26525c26dcd22acdbe53501810cee6ab0e98f1ce4f45db7d1a3",
+        "test": "9f8b1731139b2a474b45bbfe58a7ecf380d5d22034aafa2dff481a528d4ec3d9"
+      }
+    },
+    {
+      "case": "arithmetic-div",
+      "tier": "short",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-div/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-div/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "f263b7e88462ef3928a78553bbbe453f26633a09f6550e684ebe63635fa23c91",
+        "validation": "a811e0100acaf518754383d576ab115a719ec8e015ab765aa181ab22e7e730b2"
+      }
+    },
+    {
+      "case": "arithmetic-abs-diff-blind",
+      "tier": "long",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-abs-diff-blind/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-abs-diff-blind/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "f976a89dcacaa7740fd10e44c60afa6562341bfff46890a4876170db0629c33f",
+        "validation": "786911bf83cd54bfffc44f5f30d7bbef130d1fe24a42b37203ed2d482eb7a0e3"
+      }
+    },
+    {
+      "case": "arithmetic-abs-diff",
+      "tier": "long",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-abs-diff/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-abs-diff/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "5f57b468443b6d2817b2b91d48eb244ac60fb3ae186aabaf67da3b227bce2e85",
+        "validation": "a0b0b25ad3a61c5e6c87c7e5a0c518caf3999288ee8df1a5e79e543467a1d9a5"
+      }
+    },
+    {
+      "case": "arithmetic-sum-pow4",
+      "tier": "long",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-sum-pow4/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-sum-pow4/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "aad23e811b91174e4f21c3493c9f40bf0b23763dd32bdc40be4e0f1cd545c44b",
+        "validation": "1962165249356b821a318d69032c7e99c13e0cb74bc3c0244c4675de38f6d394"
+      }
+    },
+    {
+      "case": "basis-parity20",
+      "tier": "long",
+      "head_width": 16,
+      "context": 23,
+      "table_shape": [
+        23,
+        8
+      ],
+      "table_pairs": 184,
+      "minimum_pair_energy": {
+        "numerator": 70368739393405,
+        "denominator": 70368744177664,
+        "decimal_approx": 0.9999999320115904
+      },
+      "maximum_pair_energy": {
+        "numerator": 18446745292893712145,
+        "denominator": 18446744073709551616,
+        "decimal_approx": 1.0000000660921058
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/basis-parity20/cos.bin": "bf083d0420868b631cdd75c521ad3c8637647bcb0e61091beb995ba285a65d10",
+        "runs/stored-rope-guarantees/tables/basis-parity20/sin.bin": "6216aa12b8f33475b0336ca4649e3da0046a3cee08ed293cd8da4ab5c7d569b4"
+      },
+      "data_fingerprints": {
+        "train": "f477061d9aab9b97077726c8af9a77bebf6a667151551fd99b5a51c4d6a79f13",
+        "validation": "f11c032328527ed1687a872c18f92f0bf44214950c8ea080399f862614c30493",
+        "test": "d99c0107f1210c788802fe67970964c3261fa4449aa61c46cdf248c99169d0f0",
+        "validation/novel": "97e46270831562bf794b5953916c9a8c1296d78f5ee0aff68d6e8631d69e3f1f"
+      }
+    },
+    {
+      "case": "basis-parity16",
+      "tier": "long",
+      "head_width": 16,
+      "context": 19,
+      "table_shape": [
+        19,
+        8
+      ],
+      "table_pairs": 152,
+      "minimum_pair_energy": {
+        "numerator": 70368739393405,
+        "denominator": 70368744177664,
+        "decimal_approx": 0.9999999320115904
+      },
+      "maximum_pair_energy": {
+        "numerator": 18446745292893712145,
+        "denominator": 18446744073709551616,
+        "decimal_approx": 1.0000000660921058
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/basis-parity16/cos.bin": "85b7ce843dd5a5c218b8e8aeda62754e84f4d372a8ea26fe2997b926aecc7ea4",
+        "runs/stored-rope-guarantees/tables/basis-parity16/sin.bin": "5dd28cf0d8aaf6b875fd4defffd549e1de62f4b708b51390e0f296e049c1d256"
+      },
+      "data_fingerprints": {
+        "train": "82e6a4a6a3a4b45cae2ca85873ad6b42daa3b59eb0dcfd4c8e5946f9d5c4a76a",
+        "validation": "7cd9f8b3a10d5c76ed219442edc3bd02e0cced7c2ee45a4d79e85295b7d2c1e2",
+        "test": "43204e2c9858b7be7147e4158bba2b653d9a2ee138ff258f930cc41dbac98440",
+        "validation/novel": "fbc494aa8f9300ab26e9e0d3f35b7b8b1324e8a5b9db301c9b82a5c79bdc7559"
+      }
+    },
+    {
+      "case": "arithmetic-sum-cube",
+      "tier": "long",
+      "head_width": 32,
+      "context": 2,
+      "table_shape": [
+        2,
+        16
+      ],
+      "table_pairs": 32,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 140737497646525,
+        "denominator": 140737488355328,
+        "decimal_approx": 1.0000000660179253
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/arithmetic-sum-cube/cos.bin": "bcf1071f8e68888b4e606c168d90da7d2ef073a254a63d34fd6f5bcdf50b3346",
+        "runs/stored-rope-guarantees/tables/arithmetic-sum-cube/sin.bin": "b2558f28484e6b63551c587a22f08099112e507f58002e1747e3f601aded4e53"
+      },
+      "data_fingerprints": {
+        "train": "46c16e9ce5b4d78a14cff7f63aea5ade52ffed486ae0b8679eb1d340d5ce60f4",
+        "validation": "68756b674469bdb4549ec0967a5628067b937b599d52da0b4af69553920d922f"
+      }
+    },
+    {
+      "case": "basis-recall-easy",
+      "tier": "long",
+      "head_width": 16,
+      "context": 64,
+      "table_shape": [
+        64,
+        8
+      ],
+      "table_pairs": 512,
+      "minimum_pair_energy": {
+        "numerator": 281474955004097,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999228828109
+      },
+      "maximum_pair_energy": {
+        "numerator": 1125899990318601,
+        "denominator": 1125899906842624,
+        "decimal_approx": 1.0000000741415613
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/basis-recall-easy/cos.bin": "a6f9acce3acc02e89fae37ace5c96c0c9cb6cd4d5129bed8f33e8ccae4cc11cf",
+        "runs/stored-rope-guarantees/tables/basis-recall-easy/sin.bin": "e6909fab90940f0bd10570b12d530a6196f681149eea77f38f5a543084fc3d65"
+      },
+      "data_fingerprints": {
+        "train": "6d2333ba9f121b0599b4669f1c9772002f5777ef30d997d8a3ff70d5238ecdf5",
+        "validation": "db69fa145e467a08687d05889a85e615d4013d80e5ad35409a43ced3285418e9",
+        "test": "14ef1399a95ce24abcf5a6b554f31e4671464c9f0bba9f6c8ef604d5f18ecdbb",
+        "validation/novel": "14c0b6806e37439de4b27ca1ef810c92ef783d8ddffb4eb3ba1867fa53bdcd05"
+      }
+    },
+    {
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "tier": "long",
+      "head_width": 128,
+      "context": 3,
+      "table_shape": [
+        3,
+        64
+      ],
+      "table_pairs": 192,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 1180591704694272907745,
+        "denominator": 1180591620717411303424,
+        "decimal_approx": 1.0000000711311685
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/recurrence-fibonacci-k1-c2-lgt/cos.bin": "4a891c48c9d76d3527eadd4ea8c752a917ff4b16bbaa0c5ad1e5ddd0e5541f96",
+        "runs/stored-rope-guarantees/tables/recurrence-fibonacci-k1-c2-lgt/sin.bin": "5c430c8c7902de1ec4f340896bd91513a303c669437b5332fed80471ddb22626"
+      },
+      "data_fingerprints": {
+        "train": "23b950ffe6c3cbbdd344fcb2727a2857e83c6e98879e7b6bc932ccdb82658c75",
+        "validation": "53f3db300603f9613afe013b87b8f2722d4a59ad2ead0a52db592ce5bf4916cb",
+        "raw": "05a030d0ff4da8779a1d42fc45521082069201aa155ee4d07ba2407a02e71e27"
+      }
+    },
+    {
+      "case": "associative-divisor-n2-l1-w0",
+      "tier": "long",
+      "head_width": 32,
+      "context": 8,
+      "table_shape": [
+        8,
+        16
+      ],
+      "table_pairs": 128,
+      "minimum_pair_energy": {
+        "numerator": 281474958767053,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999362515162
+      },
+      "maximum_pair_energy": {
+        "numerator": 18446745292893712145,
+        "denominator": 18446744073709551616,
+        "decimal_approx": 1.0000000660921058
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/associative-divisor-n2-l1-w0/cos.bin": "f529f3b3c58f060938f3a4d6fe44e68f56d72f07e3df87bce7839204ade499c3",
+        "runs/stored-rope-guarantees/tables/associative-divisor-n2-l1-w0/sin.bin": "50906ce1373a27ea52183917bb37155d9ba8fefff4a04ca742fd75bb512a50a6"
+      },
+      "data_fingerprints": {
+        "train": "8a4826ca03b026ec9f6f11f02683f4c3463d8b11dd6752ccd6a9480bc01b5b80",
+        "validation": "4c1849d9a5f6f0947a825b2b719c0e8e256dbcc25c742579ddcfb9a60f05c3f6"
+      }
+    },
+    {
+      "case": "basis-parity24",
+      "tier": "long",
+      "head_width": 16,
+      "context": 27,
+      "table_shape": [
+        27,
+        8
+      ],
+      "table_pairs": 216,
+      "minimum_pair_energy": {
+        "numerator": 281474955004097,
+        "denominator": 281474976710656,
+        "decimal_approx": 0.9999999228828109
+      },
+      "maximum_pair_energy": {
+        "numerator": 70368749125193,
+        "denominator": 70368744177664,
+        "decimal_approx": 1.0000000703086158
+      },
+      "all_pairs_within_declared_bound": true,
+      "all_pairs_exactly_unit": false,
+      "table_sha256": {
+        "runs/stored-rope-guarantees/tables/basis-parity24/cos.bin": "f646bb02175b12cbfae5c9a98ba3db27e57ea7663191add6b203b060707f9d88",
+        "runs/stored-rope-guarantees/tables/basis-parity24/sin.bin": "1c85945474e33cee476b28b45c20282946bc1e93dbe992a0d318983ab46ecb45"
+      },
+      "data_fingerprints": {
+        "train": "e5ab2d0e3d79e42e4c5fa18798051095df10ce39727609e119169b1d83c87fa7",
+        "validation": "ac1b40a8abe98c664a1a3548e7d643295a1df23ef256a29959a371929532bcb1",
+        "test": "75be2fcf13475134a62b2d5074d79a10897fd307a32a533ca86b6f1760ef7d7b",
+        "validation/novel": "202dcb7a8093643aff8449577fd1d757f6436b22ea332c2811147512344d29b9"
+      }
+    }
+  ],
+  "table_encoding": {
+    "dtype": "IEEE754 binary32",
+    "byte_order": "little",
+    "order": "C contiguous"
+  },
+  "torch": "2.14.1+cu126",
+  "source_sha256": {
+    "research/stored_rope_guarantees/audit_tables.py": "180f1de07d92c70a2a0bd51cd35f8a3fc5c543549d2af6a6510173a1aab1b426",
+    "research/stored_rope_guarantees/plan.json": "15cecf688e42488e3dc0d099b6742d1ee4a294f5c3b64645cac03c3772f94c79",
+    "research/stored_rope_guarantees/results/guarantees.json": "6928785566ccc5763aa8950c3610a4d7b8b45ad21d87ddbe9ae445440893bb6c",
+    "research/early99_core_ablations/results/validation.json": "9a0e95f00c38de514a1a74aeb01f04566fa4f0e9930aaa243c7af6e0a247f48a"
+  },
+  "baseline_model_reference": {
+    "files": {
+      "domain/model/__init__.py": "b8583ecc51bae8eb1cc2009627b9d3be4c8f26bbd11f34d32841410d133522f4",
+      "domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+      "domain/model/block.py": "d3f55fb85933240da2e30defcd7bf66a7e234108aba3a91b9ce891d92dcd7784",
+      "domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+      "domain/model/centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d",
+      "domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+      "domain/model/engine.py": "de3a0a6f130e790959067a982bd4be69a2be3aabdc952f838639005f1fdec43a",
+      "domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+      "domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+      "domain/model/kv_cache.py": "7e60cda6058b6e2b3af460303ee5fb482d99362b82145f6feaf2affec193d895",
+      "domain/model/mha.py": "65045c01bc1819597b3d3f19ada6cf8277cbdcd2d1466bc1376b4e30ded0aa88",
+      "domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+      "domain/model/normalized_gpt.py": "12cfbbaef692fb76c572125f397cacbabf775c7f148ff79e85a9d4749d16f7ff",
+      "domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+      "domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba"
+    },
+    "model_commit": "01f18f86787511279fe52fe41883495fce0e3105"
+  },
+  "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.stored_rope_guarantees.audit_tables",
+  "limitations": "Theorems treat stored coefficients as real constants. They do not certify multiply/add rounding during rotation, normalization or score computation, QKV overflow, full-network gradients, optimization or generalization. They do not assert exact positional-phase or relative-rotation identities for rounded tables. Learned/generated LeRoPE tables outside this fixed inventory are not certified.",
+  "training_updates_issued": 0,
+  "application_ready": true
+}
