@@ -110,3 +110,11 @@ unbounded projection or readout matrices, or the whole network. Small epsilon st
 allows large constants. It adds no finite-precision or learning guarantee and
 does not remove the weaker concentration bound at smaller score coefficients.
 The short-suite selection and its frozen proof records remain unchanged.
+
+The [supplemental audit](../early99_score_scale_reporting/results/supplemental-proof-audit.json)
+verifies all **17** statements across the RMS proof, initial attention proof
+and strengthened results. It checks the actual printed axiom lists, fixture
+and compiler-output hashes, implementation references, external dependency
+revisions and Lean toolchain. It does not recompile the proofs or claim a
+verified PyTorch translation. Reproduce from the GPT repository root with
+`OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_score_scale_reporting.verify_supplemental`.
