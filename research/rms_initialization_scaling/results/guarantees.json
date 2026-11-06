@@ -1,0 +1,57 @@
+{
+  "checked_at_utc": "2026-11-06T22:29:31.553325+00:00",
+  "exit_code": 0,
+  "statements": 4,
+  "warnings": 0,
+  "extra_axioms": [],
+  "axioms": {
+    "RMSInitialization.linear_forward": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSInitialization.linear_loss_derivative": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSInitialization.vjp_rescale": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSInitialization.coefficient_ratio_decreases": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "source_sha256": {
+    "research/rms_initialization_scaling/Bounds.lean": "a129880327ac1e5b4d11a93c15134b3c4dc979de677abe385780ab25fa18bca4",
+    "research/rms_initialization_scaling/check.py": "c407ded0a87bcc307cfc1c7c6995e0ccb2e06aab729c568d03f257dac3943b06",
+    "research/stored_rope_guarantees/check.py": "c32daf88d0de108448294d6e088456e752f157c9b01c2d1fd9198894eea2a809"
+  },
+  "plan_sha256": "0cf5b3e8f297685450c3f3636e04ce74ed7f1819a46cb4315d641e9880a967ab",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_source_sha256": {
+    "src/Transformer/AttentionResiduals/QueryCoordinates.lean": "69dbee7a771b7219bc581f4efa3b1e3f3671a8d102c5e039f3893fde568f7922",
+    "src/Transformer/Residual/RMSBackward.lean": "4363cbb83edd49a67a5094a12f217ef132a27a32ffa3be141bd3559b1c4ce3c5",
+    "src/Transformer/Residual/GradientPaths.lean": "a74e1237046a7926a05ed896fae8fa9bc936133e2a7762a4bd09583563731a06",
+    "src/Transformer/Residual/Basic.lean": "64d535ff74b3b0cfa6ccd019c3bf84d3e3f9b3343331e29a005382bdea72432e",
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Basic.lean": "448f7d315a423d5a8f933b2d78b6d6662f346eb6a424d4f7e44111ee41b7b877",
+    "src/Transformer/GPTMini/Config.lean": "1f382b8889de13bac205e4b938bc8418e3956a3eae1a1b460394e7fef3fccf59",
+    "src/Transformer/AttentionResiduals/Normalized.lean": "005d61568c4dfd7905056b5fdaebecdbb26fac644d11b3591aa6265442e6cc27",
+    "src/Transformer/AttentionResiduals/Section3_Attention.lean": "01d1a7501b213f49402759669639e8e9d8b4a46c63b7eb676ac6f6222ecca529",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "attempt": "research/rms_initialization_scaling/results/lean-attempt-20261106T222928957203.json",
+  "attempt_sha256": "34934d47f929813d8600bc73a3699df902aa9faebfbb4a5496613b9459dc32de",
+  "limitations": [
+    "Real-arithmetic proofs retain finite epsilon. Numerical checks concern only the declared moderate-scale CPU grid, not a floating-point proof.",
+    "The linear map, downstream scalar loss and cotangent are fixed for each local comparison. Internal SwiGLU scales, simultaneous model changes, tied embedding/readout paths and optimizer trajectories are outside the identity.",
+    "The counterpart uses epsilon/s^2. Fixed-epsilon RMS is not exactly scale invariant, and inverse gradient scaling is not an exact same-epsilon training statement.",
+    "No optimizer updates, new task data or held-out scores, best initializer selection, current capacity/gain alteration, or repair of the ten unresolved full-stack numerical failures."
+  ]
+}

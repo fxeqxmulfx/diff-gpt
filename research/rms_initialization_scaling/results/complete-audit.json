@@ -1,0 +1,36 @@
+{
+  "audited_at_utc": "2026-11-06T22:31:32.227837+00:00",
+  "complete": true,
+  "lean_statements": 4,
+  "lean_attempts": 6,
+  "failed_lean_attempts_retained": 5,
+  "exported_theorems_unchanged_across_attempts": true,
+  "cases": 96,
+  "passed": 96,
+  "checks": 1152,
+  "maximum_finite_relative_error": 5.960464299903336e-08,
+  "optimizer_updates": 0,
+  "initializer_selected": false,
+  "fixed75_selection_changed": false,
+  "source_and_evidence_sha256": {
+    "research/rms_initialization_scaling/report.py": "85f2e2a4361021df671032dbd8a721c667a2eb5f1ca6cae2e6460a6912efb421",
+    "research/rms_initialization_scaling/plan.json": "0cf5b3e8f297685450c3f3636e04ce74ed7f1819a46cb4315d641e9880a967ab",
+    "research/rms_initialization_scaling/results/guarantees.json": "3f451efd0e4593d71c8752fa90bed8879adc0e281e75399ac233385aa2429c59",
+    "research/rms_initialization_scaling/results/runtime.json": "68ef778420a2a0114bfd5a8278e1135b4aae10287af13a15f89a6d259739c78c",
+    "research/rms_initialization_scaling/results/scaling-summary.csv": "4ab5c2a25c95157f6e1a6bafe077ab2a3fdb412f8be18c2fc130b51d3c217d4a",
+    "research/rms_initialization_scaling/results/runtime-output.txt": "3f36d1690b7eac263c185c5b55b13742a4ddcd59f5c769d494e1a11cae0da389",
+    "research/rms_initialization_scaling/results/lean-attempt-20261106T222402968430.json": "84d016846f811915ddb0079f4d11d4762fe1ba6104cdc69057f189c58af0f517",
+    "research/rms_initialization_scaling/results/lean-attempt-20261106T222422603592.json": "1cc11981cf1fb7b36d4b64c575268a2d5c510893efd88a88dc71a1296210e00d",
+    "research/rms_initialization_scaling/results/lean-attempt-20261106T222436127817.json": "6793e234db322e6cf36b57d62ad108f8ad8bc74beca0a47d221aecb6bcbeec64",
+    "research/rms_initialization_scaling/results/lean-attempt-20261106T222618550457.json": "c56f2e5f7315f9b01adbd9e856446ea92ec0d6907b26ced210e51ff0248267d6",
+    "research/rms_initialization_scaling/results/lean-attempt-20261106T222657561579.json": "782ecd24e3cd43852aa1b8bad285187a9007c9c64ec792245b1dd57ab6065b6d",
+    "research/rms_initialization_scaling/results/lean-attempt-20261106T222928957203.json": "34934d47f929813d8600bc73a3699df902aa9faebfbb4a5496613b9459dc32de",
+    "research/rms_initialization_scaling/results/runtime-attempt-20261106T223012345830.json": "35f429b187e0cc55fba64607e22dc7345d79ec494183240f7b80fede6b985b80"
+  },
+  "limits": [
+    "Real-arithmetic proofs retain finite epsilon. Numerical checks concern only the declared moderate-scale CPU grid, not a floating-point proof.",
+    "The linear map, downstream scalar loss and cotangent are fixed for each local comparison. Internal SwiGLU scales, simultaneous model changes, tied embedding/readout paths and optimizer trajectories are outside the identity.",
+    "The counterpart uses epsilon/s^2. Fixed-epsilon RMS is not exactly scale invariant, and inverse gradient scaling is not an exact same-epsilon training statement.",
+    "No optimizer updates, new task data or held-out scores, best initializer selection, current capacity/gain alteration, or repair of the ten unresolved full-stack numerical failures."
+  ]
+}

@@ -1109,3 +1109,19 @@ and radial/tangent conditioning, then check the declared96-case CPU grid.
 The changed-epsilon counterpart is explicit. No training, heldout evaluation,
 initializer selection or alteration of the capacity/gain studies is authorized
 by this local supplement; their frozen protocols remain unchanged.
+
+Local initialization-scale analysis completed
+The four RMS initialization statements compile with no warnings or extra axioms.
+For a fixed linear parameter map and fixed downstream loss, physical-parameter
+rescaling by s>0 gives an inverse-s derivative relative to the counterpart with
+epsilon/s^2. Do not drop that changed-epsilon condition. Increasing input scale
+also reduces the radial/tangent coefficient ratio eps/(s^2*m+eps), for s>=1.
+All96 declared CPU cases and1152 forward/parameter-gradient comparisons pass;
+maximum relative error is5.9604643e-8 against the unchanged0.001 threshold.
+At synthetic input RMS.02, scale4 changes normalized amplitude about.014percent
+while reducing tangent/radial coefficients about4/64fold. This does not select
+an initializer or predict training. The full tied embedding/readout path and
+nonlinear SwiGLU rescaling are outside this fixed-map result. Allfive failed
+example-elaboration attempts and the final clean proof are retained; the four
+exported statements/proofs were unchanged. The existing ten full-stack stress
+failures remain unresolved. Capacity/gain training and selection stay frozen.
