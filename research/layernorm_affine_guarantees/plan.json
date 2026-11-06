@@ -1,0 +1,86 @@
+{
+  "declared_at_utc": "2026-11-06T22:40:04.563404+00:00",
+  "motivation": "The user keeps Peri and embedding normalization and tied weights, while explicitly allowing RMSNorm or LayerNorm and learned affine parameters. Establish what bounds survive those choices before selecting a future model.",
+  "objective": "Prove scoped finite-epsilon LayerNorm and learned-diagonal-affine bounds, then compare existing CPU operations with independent high-precision local formulas. No training or architecture selection.",
+  "equations": {
+    "centering": "C(x)=x-mean(x)*ones, mean=sum(x_i)/d, positive integer d.",
+    "layernorm": "LN_eps(x)=RMS_eps(C(x)); population variance divides by d, not d-1.",
+    "affine": "gamma elementwise-multiplied by the normalized vector, plus beta. Gamma and beta are fixed when considering input sensitivity.",
+    "gamma_bound": "G>=0 and every abs(gamma_i)<=G. Unconstrained training does not provide a fixed uniform G or beta norm bound."
+  },
+  "proof_targets": [
+    "Centering energy identity ||C(x)||^2=||x||^2-(sum x_i)^2/d.",
+    "Centering is nonexpansive in Euclidean norm.",
+    "Positive-epsilon LayerNorm output norm is at most sqrt(d).",
+    "Positive-epsilon LayerNorm has input Lipschitz bound 1/sqrt(epsilon), matching the existing RMS bound.",
+    "LayerNorm is invariant to adding any scalar multiple of the all-ones vector, including finite epsilon.",
+    "A coordinatewise scale with abs(gamma_i)<=G has Euclidean operator bound G.",
+    "Affine RMS has output bound G*sqrt(d)+||beta|| and input Lipschitz bound G/sqrt(epsilon).",
+    "Affine LayerNorm has the same output and input Lipschitz bounds under the explicit parameter conditions."
+  ],
+  "numerical_grid": {
+    "device": "cpu",
+    "widths": [
+      1,
+      8,
+      128,
+      256
+    ],
+    "inputs": [
+      "zero",
+      "constant_3",
+      "balanced_0.02",
+      "balanced_1",
+      "shifted_balanced_0.02"
+    ],
+    "dtypes": [
+      "float32",
+      "float64"
+    ],
+    "normalizers": [
+      "rms_existing_repaired_backward",
+      "layernorm_native"
+    ],
+    "affine_profiles": [
+      "none",
+      "nonuniform"
+    ],
+    "epsilon": {
+      "numerator": 1,
+      "denominator": 8388608
+    },
+    "direction": "Repeat [1,-1,-1,1] and truncate to d coordinates. The same vector is the fixed output cotangent. At width 1 its sole entry is 1, so centering removes all input.",
+    "inputs_exact": "zero is all zeros; constant_3 is all threes; balanced_a is a*direction; shifted_balanced_0.02 is 3+0.02*direction. Reference uses the actual represented input, not an ideal decimal amplitude.",
+    "affine_exact": "none has no affine parameters. nonuniform uses torch.linspace(-2,2,d) for gamma and torch.linspace(-0.25,0.25,d) for beta, in the tested dtype; both require gradients. RMS uses the existing repaired RMS then explicit elementwise affine. LayerNorm uses native F.layer_norm with these same parameters.",
+    "expected_cases": 160,
+    "relative_l2_error_threshold": 0.001,
+    "reference": "Python Decimal at 80 digits, from exact represented floating input/gamma/beta/cotangent. Compute population mean/variance, normalized output and analytic full input VJP plus gamma/beta VJPs. Do not call Torch autograd or either normalization implementation in the reference.",
+    "checks": "Compare complete output and input-gradient vectors for all cases; compare both affine-parameter gradients where present. Require finite actual/reference values and relative L2 error <=0.001. An identically zero reference requires exactly zero actual output/gradient.",
+    "policy": "Complete and retain every case, including numerical failures; do not weaken the threshold or infer convergence. This measures implementations, not which normalizer learns better. Do not fix a native operation or change model code within this comparison."
+  },
+  "sources_sha256": {
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "research/normalization_guarantees/results/guarantees.json": "852131b5a7dd32f94d0a82183c6f83edac2b3ffeccf50e524bd9c58e0e65a1f6",
+    "research/stored_rope_guarantees/check.py": "c32daf88d0de108448294d6e088456e752f157c9b01c2d1fd9198894eea2a809"
+  },
+  "external_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Basic.lean": "448f7d315a423d5a8f933b2d78b6d6662f346eb6a424d4f7e44111ee41b7b877",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "torch_version": "2.14.1+cu126",
+  "torch_git_version": "5c4886908584029761b579af026dcfb627c84070",
+  "torch_python_source_sha256": {
+    "/home/misha/python_projects/gpt/.venv/lib/python3.14/site-packages/torch/nn/functional.py": "95ff403085bb179477a01df63acfddf59dfac0fb58829e99a9c8b5c2fe98899b",
+    "/home/misha/python_projects/gpt/.venv/lib/python3.14/site-packages/torch/nn/modules/normalization.py": "96284b63a2088c7d378716d5114eb5b6a1c072d479116170fcfd284c57e84b4f"
+  },
+  "limits": [
+    "Bounds are for real arithmetic with positive width and epsilon. They do not imply stable optimization, preserved information, earlier grokking or generalization.",
+    "The affine input bounds hold at fixed gamma/beta with the stated bounds. No uniform bound along unconstrained parameter training is inferred.",
+    "No Peri, embedding, tied-readout or benchmark source changes; no optimizer updates or new task scores; no initializer or normalizer selected.",
+    "Local CPU numerical failures, if any, concern the tested implementations. They do not refute the real-arithmetic norm bounds or prove the whole architecture unsuitable.",
+    "The old ten full-stack numerical failures and deferred Muon/repair studies remain unchanged. Capacity and usual-gain experiment order is preserved."
+  ]
+}
