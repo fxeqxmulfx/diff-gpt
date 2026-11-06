@@ -1,0 +1,24 @@
+{
+  "declared_at_utc": "2026-11-06T17:05:52.508707+00:00",
+  "question": "How does the normalized-score bound change for the actual stored fixed-RoPE tables, whose cosine/sine pairs need not have exactly unit energy?",
+  "scope": "Supplemental mathematical and exact-arithmetic audit only. No training, candidate, task, optimizer or selection changes. The three declared architecture screens continue unchanged.",
+  "proof": "Reuse the existing half-split tableRotate definition. For M>=1 and every stored pair c^2+s^2<=M, prove norm squared <=M*input norm squared, norm <=sqrt(M)*input norm, finite-epsilon Q/K score <=abs(gain)*M*d, and SSMax score <=log(N)*abs(gain)*M*d. Query and key may use different table rows.",
+  "expected_statements": 4,
+  "application": "Instantiate every one of the35 fixed model specifications on CPU with the frozen model factory and actual task context. Read its actual FP32 rope_cos/rope_sin buffers. Convert entries exactly to rational dyadics and check every pair against the predeclared M=1+2^-20. Retain exact minima/maxima and table hashes for all35; fail the application certificate if any table violates the bound.",
+  "pair_energy_bound": {
+    "numerator": 1048577,
+    "denominator": 1048576
+  },
+  "limitations": "Theorems treat stored coefficients as real constants. They do not certify multiply/add rounding during rotation, normalization or score computation, QKV overflow, full-network gradients, optimization or generalization. They do not assert exact positional-phase or relative-rotation identities for rounded tables. Learned/generated LeRoPE tables outside this fixed inventory are not certified.",
+  "local_source_sha256": {
+    "src/diff_gpt/domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba",
+    "src/diff_gpt/domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+    "research/early99/suite.json": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436",
+    "research/early99_core_ablations/plan.json": "d15616c3800581f90537f58aa68551c5af8f9ce6222f6f2737470278f271630e"
+  },
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/GPTMini/RoPE.lean": "4a40fa2a2a5b1fdf96ad62371aab1c3982ce2c9b67effb69525ff8daa5b1f09c",
+    "src/Transformer/SequenceModel/Attention/Execution/Tables.lean": "b4947b9e420cbd1b4c6bd0050da46955363bf227f5d5a8418b7d44fe6a3fee87"
+  }
+}
