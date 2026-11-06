@@ -1,0 +1,159 @@
+{
+  "declared_at_utc": "2026-11-06T10:19:52.146581+00:00",
+  "user_requests": [
+    "adamw with muon",
+    "or only muon"
+  ],
+  "parent": "peri-rms-scaled-ssmax-inverse-width-lr2",
+  "parent_short_gm_epochs": 16.266050125508265,
+  "configurations": [
+    {
+      "name": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width",
+      "optimizer_kind": "muon_adamw",
+      "auxiliary_lr_multiplier": 2.0,
+      "muon_momentum": 0.95,
+      "muon_nesterov": true,
+      "muon_ns_steps": 5,
+      "muon_ns_coefficients": [
+        3.4445,
+        -4.775,
+        2.0315
+      ],
+      "muon_eps": 1e-07,
+      "muon_shape_scaling": "match_rms_adamw",
+      "muon_compute_dtype": "float32",
+      "muon_normalization_dtype": "float64"
+    },
+    {
+      "name": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "learning_rate_multiplier": 4.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width",
+      "optimizer_kind": "muon_adamw",
+      "auxiliary_lr_multiplier": 2.0,
+      "muon_momentum": 0.95,
+      "muon_nesterov": true,
+      "muon_ns_steps": 5,
+      "muon_ns_coefficients": [
+        3.4445,
+        -4.775,
+        2.0315
+      ],
+      "muon_eps": 1e-07,
+      "muon_shape_scaling": "match_rms_adamw",
+      "muon_compute_dtype": "float32",
+      "muon_normalization_dtype": "float64"
+    },
+    {
+      "name": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width",
+      "optimizer_kind": "muon",
+      "auxiliary_lr_multiplier": 2.0,
+      "muon_momentum": 0.95,
+      "muon_nesterov": true,
+      "muon_ns_steps": 5,
+      "muon_ns_coefficients": [
+        3.4445,
+        -4.775,
+        2.0315
+      ],
+      "muon_eps": 1e-07,
+      "muon_shape_scaling": "match_rms_adamw",
+      "muon_compute_dtype": "float32",
+      "muon_normalization_dtype": "float64"
+    },
+    {
+      "name": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "learning_rate_multiplier": 4.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width",
+      "optimizer_kind": "muon",
+      "auxiliary_lr_multiplier": 2.0,
+      "muon_momentum": 0.95,
+      "muon_nesterov": true,
+      "muon_ns_steps": 5,
+      "muon_ns_coefficients": [
+        3.4445,
+        -4.775,
+        2.0315
+      ],
+      "muon_eps": 1e-07,
+      "muon_shape_scaling": "match_rms_adamw",
+      "muon_compute_dtype": "float32",
+      "muon_normalization_dtype": "float64"
+    }
+  ],
+  "change": "Change only optimizer: hybrid Muon hidden matrices plus native AdamW auxiliary, or pure Muon on every trainable matrix. Keep original inverse-width model and constant schedule.",
+  "matrix_equations": "B0=0; B=(.95*B)+(.05*G); H=.05*G+.95*B (new B). Normalize X=H/max(||H||_F,1e-7), computing both H conversion and normalization in FP64, then cast X to FP32. Transpose when rows>columns. Perform5 iterations X=3.4445*X+(-4.775*(X X^T)+2.0315*(X X^T)^2)*X. Restore orientation. P=(1-lr*wd)*P-lr*.2*sqrt(max(rows,cols))*X. No extra clipping.",
+  "precision": "Momentum and parameters FP32; magnitude-safe initial Frobenius normalization FP64; all5Newton-Schulz iterations FP32 with matmul precision highest. This is an explicitly labeled FP32 Muon variant, not the native torch BF16 implementation or exact polar factor. Convex sum momentum/Nesterov are evaluated as scaled additions, not subtraction-based lerp.",
+  "partition": "All35case inventories are matrix-only. Hybrid excludes the tied token_embedding_table/lm_head weight from Muon and updates it once with native AdamW; all remaining unique matrices use Muon. Pure updates all unique matrices with Muon and has no AdamW fallback. Reject any nonmatrix/duplicate/missing/changed partition.",
+  "rates": "Matrix peak=original case rate times2or4. Hybrid auxiliary peak=original case rate times2 in both arms. Every group retains original completed-update50warmup from zero then constant. Shape scaling .2sqrt(max(shape)) is applied only to matrix direction; decoupled decay uses unadjusted group rate. Original case weight decay, auxiliary AdamW betas(.9,.98),epsilon1e-8.",
+  "rate_rationale": "A two-rate grid brackets the current shared-model LR2 using the RMS-matching matrix-shape convention; LR4 is the same doubling used in the preceding optimizer study. No tuning from long diagnostics and no mixing cosine into this comparison.",
+  "execution": "Original CUDA compiled loss and exact scorer; eager matrix optimizer outside update graphs; preparation issues zero updates and consumes no RNG. Reuse frozen per-update journal unchanged. Auxiliary native fused AdamW on CUDA, foreachFalse onCPU. Same parameters for training/evaluation/checkpoint.",
+  "model_invariants": "Original inverse-width factory and all matrices, initialization/RNG/order/count, Q/K RMS, SSMaxlogN/d, fixedRoPE, Peri-RMS, embedding RMS, tied embedding/readout, parameter-free RMS and residual scaling remain unchanged. No model numeric repair or activation change.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2",
+  "screen_policy": "Complete all18cells at original budgets. Advance only with18/18passes and at least3of6improved median paired actual-exposure epoch ratios against the unchanged parent. Keep all misses/errors; no screen geometric mean. With replay intervals, prove the same decision for the entire interval; otherwise resolve with a separately declared repeat.",
+  "full_policy": "Every promoted arm completes75short cells. Retain coverage, all paired medians/worst/regressions versus parent,quarter,LR2,baseline,noQK. A new winner needs75/75 and a lower complete-suite geometric mean than16.266050125508265. If interruption leaves an interval, require its upper complete GM below the parent; a lower bound alone cannot establish a winner. No filtered means. If multiple qualified arms have overlapping actual-exposure GM intervals and their order is ambiguous, do not declare a winner; use a separately declared repetition.",
+  "long_policy": "Freeze and commit a new short winner before evaluating it once on the reused30longcells. No new long run if parent retained. Never use long outcomes to design/tune/select.",
+  "validation": "Independent FP64 SVD with scalar quintic recurrence, rather than copied matrix iteration, forzero/tiny/ordinary/large/rank-deficient/rectangular cases; full momentum/decay/rate trajectories, native auxiliary AdamW, partition and tied dedup all35cases, initialization/RNG/parameter counts, zero hiddenupdates, CPUandCUDA state restoration with tails and complete trainer resume, trainer AST and unchanged benchmark integrity. Reject nonfinite inputs instead of silently treating them as zeros. Validate journal unchanged.",
+  "mathematics": "Check finite quintic singular-coefficient bounds and zero behavior using actual coefficients; preserve known non-polar counterexample and distinguish exact real statements, finite-precision tests, and measured learning. Do not claim convergence of the printed quintic to orthogonality or transformer convergence.",
+  "source_policy": "New scientific and reporting siblings plus reusable execution journal. Preserve every prior frozen scientific source, plan, result and launcher hash. Archive every relevant dependency and pin all validated source before benchmark updates.",
+  "references": [
+    {
+      "url": "https://github.com/KellerJordan/Muon",
+      "scope": "Upstream hidden-matrix recommendation, momentum.95,Nesterov,5NSsteps. Pure all-matrix variant is explicitly experimental."
+    },
+    {
+      "path": ".venv/lib/python3.14/site-packages/torch/optim/_muon.py",
+      "sha256": "c17abbb8af4c935d125b189c38d3cbaec295f1cfd232d2712bdb75e13184b972",
+      "scope": "Actual native EMA rule,clampednorm and match_rms_adamw scaling; this study changes BF16iteration toFP32 and widens initial norm."
+    }
+  ],
+  "unresolved_numeric_failures": "Current inverse-width full stack remains40/50; ten extreme QKV/SwiGLU failures are preserved and not repaired in this experiment.",
+  "evidence_sha256": {
+    "research/early99_dimension_gain/results/shared-selection.json": "dfa88e7d98a789281983f58a4eb15dcbf190f0dd908eaed686022895ac626e28",
+    "research/early99_dimension_gain/results/selection-integrity.json": "91b7eb9742213dbc61709011f9900f1a02b0ab39555d2a431717b10e4a14a736",
+    "research/early99_cosine/results/complete-audit.json": "9cb03d4c892ca83d2e3900e750c1b5b0da33e5175040abebb2ea63a0b8fe37f0",
+    "research/early99_schedule_free_recovery/results/complete-audit.json": "06b351b7604747ca598f984253e7340023dfc6b048ddb73b1f906222977be2d2",
+    "research/early99_optimizer_followups/queue.json": "46c06d989448f421215ac5a012a3af2120645aaa60b75e8bea52271bbbb8f83d",
+    "research/early99_optimizer_followups/parameter-inventory.json": "e2a8b77da15ba55ed919729eeb40f5f91ca264989561bb59a5c61e6b8201d5be"
+  }
+}

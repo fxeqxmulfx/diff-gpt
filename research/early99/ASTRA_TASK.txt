@@ -658,3 +658,19 @@ with no replay exposure. research/early99_cosine/results/complete-audit.json
 closes this study. Retain the inverse-width constantAdamW parent and its prior
 long diagnostic. Continue with Muon/AdamW and pureMuon as requested, keeping
 their exact rates/precision/partition frozen before any new benchmark updates.
+
+Muon hybrid and pure-matrix follow-up declared
+research/early99_muon/plan.json declares4arms: hidden-matrixMuon/nativeAdamW and
+pureMuon on every unique matrix, each at matrixLRx2orx4. Hybrid auxiliary rate
+staysLRx2,betas(.9,.98),epsilon1e-8. Keep50updatewarmup andconstant rate,original
+decay,model,data,seeds,budgets andoracles. The matrix rule usesEMA momentum.95,
+Nesterov,5quinticNSsteps(3.4445,-4.775,2.0315),FP32iterations andFP64initial
+Frobeniusnorm with1e-7floor. Shape scaling is.2sqrt(max(rows,cols)); decay uses
+unadjusted rate. Label this explicitFP32variant rather than nativeBF16or exact
+polarMuon. All35case inventories have only2Dtrainable tensors; deduplicate the
+tied embedding/readout, with no fallback in pureMuon. Validate independent
+matrix/trajectory references,zero/rankdeficient/extrememagnitudes,CPU/CUDAresume,
+preparationneutrality,trainerprotocol andscopedrealproofs before training.
+Apply allfour18cellscreens andtheunchanged3taskgate; full75for everypromotedarm,
+freeze shortselection, thenonlyanewwinner getsone reusedlong30diagnostic. Keep
+thecosine/Schedule-Free negatives andthe10unrepaired modelstress failures.
