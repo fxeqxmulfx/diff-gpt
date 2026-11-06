@@ -1,0 +1,728 @@
+{
+  "kind": "Exploratory descriptive interaction; no new training or selection criterion",
+  "formula": "T(both)*T(base)/(T(embedding)*T(scaled Peri))",
+  "interpretation": "Below1 means the combined addition is faster than multiplying the two individually measured epoch ratios. This is not a claim about long-suite causality, unseen tasks, or learning guarantees. Costs are first-observed crossings, with replay bounds; a failed or zero-epoch cell has no interaction ratio.",
+  "suite_conditioned_on_original_seed1_success": true,
+  "selection_uses_this_statistic": false,
+  "geometric_mean": null,
+  "runs": [
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 0,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 10.0,
+          "upper": 10.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 2.0,
+          "upper": 2.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.2,
+      "interaction_ratio_upper": 0.2,
+      "interaction_ratio": 0.2
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 1,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 2.0,
+          "upper": 2.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 6.0,
+          "upper": 6.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 2.0,
+          "upper": 2.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 2.0,
+          "upper": 2.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.3333333333333333,
+      "interaction_ratio_upper": 0.3333333333333333,
+      "interaction_ratio": 0.3333333333333333
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 2,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 4.0,
+          "upper": 4.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 7.0,
+          "upper": 7.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.5714285714285714,
+      "interaction_ratio_upper": 0.5714285714285714,
+      "interaction_ratio": 0.5714285714285714
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seed": 0,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 46.0,
+          "upper": 46.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 117.0,
+          "upper": 117.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 80.0,
+          "upper": 80.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 39.0,
+          "upper": 39.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.19166666666666668,
+      "interaction_ratio_upper": 0.19166666666666668,
+      "interaction_ratio": 0.19166666666666668
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seed": 1,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 95.0,
+          "upper": 95.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 79.0,
+          "upper": 79.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 79.0,
+          "upper": 79.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 38.0,
+          "upper": 38.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.5784329434385516,
+      "interaction_ratio_upper": 0.5784329434385516,
+      "interaction_ratio": 0.5784329434385516
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seed": 2,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 145.0,
+          "upper": 145.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 98.0,
+          "upper": 98.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 45.0,
+          "upper": 45.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 31.0,
+          "upper": 31.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 1.0192743764172336,
+      "interaction_ratio_upper": 1.0192743764172336,
+      "interaction_ratio": 1.0192743764172336
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 0,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 19.0,
+          "upper": 19.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 463.0,
+          "upper": 463.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 219.0,
+          "upper": 219.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 46.0,
+          "upper": 46.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.008619584405850271,
+      "interaction_ratio_upper": 0.008619584405850271,
+      "interaction_ratio": 0.008619584405850271
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 1,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 21.0,
+          "upper": 21.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 306.0,
+          "upper": 306.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 45.0,
+          "upper": 45.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 28.0,
+          "upper": 28.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.042701525054466234,
+      "interaction_ratio_upper": 0.042701525054466234,
+      "interaction_ratio": 0.042701525054466234
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 2,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 29.0,
+          "upper": 29.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 253.0,
+          "upper": 253.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 230.0,
+          "upper": 230.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 29.0,
+          "upper": 29.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.014452655095377213,
+      "interaction_ratio_upper": 0.014452655095377213,
+      "interaction_ratio": 0.014452655095377213
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 0,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 16.0,
+          "upper": 16.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 146.0,
+          "upper": 146.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "budget_exhausted",
+          "lower": null,
+          "upper": null,
+          "censor_lower": 468.75,
+          "censor_upper": 468.75
+        },
+        "both": {
+          "status": "passed",
+          "lower": 15.0,
+          "upper": 15.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": null,
+      "interaction_ratio_upper": null,
+      "interaction_ratio": null
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 1,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 26.0,
+          "upper": 26.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 115.0,
+          "upper": 115.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "budget_exhausted",
+          "lower": null,
+          "upper": null,
+          "censor_lower": 468.75,
+          "censor_upper": 468.75
+        },
+        "both": {
+          "status": "passed",
+          "lower": 9.0,
+          "upper": 9.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": null,
+      "interaction_ratio_upper": null,
+      "interaction_ratio": null
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 2,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 4.0,
+          "upper": 4.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 192.0,
+          "upper": 192.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "budget_exhausted",
+          "lower": null,
+          "upper": null,
+          "censor_lower": 468.75,
+          "censor_upper": 468.75
+        },
+        "both": {
+          "status": "passed",
+          "lower": 20.0,
+          "upper": 20.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": null,
+      "interaction_ratio_upper": null,
+      "interaction_ratio": null
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 0,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 420.0,
+          "upper": 420.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 360.0,
+          "upper": 360.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 5218.0,
+          "upper": 5218.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 292.0,
+          "upper": 292.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.06528682764788553,
+      "interaction_ratio_upper": 0.06528682764788553,
+      "interaction_ratio": 0.06528682764788553
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 1,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 419.0,
+          "upper": 419.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 431.0,
+          "upper": 431.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 4294.0,
+          "upper": 4294.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 336.0,
+          "upper": 336.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.07607010051255894,
+      "interaction_ratio_upper": 0.07607010051255894,
+      "interaction_ratio": 0.07607010051255894
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 2,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 451.0,
+          "upper": 451.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 337.0,
+          "upper": 337.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "budget_exhausted",
+          "lower": null,
+          "upper": null,
+          "censor_lower": 5263.163265306122,
+          "censor_upper": 5263.163265306122
+        },
+        "both": {
+          "status": "passed",
+          "lower": 311.0,
+          "upper": 311.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": null,
+      "interaction_ratio_upper": null,
+      "interaction_ratio": null
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 0,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 4.0,
+          "upper": 4.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 6.0,
+          "upper": 6.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 4.0,
+          "upper": 4.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 4.0,
+          "upper": 4.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.6666666666666666,
+      "interaction_ratio_upper": 0.6666666666666666,
+      "interaction_ratio": 0.6666666666666666
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 1,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 4.0,
+          "upper": 4.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 5.0,
+          "upper": 5.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.8,
+      "interaction_ratio_upper": 0.8,
+      "interaction_ratio": 0.8
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 2,
+      "costs": {
+        "base": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "embedding": {
+          "status": "passed",
+          "lower": 5.0,
+          "upper": 5.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "peri": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        },
+        "both": {
+          "status": "passed",
+          "lower": 3.0,
+          "upper": 3.0,
+          "censor_lower": null,
+          "censor_upper": null
+        }
+      },
+      "interaction_ratio_lower": 0.6,
+      "interaction_ratio_upper": 0.6,
+      "interaction_ratio": 0.6
+    }
+  ],
+  "tasks": [
+    {
+      "case": "suite-boolean-and-random",
+      "all_three_seeds_solved_by_all_four": true,
+      "median_interaction_ratio_lower": 0.3333333333333333,
+      "median_interaction_ratio_upper": 0.3333333333333333,
+      "median_interaction_ratio": 0.3333333333333333
+    },
+    {
+      "case": "power-division-p193-k2",
+      "all_three_seeds_solved_by_all_four": true,
+      "median_interaction_ratio_lower": 0.5784329434385516,
+      "median_interaction_ratio_upper": 0.5784329434385516,
+      "median_interaction_ratio": 0.5784329434385516
+    },
+    {
+      "case": "power-division-p97-k2",
+      "all_three_seeds_solved_by_all_four": true,
+      "median_interaction_ratio_lower": 0.014452655095377213,
+      "median_interaction_ratio_upper": 0.014452655095377213,
+      "median_interaction_ratio": 0.014452655095377213
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "all_three_seeds_solved_by_all_four": false,
+      "median_interaction_ratio_lower": null,
+      "median_interaction_ratio_upper": null,
+      "median_interaction_ratio": null
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "all_three_seeds_solved_by_all_four": false,
+      "median_interaction_ratio_lower": null,
+      "median_interaction_ratio_upper": null,
+      "median_interaction_ratio": null
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "all_three_seeds_solved_by_all_four": true,
+      "median_interaction_ratio_lower": 0.6666666666666666,
+      "median_interaction_ratio_upper": 0.6666666666666666,
+      "median_interaction_ratio": 0.6666666666666666
+    }
+  ],
+  "source_sha256": "c4796c1c835054815f023fda31fbd529ee859a64503ac7bf0d938b9ab6b96d23",
+  "screen_integrity_sha256": "334e4a2e42a762fd8988ac85ba7e5a8274415f1f58312073a9869191e7562b97",
+  "plans_sha256": {
+    "runs/early99/candidates/adamw-lr2/plan.json": "eb55f026d26144db633be17ec41b6ded461a69906b93f98327f74b0490bade9c",
+    "runs/early99/candidates/core-embedding-rms-lr2/plan.json": "77f3764a23618f7a54d10c943ed78148a7ffe0dd29b50fd2288b735336d6b292",
+    "runs/early99/candidates/core-scaled-peri-rms-lr2/plan.json": "2430c87d8543bc9a06712da7a5f34ddd82f990ae1b546c752db5a0ba2e736806",
+    "runs/early99/candidates/peri-rms-scaled-lr2/plan.json": "e82fec1d851e03e7e5c77d0a935ab029a20827d8b3600596fcbd74f5a883fecc"
+  }
+}

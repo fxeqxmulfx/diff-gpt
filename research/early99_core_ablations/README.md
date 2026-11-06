@@ -110,6 +110,38 @@ ratio or aggregate screen mean is reported. These results isolate the declared
 scaled Peri-RMS addition with the original attention gain; they do not identify
 the cause of previous combined-stack long failures.
 
+The SSMax-only arm completed **18/18** and improved **3/6** paired task medians,
+so it **advances to all 75 short runs**. Its [promotion comparison](results/screen-core-ssmax-lr2-vs-parent.json)
+retains the two task regressions as well as the improvements:
+
+| Screen task | Median paired epoch ratio versus LR×2 |
+|---|---:|
+| Boolean AND | 1.000 |
+| Power division, p193 k2 | 0.537 |
+| Power division, p97 k2 | 0.714 |
+| Key/value binding | 1.188 |
+| Square-sum | 0.764 |
+| Linear transport | 1.250 |
+
+The [combined checkpoint audit](results/audit-screen.json) verifies all 54 screen
+runs, including the four Peri-only budget misses. Every final model and native
+AdamW moment is finite; second moments are nonnegative. There are no execution
+errors, resumptions or replayed updates. The [screen integrity record](results/screen-integrity.json)
+reconstructs all 15 control comparisons and 30 CSV files, and pins their evidence.
+SSMax improves only one task median against the global inverse-width incumbent
+in this screen. Its full 75-run result is still required by the declared policy;
+passing the original-LR×2 gate does not establish a new shared winner.
+
+The [descriptive embedding/Peri interaction](results/embedding-peri-interaction.json)
+retains all 18 paired cells across the four original/embedding/Peri/both arms.
+It reports `T(both)*T(original)/(T(embedding)*T(Peri))`, where `T` is the first
+observed crossing epoch. The four Peri-only misses leave four cell ratios and
+the key/value and square-sum task medians undefined; there is no filtered mean.
+The other task medians are 0.3333 (Boolean), 0.5784 (p193), 0.01445 (p97), and
+0.6667 (linear transport). Values below one describe a combined learning time
+smaller than the product of the isolated epoch ratios. This exploratory
+statistic is not a selection criterion or a causal explanation of long failures.
+
 A separate [initial-scale diagnostic](../core_initial_scale/README.md) completed
 72 forward measurements on the fixed screen's training prefixes, with no updates
 or held-out scoring. The first attention branch/residual RMS ratio ranges from
@@ -144,7 +176,8 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.ea
 MPLCONFIGDIR=/tmp/gpt-core-curves-mpl /usr/bin/python3 research/early99_core_ablations_reporting/plot_key_value.py
 ```
 
-Status: the SSMax-only screen continues from validated source `00b6224`.
-Both completed normalization-only screens are rejected under the declared gate.
+Status: all three screens are complete and audited from source `00b6224`.
+Both normalization-only arms are rejected; SSMax alone qualifies for the full
+75-run short suite, reusing its 18 completed screen cells without rerunning them.
 No full-suite result or new winner is established yet.
 The incomplete Muon study and proposed numerical repair remain deferred.
