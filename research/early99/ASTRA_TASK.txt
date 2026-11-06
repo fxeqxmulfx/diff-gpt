@@ -1064,3 +1064,30 @@ For independentGaussianmatrix rows onfixedunit-RMSinputs,outputvarianceis
 fanin*.02^2: .0512at128vs.1024at256. Thisdoesnotdirectlyapplytotiedreadout
 conditionedonembedding-dependentstates. Evaluate actualscalesbeforechoosing
 block-specificinitialization; noalternativeisdeclaredbestfromthislocalaudit.
+
+Initialization component audit completed
+The initialization audit completes all 36 states and 72 objective measurements.
+All forward/parameter-gradient comparisons are exact; all 288 residual/tied-path
+reconstructions have zero error. Every active value and gradient is finite.
+The complete results retain 6108 component rows and 1044 parameter rows. For the
+one-layer inverse-width model, widening128to256 changes three-seed median Q RMS
+before normalization .22775to.31824, SwiGLU product RMS .02589to.05282, FFN output
+before branch RMS .00966to.02760, and its local unit-probe RMS VJP gain105.06to36.52.
+These are changes under the retained initializer, not proof of harmful gradients.
+Matrix-piece standard deviations span .01968to.02027 around the declared .02.
+Restoring only the usual gain produces paired Q/K parameter-probe-gradient ratios
+with medians4.8023/4.8124 across18size/seed/layer pairs; V median is1.0052.
+This reinforces the planned gain test without establishing a training outcome.
+No new initializer is selected. After capacity and gain results, freeze a separate
+block-specific initialization test if warranted. Deterministically rescaling the
+existing matrix draws can preserve paired random directions while explicitly
+changing their magnitudes; such an intervention needs its own comparison contract.
+
+First capacity outcome preserved; study remains in progress
+Depth2,width128,originalLR1,seed0 completes100000updates without99heldout.
+Maximum observed heldout is.9704569607; finalheldout.8805526036 andfinaltrain
+.9987244898. This is5263.163265epochs and2050.860074trainerseconds. The deepaudit
+verifies its sources, initialization, optimizer moments, complete oracles and
+checkpoint; there is no resumption or replay. Recordit as1of27newcells, with the
+remainingqueueunchanged. This single original-model seed does not establish a
+three-seed capacity conclusion or any result for the enlargednormalizedmodel.

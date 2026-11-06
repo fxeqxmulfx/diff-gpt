@@ -1,0 +1,3157 @@
+{
+  "complete": true,
+  "checks": {
+    "states": 36,
+    "objective_parity_checks": 72,
+    "path_reconstructions": 288,
+    "maximum_reconstruction_relative_l2": 0.0,
+    "finite_active_values_and_gradients": true
+  },
+  "groups": [
+    {
+      "size": "current",
+      "arm": "original",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22771682781437028,
+        "min": 0.2231250787120806,
+        "max": 0.23070230443869816
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0021284373582364144,
+        "min": 0.0020621657882773105,
+        "max": 0.0021908607985836274
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22467306325723044,
+        "min": 0.22320926208993805,
+        "max": 0.22786855883930804
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0021768405030642263,
+        "min": 0.002100349757397254,
+        "max": 0.002183765572182044
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.020220655706466403,
+        "min": 0.019220168227584496,
+        "max": 0.0212000897903748
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03850735406585015,
+        "min": 0.03715910104432197,
+        "max": 0.03929514707324091
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.020220655706466403,
+        "min": 0.019220168227584496,
+        "max": 0.0212000897903748
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03850735406585015,
+        "min": 0.03715910104432197,
+        "max": 0.03929514707324091
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.22596948824345364,
+        "min": 0.2251770461935618,
+        "max": 0.22612001443589866
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0016975165234813386,
+        "min": 0.0016895061656713151,
+        "max": 0.0017941642216222275
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.02581916863063986,
+        "min": 0.02574262739605815,
+        "max": 0.026078616883895837
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0149209027175837,
+        "min": 0.01485010376286872,
+        "max": 0.015518213648299577
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.009620277154874941,
+        "min": 0.00961435568162312,
+        "max": 0.009683471066391322
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.06632191875790637,
+        "min": 0.06583197052784939,
+        "max": 0.06758669586225542
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.009620277154874941,
+        "min": 0.00961435568162312,
+        "max": 0.009683471066391322
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.06632191875790637,
+        "min": 0.06583197052784939,
+        "max": 0.06758669586225542
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.01982948052760289,
+        "min": 0.019603338768261477,
+        "max": 0.02004041213667236
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10087219782683306,
+        "min": 0.10071415894414386,
+        "max": 0.10346211104449038
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.2955174041031296,
+        "min": 0.294080912944092,
+        "max": 0.29804009821666905
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.023285293206850317,
+        "min": 0.02260333435297001,
+        "max": 0.02503061127317949
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.023610136778709042,
+        "min": 0.02284575373258712,
+        "max": 0.024654122499232156
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.05267036204063818,
+        "min": 0.05176961274190653,
+        "max": 0.054653481806705866
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.7707153356747627,
+        "min": 0.7192290515473838,
+        "max": 0.8181338693265017
+      }
+    },
+    {
+      "size": "current",
+      "arm": "normalized_inverse",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.2277526167169897,
+        "min": 0.22315873149278592,
+        "max": 0.2307377241763441
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00025380609587986354,
+        "min": 0.00024073024158788382,
+        "max": 0.00025676694093901525
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.2247074912623602,
+        "min": 0.2232428790406851,
+        "max": 0.22790441887287682
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0002557851236107029,
+        "min": 0.00024614947246749826,
+        "max": 0.00026117554416122855
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.017529277323064186,
+        "min": 0.01701659801324465,
+        "max": 0.01839957216389559
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03228044137953332,
+        "min": 0.030824354300675167,
+        "max": 0.03300304450585242
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.4960297502906601,
+        "min": 0.4960259478560462,
+        "max": 0.49603396319413434
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011299729179669842,
+        "min": 0.0011162394983681688,
+        "max": 0.0011309383017749834
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.2261701070424007,
+        "min": 0.22514268801818715,
+        "max": 0.22629010326652915
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0025491606753733982,
+        "min": 0.0025235373341564644,
+        "max": 0.0025908020836388503
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.025885745384305013,
+        "min": 0.025700824095385516,
+        "max": 0.025959691037561388
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.022524402142070663,
+        "min": 0.022291335019825,
+        "max": 0.022566009953373125
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.00965597348976476,
+        "min": 0.009652617029010203,
+        "max": 0.009679474730216756
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.09948993950763049,
+        "min": 0.09846962012592002,
+        "max": 0.09979113298999084
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.70663549352708,
+        "min": 0.7066337161380097,
+        "max": 0.7066389554404906
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013323606807487647,
+        "min": 0.0013255260330074232,
+        "max": 0.0013440463175179395
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.01982948052760289,
+        "min": 0.019603338768261477,
+        "max": 0.02004041213667236
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10085585412564568,
+        "min": 0.0998941427277793,
+        "max": 0.10375784701502694
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.2978349749431914,
+        "min": 0.2953703019840146,
+        "max": 0.29998571805631813
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0028480200388262752,
+        "min": 0.002655189696457798,
+        "max": 0.0029920106101785685
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0028620325560284724,
+        "min": 0.0026523403111689014,
+        "max": 0.002977001537337082
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.04164720815587124,
+        "min": 0.03914937404370563,
+        "max": 0.04210759994584864
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.9946965291469024,
+        "min": 0.9926645307827525,
+        "max": 0.9961095588193257
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.60239345968751,
+        "min": 50.269689373908435,
+        "max": 51.46742947276306
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 40.36598526557489,
+        "min": 38.57811094827729,
+        "max": 41.81302848621183
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 105.05797031515158,
+        "min": 105.0008278544349,
+        "max": 105.60205369359498
+      }
+    },
+    {
+      "size": "current",
+      "arm": "normalized_usual",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.2277526167169897,
+        "min": 0.22315873149278592,
+        "max": 0.2307377241763441
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001210519709729698,
+        "min": 0.0011723371075992915,
+        "max": 0.001274948580183237
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.2247074912623602,
+        "min": 0.2232428790406851,
+        "max": 0.22790441887287682
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011949148308444588,
+        "min": 0.001181965217755626,
+        "max": 0.0013055042102531422
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.019229807798861357,
+        "min": 0.018399961164824747,
+        "max": 0.02016064532028881
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03152696745181794,
+        "min": 0.029991236567711816,
+        "max": 0.03287134747336778
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49603233265118535,
+        "min": 0.49602537213756104,
+        "max": 0.4960368996535303
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011266365750586182,
+        "min": 0.0011122713632387997,
+        "max": 0.00113091855711561
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.22617736609705183,
+        "min": 0.22516028486636355,
+        "max": 0.2262461672812785
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.002550161091137416,
+        "min": 0.002520433565877307,
+        "max": 0.002586645406804339
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.025897217047533654,
+        "min": 0.02575204561410877,
+        "max": 0.026005344135709225
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02252207510997813,
+        "min": 0.022259944020014157,
+        "max": 0.02254939179981901
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.00966794159891409,
+        "min": 0.009657143269886946,
+        "max": 0.009672367276058833
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0994961515770912,
+        "min": 0.09839192071105607,
+        "max": 0.09966513648106108
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.7066351701800889,
+        "min": 0.7066328792453359,
+        "max": 0.7066388124303
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013319505540468634,
+        "min": 0.0013244222474127225,
+        "max": 0.0013422992577257853
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.01982948052760289,
+        "min": 0.019603338768261477,
+        "max": 0.02004041213667236
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10265007518462173,
+        "min": 0.1013544992851817,
+        "max": 0.10566971861334983
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.2978550892411007,
+        "min": 0.29534009080330137,
+        "max": 0.3000435922173018
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.013939821520563056,
+        "min": 0.012930501808605815,
+        "max": 0.014139616654072108
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.013638183478582696,
+        "min": 0.012894804062886818,
+        "max": 0.01416175308306196
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.04106027613595151,
+        "min": 0.03968340453359465,
+        "max": 0.0417343596134387
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.8661260573785783,
+        "min": 0.8285544353468457,
+        "max": 0.8969434274582326
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.61343787612239,
+        "min": 50.27051887546784,
+        "max": 51.456946261737166
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 39.574310544657116,
+        "min": 37.50403952182355,
+        "max": 41.79475240406883
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 105.0625594652098,
+        "min": 105.00474408615635,
+        "max": 105.64116578332728
+      }
+    },
+    {
+      "size": "depth",
+      "arm": "original",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22565006230263657,
+        "min": 0.2230947719093162,
+        "max": 0.22731817759200748
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0020762334284363435,
+        "min": 0.0018132411066607615,
+        "max": 0.0020955353658130486
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22515570682512276,
+        "min": 0.22489848096006412,
+        "max": 0.22920711644479494
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0019876362574825883,
+        "min": 0.0018864753622187338,
+        "max": 0.0021601326923423045
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.02037452108829425,
+        "min": 0.02035193551207047,
+        "max": 0.02122591258787938
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.033716531527504624,
+        "min": 0.03271854200873406,
+        "max": 0.03678331122017183
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.02037452108829425,
+        "min": 0.02035193551207047,
+        "max": 0.02122591258787938
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.033716531527504624,
+        "min": 0.03271854200873406,
+        "max": 0.03678331122017183
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.22677891146778986,
+        "min": 0.22643716472677652,
+        "max": 0.22768597973815657
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.002029356039344926,
+        "min": 0.0020277508348308304,
+        "max": 0.0020599476218347286
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.026289766330028295,
+        "min": 0.026009862736827913,
+        "max": 0.02635350409624122
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.01756455910482289,
+        "min": 0.017444338003466363,
+        "max": 0.01775785399705448
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.009765387761541091,
+        "min": 0.009613769995543121,
+        "max": 0.009826337295644192
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.07771047898913874,
+        "min": 0.07732602654892391,
+        "max": 0.07848384824423951
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.009765387761541091,
+        "min": 0.009613769995543121,
+        "max": 0.009826337295644192
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.07771047898913874,
+        "min": 0.07732602654892391,
+        "max": 0.07848384824423951
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.02003388043417641,
+        "min": 0.019860569516529404,
+        "max": 0.020059725010433918
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10970710240939294,
+        "min": 0.10747445686262747,
+        "max": 0.11123070120945741
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.2816167008355598,
+        "min": 0.2802679212217307,
+        "max": 0.28515912461942367
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02298111699186367,
+        "min": 0.020519329025217654,
+        "max": 0.02418128344364363
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.022401275132504353,
+        "min": 0.020897864989043308,
+        "max": 0.024555355537050544
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.049010393360782334,
+        "min": 0.045802071959198526,
+        "max": 0.049107956230859624
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.7851545549607983,
+        "min": 0.7285663312976152,
+        "max": 0.8158282086534306
+      }
+    },
+    {
+      "size": "depth",
+      "arm": "original",
+      "layer": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22677703989758383,
+        "min": 0.22664541150220013,
+        "max": 0.2272510250466484
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0017167267309479012,
+        "min": 0.001481745785902882,
+        "max": 0.0017967196913365557
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22567977514893459,
+        "min": 0.2241032938181987,
+        "max": 0.22648384991093384
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0017507315012246134,
+        "min": 0.0015067934209380394,
+        "max": 0.0018724742633452062
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.020210520622547478,
+        "min": 0.019788869919626355,
+        "max": 0.02095079929618356
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.027459196974092347,
+        "min": 0.027293251734524883,
+        "max": 0.02922456781473979
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.020210520622547478,
+        "min": 0.019788869919626355,
+        "max": 0.02095079929618356
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.027459196974092347,
+        "min": 0.027293251734524883,
+        "max": 0.02922456781473979
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.2257910336448164,
+        "min": 0.22560371739135318,
+        "max": 0.22596745932924267
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001510552431739595,
+        "min": 0.001491577732020712,
+        "max": 0.0015445418189321514
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.02614081533474142,
+        "min": 0.026092758873691113,
+        "max": 0.026295253103657268
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.01308920580013001,
+        "min": 0.013000905814519658,
+        "max": 0.013337757230573701
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.00967965679743769,
+        "min": 0.009591146412028788,
+        "max": 0.009770870493674245
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.057873159133999034,
+        "min": 0.057532412379824274,
+        "max": 0.05891757171580376
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.00967965679743769,
+        "min": 0.009591146412028788,
+        "max": 0.009770870493674245
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.057873159133999034,
+        "min": 0.057532412379824274,
+        "max": 0.05891757171580376
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.02003388043417641,
+        "min": 0.019860569516529404,
+        "max": 0.020059725010433918
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10970710240939294,
+        "min": 0.10747445686262747,
+        "max": 0.11123070120945741
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.2816167008355598,
+        "min": 0.2802679212217307,
+        "max": 0.28515912461942367
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.019575003462532714,
+        "min": 0.016717312359955157,
+        "max": 0.020086931749592103
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.019878841426321653,
+        "min": 0.016876370944415395,
+        "max": 0.021048791849890513
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.038808807820595266,
+        "min": 0.03830100957827822,
+        "max": 0.03890863134886826
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.7743838612652383,
+        "min": 0.7258340150801543,
+        "max": 0.8533553136253518
+      }
+    },
+    {
+      "size": "depth",
+      "arm": "normalized_inverse",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.2256840460652061,
+        "min": 0.22312836542452852,
+        "max": 0.227352983783907
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00018743521540052309,
+        "min": 0.0001740479451942226,
+        "max": 0.00018842698392722298
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22519009883586677,
+        "min": 0.22493244002829071,
+        "max": 0.22924166553087957
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0001846621970513034,
+        "min": 0.00016866936590633952,
+        "max": 0.0001905355025962115
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.018214495819256105,
+        "min": 0.01803528093489562,
+        "max": 0.018343661571419805
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.022953315787374282,
+        "min": 0.022270366172090494,
+        "max": 0.02330503055311045
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.35074757326977235,
+        "min": 0.350747313545813,
+        "max": 0.3507484992779266
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011642355632509654,
+        "min": 0.0011517558729115158,
+        "max": 0.0011771918670081068
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.2272978133827042,
+        "min": 0.22669440613794675,
+        "max": 0.22732961867630216
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0021932984467160593,
+        "min": 0.002191000356807293,
+        "max": 0.0022615007463271997
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.026307650824725325,
+        "min": 0.02599429946544231,
+        "max": 0.02644017002673518
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.019021458107492298,
+        "min": 0.018945395580299857,
+        "max": 0.019577181817980013
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.00977147006011435,
+        "min": 0.009519342024686085,
+        "max": 0.009846812192080775
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.08440955490418066,
+        "min": 0.08385656535705695,
+        "max": 0.0864228636688085
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49967549335925593,
+        "min": 0.4996589839202111,
+        "max": 0.49967651972447263
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001625602717596246,
+        "min": 0.0016112242393034894,
+        "max": 0.0016290689687905751
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.02003388043417641,
+        "min": 0.019860569516529404,
+        "max": 0.020059725010433918
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10388826830525527,
+        "min": 0.10246494125033585,
+        "max": 0.10390214631131472
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.29921447821908453,
+        "min": 0.2978364064714816,
+        "max": 0.30026931138009993
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.002096436957859609,
+        "min": 0.0019427033081073298,
+        "max": 0.002135972467526358
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0020862771378424775,
+        "min": 0.0018987763716131322,
+        "max": 0.002108777871641477
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.029599853502768704,
+        "min": 0.02917122549785937,
+        "max": 0.029884920817439292
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.9947652973218684,
+        "min": 0.9927274672655635,
+        "max": 0.9958078396445219
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.360513223289246,
+        "min": 50.31686696946549,
+        "max": 50.49609513219675
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 39.430707172834296,
+        "min": 38.672025375991176,
+        "max": 39.59427720536567
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 104.09049629653931,
+        "min": 103.85016460724907,
+        "max": 106.10092675569051
+      }
+    },
+    {
+      "size": "depth",
+      "arm": "normalized_inverse",
+      "layer": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22729268706862585,
+        "min": 0.22560757369772896,
+        "max": 0.22894829411689352
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0001661838441643475,
+        "min": 0.00016074359012494606,
+        "max": 0.00017542838870799164
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22593131004395617,
+        "min": 0.22368614413346377,
+        "max": 0.2270751132552123
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00017202845218031464,
+        "min": 0.0001642235372528776,
+        "max": 0.00018214608494619616
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.017950368234128877,
+        "min": 0.017813913006565932,
+        "max": 0.018132151748182845
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.019459706956974434,
+        "min": 0.01929541516650197,
+        "max": 0.019632511103914334
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.35074695575808507,
+        "min": 0.350746954590587,
+        "max": 0.3507477288385242
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.000978454645470781,
+        "min": 0.0009756479895980254,
+        "max": 0.0009834376729754583
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.2259997001703025,
+        "min": 0.22565550891091077,
+        "max": 0.22608074495912123
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0018190226723504108,
+        "min": 0.0018146883299896325,
+        "max": 0.0018221147118242247
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.026354811673932735,
+        "min": 0.026145845219392224,
+        "max": 0.02642306203885851
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015844226777605747,
+        "min": 0.01580562408229356,
+        "max": 0.0158752085174808
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.009744916920597738,
+        "min": 0.00959982468251676,
+        "max": 0.009800576530185132
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.07001394197859828,
+        "min": 0.06974592488980473,
+        "max": 0.07067624538753277
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.499670456444259,
+        "min": 0.4996580403797146,
+        "max": 0.4996758215713218
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013307949138276014,
+        "min": 0.001329753643618283,
+        "max": 0.001346339384800428
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.02003388043417641,
+        "min": 0.019860569516529404,
+        "max": 0.020059725010433918
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10388826830525527,
+        "min": 0.10246494125033585,
+        "max": 0.10390214631131472
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.29921447821908453,
+        "min": 0.2978364064714816,
+        "max": 0.30026931138009993
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0019111586280227708,
+        "min": 0.0018104065800533225,
+        "max": 0.0019839058987383275
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0019069839232483529,
+        "min": 0.0018217868831177594,
+        "max": 0.002034935787738936
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02526195663493348,
+        "min": 0.024837149169001194,
+        "max": 0.025316481523065575
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.9948611213007601,
+        "min": 0.9934577922003993,
+        "max": 0.9958324524094468
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.360513223289246,
+        "min": 50.31686696946549,
+        "max": 50.49609513219675
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 39.8908359663448,
+        "min": 39.440591867634424,
+        "max": 39.926294555128955
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 104.81844221842279,
+        "min": 104.00637873187758,
+        "max": 106.29975819464048
+      }
+    },
+    {
+      "size": "depth",
+      "arm": "normalized_usual",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.2256840460652061,
+        "min": 0.22312836542452852,
+        "max": 0.227352983783907
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.000873212624160094,
+        "min": 0.0008675404969721899,
+        "max": 0.000963667748540651
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22519009883586677,
+        "min": 0.22493244002829071,
+        "max": 0.22924166553087957
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0008877139404070264,
+        "min": 0.000843330674000329,
+        "max": 0.0009501438795980187
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.019510295567169978,
+        "min": 0.019488662154683922,
+        "max": 0.020278661558896467
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.022570887311998935,
+        "min": 0.022189757632337572,
+        "max": 0.024925502460920925
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.3507484544336704,
+        "min": 0.3507454450998544,
+        "max": 0.35074919467211835
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011751028152474443,
+        "min": 0.0011740596855436339,
+        "max": 0.0012121118185942897
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.22727092342770006,
+        "min": 0.22673317687637362,
+        "max": 0.22736439433388425
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0022156397598425957,
+        "min": 0.002198643420819451,
+        "max": 0.002293031241483189
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.026341644942747825,
+        "min": 0.025970945386150482,
+        "max": 0.02642312594711817
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.01913040265793941,
+        "min": 0.01910503650712383,
+        "max": 0.019840087353905324
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.009788669167858768,
+        "min": 0.009513496881519186,
+        "max": 0.009838124023385516
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.08532223407420157,
+        "min": 0.08432814016831394,
+        "max": 0.08764278986343184
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49967621638203885,
+        "min": 0.4996579921487615,
+        "max": 0.4996768972973303
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0016418499103259632,
+        "min": 0.0016230913308082982,
+        "max": 0.0016487952422777272
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.02003388043417641,
+        "min": 0.019860569516529404,
+        "max": 0.020059725010433918
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10571851655123282,
+        "min": 0.1039336114733198,
+        "max": 0.1062760661177184
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.29932131152405483,
+        "min": 0.2980634152594989,
+        "max": 0.3001918693105571
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.009792262213308756,
+        "min": 0.009748999219173844,
+        "max": 0.010948781438234387
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.009981202921321155,
+        "min": 0.009529600865915084,
+        "max": 0.010748590772961648
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.030198568896258174,
+        "min": 0.02961380945800731,
+        "max": 0.03137527491948078
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.8731371422773867,
+        "min": 0.8361797884357487,
+        "max": 0.8914651513822769
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.359465446362165,
+        "min": 50.32596282211486,
+        "max": 50.522338615121
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 38.44930132584831,
+        "min": 37.76649556858572,
+        "max": 41.12739778385714
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 103.93426772762966,
+        "min": 103.91052994697317,
+        "max": 106.31130854351306
+      }
+    },
+    {
+      "size": "depth",
+      "arm": "normalized_usual",
+      "layer": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22717560746752283,
+        "min": 0.22558973452627631,
+        "max": 0.22871012098272497
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0008090228751711031,
+        "min": 0.0007391609087316494,
+        "max": 0.0009239965357078909
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.22573668049451925,
+        "min": 0.22379433869258117,
+        "max": 0.22719834963768648
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0008501000961268764,
+        "min": 0.0007762041642084246,
+        "max": 0.0009572050220527722
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.019564273079211637,
+        "min": 0.01856056645851793,
+        "max": 0.020201861555218276
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.019750572696302624,
+        "min": 0.018700139236672304,
+        "max": 0.02074102149647382
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.3507462745248094,
+        "min": 0.350743464749724,
+        "max": 0.3507493899931548
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0009765236840164175,
+        "min": 0.0009759852928488473,
+        "max": 0.0009856289561571568
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.22597648857943695,
+        "min": 0.22575246099742288,
+        "max": 0.22609811994246054
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0018202831120194252,
+        "min": 0.001812707922913334,
+        "max": 0.0018272517525166098
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.026304705083141252,
+        "min": 0.026249053150307504,
+        "max": 0.026372283929324582
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015853001057255026,
+        "min": 0.0158203085991561,
+        "max": 0.015872969305956285
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.009731366103467752,
+        "min": 0.009648076834453803,
+        "max": 0.009765738938600534
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.07023146604426926,
+        "min": 0.06986049089338145,
+        "max": 0.07041254718488162
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49966939385065084,
+        "min": 0.49966143914693456,
+        "max": 0.49967348066472983
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013307258494409484,
+        "min": 0.0013304701300991858,
+        "max": 0.0013461451488090892
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.02003388043417641,
+        "min": 0.019860569516529404,
+        "max": 0.020059725010433918
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10571851655123282,
+        "min": 0.1039336114733198,
+        "max": 0.1062760661177184
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.29932131152405483,
+        "min": 0.2980634152594989,
+        "max": 0.3001918693105571
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.009240849874999926,
+        "min": 0.008300797753752127,
+        "max": 0.010448095595724181
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.009301763375825283,
+        "min": 0.008562087460071081,
+        "max": 0.010750844560484474
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02507824892295044,
+        "min": 0.024781733849583543,
+        "max": 0.02536604345261313
+      },
+      "attention_normalized_entropy": {
+        "count": 12,
+        "median": 0.8699309099341093,
+        "min": 0.8367884429671099,
+        "max": 0.9008342681558181
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.359465446362165,
+        "min": 50.32596282211486,
+        "max": 50.522338615121
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 40.4507807021516,
+        "min": 38.320534896766006,
+        "max": 42.08687532342896
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 104.99606800714137,
+        "min": 104.34456656683969,
+        "max": 105.84611498137494
+      }
+    },
+    {
+      "size": "width",
+      "arm": "original",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3181955603273718,
+        "min": 0.31817415360772583,
+        "max": 0.31958859737873574
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.002029753747779274,
+        "min": 0.0018182814344045364,
+        "max": 0.002095064999816161
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31957702452794023,
+        "min": 0.3177914107805567,
+        "max": 0.32049721980032303
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0019440258594956021,
+        "min": 0.001797501368519564,
+        "max": 0.0020384847083294642
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.04114577521120436,
+        "min": 0.038798187797920325,
+        "max": 0.04155560553067309
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02264277717981057,
+        "min": 0.0225914880631391,
+        "max": 0.024681132041323828
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.04114577521120436,
+        "min": 0.038798187797920325,
+        "max": 0.04155560553067309
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02264277717981057,
+        "min": 0.0225914880631391,
+        "max": 0.024681132041323828
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.32031868322421936,
+        "min": 0.31934613560744574,
+        "max": 0.3207607508350701
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.002210866925850398,
+        "min": 0.0022058527264943073,
+        "max": 0.002215243331181171
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.052489666252630005,
+        "min": 0.05236629016692678,
+        "max": 0.05312710344309088
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.013361291453033422,
+        "min": 0.013290066756389638,
+        "max": 0.013401753498324294
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.02741809466605833,
+        "min": 0.02737683871343804,
+        "max": 0.028036157330855686
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.04159506168779495,
+        "min": 0.04150977434705199,
+        "max": 0.04216713458466202
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.02741809466605833,
+        "min": 0.02737683871343804,
+        "max": 0.028036157330855686
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.04159506168779495,
+        "min": 0.04150977434705199,
+        "max": 0.04216713458466202
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0200085162062693,
+        "min": 0.019831899205572424,
+        "max": 0.02002542355893962
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.11682524272738562,
+        "min": 0.11518671876290183,
+        "max": 0.11878755629451695
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.39876289512059726,
+        "min": 0.3983835209800802,
+        "max": 0.40245397148240947
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.022952660500376806,
+        "min": 0.0202396219972945,
+        "max": 0.023324713572705852
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.022444362356727355,
+        "min": 0.02000817653316417,
+        "max": 0.022447227018628894
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0461627586250622,
+        "min": 0.04596568396615079,
+        "max": 0.04658099662620954
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.7918376429314027,
+        "min": 0.7417705478883015,
+        "max": 0.8287308163439853
+      }
+    },
+    {
+      "size": "width",
+      "arm": "normalized_inverse",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31824315812412973,
+        "min": 0.3182221369232255,
+        "max": 0.3196372456043522
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00020151051498416562,
+        "min": 0.00020023707709998,
+        "max": 0.00021994180539480152
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3196249070480427,
+        "min": 0.3178399274749395,
+        "max": 0.3205454598901083
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00020106045478507497,
+        "min": 0.00020038395404344678,
+        "max": 0.00021574494987370915
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.03575813238515621,
+        "min": 0.03550185187179378,
+        "max": 0.03587436802374163
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015842606374541605,
+        "min": 0.015688873231115185,
+        "max": 0.016146712876128243
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49606676340264966,
+        "min": 0.49606660027661137,
+        "max": 0.49606680848290374
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011329014707351776,
+        "min": 0.0011242606458520233,
+        "max": 0.0011456351793616684
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.32058988609881295,
+        "min": 0.3200771007751693,
+        "max": 0.3208135206116864
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0018462749066753834,
+        "min": 0.0018195799537217678,
+        "max": 0.0018477917405858005
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.05282472343339558,
+        "min": 0.05263978349728048,
+        "max": 0.05336218348559236
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.011145643052044442,
+        "min": 0.010975265775254262,
+        "max": 0.011183049651372559
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.027600614117093136,
+        "min": 0.0274460878376966,
+        "max": 0.02825751059340205
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03488352928905946,
+        "min": 0.034281948954406526,
+        "max": 0.03508123432969246
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.7070502977279651,
+        "min": 0.7070493437497848,
+        "max": 0.7070527450887684
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001356734718959297,
+        "min": 0.0013403801808905512,
+        "max": 0.0013585527740110814
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0200085162062693,
+        "min": 0.019831899205572424,
+        "max": 0.02002542355893962
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10170946148788587,
+        "min": 0.10150145132274167,
+        "max": 0.10247638510092581
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.5070211632125846,
+        "min": 0.5051892957725082,
+        "max": 0.5109244817476277
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0023307130524065902,
+        "min": 0.00226126963862531,
+        "max": 0.0024203539503711985
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0023109465948745966,
+        "min": 0.0022833734235151297,
+        "max": 0.002391124546628457
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.029125431130536967,
+        "min": 0.028814148793953952,
+        "max": 0.029642348767614606
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.9950542556350541,
+        "min": 0.9934440874366489,
+        "max": 0.9964035001306409
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.17785584188434,
+        "min": 50.010543756330534,
+        "max": 50.666550566002186
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 19.776502874036353,
+        "min": 19.735119030836064,
+        "max": 19.932087566779035
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 36.51853588317441,
+        "min": 35.73432397222538,
+        "max": 36.805051117614305
+      }
+    },
+    {
+      "size": "width",
+      "arm": "normalized_usual",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31824315812412973,
+        "min": 0.3182221369232255,
+        "max": 0.3196372456043522
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0009844906775877084,
+        "min": 0.0009089145268981031,
+        "max": 0.0010139846837917063
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3196249070480427,
+        "min": 0.3178399274749395,
+        "max": 0.3205454598901083
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0009781729438745794,
+        "min": 0.0009051885607332611,
+        "max": 0.0009938392038945807
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.03925714498174766,
+        "min": 0.03732275354967524,
+        "max": 0.039599200208809575
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.014834544351228615,
+        "min": 0.014702482859013159,
+        "max": 0.016037154484217254
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.4960682359410484,
+        "min": 0.4960667867977418,
+        "max": 0.496068241653763
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001131373167216789,
+        "min": 0.00112898117227425,
+        "max": 0.0011462825638441536
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.32047451336014776,
+        "min": 0.3199408965382479,
+        "max": 0.3207162835643381
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0018486648096943095,
+        "min": 0.00182470560100236,
+        "max": 0.001850479462995414
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.05263024329429845,
+        "min": 0.052557292087662924,
+        "max": 0.053326457361391334
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.011182046245336566,
+        "min": 0.01100159935945545,
+        "max": 0.01119516783899089
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.027492590700378478,
+        "min": 0.027399561288567534,
+        "max": 0.02821881523870698
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03491633726871066,
+        "min": 0.034365621519652854,
+        "max": 0.03519664150990501
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.7070498451964123,
+        "min": 0.7070491180880003,
+        "max": 0.7070525658903078
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013582611840269147,
+        "min": 0.0013396163116411494,
+        "max": 0.00135880497901341
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0200085162062693,
+        "min": 0.019831899205572424,
+        "max": 0.02002542355893962
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.1043199523454548,
+        "min": 0.10374041700793245,
+        "max": 0.10478655257430636
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.5070821065973572,
+        "min": 0.5058103004783638,
+        "max": 0.5110419493225308
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.011105926860538613,
+        "min": 0.010181098839768631,
+        "max": 0.011492145501656744
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.01094368447341201,
+        "min": 0.010189774295216867,
+        "max": 0.011341506511570103
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.029496229059119732,
+        "min": 0.028996564962589143,
+        "max": 0.029611235842750164
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.8777703077382841,
+        "min": 0.845092642959959,
+        "max": 0.9036774766933704
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 50.183192506626504,
+        "min": 50.012374312964596,
+        "max": 50.65729753020032
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 18.543142765799516,
+        "min": 18.417004211655446,
+        "max": 19.78566409585221
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 36.631870927126826,
+        "min": 35.7812837695034,
+        "max": 36.860672834722315
+      }
+    },
+    {
+      "size": "depth_width",
+      "arm": "original",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31918984905981573,
+        "min": 0.31593495439419955,
+        "max": 0.3216911461430498
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0018941517290599565,
+        "min": 0.0016156068014253088,
+        "max": 0.0019291680850812406
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31942676067618414,
+        "min": 0.31885306260960966,
+        "max": 0.32277913714242096
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0019136708395357904,
+        "min": 0.0016651338270083386,
+        "max": 0.001966035741522027
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.04055641550957255,
+        "min": 0.037793310252491386,
+        "max": 0.04062205454205211
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.021656285460405288,
+        "min": 0.02106603491075667,
+        "max": 0.023280142805716587
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.04055641550957255,
+        "min": 0.037793310252491386,
+        "max": 0.04062205454205211
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.021656285460405288,
+        "min": 0.02106603491075667,
+        "max": 0.023280142805716587
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.31980383969585646,
+        "min": 0.3193831616213506,
+        "max": 0.3203767166228341
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0028572541313574757,
+        "min": 0.0028241673056635763,
+        "max": 0.0029723238301876094
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.052858483651212304,
+        "min": 0.05280614076838329,
+        "max": 0.0532029141078117
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.017221776443143016,
+        "min": 0.017077046326554168,
+        "max": 0.017827001733739176
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.027604405902181176,
+        "min": 0.027551625662808325,
+        "max": 0.02789132058878361
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.05401079307753955,
+        "min": 0.05355503677534323,
+        "max": 0.0552959953588053
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.027604405902181176,
+        "min": 0.027551625662808325,
+        "max": 0.02789132058878361
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.05401079307753955,
+        "min": 0.05355503677534323,
+        "max": 0.0552959953588053
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0201245145450076,
+        "min": 0.02012287735834344,
+        "max": 0.02018759988639772
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.13473395767608567,
+        "min": 0.1345967467922894,
+        "max": 0.13982950681415365
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.37120079310072784,
+        "min": 0.3694100678634563,
+        "max": 0.3760676042197707
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02151768557282231,
+        "min": 0.018225140568020073,
+        "max": 0.021560290311908408
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02182326209310399,
+        "min": 0.01838816009693962,
+        "max": 0.022221705987286552
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.043718751691165104,
+        "min": 0.043002583802594536,
+        "max": 0.04469835558486445
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.7875287051840751,
+        "min": 0.7224003615845025,
+        "max": 0.8371600735262141
+      }
+    },
+    {
+      "size": "depth_width",
+      "arm": "original",
+      "layer": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3192508706529273,
+        "min": 0.31859257358898063,
+        "max": 0.3199039742604469
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013215237329534065,
+        "min": 0.0012995014289114667,
+        "max": 0.001478194863358613
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31963651080814726,
+        "min": 0.31873748586559597,
+        "max": 0.32259597127589873
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001346962479046132,
+        "min": 0.0013242694702617298,
+        "max": 0.0014961984589113016
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.03935494185293501,
+        "min": 0.03890608273164656,
+        "max": 0.03954220822379734
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015315844007181004,
+        "min": 0.014942127459146434,
+        "max": 0.01574900686131008
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.03935494185293501,
+        "min": 0.03890608273164656,
+        "max": 0.03954220822379734
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015315844007181004,
+        "min": 0.014942127459146434,
+        "max": 0.01574900686131008
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.3196387486688196,
+        "min": 0.3182364488020568,
+        "max": 0.3200905184093059
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0016831538360702267,
+        "min": 0.0016656912907214078,
+        "max": 0.00169575711459626
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.05231074855587421,
+        "min": 0.05229175212909563,
+        "max": 0.05261412029345266
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.010110002320960465,
+        "min": 0.0100558719231949,
+        "max": 0.010183197536117013
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.02738350089595777,
+        "min": 0.027364126596327233,
+        "max": 0.027393639955582978
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.031679619831095476,
+        "min": 0.03145239654383945,
+        "max": 0.03209267047375709
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.02738350089595777,
+        "min": 0.027364126596327233,
+        "max": 0.027393639955582978
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.031679619831095476,
+        "min": 0.03145239654383945,
+        "max": 0.03209267047375709
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0201245145450076,
+        "min": 0.02012287735834344,
+        "max": 0.02018759988639772
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.13473395767608567,
+        "min": 0.1345967467922894,
+        "max": 0.13982950681415365
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.37120079310072784,
+        "min": 0.3694100678634563,
+        "max": 0.3760676042197707
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015151361835526376,
+        "min": 0.01494026071175857,
+        "max": 0.01681685177434851
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.015226228751956982,
+        "min": 0.015203358083807515,
+        "max": 0.016890312069107415
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.03128398767232858,
+        "min": 0.03034447981011018,
+        "max": 0.03157020085713519
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.8001632251598177,
+        "min": 0.7349551093780591,
+        "max": 0.8417877510991261
+      }
+    },
+    {
+      "size": "depth_width",
+      "arm": "normalized_inverse",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3192372227873431,
+        "min": 0.3159813866767443,
+        "max": 0.32173890167908514
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00014613694645507683,
+        "min": 0.00014561999025596836,
+        "max": 0.0001582228645567313
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3194737774249873,
+        "min": 0.31890034969443354,
+        "max": 0.32282709304714174
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00014691307001321306,
+        "min": 0.00014544088802389898,
+        "max": 0.00015926787673194715
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.0353905591749513,
+        "min": 0.03485311845924167,
+        "max": 0.03552295260295074
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.011839540056853216,
+        "min": 0.011808059120315788,
+        "max": 0.012160168841379434
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.3507720340751733,
+        "min": 0.3507716909351451,
+        "max": 0.3507720591214653
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0011857866458430007,
+        "min": 0.001185729625553821,
+        "max": 0.0011932864964987798
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.31992557580282927,
+        "min": 0.31974002079991526,
+        "max": 0.32113343449057286
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0015648524037352,
+        "min": 0.0015588501202683418,
+        "max": 0.0015970063855097036
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.05309830139540756,
+        "min": 0.05287937726423848,
+        "max": 0.05363418912153584
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.009488166063991285,
+        "min": 0.009403976490696454,
+        "max": 0.009667770386649477
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.027681609475656625,
+        "min": 0.027631737486626555,
+        "max": 0.028033939362221892
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.029797711562463674,
+        "min": 0.02951656891951674,
+        "max": 0.030037111221571954
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49996001501978876,
+        "min": 0.4999597732070391,
+        "max": 0.4999610911189592
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0016382298790417467,
+        "min": 0.0016310614558614992,
+        "max": 0.0016450515145669585
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0201245145450076,
+        "min": 0.02012287735834344,
+        "max": 0.02018759988639772
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10315896143445903,
+        "min": 0.10303405684653302,
+        "max": 0.10407889399766038
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.5132821405410015,
+        "min": 0.5128970344017241,
+        "max": 0.5158692967959763
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0016678721732391324,
+        "min": 0.001647775607889371,
+        "max": 0.0017745652875025021
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0016655244249095895,
+        "min": 0.0016403899984192769,
+        "max": 0.0017956559283051417
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02207240317900027,
+        "min": 0.021861398720468956,
+        "max": 0.022517031270665837
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.9948175454633191,
+        "min": 0.9928729793994215,
+        "max": 0.9965762493072561
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 49.84374777585061,
+        "min": 49.658297771310416,
+        "max": 49.92138196855494
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 19.970050172817984,
+        "min": 19.915992749136077,
+        "max": 20.38097117005611
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 36.51814056349346,
+        "min": 36.034709532684026,
+        "max": 36.537815856515365
+      }
+    },
+    {
+      "size": "depth_width",
+      "arm": "normalized_inverse",
+      "layer": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.31949107652380854,
+        "min": 0.3193862669045508,
+        "max": 0.32153374197027645
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00013009376967396667,
+        "min": 0.00012990144996614066,
+        "max": 0.0001331170985916805
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.318614485750036,
+        "min": 0.31671014988924245,
+        "max": 0.3245212856777211
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00013090608987089504,
+        "min": 0.0001301569925827301,
+        "max": 0.00013201601581379804
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.03525878619071934,
+        "min": 0.03512076124991986,
+        "max": 0.03564159825576522
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.010005098522637462,
+        "min": 0.009848714526914378,
+        "max": 0.010022691352351874
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.3507719316606472,
+        "min": 0.35077187970657586,
+        "max": 0.35077208538578836
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.000995358200550925,
+        "min": 0.0009916919822603708,
+        "max": 0.0009972693166801984
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.32065448750040276,
+        "min": 0.3190272611639392,
+        "max": 0.32071009327873584
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013009366584489507,
+        "min": 0.0012926505343373719,
+        "max": 0.0013044160780812182
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.05274886568906696,
+        "min": 0.05248459235710361,
+        "max": 0.05297745772772932
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.007831887479297129,
+        "min": 0.007803684482544108,
+        "max": 0.007846734849368653
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.027578929283350186,
+        "min": 0.02751027582565492,
+        "max": 0.02774598154275574
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02460760667124172,
+        "min": 0.024445852696782733,
+        "max": 0.02471675756650842
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.4999599762180224,
+        "min": 0.4999598048736836,
+        "max": 0.49996020415427966
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013429827847052397,
+        "min": 0.0013398735536015681,
+        "max": 0.0013523951377451583
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0201245145450076,
+        "min": 0.02012287735834344,
+        "max": 0.02018759988639772
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10315896143445903,
+        "min": 0.10303405684653302,
+        "max": 0.10407889399766038
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.5132821405410015,
+        "min": 0.5128970344017241,
+        "max": 0.5158692967959763
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0014760669301833848,
+        "min": 0.0014628320425895149,
+        "max": 0.0015016937633969827
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0014713994878339522,
+        "min": 0.001467236610599349,
+        "max": 0.0014834078829792752
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.018178869633163557,
+        "min": 0.017932802618589306,
+        "max": 0.018545639437669563
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.9952427828566761,
+        "min": 0.9930891340975881,
+        "max": 0.9964097541098476
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 49.84374777585061,
+        "min": 49.658297771310416,
+        "max": 49.92138196855494
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 20.0649881737931,
+        "min": 19.862446612638983,
+        "max": 20.13886326913138
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 36.552567924369455,
+        "min": 36.48979059415352,
+        "max": 36.64619822605202
+      }
+    },
+    {
+      "size": "depth_width",
+      "arm": "normalized_usual",
+      "layer": 0,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3192372227873431,
+        "min": 0.3159813866767443,
+        "max": 0.32173890167908514
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0007309752470621225,
+        "min": 0.0006669848162331524,
+        "max": 0.0007750329306238575
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3194737774249873,
+        "min": 0.31890034969443354,
+        "max": 0.32282709304714174
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0007293791445883622,
+        "min": 0.0006707842856081755,
+        "max": 0.0007820629001411526
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.03873641419576077,
+        "min": 0.03637774025823941,
+        "max": 0.038874928819537455
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.011494509932367595,
+        "min": 0.011332940047582821,
+        "max": 0.012512548863019704
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.3507727846530248,
+        "min": 0.3507715850510289,
+        "max": 0.3507730348489811
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0012092270547066864,
+        "min": 0.001205428302202534,
+        "max": 0.0012148972313633013
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.3199246479205388,
+        "min": 0.3197210213358511,
+        "max": 0.3210580784529183
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0015819454924076233,
+        "min": 0.0015740179632364835,
+        "max": 0.0016115977144677527
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.053028039561855964,
+        "min": 0.05286512165066811,
+        "max": 0.053638970873216216
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00960030338319905,
+        "min": 0.009497333929178368,
+        "max": 0.009745888432544857
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.0276934164145898,
+        "min": 0.027587114994892803,
+        "max": 0.028006251992651596
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.030139376372582592,
+        "min": 0.029801289923925642,
+        "max": 0.03029637410163038
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49996007695701294,
+        "min": 0.4999596804752541,
+        "max": 0.49996094947209563
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.001651693762141354,
+        "min": 0.001647790957829664,
+        "max": 0.0016602877429996341
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0201245145450076,
+        "min": 0.02012287735834344,
+        "max": 0.02018759988639772
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10582679194340154,
+        "min": 0.10497310092601965,
+        "max": 0.10622284421776405
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.5129218796289133,
+        "min": 0.5127694497533833,
+        "max": 0.5152255048139195
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008374197618881985,
+        "min": 0.007494961592262068,
+        "max": 0.00859893865787474
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008319476807236518,
+        "min": 0.007459740091907336,
+        "max": 0.008672605694453618
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.02244950038924329,
+        "min": 0.022386352874242947,
+        "max": 0.022957970594957036
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.8753551603957324,
+        "min": 0.8326926912262671,
+        "max": 0.9082621396554356
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 49.837269259205975,
+        "min": 49.655210346079144,
+        "max": 49.92516266608809
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 19.01133436872323,
+        "min": 18.803175646159143,
+        "max": 20.598530542338512
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 36.49532947450913,
+        "min": 36.08573284830894,
+        "max": 36.58155329639593
+      }
+    },
+    {
+      "size": "depth_width",
+      "arm": "normalized_usual",
+      "layer": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "q_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.32000228801979347,
+        "min": 0.31938091024113,
+        "max": 0.3216283254296722
+      },
+      "q_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0006080625745596026,
+        "min": 0.0005818684914180708,
+        "max": 0.0006351800658880577
+      },
+      "k_before_norm_activation_rms": {
+        "count": 3,
+        "median": 0.3185929035836143,
+        "min": 0.31687280957419584,
+        "max": 0.32461474684529884
+      },
+      "k_before_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0006134898857936813,
+        "min": 0.0005924699233781952,
+        "max": 0.0006343644644480092
+      },
+      "attention_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.03836297621039829,
+        "min": 0.037164732692533765,
+        "max": 0.039019150351434925
+      },
+      "attention_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0095240477631195,
+        "min": 0.009319858968817008,
+        "max": 0.009958706411026433
+      },
+      "attention_branch_activation_rms": {
+        "count": 3,
+        "median": 0.3507726582910471,
+        "min": 0.3507720125228293,
+        "max": 0.3507730402074205
+      },
+      "attention_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0009951357764109716,
+        "min": 0.000992304668773755,
+        "max": 0.0009957937552015174
+      },
+      "swiglu_gate_value_activation_rms": {
+        "count": 3,
+        "median": 0.3206437549245723,
+        "min": 0.3189444311054743,
+        "max": 0.3208829644921056
+      },
+      "swiglu_gate_value_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013001205164488649,
+        "min": 0.0012944287348229133,
+        "max": 0.001304272748099156
+      },
+      "swiglu_product_activation_rms": {
+        "count": 3,
+        "median": 0.05271844842636353,
+        "min": 0.052518952902244516,
+        "max": 0.052861379493428465
+      },
+      "swiglu_product_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.007833170873096871,
+        "min": 0.00782300539693947,
+        "max": 0.007839858315406078
+      },
+      "ffn_before_output_norm_activation_rms": {
+        "count": 3,
+        "median": 0.02756774078272902,
+        "min": 0.027531689701691224,
+        "max": 0.027665956792966417
+      },
+      "ffn_before_output_norm_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.024581981058080897,
+        "min": 0.024507899931068566,
+        "max": 0.024718979182338806
+      },
+      "ffn_branch_activation_rms": {
+        "count": 3,
+        "median": 0.49995990920710315,
+        "min": 0.49995987796920294,
+        "max": 0.49995996899344125
+      },
+      "ffn_branch_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0013427584080794406,
+        "min": 0.001339780001838669,
+        "max": 0.0013516063299047717
+      },
+      "raw_embedding_activation_rms": {
+        "count": 3,
+        "median": 0.0201245145450076,
+        "min": 0.02012287735834344,
+        "max": 0.02018759988639772
+      },
+      "raw_embedding_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.10582679194340154,
+        "min": 0.10497310092601965,
+        "max": 0.10622284421776405
+      },
+      "logits_activation_rms": {
+        "count": 3,
+        "median": 0.5129218796289133,
+        "min": 0.5127694497533833,
+        "max": 0.5152255048139195
+      },
+      "logits_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.008974477035894253,
+        "min": 0.008974477035894253,
+        "max": 0.008974477035894253
+      },
+      "q_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.00687742152269112,
+        "min": 0.006558844056307451,
+        "max": 0.0071620976585601015
+      },
+      "k_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.0068756639811561665,
+        "min": 0.00666127454656477,
+        "max": 0.007112881644333659
+      },
+      "v_parameter_probe_gradient_rms": {
+        "count": 3,
+        "median": 0.01795819476733628,
+        "min": 0.017921596536267043,
+        "max": 0.018437662337264998
+      },
+      "attention_normalized_entropy": {
+        "count": 24,
+        "median": 0.8741743389418468,
+        "min": 0.8449112688427287,
+        "max": 0.9056969782341546
+      },
+      "embedding_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 49.837269259205975,
+        "min": 49.655210346079144,
+        "max": 49.92516266608809
+      },
+      "attention_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 19.19581367059147,
+        "min": 18.730828877301033,
+        "max": 20.001544213361942
+      },
+      "ffn_output_local_rms_probe_vjp_gain": {
+        "count": 3,
+        "median": 36.58496155702395,
+        "min": 36.57718765504809,
+        "max": 36.61415323884028
+      }
+    }
+  ],
+  "component_rows": 6108,
+  "parameter_rows": 1044,
+  "paired_gain_gradients": [
+    {
+      "size": "current",
+      "seed": 0,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.659014735155335,
+      "k_usual_over_inverse_probe_gradient_rms": 4.581181201129646,
+      "v_usual_over_inverse_probe_gradient_rms": 1.002092612240448
+    },
+    {
+      "size": "current",
+      "seed": 1,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.8698975541581735,
+      "k_usual_over_inverse_probe_gradient_rms": 4.861670279860885,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0136408436388495
+    },
+    {
+      "size": "current",
+      "seed": 2,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.964718106372356,
+      "k_usual_over_inverse_probe_gradient_rms": 4.948145349790729,
+      "v_usual_over_inverse_probe_gradient_rms": 0.9751274399100397
+    },
+    {
+      "size": "depth",
+      "seed": 0,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 5.12590007815692,
+      "k_usual_over_inverse_probe_gradient_rms": 5.152043598616672,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0151719357892734
+    },
+    {
+      "size": "depth",
+      "seed": 0,
+      "layer": 1,
+      "q_usual_over_inverse_probe_gradient_rms": 4.83520820276454,
+      "k_usual_over_inverse_probe_gradient_rms": 4.877735602500874,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0041202991194955
+    },
+    {
+      "size": "depth",
+      "seed": 1,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 5.018264589600027,
+      "k_usual_over_inverse_probe_gradient_rms": 5.018811592762278,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0498697691436343
+    },
+    {
+      "size": "depth",
+      "seed": 1,
+      "layer": 1,
+      "q_usual_over_inverse_probe_gradient_rms": 5.266427002595581,
+      "k_usual_over_inverse_probe_gradient_rms": 5.2831370037626515,
+      "v_usual_over_inverse_probe_gradient_rms": 0.9905898218953497
+    },
+    {
+      "size": "depth",
+      "seed": 2,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.670907072400747,
+      "k_usual_over_inverse_probe_gradient_rms": 4.733169413216465,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0202269715096215
+    },
+    {
+      "size": "depth",
+      "seed": 2,
+      "layer": 1,
+      "q_usual_over_inverse_probe_gradient_rms": 4.585046168749365,
+      "k_usual_over_inverse_probe_gradient_rms": 4.699829348544954,
+      "v_usual_over_inverse_probe_gradient_rms": 0.9977688534605729
+    },
+    {
+      "size": "width",
+      "seed": 0,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.5023816115790645,
+      "k_usual_over_inverse_probe_gradient_rms": 4.462596520690979,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0063307845718303
+    },
+    {
+      "size": "width",
+      "seed": 1,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.58855485117594,
+      "k_usual_over_inverse_probe_gradient_rms": 4.576793997971736,
+      "v_usual_over_inverse_probe_gradient_rms": 0.9989503893531395
+    },
+    {
+      "size": "width",
+      "seed": 2,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.930742327885652,
+      "k_usual_over_inverse_probe_gradient_rms": 4.90773198165817,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0127310708954278
+    },
+    {
+      "size": "depth_width",
+      "seed": 0,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.84565922619661,
+      "k_usual_over_inverse_probe_gradient_rms": 4.8297703127566285,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0195824804340718
+    },
+    {
+      "size": "depth_width",
+      "seed": 0,
+      "layer": 1,
+      "q_usual_over_inverse_probe_gradient_rms": 4.65928839814647,
+      "k_usual_over_inverse_probe_gradient_rms": 4.672873708334529,
+      "v_usual_over_inverse_probe_gradient_rms": 1.001415960978718
+    },
+    {
+      "size": "depth_width",
+      "seed": 1,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 5.02088694400283,
+      "k_usual_over_inverse_probe_gradient_rms": 4.995109457904304,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0269013742576174
+    },
+    {
+      "size": "depth_width",
+      "seed": 1,
+      "layer": 1,
+      "q_usual_over_inverse_probe_gradient_rms": 4.769346342864683,
+      "k_usual_over_inverse_probe_gradient_rms": 4.794960122530934,
+      "v_usual_over_inverse_probe_gradient_rms": 0.9858476845872104
+    },
+    {
+      "size": "depth_width",
+      "seed": 2,
+      "layer": 0,
+      "q_usual_over_inverse_probe_gradient_rms": 4.5485329169681865,
+      "k_usual_over_inverse_probe_gradient_rms": 4.54754058430967,
+      "v_usual_over_inverse_probe_gradient_rms": 1.0142236299643788
+    },
+    {
+      "size": "depth_width",
+      "seed": 2,
+      "layer": 1,
+      "q_usual_over_inverse_probe_gradient_rms": 4.483661736515521,
+      "k_usual_over_inverse_probe_gradient_rms": 4.540013859007864,
+      "v_usual_over_inverse_probe_gradient_rms": 0.9941777634161676
+    }
+  ],
+  "measurements_sha256": "88b8dc382b6db758ea864e97c097e407f25906c3225e30876f219941bfd2c46a",
+  "reporter_sha256": "a32f504aa989633ffba8c377bf5051eaffaa1c5d710971ec3aa385a9e60c6d18",
+  "csv_sha256": {
+    "components.csv": "ef0167cc1be8f47644704b357c5c2408eb2ece071c46747bd0b646c532268cf2",
+    "parameters.csv": "744a483ddc9079d7594e39573afb36a4545dbaf3206e074c3ce8ce56de267087",
+    "paired_gain_gradients.csv": "d4ecf1a197e9d71661d01f34c1ef701c1f5cf3c5e4c3f2fb965f6060be16e3e4"
+  },
+  "limits": "These local initialized training-prefix observations cannot establish the best initializer, causal training dynamics, convergence, generalization or universal model quality. Fixed unit probes are directional VJPs, not worst-case Jacobian norms. For an independent Normal(0,sigma) matrix applied to a fixed unit-RMS input, per-output variance is fan_in*sigma^2; that identity does not directly apply to the tied readout conditioned on its own embedding-dependent hidden states.",
+  "new_initializer_selected": false
+}

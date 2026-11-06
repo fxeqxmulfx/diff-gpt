@@ -49,6 +49,16 @@ their recorded runtimes remain visible but runtime ratios against them are
 omitted. Capacity and first-99 epoch comparisons remain valid within the stated
 task and seed scope. Reports remain separate from the fixed benchmark ranking.
 
+The [initialization audit](../cubic_initialization_diagnostic/README.md) confirms
+that widening under the unchanged `Normal(0, 0.02)` recipe changes activation
+and local gradient scales. Those changes are part of this declared intervention.
+The first completed new cell (two layers, width 128, original LR1, seed 0) is a
+budget miss: maximum observed held-out accuracy 97.05%, final 88.06%, after
+100,000 updates. Its checkpoint, source, optimizer and execution audit passes
+with no replay. The [partial audit](results/partial-audit-depth-original-lr1-seed0.json)
+covers **1/27 new cells**, and the remaining queue continues unchanged. This is
+not yet a three-seed conclusion about depth or the normalized model.
+
 After the dispatcher finishes, run the separate auditor, reporter and plotter:
 
 ```sh
