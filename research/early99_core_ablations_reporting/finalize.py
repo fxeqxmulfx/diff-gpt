@@ -11,11 +11,15 @@ from research.early99_core_ablations_reporting.run_screens import (
     RESULTS,
     ROOT,
     RUNS,
+    SCREEN_CELLS,
+    SCREEN_TASKS,
     write_json,
 )
 from research.early99_core_ablations_reporting.verify_results import verify
 from research.early99_dimension_gain.readiness import sha256
 from research.early99_reporting.round2_audit import read, require, verify_hash
+
+INTERACTION_TESTS = 3
 
 
 def main() -> None:
@@ -69,6 +73,37 @@ def main() -> None:
         RESULTS / name
         for name in ["validation.json", "guarantees.json", "selection-validation.json"]
     )
+    interaction_path = RESULTS / "embedding-peri-interaction.json"
+    interaction = read(interaction_path)
+    interaction_validation_path = RESULTS / "interaction-validation.json"
+    interaction_validation = read(interaction_validation_path)
+    require(
+        interaction_validation["exit_code"] == 0
+        and interaction_validation["passed"] == INTERACTION_TESTS
+        and interaction_validation["skipped"] == 0,
+        "Incomplete descriptive-interaction validation",
+    )
+    for path, digest in interaction_validation["files_sha256"].items():
+        verify_hash(ROOT / path, digest)
+        files.add(ROOT / path)
+    verify_hash(
+        ROOT / "research/early99_core_ablations_reporting/interactions.py",
+        interaction["source_sha256"],
+    )
+    verify_hash(
+        RESULTS / "screen-integrity.json", interaction["screen_integrity_sha256"]
+    )
+    for path, digest in interaction["plans_sha256"].items():
+        verify_hash(ROOT / path, digest)
+        files.add(ROOT / path)
+    require(
+        len(interaction["runs"]) == SCREEN_CELLS
+        and len(interaction["tasks"]) == SCREEN_TASKS
+        and interaction["selection_uses_this_statistic"] is False
+        and interaction["geometric_mean"] is None,
+        "Incomplete or selection-changing descriptive interaction",
+    )
+    files.update([interaction_path, interaction_validation_path])
     for file in files:
         require(file.is_file(), f"Missing closure evidence: {file}")
     result = {
@@ -81,6 +116,8 @@ def main() -> None:
         "long": long,
         "architecture_implementation_tests_passed": 33,
         "additional_reporting_tests_passed": 5,
+        "descriptive_interaction_tests_passed": INTERACTION_TESTS,
+        "descriptive_interaction_cells": SCREEN_CELLS,
         "proof_statements_checked": 4,
         "unresolved_inverse_width_stack_numeric_failures": 10,
         "suite_conditioned_on_original_seed1_success": True,
