@@ -1,0 +1,87 @@
+{
+  "declared_at_utc": "2026-11-06T03:20:05.557373+00:00",
+  "round": "4: SSMax with inverse head-width gain, retaining Q/K RMS",
+  "previous_round_completion_commit": "c0d703a",
+  "parent": "peri-rms-scaled-ssmax-gain-quarter-lr2",
+  "configurations": [
+    {
+      "name": "peri-rms-scaled-ssmax-inverse-width-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "gain_rule": "inverse_head_width"
+    }
+  ],
+  "short_evidence": {
+    "parent_passes": 75,
+    "parent_gm_epochs": 17.32570837255021,
+    "half_gain_gm_epochs": 18.523796573783496,
+    "unscaled_qk_parent_gm_epochs": 24.327068672012203,
+    "evidence_file": "research/early99_score_scale/results/full-short-summary.json",
+    "evidence_sha256": "49579ce24e7866d67d790e42ba67c6414f61145fe8893d690d6ebdf7da1373fc"
+  },
+  "mathematical_motivation": "The current real score envelope is (sqrt(d)/4)*log(N) at ideal initialization, so a constant multiplier does not give a constant envelope across widths. Set the fixed gain to1/d, giving abs(score)<=log(N) in real arithmetic. This is one common dimensional rule at every task size. It agrees with the ideal quarter-scale gain at d16, tightens it for d>16 and increases it for d<16. It is not a uniformly tighter bound at every width.",
+  "single_change": "Replace the quarter-scale fixed gain g=(1/4)*exp(log_alpha)/d with g=1/d, where d is head width. Keep the visible-key log(N) multiplier and every other model/optimizer mechanism. Preserve original learned matrices, initialization draws, parameter count and original frozen buffers; any additional gain tensor is a deterministic nonlearned buffer.",
+  "equation": "scores_ij = log(i+1) * dot(R_i RMS(q_i), R_j RMS(k_j)) / d, j<=i. Use global positions and full visible-key counts for every cached path.",
+  "invariants": "Keep Q/K RMS, scaled Peri-RMS, embedding RMS, centered XSA, SwiGLU, ordinary fixed RoPE, tied weights, parameter-free normalization, all original tensors/RNG, LR x2, AdamW settings, data, model dimensions, batch order, cadence, thresholds and original update budgets.",
+  "scope": "No LeRoPE, activation, residual, numeric arithmetic repair, optimizer or schedule change is combined with this trial. Parameter counts, all35tasks, frozen data, model sizes, seeds, shuffle, cadence and original budgets remain unchanged.",
+  "guarantees": "For epsilon>0, d>0 and N>=1, the real normalized dot bound gives abs(score)<=log(N). Applying the checked selectivity ceiling gives p_i<=1/(1+(N-1)*N^(-2)), independent of head width; this is an upper bound and does not guarantee concentration. Query sensitivity constant is log(N)/(sqrt(d)*sqrt(epsilon)) for ideal exact gain. General statements with the actual rounded gain remain available. Establish explicit algebraic proof specializations and validate floating-point behavior separately. No whole-network, convergence or generalization theorem is inferred.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/peri-rms-scaled-ssmax-gain-quarter-lr2",
+  "screen_policy": "Require18/18passes and improved median paired epochs in at least3of6tasks versus the quarter-scale Q/K parent. Boolean AND,key-value binding and linear transport have head width16and are expected to be unchanged; the three width32tasks are the intended changed comparisons. Do not relax the gate after observing results. Preserve all rows, misses and errors; no screen geometric mean.",
+  "full_policy": "If promoted, complete every75short cell before choosing. Select this new shared-model candidate only if all75pass and the complete geometric mean is below the quarter-scale parent. Otherwise retain the parent. Report every paired seed, per-task median/worst and parameter/runtime cost versus quarter-scale, LR x2, baseline and no-QK ablation. No successful-only aggregate.",
+  "long_policy": "Freeze and commit a short-only decision after all promoted cells. If this new candidate wins, run it once at original budgets on the already observed30cell long diagnostic; otherwise do not duplicate the retained parent diagnostic. Long outcomes never choose or tune this or later candidates.",
+  "pretraining_validation": "Verify the independent forward/gradient equation, same initialized matrices/RNG/capacity, Q/K RMS retention, N1 edge, causality and dense/chunked/shared cached computation, and native captured CUDA updates. Reuse the original trainer and scorer through explicit factories. Commit scientific source, settings and plan before new training.",
+  "score_stress": {
+    "head_widths": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      128
+    ],
+    "visible_keys": [
+      1,
+      2,
+      32,
+      512,
+      4096
+    ],
+    "raw_qk_scales": [
+      0.0,
+      1e-09,
+      1.0,
+      1000000000.0
+    ],
+    "expected_cases": 120,
+    "base_seed": 20261106,
+    "fp32_epsilon": 1.1920928955078125e-07,
+    "maximum_probability_absolute_error": 2e-06,
+    "maximum_relative_gradient_error": 0.001,
+    "reference": "Independent FP64 evaluation of the same quantized inputs and actual FP32 epsilon. Check the actual stored fixed gain and the normalized score envelope; isolate score arithmetic, without claiming that prior full-stack extreme failures are fixed."
+  },
+  "source_policy": "New implementation/configuration/plan files in a separate package, archived with all inherited scientific sources. Do not modify earlier scientific packages, plans, proofs, selections or results. Reporting code remains outside the new frozen training package.",
+  "not_used_for_design": "Any long-suite outcomes. The rule follows the complete short comparison, width/selectivity mathematics and the shared-architecture instruction.",
+  "evidence_sha256": {
+    "research/early99_score_scale/results/shared-selection.json": "6d2722ef9b396b958859ccf4c9e46d9ab57d921c14eeb03a900cd2c88caad66c",
+    "research/normalization_guarantees/results/attention-selectivity.json": "4723a1e11a89932316babec705b85a8a0a593fe8545b894bc208c624e7ebc0ee",
+    "research/normalization_guarantees/results/improved-sensitivity.json": "bd40f8e456441051ae5be08595b9ee2c06a6fba34cc61d18ed3e2f0e42f3854c"
+  }
+}

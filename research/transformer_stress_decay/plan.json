@@ -1,0 +1,39 @@
+{
+  "declared_at_utc": "2026-11-06T03:20:05.557373+00:00",
+  "question": "Does stronger decoupled weight decay reduce the residual learner generalization gap while preserving both odd and mixed-teacher coverage?",
+  "previous_round_completion_commit": "c0d703a",
+  "motivation": "The committed96cell activation/initialization diagnosis finds96training-threshold crossings versus34heldout crossings, with median finalheldout/train error ratio11.9099. This is evidence of a gap, not a causal proof that weight decay helps. The shifted and learned-even-zero controls pass9/24and10/24across the two teachers, respectively.",
+  "single_change": "Change native AdamW weight_decay from0.01to0.1or1.0 for each existing activation. Apply it to the same complete parameter group, including residual gates and learned even coefficients. No model equation, activation initialization, learning rate or other optimizer setting changes.",
+  "activation_variants": [
+    "shifted",
+    "learned_even"
+  ],
+  "even_gain_initial": 0.0,
+  "teachers": [
+    "original_odd",
+    "mixed"
+  ],
+  "control_weight_decay": 0.01,
+  "new_weight_decays": [
+    0.1,
+    1.0
+  ],
+  "variant": "peri_rezero",
+  "learning_rate": 0.01,
+  "expected_new_cells": 96,
+  "reused_control_cells": 48,
+  "total_comparison_cells": 144,
+  "unchanged_protocol": "Use both original sphere-input teachers and all depths4/16, strengths0.25/1, seeds0/1/2, width16/hidden43, train512/heldout512,data seed1,batch64,512updates,observation32,warmup16,AdamW betas0.9/0.98 epsilon1e-8,initial matrix std0.1 and relativeMSE<=0.05 first crossing. Complete the full512updates regardless of crossing, except numerical failure. Use the exact existing train_parity_cell loop and model constructors with only settings.weight_decay changed. CPU FP32 highest,one thread; preserve all data fingerprints, original arrays and sampler states.",
+  "controls": "Reuse all48rows from the completed parity study: shifted and learned-even-zero on both teachers, including all mixed-teacher regressions. The separately completed coefficient0.5/1studies remain preserved as historical negative evidence; they are not new arms here.",
+  "selection": "Evaluate each of the six activation/decay configurations on all24cells spanning both teachers. Require the exact full144cell grid before selection. Rank pooled threshold coverage, then geometric-mean first-crossing updates only when all24pass; otherwise worst final heldout relativeMSE across all24, median as tie-break. No filtered mean, missing cell, teacher-specific choice or erased regression. Report every teacher separately and all paired gains/losses.",
+  "validation": "Before training verify unchanged model initialization/RNG/capacity and protocol, complete declared grid and source/data snapshots. Audit every new checkpoint by replaying full train/heldout final scores and checking the full history, first crossing, native optimizer settings/state, source hashes and sampler state. Preserve all failures and prior controls.",
+  "mathematical_scope": "Forward RMS/activation/residual equations and their existing bounds are unchanged. Stronger decoupled weight decay does not by itself prove a smaller function Jacobian, generalization or convergence; no new such guarantee is claimed.",
+  "source_policy": "New standalone runner/plan with a frozen copy and hashes of all inherited source. Reuse existing frozen model and training functions; do not edit completed stress packages or any early99 scientific source.",
+  "scope": "Adaptive follow-up on already observed synthetic residual tasks, not fresh transfer evidence or a full-GPT improvement. No early99 long result is used; original thresholds,data,budgets and all negative outcomes remain intact. This study is independent of the inverse-width attention trial.",
+  "evidence_sha256": {
+    "research/stress_audits/results/residual-generalization.json": "f1c5897b022b8a88fa797767932a037b869bf6f15eed320f64697e277f0475f5",
+    "research/transformer_stress_parity/results/summary.json": "a2a0bed3b112bb7f2c24bf3378cd45d5f28c005ab2a6c11095bdc9e7f6eb310e",
+    "research/transformer_stress_parity_init/results/summary.json": "4cf22fe18a02a1b481fe794fa7bdcf427259db4eefd555d35a0fed67f0e888b1",
+    "research/transformer_stress_parity/plan.json": "f1ab7f5b6442f8c3bb2268c1d46f2dbeccdb3c54bf38ce0d0e0bcb0a878851c8"
+  }
+}
