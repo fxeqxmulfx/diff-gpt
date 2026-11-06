@@ -814,3 +814,15 @@ branch/residual RMS spans0.4067-1.1394(original),0.00760-0.02252(embedding only)
 22.5508-26.0577(scaled Peri only),0.4760-0.5001(both). Retain every row and hash.
 This describes a large initial scale interaction, not a causal explanation of
 learning failures or a selected target. The declared learning screens continue.
+
+The rms_composition_guarantees supplement checks two adjacent equal-epsilon real
+RMS maps, as in embedding normalization followed by the first branch input norm.
+Five Lean statements establish the exact scalar composition and vector mapping,
+global sensitivity bound1/epsilon and the actual vector directional derivative
+at zero attaining that coefficient. At FP32epsilon this is8388608, versus about
+2896.3094for one map. A predeclared32-case CPU FP32/FP64 forward/directional-gradient
+grid passes with maximum relative error2.38419e-7; preserve the initial rejected
+type-inference proof source/log and all final evidence. The zero-input result is
+not evidence that the measured embeddings operate near zero, and does not bound
+the full residual/readout network or explain its learning failures. No benchmark
+source, setting, selection rule or unresolved numerical-stress result changed.

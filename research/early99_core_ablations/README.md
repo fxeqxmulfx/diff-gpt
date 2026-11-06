@@ -37,6 +37,13 @@ embedding norm. SSMax retains the original gain, with its corresponding score
 bound. None of these properties proves successful optimization or explains the
 previous long failures by itself.
 
+The [adjacent-RMS supplement](../rms_composition_guarantees/README.md) checks the
+embedding-RMS followed by first input RMS. Two equal-epsilon real maps have
+sensitivity bound `1/epsilon`, reached along unit-RMS directions at zero, whereas
+one map has coefficient `1/sqrt(epsilon)`. Five Lean statements and 32 local CPU
+value/gradient checks pass. This concerns the adjacent maps, not a whole-model
+bound or a demonstrated cause of these learning results.
+
 The implementation reuses the frozen native training loop, execution journal and
 individual model adapters. Validation passed 33 checks, including all 35 task
 shapes, independent full forward and parameter gradients, causal caches, three

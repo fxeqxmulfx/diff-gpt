@@ -1,0 +1,57 @@
+{
+  "checked_at_utc": "2026-11-06T18:35:10.667622+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "statements": 5,
+  "axioms": {
+    "RMSComposition.radial_comp_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSComposition.double_on_unit_direction": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSComposition.double_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSComposition.radial_double_zero_derivative": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "RMSComposition.double_zero_direction_derivative": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "source_sha256": {
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "research/rms_composition_guarantees/Bounds.lean": "594b49f1d27c08024ff9443fa3a627c4e1a7e08622fb3b9c09d476af54ef3adf",
+    "research/rms_composition_guarantees/check.py": "f71bef50482818cf9b68c1f3bd1822de6daebf9fb4991e94d4df7cf8567c2205"
+  },
+  "output": "research/rms_composition_guarantees/results/lean-attempt-20261106T183504224679.txt",
+  "output_sha256": "c9f466e4daeeef9ce12b00bfb577aa2ebcd831c56cf8bc4181c72a451f1cf7d1",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_source_sha256": {
+    "src/Transformer/Residual/RMSBackward.lean": "4363cbb83edd49a67a5094a12f217ef132a27a32ffa3be141bd3559b1c4ce3c5",
+    "src/Transformer/Residual/GradientPaths.lean": "a74e1237046a7926a05ed896fae8fa9bc936133e2a7762a4bd09583563731a06",
+    "src/Transformer/Residual/Basic.lean": "64d535ff74b3b0cfa6ccd019c3bf84d3e3f9b3343331e29a005382bdea72432e",
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/Basic.lean": "448f7d315a423d5a8f933b2d78b6d6662f346eb6a424d4f7e44111ee41b7b877",
+    "src/Transformer/GPTMini/Config.lean": "1f382b8889de13bac205e4b938bc8418e3956a3eae1a1b460394e7fef3fccf59",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+  },
+  "command": "lake env python3 /home/misha/python_projects/gpt/research/rms_composition_guarantees/check.py",
+  "hypotheses": "Real arithmetic, epsilon>0 and vector width d>0. Unit-direction mapping and derivative require norm(v)^2=d. No assumption bounds a learned weight or training trajectory.",
+  "mapping": "Use the existing rmsNormEps and radialRMS definitions. Check the exact scalar identity R_e(R_e(a)) = a/sqrt((1+e)*a^2+e^2), its unit-RMS vector mapping, global vector Lipschitz constant1/e and scalar/vector directional derivative1/e at zero. Reuse the already checked one-operation constant1/sqrt(e).",
+  "limitations": "Only two adjacent, equal-epsilon, equal-width real RMS maps. This is not a bound on the whole model, learned projections, residual/readout paths, numerical rounding, optimizer convergence or generalization. The zero-input derivative does not establish that the measured runs operate near zero or that this mechanism caused their failures.",
+  "plan_sha256": "916753d05e86b4f439f86f83618dd0dabe5ba9dfc886cf629019d6a36ebf1659"
+}
