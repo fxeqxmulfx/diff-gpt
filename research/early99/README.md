@@ -11,24 +11,29 @@ Every task runs model/shuffle seeds **0, 1, 2**, with fixed data seed 1. The sho
 suite has 75 cells; long has 30; their union has 105. Optimization uses the short
 suite. The long suite is a subsequent regression check.
 
-**Round 2 short selection is now frozen.** All eight promoted candidates
+**Round 2 is complete; its short selection remains frozen.** All eight promoted candidates
 completed 75/75 passes. The declared coverage/epoch rule selects
 `peri-rms-scaled-ssmax-noqk-lr2`: geometric mean **20.9798 epochs**, **38.7%
 fewer** than the LR ×2 incumbent and **63.3% fewer** than the original baseline.
 The [frozen selection](results/round2/selection.json) and
 [complete short summary](results/round2/final-short-summary.json) retain all
 eligible arms, rejected screens, regressions and mathematical tradeoffs.
-Its one reused 30-cell long diagnostic is running, with no reselection or
-tuning from those outcomes. **Q/K RMS remains in the shared-model research
+Its one reused long diagnostic passes **20/30**, versus **26/30 for LR ×2**
+and **29/30 for baseline**, with six new budget misses versus LR ×2. The
+short winner has substantial long regressions; no long geometric mean is
+reported and no reselection or tuning uses those outcomes.
+**Q/K RMS remains in the shared-model research
 candidate**; the small-benchmark winner is an ablation, not a universal-model
 recommendation. SSMax/QK is the strongest completed Q/K-normalized arm at
 **24.3271 epochs**, **29.0% fewer** than LR ×2.
 
 The [reporting audit](../early99_reporting/README.md) reconstructs every screen
 decision and full short comparison from raw histories, verifies JSON/CSV and
-frozen hashes, and checks the long reports once the diagnostic finishes.
+frozen hashes, and has checked both complete long comparisons and their summary.
 The [round-two report](ROUND2_REPORT.md) collects the complete short table,
-rejected screens, mathematical tradeoffs and remaining long-diagnostic work.
+rejected screens, mathematical tradeoffs, all long failures and the 105-cell
+checkpoint audit. The user-requested next round will use short evidence and
+mathematics, preserving the original suite and all completed results.
 
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
@@ -634,8 +639,9 @@ preserve every cell.
 The first audit attempt used a relative result path inside the replay checkout.
 Training had used absolute paths throughout and was unaffected. Correcting the
 temporary audit helper's result paths produced a clean 75-cell audit, with no
-retraining or resumed cells. Final selection waits for the remaining three
-promoted attention candidates; no new long diagnostic has run.
+retraining or resumed cells. At that checkpoint, final selection awaited the
+remaining three promoted attention candidates and the long diagnostic had
+not started. The completed round is summarized at the top of this document.
 
 The **SSMax without Q/K RMS** arm has now also completed and passed its
 [75-cell audit](results/round2/audit-peri-rms-scaled-ssmax-noqk-lr2-full-short.json).
@@ -654,12 +660,12 @@ takes **2 → 13 (6.5×)**. Its
 [LR ×2 comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-lr2-short.json),
 [scaled-parent comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-peri-scaled-short.json)
 and [baseline comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-baseline-short.json)
-retain every row and complete task medians/worst cases. This arm is the current
+retain every row and complete task medians/worst cases. This arm became the
 empirical leader under the predeclared coverage/epoch rule. It retains the
 scaled residual-state bound but loses Q/K RMS's score bound independent of
 projection norms. Faster observed learning and stronger score control are
-therefore distinct choices here. Final selection still waits for all remaining
-promoted arms; no new long diagnostic has run.
+therefore distinct choices here. At that checkpoint, final selection still
+awaited the remaining promoted arms and the long diagnostic had not started.
 
 The user's clarified research objective is one shared architecture for small
 and large tasks. **Q/K RMS remains in the main candidate**; the no-Q/K arm

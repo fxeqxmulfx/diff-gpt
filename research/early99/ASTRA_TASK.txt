@@ -254,16 +254,22 @@ claim an ideal/universal model from a finite collection of successful tests.
 Round 2 execution update
 All eight promoted candidates completed and passed all 75 short cells. The
 frozen selection is peri-rms-scaled-ssmax-noqk-lr2, geometric mean 20.9798 epochs, 38.7%
-fewer than LR x2. Its one reused 30-cell long diagnostic is now running from the
-pinned 7cff292 source. Do not duplicate it or alter the frozen selection.
+fewer than LR x2. Its one reused 30-cell long diagnostic is complete from the
+pinned 7cff292 source: 20/30 passes, versus LR x2's 26/30 and baseline's 29/30.
+All ten budget misses and the six new misses versus LR x2 are retained. The
+worst observed successful-pair slowdown is 176x versus LR x2. No long aggregate
+is reported, and none of these outcomes can choose or tune new candidates.
+Do not duplicate the diagnostic or alter the frozen selection.
 This remains the benchmark ablation winner; the shared-model candidate keeps
 Q/K RMS. SSMax/QK is the best completed normalized arm at geometric mean 24.3271. The
 user's full Log-Scaled LeRoPE combination passes 75/75 at geometric mean 28.3632 but is
 16.59% slower than SSMax/QK on this suite. Preserve those negative results.
 Independent component stress fixes and their proofs/results are recorded in
 research/transformer_stress_fixes, with separate rate/width/epsilon follow-ups.
-Complete their audits and preserve any unresolved learning failures while the
-original long diagnostic finishes. Continue research afterward as requested.
+Their audits are complete; preserve all unresolved learning failures. The
+105-cell final checkpoint audit and complete report reconstruction passed.
+research/early99/ROUND2_REPORT.md records the completed round. Continue research
+after its reports are committed, as requested, using short evidence and math.
 
 Further stress repair evidence
 The bounded-frequency gradient repair in research/transformer_gradient_stress
@@ -285,5 +291,14 @@ all 48 prior controls and 48 new cells. Initial 0.5 recovers the mixed-teacher
 passes but loses the four original-task gains; initial 1 loses three additional
 original-task passes. Neither fixes the tradeoff. Preserve these full audited
 results without promoting an unsupported shared-model replacement. Continue the
-original long diagnostic and subsequent research; keep every frozen source,
-original short selection and original long budget unchanged.
+subsequent research; keep every frozen source, original short selection and
+completed long diagnostic unchanged.
+
+Supplemental normalization guarantee
+research/normalization_guarantees/RMSLipschitz.lean proves the improved global
+real-arithmetic bound 1/sqrt(epsilon), and abs(alpha)/sqrt(epsilon) after a fixed
+post-RMS scalar, for the unchanged existing RMS equation. All six statements
+compile without warnings or extra axioms; examples use the actual FP32 epsilon.
+This improves the earlier factor-two estimate without changing the model or
+claiming a full-network, floating-point, optimization or learning guarantee.
+The original frozen guarantee records are preserved.

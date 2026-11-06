@@ -1,11 +1,12 @@
-# Round two: short selection and pending long diagnostic
+# Round two: short improvement and long regressions
 
 The short-suite selection is frozen. **Scaled Peri-RMS + embedding RMS + SSMax,
 without Q/K RMS, at LR ×2** reaches first-observed 99% exact held-out accuracy
 in **20.9798 geometric-mean epochs**, with **75/75 passes**. This is **38.7% fewer
-epochs than LR ×2** and **63.3% fewer than the original baseline**. The reused
-30-cell long diagnostic is still running; this report does not claim that the
-round is complete.
+epochs than LR ×2** and **63.3% fewer than the original baseline**. Its completed
+reused long diagnostic passes **20/30**, versus **26/30 for LR ×2** and **29/30
+for baseline**. The short improvement comes with substantial long regressions;
+the frozen selection is retained as the benchmark result.
 
 The shared-model research candidate **keeps Q/K RMS**, as requested. Its best
 completed normalized arm is scaled Peri-RMS + embedding RMS + SSMax at
@@ -76,7 +77,7 @@ binding seeds and all three square-sum seeds. The causal-centering LR ×1
 screen also exhausts the square-sum budget in all three seeds, retained in its
 [full screen record](results/round2/screen-peri-rms-scaled-csa-lr1.json).
 The [reporting audit](../early99_reporting/README.md) reconstructs all 14 screen
-decisions and all 26 full-short paired reports directly from raw histories,
+decisions and all 27 full-short paired reports directly from raw histories,
 checking the JSON and CSVs without rewriting the frozen results.
 
 ## Mathematical guarantees and practical limits
@@ -132,8 +133,48 @@ arm's long run, with SHA-256
 It receives exactly one 30-cell diagnostic at the original budgets, from
 source `7cff292`. The long suite was already observed in round one; it is
 reused regression evidence, not a fresh holdout. Candidate choice and tuning
-do not use its outcomes. Its complete outcome and checkpoint audit remain
-pending and will be added without reselection.
+do not use its outcomes. All 30 cells and the full 105-cell checkpoint audit
+are complete, with no execution errors or resumed clocks.
+
+| Long diagnostic | Passes / 30 | Trainer seconds |
+|---|---:|---:|
+| Original baseline | 29 | 3628.01 |
+| LR ×2 incumbent | 26 | 3238.05 |
+| Selected short ablation | **20** | **4550.23** |
+
+Every selected-arm budget miss is retained below. Censoring is the original
+budget exposure, not an observed successful crossing.
+
+| Task | Censored seeds | Updates per cell | Censor epochs |
+|---|---|---:|---:|
+| `arithmetic-sum-pow4` | 0, 1, 2 | 100,000 | 5263.1633 |
+| `arithmetic-sum-cube` | 0, 1, 2 | 100,000 | 5263.1633 |
+| `basis-recall-easy` | 0 | 20,000 | 63.8992 |
+| `recurrence-fibonacci-k1-c2-lgt` | 0, 2 | 100,000 | 10000.0000 |
+| `basis-parity24` | 0 | 100,000 | 80.0000 |
+
+Compared with LR ×2, six cells newly miss their budgets and four remain
+censored; none is recovered. Among the 20 common passes, 10 are earlier and
+10 later. The worst observed ratio is **176×**, on
+`associative-divisor-n2-l1-w0`, seed 0: **8 to 1408 epochs**. Compared with the
+original baseline, nine cells newly miss their budgets and one remains
+censored; 11 common passes are earlier and nine later. Its worst observed
+ratio is **13.5909×** on the same task, seed 2: **22 to 299 epochs**.
+**No long geometric mean is reported**, because every comparison contains
+censored cells. These comparisons combine multiple model changes relative to
+the controls and do not isolate the cause of a regression.
+
+The [long summary](results/round2/long-summary.json),
+[baseline comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-baseline-long.json)
+and [LR ×2 comparison](results/round2/peri-rms-scaled-ssmax-noqk-lr2-vs-lr2-long.json)
+include every cell, final accuracy, task statistic and recovery/regression
+record, with adjacent CSVs. The
+[complete checkpoint audit](results/round2/audit-peri-rms-scaled-ssmax-noqk-lr2-complete.json)
+verifies all 105 cells, original initialization/data, optimizer settings and
+updates, stopping rules and all 26 archived source files. The
+[final reporting audit](../early99_reporting/results/complete-audit.json)
+independently reconstructs both long comparisons and their summaries, together
+with all frozen short reports and selection hashes.
 
 The benchmark keeps all 35 fixed tasks, data seed 1, model/shuffle seeds 0/1/2,
 original data and dimensions, native AdamW betas `(0.9,0.98)`, epsilon `1e-8`,
@@ -145,5 +186,7 @@ sequences and required free generation. A first 99% crossing counts; historical
 
 Raw histories, checkpoints and source archives remain under `runs/early99`.
 Use the [repository reporting audit](../early99_reporting/README.md) to reproduce
-the comparisons and verify the frozen artifacts. Final long reports, final
-round documentation and the user's requested subsequent research remain open.
+the comparisons and verify the frozen artifacts. Round two is complete. The
+user's requested subsequent research will use short evidence and mathematical
+analysis, retaining Q/K RMS in the shared-model candidate and all negative
+results; the reused long outcomes will not choose or tune new candidates.
