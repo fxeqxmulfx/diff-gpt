@@ -40,3 +40,28 @@ The inverse-width complete-model stress result is still40/50. Its five extreme
 QKV inaccuracies and five nonfinite SwiGLU cases are deferred until the requested
 optimizer comparisons finish. Wider optimizer normalization does not repair those
 model failures or prove transformer convergence.
+
+Implementation validation passes54checks:39Muon checks,6unchanged execution-journal
+checks and9frozen benchmark-integrity checks. The two real CUDA configurations
+cover hybrid/head-width8 and pure/head-width32, compiled versus eager losses,
+tail batches, all optimizer state, full-split scoring and nonempty-state restore.
+The independent matrix reference uses FP64 SVD and a scalar polynomial recurrence,
+covering zero through1e30 gradients and rank-deficient/tall/wide matrices. Complete
+CPU trainer resumes reproduce weights, moments, sampler and RNG exactly.
+
+Initial validation failures are retained: importing the lab sampler before the
+existing bootstrap; a journal callback with the wrong signature; and the tensor
+test helper refusing string partition metadata. The final tests compare all
+nonnumeric metadata exactly and every numerical state, without weakening the
+matrix or update tolerances. No benchmark updates occurred during these fixes.
+
+[Checked Lean statements](Guarantees.lean) prove that the exact quintic preserves
+the interval[0,5/4], using explicit Bernstein certificates, and that every finite
+scalar iteration from[0,1] stays there. The same coefficients map1to0.701 in one
+step. Three existing matrix statements were separately checked: the conditional
+SVD polynomial identity, zero preservation, and the1×1non-polar counterexample.
+All six printed theorem dependencies use only standard axioms; final compilation
+has no warnings. The old zero-norm normalization theorem is not used to claim
+scale invariance below this implementation's epsilon floor. These are real scalar
+bounds and conditional matrix algebra, distinct from the finite-precision checks
+and the forthcoming learning measurements.

@@ -1,0 +1,162 @@
+...............................FFFF..                                    [100%]
+=================================== FAILURES ===================================
+___ test_preparation_and_zero_rate_step_preserve_weights_and_rng[muon_adamw] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-misha/pytest-1/test_preparation_and_zero_rate0')
+kind = 'muon_adamw'
+
+    @pytest.mark.parametrize("kind", ["muon_adamw", "muon"])
+    def test_preparation_and_zero_rate_step_preserve_weights_and_rng(
+        tmp_path: Path, kind: str
+    ) -> None:
+        """Preparation issues no update; zero-rate first batch advances moments/counts."""
+        case, config = small_case(), Configuration(optimizer_kind=kind)
+        task = arithmetic(case, "cpu")
+        model = dimension_model(task, case, "cpu")
+        state, rng = copy.deepcopy(model.state_dict()), torch.get_rng_state().clone()
+        actual = MuonStepper(
+            model,
+            task,
+            case,
+            "cpu",
+            configuration=config,
+            compiled=False,
+            journal_path=tmp_path / "execution-journal.json",
+        )
+        moments = copy.deepcopy(actual.optimizer.state_dict())
+        actual.prepare([8, 5])
+>       assert_close(actual.optimizer.state_dict(), moments, rtol=0, atol=0)
+E       TypeError: No comparison pair was able to handle inputs of type <class 'str'> and <class 'str'>.
+E       
+E       The failure occurred for item ['adamw']['param_groups'][0]['param_names'][0]
+
+tests/diff_gpt/application/test_early99_muon.py:251: TypeError
+______ test_preparation_and_zero_rate_step_preserve_weights_and_rng[muon] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-misha/pytest-1/test_preparation_and_zero_rate1')
+kind = 'muon'
+
+    @pytest.mark.parametrize("kind", ["muon_adamw", "muon"])
+    def test_preparation_and_zero_rate_step_preserve_weights_and_rng(
+        tmp_path: Path, kind: str
+    ) -> None:
+        """Preparation issues no update; zero-rate first batch advances moments/counts."""
+        case, config = small_case(), Configuration(optimizer_kind=kind)
+        task = arithmetic(case, "cpu")
+        model = dimension_model(task, case, "cpu")
+        state, rng = copy.deepcopy(model.state_dict()), torch.get_rng_state().clone()
+        actual = MuonStepper(
+            model,
+            task,
+            case,
+            "cpu",
+            configuration=config,
+            compiled=False,
+            journal_path=tmp_path / "execution-journal.json",
+        )
+        moments = copy.deepcopy(actual.optimizer.state_dict())
+        actual.prepare([8, 5])
+>       assert_close(actual.optimizer.state_dict(), moments, rtol=0, atol=0)
+E       TypeError: No comparison pair was able to handle inputs of type <class 'str'> and <class 'str'>.
+E       
+E       The failure occurred for item ['muon']['param_groups'][0]['adjust_lr_fn']
+
+tests/diff_gpt/application/test_early99_muon.py:251: TypeError
+_ test_complete_trainer_resume_preserves_moments_batches_and_journal[muon_adamw] _
+
+tmp_path = PosixPath('/tmp/pytest-of-misha/pytest-1/test_complete_trainer_resume_p0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7803275a3100>
+kind = 'muon_adamw'
+
+    @pytest.mark.parametrize("kind", ["muon_adamw", "muon"])
+    def test_complete_trainer_resume_preserves_moments_batches_and_journal(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
+    ) -> None:
+        """Compare a real checkpoint continuation with uninterrupted original batches."""
+        case, config = small_case(), Configuration(optimizer_kind=kind)
+        monkeypatch.setattr(trainer, "CHECKPOINT_INTERVAL", 2)
+>       full = trainer.run(
+            case, 4, tmp_path / "full", "cpu", configuration=config, compiled=False
+        )
+
+tests/diff_gpt/application/test_early99_muon.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+research/early99_muon/trainer.py:220: in run
+    stepper.step(gather(parts), completed)
+research/early99_muon/factories.py:165: in step
+    recorded_step(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+journal = <research.early99_execution.journal.UpdateJournal object at 0x7803275cfed0>
+indices = tensor([ 7,  9,  0, 14,  1,  2,  4, 20]), completed = 0
+device = 'cpu'
+update = <function MuonStepper.step.<locals>.<lambda> at 0x78032718ba00>
+
+    def recorded_step(
+        journal: UpdateJournal,
+        indices: torch.Tensor,
+        completed: int,
+        device: str,
+        update: Callable[[torch.Tensor, int], None],
+    ) -> None:
+        """Bracket one real step; CUDA synchronization makes the completed marker sound."""
+        journal.begin(completed, len(indices))
+>       update(indices, completed)
+E       TypeError: MuonStepper.step.<locals>.<lambda>() takes 0 positional arguments but 2 were given
+
+research/early99_execution/journal.py:170: TypeError
+----------------------------- Captured stdout call -----------------------------
+{"case": "muon-validation", "seed": 4, "event": "prepared", "completed": 0, "seconds": 0.04230207900013738}
+{"case": "muon-validation", "seed": 4, "step": 0, "seconds": 0.05270807700003388, "train": {"loss": 1.9539253598167783, "token_accuracy": 0.14285714285714285, "sequence_accuracy": 0.14285714285714285, "correct": 3, "targets": 21, "exact": 3, "examples": 21}, "validation": {"loss": 1.918477557954334, "token_accuracy": 0.14285714285714285, "sequence_accuracy": 0.14285714285714285, "correct": 3, "targets": 21, "exact": 3, "examples": 21}, "first_train99": null, "first_fit": null, "first_target": null, "low_plateau_observations": 0, "classification": "target_not_reached_within_budget", "final_target_met": false}
+___ test_complete_trainer_resume_preserves_moments_batches_and_journal[muon] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-misha/pytest-1/test_complete_trainer_resume_p1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x78032415c3e0>
+kind = 'muon'
+
+    @pytest.mark.parametrize("kind", ["muon_adamw", "muon"])
+    def test_complete_trainer_resume_preserves_moments_batches_and_journal(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
+    ) -> None:
+        """Compare a real checkpoint continuation with uninterrupted original batches."""
+        case, config = small_case(), Configuration(optimizer_kind=kind)
+        monkeypatch.setattr(trainer, "CHECKPOINT_INTERVAL", 2)
+>       full = trainer.run(
+            case, 4, tmp_path / "full", "cpu", configuration=config, compiled=False
+        )
+
+tests/diff_gpt/application/test_early99_muon.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+research/early99_muon/trainer.py:220: in run
+    stepper.step(gather(parts), completed)
+research/early99_muon/factories.py:165: in step
+    recorded_step(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+journal = <research.early99_execution.journal.UpdateJournal object at 0x78032415ce90>
+indices = tensor([ 7,  9,  0, 14,  1,  2,  4, 20]), completed = 0
+device = 'cpu'
+update = <function MuonStepper.step.<locals>.<lambda> at 0x780325de6b90>
+
+    def recorded_step(
+        journal: UpdateJournal,
+        indices: torch.Tensor,
+        completed: int,
+        device: str,
+        update: Callable[[torch.Tensor, int], None],
+    ) -> None:
+        """Bracket one real step; CUDA synchronization makes the completed marker sound."""
+        journal.begin(completed, len(indices))
+>       update(indices, completed)
+E       TypeError: MuonStepper.step.<locals>.<lambda>() takes 0 positional arguments but 2 were given
+
+research/early99_execution/journal.py:170: TypeError
+----------------------------- Captured stdout call -----------------------------
+{"case": "muon-validation", "seed": 4, "event": "prepared", "completed": 0, "seconds": 0.04332916699991074}
+{"case": "muon-validation", "seed": 4, "step": 0, "seconds": 0.04608886200003326, "train": {"loss": 1.9539253598167783, "token_accuracy": 0.14285714285714285, "sequence_accuracy": 0.14285714285714285, "correct": 3, "targets": 21, "exact": 3, "examples": 21}, "validation": {"loss": 1.918477557954334, "token_accuracy": 0.14285714285714285, "sequence_accuracy": 0.14285714285714285, "correct": 3, "targets": 21, "exact": 3, "examples": 21}, "first_train99": null, "first_fit": null, "first_target": null, "low_plateau_observations": 0, "classification": "target_not_reached_within_budget", "final_target_met": false}
+=========================== short test summary info ============================
+FAILED tests/diff_gpt/application/test_early99_muon.py::test_preparation_and_zero_rate_step_preserve_weights_and_rng[muon_adamw]
+FAILED tests/diff_gpt/application/test_early99_muon.py::test_preparation_and_zero_rate_step_preserve_weights_and_rng[muon]
+FAILED tests/diff_gpt/application/test_early99_muon.py::test_complete_trainer_resume_preserves_moments_batches_and_journal[muon_adamw]
+FAILED tests/diff_gpt/application/test_early99_muon.py::test_complete_trainer_resume_preserves_moments_batches_and_journal[muon]
+4 failed, 33 passed, 2 deselected in 11.39s

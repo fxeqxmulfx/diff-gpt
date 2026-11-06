@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/diff_gpt/application/test_early99_muon.py _______
+ImportError while importing test module '/home/misha/python_projects/gpt/tests/diff_gpt/application/test_early99_muon.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/diff_gpt/application/test_early99_muon.py:15: in <module>
+    from lab.infrastructure.benchmarks.samplers import EpochSampler, gather
+E   ModuleNotFoundError: No module named 'lab'
+=========================== short test summary info ============================
+ERROR tests/diff_gpt/application/test_early99_muon.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.14s
