@@ -24,5 +24,15 @@
   "validation": "Check actual update equations against an independent scalar/matrix reference, zero-gradient/rank-deficient/rectangular-matrix behavior, tied-weight deduplication, optimizer state/checkpoint resumption, and real CUDA updates. Distinguish approximate finite-step Newton-Schulz behavior from exact polar-factor results in the local Lean library.",
   "primary_reference": "https://github.com/KellerJordan/Muon",
   "reference_checked_at_utc": "2026-11-06T07:29:15.896295+00:00",
-  "unresolved_after_requested_optimizer_work": "The inverse-width model still has10failures in its50case complete-stack numerical stress; retain and separately repair them after these requested optimizer studies. Do not quietly combine a repair with an optimizer arm."
+  "unresolved_after_requested_optimizer_work": "The inverse-width model still has10failures in its50case complete-stack numerical stress; retain and separately repair them after these requested optimizer studies. Do not quietly combine a repair with an optimizer arm.",
+  "matrix_partition_inventory": {
+    "path": "research/early99_optimizer_followups/parameter-inventory.json",
+    "sha256": "e2a8b77da15ba55ed919729eeb40f5f91ca264989561bb59a5c61e6b8201d5be",
+    "cases": 35,
+    "all_trainable_tensors_are_matrices": true,
+    "tied_embedding_readout_deduplicated": true,
+    "training_updates": 0
+  },
+  "local_muon_source_inspected": "/home/misha/lean_projects/transformer/optimizers/src/lean_optim/matrix.py",
+  "implementation_note": "The local Muon adapter has auxiliary Adam betas(.9,.999), while this benchmark retains(.9,.98); do not silently reuse different auxiliary moments. Its native matrix rule uses5Newton-Schulz steps and0.2*sqrt(max(shape)) scaling. Pin and validate the chosen convention before declaring exact runs."
 }

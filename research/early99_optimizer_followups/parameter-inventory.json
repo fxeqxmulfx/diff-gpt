@@ -1,0 +1,2831 @@
+{
+  "checked_at_utc": "2026-11-06T07:32:37.525639+00:00",
+  "scope": "Read-only CPU construction of the current shared inverse-width architecture for all35fixedcases; no training, gradient or metric evaluation. This records eligibility for future optimizer partitioning, not an optimizer result.",
+  "cases": 35,
+  "all_matrix_only": true,
+  "no_duplicate_tied_weight_updates_required": true,
+  "sources_sha256": {
+    "research/early99_dimension_gain/factories.py": "0c1309238bf0cae46015d505c6e1d9ba81b8a0a2730ba28ad36d6950d74921ca",
+    "research/early99/experiments/factories.py": "02891e8d9c2113dfe407238d37bb6d998a32ce146eca8f5aed0dfaa104c90681",
+    "src/diff_gpt/domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+    "research/early99/suite.json": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436"
+  },
+  "rows": [
+    {
+      "case": "suite-boolean-and-shift",
+      "tier": "short",
+      "trainable_tensor_count": 9,
+      "parameters": 104832,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            100,
+            64
+          ],
+          "elements": 6400
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "tier": "short",
+      "trainable_tensor_count": 9,
+      "parameters": 104832,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            100,
+            64
+          ],
+          "elements": 6400
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "power-division-p97-k3",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-cube-plus",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "power-division-p193-k5",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 221184,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            193,
+            128
+          ],
+          "elements": 24704
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "power-division-p193-k2",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 221184,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            193,
+            128
+          ],
+          "elements": 24704
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "power-division-p97-k2",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-square-times",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-sub",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-mul",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-add",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "tier": "short",
+      "trainable_tensor_count": 9,
+      "parameters": 104832,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            100,
+            64
+          ],
+          "elements": 6400
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "power-division-p193-k3",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 221184,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            193,
+            128
+          ],
+          "elements": 24704
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "division-p193",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 221184,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            193,
+            128
+          ],
+          "elements": 24704
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "basis-depth-easy",
+      "tier": "short",
+      "trainable_tensor_count": 9,
+      "parameters": 100736,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            36,
+            64
+          ],
+          "elements": 2304
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "gpt-probe-branch-amplitudes",
+      "tier": "short",
+      "trainable_tensor_count": 9,
+      "parameters": 102848,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            69,
+            64
+          ],
+          "elements": 4416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "power-division-p97-k5",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-half-sum",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-sum-square",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "basis-depth-hard",
+      "tier": "short",
+      "trainable_tensor_count": 25,
+      "parameters": 1183488,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        },
+        {
+          "name": "blocks.2.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.2.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.2.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.2.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        },
+        {
+          "name": "blocks.3.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.3.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.3.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.3.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        },
+        {
+          "name": "blocks.4.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.4.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.4.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.4.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        },
+        {
+          "name": "blocks.5.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.5.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.5.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.5.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            36,
+            128
+          ],
+          "elements": 4608
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight",
+        "blocks.2.sa.c_attn.weight",
+        "blocks.2.sa.c_proj.weight",
+        "blocks.2.ffwd.c_fc.weight",
+        "blocks.2.ffwd.c_proj.weight",
+        "blocks.3.sa.c_attn.weight",
+        "blocks.3.sa.c_proj.weight",
+        "blocks.3.ffwd.c_fc.weight",
+        "blocks.3.ffwd.c_proj.weight",
+        "blocks.4.sa.c_attn.weight",
+        "blocks.4.sa.c_proj.weight",
+        "blocks.4.ffwd.c_fc.weight",
+        "blocks.4.ffwd.c_proj.weight",
+        "blocks.5.sa.c_attn.weight",
+        "blocks.5.sa.c_proj.weight",
+        "blocks.5.ffwd.c_fc.weight",
+        "blocks.5.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-affine-product",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-perm-add",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "tier": "short",
+      "trainable_tensor_count": 9,
+      "parameters": 102848,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            69,
+            64
+          ],
+          "elements": 4416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-div",
+      "tier": "short",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-abs-diff-blind",
+      "tier": "long",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-abs-diff",
+      "tier": "long",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-sum-pow4",
+      "tier": "long",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "basis-parity20",
+      "tier": "long",
+      "trainable_tensor_count": 9,
+      "parameters": 102784,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            68,
+            64
+          ],
+          "elements": 4352
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "basis-parity16",
+      "tier": "long",
+      "trainable_tensor_count": 9,
+      "parameters": 102784,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            68,
+            64
+          ],
+          "elements": 4352
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "arithmetic-sum-cube",
+      "tier": "long",
+      "trainable_tensor_count": 5,
+      "parameters": 208896,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            97,
+            128
+          ],
+          "elements": 12416
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "basis-recall-easy",
+      "tier": "long",
+      "trainable_tensor_count": 9,
+      "parameters": 133504,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            548,
+            64
+          ],
+          "elements": 35072
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "tier": "long",
+      "trainable_tensor_count": 5,
+      "parameters": 229248,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            256,
+            128
+          ],
+          "elements": 32768
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "associative-divisor-n2-l1-w0",
+      "tier": "long",
+      "trainable_tensor_count": 9,
+      "parameters": 425728,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            384,
+            128
+          ],
+          "elements": 49152
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            128,
+            128
+          ],
+          "elements": 16384
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            682,
+            128
+          ],
+          "elements": 87296
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            128,
+            341
+          ],
+          "elements": 43648
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            256,
+            128
+          ],
+          "elements": 32768
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    },
+    {
+      "case": "basis-parity24",
+      "tier": "long",
+      "trainable_tensor_count": 9,
+      "parameters": 102784,
+      "all_trainable_tensors_are_matrices": true,
+      "tied_embedding_readout": true,
+      "tied_weight_alias_names": [
+        "token_embedding_table.weight",
+        "lm_head.weight"
+      ],
+      "hybrid_muon_matrices": [
+        {
+          "name": "blocks.0.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.0.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.0.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.0.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        },
+        {
+          "name": "blocks.1.sa.c_attn.weight",
+          "shape": [
+            192,
+            64
+          ],
+          "elements": 12288
+        },
+        {
+          "name": "blocks.1.sa.c_proj.weight",
+          "shape": [
+            64,
+            64
+          ],
+          "elements": 4096
+        },
+        {
+          "name": "blocks.1.ffwd.c_fc.weight",
+          "shape": [
+            342,
+            64
+          ],
+          "elements": 21888
+        },
+        {
+          "name": "blocks.1.ffwd.c_proj.weight",
+          "shape": [
+            64,
+            171
+          ],
+          "elements": 10944
+        }
+      ],
+      "hybrid_adamw_matrices": [
+        {
+          "name": "token_embedding_table.weight",
+          "shape": [
+            68,
+            64
+          ],
+          "elements": 4352
+        }
+      ],
+      "pure_muon_matrices": [
+        "token_embedding_table.weight",
+        "blocks.0.sa.c_attn.weight",
+        "blocks.0.sa.c_proj.weight",
+        "blocks.0.ffwd.c_fc.weight",
+        "blocks.0.ffwd.c_proj.weight",
+        "blocks.1.sa.c_attn.weight",
+        "blocks.1.sa.c_proj.weight",
+        "blocks.1.ffwd.c_fc.weight",
+        "blocks.1.ffwd.c_proj.weight"
+      ],
+      "training_updates": 0
+    }
+  ]
+}
