@@ -1,0 +1,25 @@
+{
+  "declared_at_utc": "2026-11-06T04:53:44.281450+00:00",
+  "question": "Does the selected inverse-width SSMax architecture pass complete-model forward and gradient stress beyond its120isolated attention probes?",
+  "scope": "Read-only numerical diagnostic; no optimizer updates, benchmark candidate changes, tuning or reselection. The long diagnostic continues unchanged. Standard freshly initialized models at declared stress sizes, not saved trained checkpoint replays.",
+  "architecture": "Scaled Peri-RMS + embedding RMS + centered XSA + SwiGLU + SSMax gain1/head_width + Q/K RMS + tied weights + parameter-free RMS + original fixed RoPE; exact production operations from the frozen inverse-width candidate.",
+  "grid": "Reuse the original5layers/context shapes and10non-frequency interventions, width32,heads4,vocab31,seed123. Exactly50cases. Same original seed percell; preserve ordinary controls and all extreme embedding/QKV/SwiGLU cases. All15learned-frequency interventions are explicitly inapplicable because this architecture has no learned-frequency parameter; retain the prior65case LeRoPE results without claiming direct whole-grid equivalence.",
+  "expected_cases": 50,
+  "inapplicable_original_cases": 15,
+  "interventions": [
+    "control",
+    "embedding",
+    "qkv",
+    "swiglu"
+  ],
+  "dtype": "CPU FP32 highest,one thread; FP32 parameters and original RMS epsilon.",
+  "reference": "Copy the exact quantized weights and buffers to FP64 and retain FP32 RMS epsilon. Use identical tokens, targets and full cross-entropy mean. Compare every named parameter gradient as well as logits and loss. The original FP32 rotary tables are promoted unchanged, so this measures arithmetic given stored phases, not independently recomputed phase accuracy or a high-precision transcendental proof.",
+  "checks": "Require tied parameter identity, Q/K RMS, inverse-width gain and all source hashes. Evaluate every cell even after failures. Record forward/loss/gradient/reference finiteness separately. For finite cases, forward pass needs relativeL2logit error<=0.001; stronger pass additionally needs global parameter-gradient relativeL2error<=0.001 and relative loss error<=0.001. Report per-parameter gradient errors and ordinary controls; no successful-only summaries.",
+  "relative_error_threshold": 0.001,
+  "source_policy": "Separate sibling diagnostic; freeze plan and implementation before executing grid. Archive exact model, inherited factory, original stress source and new diagnostic sources/settings. Preserve all raw numerical measurements and strictJSONnonfinite flags. No edits under the active frozen candidate/reporting packages.",
+  "evidence_sha256": {
+    "research/transformer_stress/plan.json": "2f931000db4813a80695a5858972f562a253cdf731eb357aa116e6ff632123eb",
+    "research/early99_dimension_gain/plan.json": "5de171bb0c2054a1b6802c67f3b4026de0270a9ea06101ee68b8955090e38c7a",
+    "research/early99_dimension_gain/results/selection-integrity.json": "91b7eb9742213dbc61709011f9900f1a02b0ab39555d2a431717b10e4a14a736"
+  }
+}
