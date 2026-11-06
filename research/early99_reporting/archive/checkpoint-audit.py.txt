@@ -1,0 +1,119 @@
+"""Audit completed round-2 records and their saved optimizer state."""
+import argparse
+import hashlib
+import json
+import math
+from datetime import datetime, timezone
+from pathlib import Path
+
+import torch
+
+from research.current_grokking.run import verify_model_reference
+from research.early99.experiments.compare import paired_cell
+from research.early99.experiments.factories import Configuration
+from research.early99.protocol import selected, specification, suite
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--long', action='store_true')
+parser.add_argument('--name', action='append', required=True)
+parser.add_argument('--full', action='store_true')
+parser.add_argument('--output', type=Path, required=True)
+args = parser.parse_args()
+assert verify_model_reference() == suite()['baseline_model_reference']
+search = json.loads(Path('research/early99/results/round2/plan.json').read_text())
+runs_root = Path('/home/misha/python_projects/gpt/runs/early99')
+reference = runs_root / 'baseline'
+incumbent = runs_root / 'candidates/adamw-lr2'
+records = {}
+for name in args.name:
+    root = runs_root / 'candidates' / name
+    raw_plan = (root / 'plan.json').read_bytes()
+    plan = json.loads(raw_plan)
+    config = Configuration(**plan['configuration'])
+    assert json.loads((root / 'configuration.json').read_text()) == plan['configuration']
+    for path, expected in plan['source_sha256'].items():
+        assert hashlib.sha256((root / 'experiment_source' / path).read_bytes()).hexdigest() == expected
+        assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == expected
+    assert not list(root.glob('*/seed*/error.json'))
+    tasks = selected('all' if args.long else 'short')
+    if not args.full:
+        tasks = [t for t in tasks if t['name'] in search['screen_tasks']]
+    count = 0
+    passes = 0
+    censored = []
+    parameters = []
+    for task in tasks:
+        for seed in [0, 1, 2]:
+            cell = root / task['name'] / f'seed{seed}'
+            for filename in ['checkpoint.pt', 'early99_result.json', 'history.jsonl', 'protocol.json', 'result.json']:
+                assert (cell / filename).is_file(), str(cell / filename)
+            result = json.loads((cell / 'result.json').read_text())
+            metadata = result['metadata']
+            assert metadata == json.loads((cell / 'protocol.json').read_text())
+            assert metadata['experiment'] == config.metadata(specification(task))
+            assert not metadata.get('resumptions')
+            assert metadata['optimizer_betas'] == list(config.betas)
+            assert metadata['optimizer_eps'] == 1e-8
+            assert metadata['optimizer_fused'] and metadata['compiled_loss']
+            assert metadata['device'] == 'cuda'
+            for source, expected in metadata['sources'].items():
+                assert hashlib.sha256((cell / 'source' / source).read_bytes()).hexdigest() == expected
+            base_pair = paired_cell(task, seed, reference, root)
+            paired_cell(task, seed, incumbent, root)
+            history = [json.loads(line) for line in (cell / 'history.jsonl').read_text().splitlines()]
+            crossings = [h for h in history if h['validation']['sequence_accuracy'] >= 0.99]
+            if crossings:
+                assert result['completed'] == crossings[0]['step']
+                assert base_pair['candidate_status'] == 'passed'
+                passes += 1
+            else:
+                assert result['completed'] == task['case']['max_updates']
+                assert base_pair['candidate_status'] == 'budget_exhausted'
+                censored.append(dict(case=task['name'], seed=seed, updates=result['completed']))
+            saved = torch.load(cell / 'checkpoint.pt', map_location='cpu', weights_only=True)
+            assert saved['completed'] == result['completed']
+            assert saved['history'] == history
+            assert saved['metadata'] == metadata
+            assert {int(s['step']) for s in saved['optimizer']['state'].values()} == {result['completed']}
+            groups = saved['optimizer']['param_groups']
+            lerope = 'lerope' in config.model_variant
+            assert len(groups) == (2 if lerope else 1)
+            if lerope:
+                added = groups[1]
+                assert len(added['params']) == 1
+                assert added['weight_decay'] == 0.0
+                assert added['betas'] == config.betas and added['eps'] == 1e-8
+                assert added['fused'] and added['capturable']
+                assert float(added['lr']) == float(groups[0]['lr'])
+            group = groups[0]
+            assert group['betas'] == config.betas
+            assert group['fused'] and group['capturable']
+            assert group['eps'] == 1e-8 and group['weight_decay'] == task['case']['weight_decay']
+            rate = task['case']['learning_rate'] * config.learning_rate_multiplier
+            expected_rate = config.learning_rate_at(specification(task), result['completed'] - 1, task['train_examples'])
+            assert math.isclose(float(group['lr']), expected_rate, rel_tol=1e-7, abs_tol=1e-12)
+            assert all(torch.isfinite(value).all() for value in saved['model'].values())
+            parameters.append(metadata['parameters'])
+            count += 1
+    expected_count = len(tasks) * 3
+    assert count == expected_count
+    records[name] = dict(
+        completed=count, passed=passes, censored=censored, execution_errors=0, resumed=0,
+        candidate_plan_sha256=hashlib.sha256(raw_plan).hexdigest(),
+        source_files_verified=len(plan['source_sha256']),
+        minimum_parameters=min(parameters), maximum_parameters=max(parameters),
+    )
+result = dict(
+    audited_at_utc=datetime.now(timezone.utc).isoformat(), candidates=records,
+    completed_new_scientific_runs=sum(r['completed'] for r in records.values()),
+    all_checkpoints_histories_protocols_and_sources_retained=True,
+    checkpoint_optimizer_steps_and_settings_verified=True,
+    stop_at_first_exact_crossing_or_original_budget_verified=True,
+    unchanged_original_initialization_data_seeds_cadence_and_oracles_in_all_pairs=True,
+    capacity_policy='Original capacity matched; only the explicitly declared head_dim/2 zero-initialized LeRoPE frequency parameters may be added.',
+    source_archives_match_frozen_plans_and_current_implementation=True,
+    previous_round_reports_and_selection_preserved=True,
+)
+args.output.write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result, indent=2))

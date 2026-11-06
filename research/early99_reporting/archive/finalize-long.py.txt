@@ -1,0 +1,56 @@
+"""Report the fixed winner's reused long diagnostic without reselection."""
+import hashlib
+import json
+import shutil
+from datetime import datetime, timezone
+from pathlib import Path
+
+from research.early99.experiments.compare import comparison
+
+results=Path('research/early99/results/round2')
+selection_path=results/'selection.json'
+selection_bytes=selection_path.read_bytes()
+selection=json.loads(selection_bytes)
+assert selection['new_short_winner']
+name=selection['selected_name']
+root=Path('runs/early99/candidates')/name
+reports={}
+for label,control in [('baseline',Path('runs/early99/baseline')),('lr2',Path('runs/early99/candidates/adamw-lr2'))]:
+    directory=root/'comparisons'/label
+    report=comparison(control,root,'long',output=directory)
+    assert report['expected_cells']==30
+    assert all(r['candidate_status'] in ['passed','budget_exhausted'] for r in report['runs'])
+    reports[label]=report
+    for suffix in ['.json','.csv','-tasks.csv']:
+        shutil.copyfile(directory/('comparison-long'+suffix),results/(f'{name}-vs-{label}-long'+suffix))
+
+
+def measure(report,prefix):
+    rows=report['runs']
+    return dict(passed=sum(r[prefix+'_status']=='passed' for r in rows),expected=30,
+        trainer_seconds_including_setup_scoring=sum(r[prefix+'_seconds_last_run_segment'] for r in rows),
+        censored=[{k:r[k] for k in ['case','seed',prefix+'_censor_epochs',prefix+'_final_heldout_accuracy']} for r in rows if r[prefix+'_status']=='budget_exhausted'])
+
+
+def contrasts(report):
+    fields=['case','seed','baseline_status','candidate_status','baseline_first99_epochs','candidate_first99_epochs','baseline_censor_epochs','candidate_censor_epochs','epoch_ratio']
+    common=[r for r in report['runs'] if r['epoch_ratio'] is not None]
+    return dict(geometric_mean_epoch_ratio=report['geometric_mean_epoch_ratio'],
+        common_passes=len(common),earlier=report['paired_earlier'],tied=report['paired_tied'],later=report['paired_later'],
+        recovered=[{k:r[k] for k in fields} for r in report['runs'] if r['baseline_status']=='budget_exhausted' and r['candidate_status']=='passed'],
+        newly_censored=[{k:r[k] for k in fields} for r in report['runs'] if r['baseline_status']=='passed' and r['candidate_status']=='budget_exhausted'],
+        both_censored=[{k:r[k] for k in fields} for r in report['runs'] if r['baseline_status']==r['candidate_status']=='budget_exhausted'],
+        worst_observed_ratio=max((r['epoch_ratio'] for r in common),default=None),
+        largest_regressions=[{k:r[k] for k in fields} for r in sorted(common,key=lambda r:r['epoch_ratio'],reverse=True)[:5] if r['epoch_ratio']>1])
+
+summary=dict(reported_at_utc=datetime.now(timezone.utc).isoformat(),selected_name=name,
+    diagnostic='Reused 30-cell long regression suite, already observed in round 1. No tuning or reselection using these outcomes.',
+    frozen_selection_sha256=hashlib.sha256(selection_bytes).hexdigest(),
+    candidate_plan_sha256=hashlib.sha256((root/'plan.json').read_bytes()).hexdigest(),
+    baseline=measure(reports['baseline'],'baseline'),incumbent_lr2=measure(reports['lr2'],'baseline'),winner=measure(reports['baseline'],'candidate'),
+    winner_vs_baseline=contrasts(reports['baseline']),winner_vs_lr2=contrasts(reports['lr2']),
+    retained_short_selection=name,original_budgets_and_every_failure_preserved=True,
+    aggregate_note='No filtered aggregate: an epoch-ratio geometric mean is reported only if every paired cell passes. Censored rows retain their original budget exposure.')
+assert selection_path.read_bytes()==selection_bytes
+(results/'long-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print(json.dumps(summary,indent=2))

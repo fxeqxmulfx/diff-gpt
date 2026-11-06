@@ -1,0 +1,338 @@
+{
+  "audited_at_utc": "2026-11-06T00:17:13.730067+00:00",
+  "frozen_selection_sha256": "ec56a5245f2c9626eab67e1d809bc8c6b7889010adf2cf3e774698cb5db24c81",
+  "short_screens_recomputed": {
+    "adamw-lr3": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "adamw-lr2-beta95": {
+      "completed": 18,
+      "passed": 18,
+      "advance": false
+    },
+    "adamw-lr3-cosine200": {
+      "completed": 18,
+      "passed": 18,
+      "advance": false
+    },
+    "peri-rms-lr2": {
+      "completed": 18,
+      "passed": 12,
+      "advance": false
+    },
+    "peri-rms-embedding-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": false
+    },
+    "adamw-lr2p5": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "peri-rms-scaled-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "peri-rms-scaled-csa-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": false
+    },
+    "peri-rms-scaled-csa-lr1": {
+      "completed": 18,
+      "passed": 15,
+      "advance": false
+    },
+    "peri-rms-scaled-ssmax-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "peri-rms-scaled-ssmax-noqk-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "peri-rms-scaled-lerope-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "peri-rms-scaled-ssmax-lerope-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    },
+    "peri-rms-scaled-ssmax-lerope-log-angle-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "advance": true
+    }
+  },
+  "promoted_full_short_candidates_verified": [
+    "adamw-lr2p5",
+    "adamw-lr3",
+    "peri-rms-scaled-lerope-lr2",
+    "peri-rms-scaled-lr2",
+    "peri-rms-scaled-ssmax-lerope-log-angle-lr2",
+    "peri-rms-scaled-ssmax-lerope-lr2",
+    "peri-rms-scaled-ssmax-lr2",
+    "peri-rms-scaled-ssmax-noqk-lr2"
+  ],
+  "paired_short_comparisons_recomputed": 27,
+  "candidate_source_archives_verified": {
+    "adamw-lr3": 21,
+    "adamw-lr2-beta95": 21,
+    "adamw-lr3-cosine200": 22,
+    "peri-rms-lr2": 22,
+    "peri-rms-embedding-lr2": 22,
+    "adamw-lr2p5": 22,
+    "peri-rms-scaled-lr2": 22,
+    "peri-rms-scaled-csa-lr2": 23,
+    "peri-rms-scaled-csa-lr1": 23,
+    "peri-rms-scaled-ssmax-lr2": 26,
+    "peri-rms-scaled-ssmax-noqk-lr2": 26,
+    "peri-rms-scaled-lerope-lr2": 26,
+    "peri-rms-scaled-ssmax-lerope-lr2": 26,
+    "peri-rms-scaled-ssmax-lerope-log-angle-lr2": 26,
+    "adamw-lr2": 21
+  },
+  "recorded_checkpoint_audits_verified": {
+    "adamw-lr3": {
+      "file": "research/early99/results/round2/audit-before-schedule.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "5e46b12b4374a154b8ebd8ca356d27bcbc54e1c954f5b4a16d990714ee24feed",
+      "source_files_verified": 21,
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "adamw-lr2-beta95": {
+      "file": "research/early99/results/round2/audit-before-schedule.json",
+      "completed": 18,
+      "passed": 18,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "fb1414fb1ae55f18055db551343ac33fdbb73099efed2aa680e038f0052c2fd7",
+      "source_files_verified": 21,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "adamw-lr3-cosine200": {
+      "file": "research/early99/results/round2/audit-cosine-and-peri.json",
+      "completed": 18,
+      "passed": 18,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "c1938508c29f9bd8499f96f7867b4065fa6488563fdd6267f57e26e459e8f41b",
+      "source_files_verified": 22,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "peri-rms-lr2": {
+      "file": "research/early99/results/round2/audit-cosine-and-peri.json",
+      "completed": 18,
+      "passed": 12,
+      "censored": [
+        {
+          "case": "gpt-probe-key-value-binding",
+          "seed": 0,
+          "updates": 30000
+        },
+        {
+          "case": "gpt-probe-key-value-binding",
+          "seed": 1,
+          "updates": 30000
+        },
+        {
+          "case": "gpt-probe-key-value-binding",
+          "seed": 2,
+          "updates": 30000
+        },
+        {
+          "case": "arithmetic-square-sum",
+          "seed": 0,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-square-sum",
+          "seed": 1,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-square-sum",
+          "seed": 2,
+          "updates": 100000
+        }
+      ],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "508b7e24333b6eeb054491897f3f190a7343b378133688826f9ec5be556c1d7b",
+      "source_files_verified": 22,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "peri-rms-scaled-csa-lr1": {
+      "file": "research/early99/results/round2/audit-csa-lr1-screen.json",
+      "completed": 18,
+      "passed": 15,
+      "censored": [
+        {
+          "case": "arithmetic-square-sum",
+          "seed": 0,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-square-sum",
+          "seed": 1,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-square-sum",
+          "seed": 2,
+          "updates": 100000
+        }
+      ],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "0e0c4016fa53bf79ba1f4c8ae9c68e7cd5506b822b55a357a188c662c8ba242a",
+      "source_files_verified": 23,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "peri-rms-scaled-csa-lr2": {
+      "file": "research/early99/results/round2/audit-csa-lr2-screen.json",
+      "completed": 18,
+      "passed": 18,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "12301eb7cc82f3467490b475289989af94fa670ebb6ab2e4b1c4ea2a245384c3",
+      "source_files_verified": 23,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "adamw-lr2p5": {
+      "file": "research/early99/results/round2/audit-lr2p5-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "db877c896a022e0f1046c344a3f2ba1ece7c55421a3c021ffb0b13ec3a8b3f91",
+      "source_files_verified": 22,
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-embedding-lr2": {
+      "file": "research/early99/results/round2/audit-peri-embedding.json",
+      "completed": 18,
+      "passed": 18,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "97c4134ef529c8b8ad46352cda4ee177fabe3965bf85adc4eed5cdbb5ed6b841",
+      "source_files_verified": 22,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "peri-rms-scaled-lerope-lr2": {
+      "file": "research/early99/results/round2/audit-peri-rms-scaled-lerope-lr2-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "45964bf39536c51797b26ed3b77a25e6916ff84b826f3f0b50372a3b322a60cc",
+      "source_files_verified": 26,
+      "minimum_parameters": 100744,
+      "maximum_parameters": 1183504
+    },
+    "peri-rms-scaled-ssmax-lerope-log-angle-lr2": {
+      "file": "research/early99/results/round2/audit-peri-rms-scaled-ssmax-lerope-log-angle-lr2-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "102d6b77174133b628dfdd8b08d0bdbafedb7f6ead595e249319ba6022a4d69a",
+      "source_files_verified": 26,
+      "minimum_parameters": 100744,
+      "maximum_parameters": 1183504
+    },
+    "peri-rms-scaled-ssmax-lerope-lr2": {
+      "file": "research/early99/results/round2/audit-peri-rms-scaled-ssmax-lerope-lr2-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "4979a9b6227008193946e1ea8b8edd960159f07c40b09b9c1936a907e92b1915",
+      "source_files_verified": 26,
+      "minimum_parameters": 100744,
+      "maximum_parameters": 1183504
+    },
+    "peri-rms-scaled-ssmax-lr2": {
+      "file": "research/early99/results/round2/audit-peri-rms-scaled-ssmax-lr2-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "f2e2838bd0e3892a2cdc0818cebd1822b77fc281bf327a383150ec09a68a5479",
+      "source_files_verified": 26,
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-scaled-ssmax-noqk-lr2": {
+      "file": "research/early99/results/round2/audit-peri-rms-scaled-ssmax-noqk-lr2-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "8549242296e7d1b00780be299b01be715784de068a450f7cae4e470c44797d94",
+      "source_files_verified": 26,
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    },
+    "peri-rms-scaled-lr2": {
+      "file": "research/early99/results/round2/audit-peri-scaled-full-short.json",
+      "completed": 75,
+      "passed": 75,
+      "censored": [],
+      "execution_errors": 0,
+      "resumed": 0,
+      "candidate_plan_sha256": "e82fec1d851e03e7e5c77d0a935ab029a20827d8b3600596fcbd74f5a883fecc",
+      "source_files_verified": 22,
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    }
+  },
+  "deep_checkpoint_loading_repeated": false,
+  "proof_fixtures_hash_verified": [
+    "research/early99/guarantees/PeriBounds.lean",
+    "research/early99/guarantees/CausalCentering.lean",
+    "research/early99/guarantees/ScalableSoftmax.lean",
+    "research/early99/guarantees/LearnedRotary.lean",
+    "research/early99/guarantees/NormalizedScores.lean",
+    "research/early99/guarantees/LogScaledRotary.lean"
+  ],
+  "proof_compilation_repeated": false,
+  "selected_name": "peri-rms-scaled-ssmax-noqk-lr2",
+  "selected_long_cells_present": 21,
+  "expected_long_cells": 30,
+  "complete_long_reports_and_checkpoint_audit_verified": false,
+  "round2_results_ready_for_final_writeup": false,
+  "audit_source_sha256": "c1ba104d9a3fe27b9fa373cec55dd75ce4b7f772611ba7c2a44769f283e3439e",
+  "scope": "Read-only reconstruction of reported raw-history comparisons, screen gates, CSVs, source archives and frozen hashes. No training or reselection. Partial long outcomes are not analyzed. Deep checkpoint validation and proof compilation are separate recorded checks. This is not a claim that final documentation/commits or subsequent research are complete."
+}

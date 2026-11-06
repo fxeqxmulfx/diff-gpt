@@ -24,6 +24,10 @@ candidate**; the small-benchmark winner is an ablation, not a universal-model
 recommendation. SSMax/QK is the strongest completed Q/K-normalized arm at
 **24.3271 epochs**, **29.0% fewer** than LR ×2.
 
+The [reporting audit](../early99_reporting/README.md) reconstructs every screen
+decision and full short comparison from raw histories, verifies JSON/CSV and
+frozen hashes, and checks the long reports once the diagnostic finishes.
+
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
 probes now use exact generated vectors, not their former MSE target. Validation

@@ -1,0 +1,27 @@
+import hashlib
+import json
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+main = Path('/home/misha/python_projects/gpt')
+progress = Path('/tmp/early99_final_phase_progress.json')
+short_progress = Path('/tmp/early99_attention_full_progress.json')
+selection = main / 'research/early99/results/round2/selection.json'
+assert not selection.exists(), 'A frozen selection already exists; inspect before continuing'
+progress.write_text(json.dumps({'phase': 'waiting_for_all_required_short_audits'}))
+while True:
+    try:
+        state = json.loads(short_progress.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        state = {}
+    if state.get('phase') == 'all_required_short_complete':
+        break
+    time.sleep(10)
+subprocess.run([sys.executable, '/tmp/early99_round2_finalize_short.py'], cwd=main, check=True)
+frozen = json.loads(selection.read_text())
+progress.write_text(json.dumps({'phase': 'frozen_selection_running_reused_long', 'selected': frozen['selected_name'], 'selection_sha256': hashlib.sha256(selection.read_bytes()).hexdigest()}))
+if frozen['new_short_winner']:
+    subprocess.run([sys.executable, '/tmp/early99_run_frozen_long.py'], cwd=main, check=True)
+progress.write_text(json.dumps({'phase': 'reused_long_and_audit_complete', 'selected': frozen['selected_name']}))

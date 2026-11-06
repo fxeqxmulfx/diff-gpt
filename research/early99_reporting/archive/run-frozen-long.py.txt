@@ -1,0 +1,31 @@
+import hashlib
+import json
+import subprocess
+import sys
+from pathlib import Path
+main=Path('/home/misha/python_projects/gpt')
+results=main/'research/early99/results/round2'
+selection_path=results/'selection.json'
+selection_bytes=selection_path.read_bytes()
+selection=json.loads(selection_bytes)
+assert selection['new_short_winner']
+name=selection['selected_name']
+assert name in selection['eligible_full_coverage_geometric_mean_epochs']
+output=main/'runs/early99/candidates'/name
+assert hashlib.sha256((output/'plan.json').read_bytes()).hexdigest()==selection['candidate_plan_sha256'][name]
+if name in ['adamw-lr2p5','peri-rms-scaled-lr2']:
+    cwd=Path('/tmp/early99-refinement-replay-9e57')
+elif name in ['peri-rms-scaled-ssmax-lr2','peri-rms-scaled-ssmax-noqk-lr2','peri-rms-scaled-lerope-lr2']:
+    cwd=Path('/tmp/early99-attention-replay-7cff')
+elif name=='peri-rms-scaled-ssmax-lerope-lr2':
+    cwd=Path('/tmp/early99-combined-replay-57aa')
+else:
+    cwd=main
+config=cwd/f'research/early99/configs/{name}.json'
+common=[sys.executable,'-m','research.early99.experiments.run','--configuration',str(config),'--output',str(output),'--baseline',str(main/'runs/early99/baseline')]
+subprocess.run(common+['--write-plan'],cwd=cwd,check=True)
+subprocess.run(common+['--run','--tier','long'],cwd=cwd,check=True)
+assert selection_bytes==selection_path.read_bytes()
+subprocess.run([sys.executable,'/tmp/early99_round2_refinement_audit.py','--name',name,'--full','--long','--output',str(results/f'audit-{name}-complete.json')],cwd=cwd,check=True)
+subprocess.run([sys.executable,'/tmp/early99_round2_finalize_long.py'],cwd=main,check=True)
+assert selection_bytes==selection_path.read_bytes()

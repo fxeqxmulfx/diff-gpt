@@ -1,0 +1,118 @@
+"""Freeze the full short-suite choice before one reused long diagnostic."""
+import hashlib
+import json
+import math
+import shutil
+import statistics
+from datetime import datetime, timezone
+from pathlib import Path
+
+from research.early99.experiments.compare import comparison
+from research.early99.protocol import selected
+
+results=Path('research/early99/results/round2')
+assert not (results/'selection.json').exists(), 'Do not replace a frozen selection'
+new_names=['adamw-lr2p5','peri-rms-scaled-lr2']
+csa='peri-rms-scaled-csa-lr2'
+csa_lr1='peri-rms-scaled-csa-lr1'
+attention_extensions=['peri-rms-scaled-ssmax-lr2','peri-rms-scaled-ssmax-noqk-lr2','peri-rms-scaled-lerope-lr2','peri-rms-scaled-ssmax-lerope-lr2','peri-rms-scaled-ssmax-lerope-log-angle-lr2']
+for extension in [csa,csa_lr1]+attention_extensions:
+    extension_screen=json.loads((results/f'screen-{extension}.json').read_text())
+    if extension_screen['advance']:
+        new_names.append(extension)
+all_names=['adamw-lr3','adamw-lr2-beta95','adamw-lr3-cosine200','peri-rms-lr2','peri-rms-embedding-lr2']+['adamw-lr2p5','peri-rms-scaled-lr2',csa,csa_lr1]+attention_extensions
+reports={}
+for name in new_names:
+    root=Path('runs/early99/candidates')/name
+    assert json.loads((results/f'screen-{name}.json').read_text())['advance']
+    for task in selected('long'):
+        assert not list((root/task['name']).glob('seed*/result.json')), 'Long ran before selection'
+    reports[name]={}
+    for label,control in [('baseline',Path('runs/early99/baseline')),('lr2',Path('runs/early99/candidates/adamw-lr2'))]:
+        directory=root/'comparisons'/label
+        report=comparison(control,root,'short',output=directory)
+        assert report['expected_cells']==75
+        assert all(r['candidate_status'] in ['passed','budget_exhausted'] for r in report['runs']), 'Incomplete or erroneous short cells'
+        reports[name][label]=report
+        for suffix in ['.json','.csv','-tasks.csv']:
+            shutil.copyfile(directory/('comparison-short'+suffix),results/(f'{name}-vs-{label}-short'+suffix))
+reports['adamw-lr3']={label:json.loads((results/f'adamw-lr3-vs-{label}-short.json').read_text()) for label in ['baseline','lr2']}
+
+
+def measurement(report,prefix):
+    rows=report['runs']
+    values=[r[prefix+'_first99_epochs'] for r in rows]
+    return dict(passed=sum(r[prefix+'_status']=='passed' for r in rows),expected=75,
+        geometric_mean_first99_epochs=math.exp(statistics.mean(math.log(v) for v in values)) if all(v is not None and v>0 for v in values) else None,
+        trainer_seconds_including_setup_scoring=sum(r[prefix+'_seconds_last_run_segment'] for r in rows))
+
+
+def metrics(report):
+    ratios=[r for r in report['runs'] if r['epoch_ratio'] is not None]
+    ratio=report['geometric_mean_epoch_ratio']
+    return dict(geometric_mean_epoch_ratio=ratio,epoch_reduction_fraction=1-ratio if ratio is not None else None,
+        earlier=report['paired_earlier'],tied=report['paired_tied'],later=report['paired_later'],
+        worst_observed_paired_epoch_ratio=max((r['epoch_ratio'] for r in ratios),default=None),
+        largest_regressions=[{k:r[k] for k in ['case','seed','epoch_ratio','baseline_first99_epochs','candidate_first99_epochs']} for r in sorted(ratios,key=lambda r:r['epoch_ratio'],reverse=True)[:5] if r['epoch_ratio']>1],
+        censored_or_errors=report['failures_and_pending'])
+
+first=reports[new_names[0]]
+summary=dict(baseline=measurement(first['baseline'],'baseline'),incumbent_lr2=measurement(first['lr2'],'baseline'),candidates={},
+    original_parameter_counts_and_initialization_identical_in_every_pair=True,
+    additional_capacity='LeRoPE adds head_dim/2 shared zero-initialized log-frequency scalars; every candidate reports its actual parameter counts.',
+    runtime_note='Each trainer clock includes setup, compilation and scoring; dispatcher startup and separate data preflight are excluded. No resumed cells.',
+    guarantees_record='research/early99/results/round2/guarantees.json')
+for name in all_names:
+    screen=json.loads((results/f'screen-{name}.json').read_text())
+    # Older screen reports use different naming; retain the original full record path.
+    entry=dict(screen_report=f'research/early99/results/round2/screen-{name}.json',
+        full_short_evaluated=name in reports,formal_note='Scaled Peri-RMS variants retain the embedding-independent residual bound; SSMax has a conditional margin bound. Ordinary LeRoPE retains relative-token-position identities; Log-Scaled LeRoPE retains norm preservation with warped displacements and loses ordinary translation invariance. See the separate checked guarantee records.')
+    if name in reports:
+        pair=reports[name]
+        parent_path=results/f'{name}-vs-peri-scaled-short.json'
+        if parent_path.exists():
+            entry['vs_same_scaled_parent']=metrics(json.loads(parent_path.read_text()))
+        entry.update(measurement=measurement(pair['baseline'],'candidate'),vs_baseline=metrics(pair['baseline']),vs_lr2=metrics(pair['lr2']),
+            minimum_parameters=min(r['candidate_parameters'] for r in pair['baseline']['runs']),
+            maximum_parameters=max(r['candidate_parameters'] for r in pair['baseline']['runs']))
+    else:
+        entry['full_suite_geometric_mean_first99_epochs']=None
+        entry['decision']='Rejected at the predeclared screen; no full-suite speed claim'
+    summary['candidates'][name]=entry
+
+eligible={'adamw-lr2':summary['incumbent_lr2']['geometric_mean_first99_epochs']}
+for name,r in reports.items():
+    m=measurement(r['baseline'],'candidate')
+    if m['passed']==75:
+        eligible[name]=m['geometric_mean_first99_epochs']
+winner=min(eligible,key=eligible.get)
+new_winner=winner!='adamw-lr2'
+summary['selected_name']=winner
+summary['selected_qk_rms'] = 'noqk' not in winner
+summary['selected_score_bound_note'] = ('No uniform score bound independent of projection norms; scaled residual-state bound retained.' if 'noqk' in winner else 'Q/K RMS retains the checked score bound; this does not imply a positive winning margin or convergence.')
+summary['selected_position_map'] = 'p * log(p + 1)' if 'log-angle' in winner else 'p'
+summary['shared_model_objective'] = 'The user requires one architecture across small and large tasks. Keep Q/K RMS in the main shared-model candidate; no-QK remains an ablation. This selection reports the declared small-suite benchmark winner, not a universal-model recommendation. Cross-scale validation follows this completed round.'
+summary['eligible_full_coverage_geometric_mean_epochs']=eligible
+summary_path=results/'final-short-summary.json'
+summary_path.write_text(json.dumps(summary,indent=2)+'\n')
+plans=['plan.json','schedule-plan.json','peri-rms-plan.json','peri-embedding-plan.json','refinement-plan.json','csa-plan.json','csa-lr-plan.json','ssmax-plan.json','lerope-plan.json','ssmax-lerope-plan.json','ssmax-lerope-log-angle-plan.json']
+selection=dict(selected_at_utc=datetime.now(timezone.utc).isoformat(),
+    selected_configuration=json.loads(Path(f'research/early99/configs/{winner}.json').read_text()),new_short_winner=new_winner,
+    selected_name=winner,
+    selected_qk_rms=summary['selected_qk_rms'],
+    selected_score_bound_note=summary['selected_score_bound_note'],
+    selected_position_map=summary['selected_position_map'],
+    shared_model_objective=summary['shared_model_objective'],
+    selection_data='All 75 paired short cells for every promoted candidate; no round-2 long cells have been run.',
+    selection_reason='The unchanged declared rule prioritizes complete 75-cell coverage, then lowest full-suite geometric-mean epochs. Screened-out candidates retain all rows but are ineligible for a full-suite speed claim.',
+    mathematical_criterion='Report stronger proven properties alongside performance. The normalized/scaled candidates have an embedding-independent 1+sqrt(2L) residual RMS bound. The causal-centering extension also has checked zero-row-sum and prefix identities. Optimizer-only candidates do not add these properties. No speed, convergence or floating-point theorem follows from them.',
+    eligible_full_coverage_geometric_mean_epochs=eligible,
+    candidate_plan_sha256={name:hashlib.sha256((Path('runs/early99/candidates')/name/'plan.json').read_bytes()).hexdigest() for name in all_names+['adamw-lr2']},
+    search_plan_sha256={name:hashlib.sha256((results/name).read_bytes()).hexdigest() for name in plans},
+    short_summary_sha256=hashlib.sha256(summary_path.read_bytes()).hexdigest(),
+    comparison_sha256={f'{name}-vs-{label}':hashlib.sha256((results/f'{name}-vs-{label}-short.json').read_bytes()).hexdigest() for name in reports for label in ['baseline','lr2','peri-scaled','ssmax-qk','lerope','ssmax-lerope'] if (results/f'{name}-vs-{label}-short.json').exists()},
+    guarantee_record_sha256={f:hashlib.sha256((results/f).read_bytes()).hexdigest() for f in ['guarantees.json','csa-guarantees.json','attention-extension-guarantees.json','log-angle-guarantees.json']},
+    long_policy='A new short winner receives exactly one 30-cell evaluation at original budgets on the already observed long regression suite. This is reused diagnostic evidence, not fresh holdout. No tuning or reselection using long outcomes. If the incumbent is retained, keep its existing long report without rerunning.',
+    status='Frozen short-suite selection before any new long regression run')
+(results/'selection.json').write_text(json.dumps(selection,indent=2)+'\n')
+print(json.dumps(dict(selection=selection,short=summary),indent=2))
