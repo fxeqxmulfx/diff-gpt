@@ -91,6 +91,32 @@ or held-out scoring. The first attention branch/residual RMS ratio ranges from
 the initial scale interaction, not the cause of later learning outcomes. It does
 not change the declared candidates or selection policy.
 
+A [retrospective key/value curve report](results/key-value-curves.json) retains
+all **1,962 observations from 12 completed runs**: the original LR×2 model,
+embedding RMS alone, scaled Peri-RMS alone, and their existing combination,
+each with seeds 0/1/2. This task was chosen after observing the three Peri-only
+misses; it is descriptive evidence, not an additional selection gate or a causal
+explanation of the long-suite failures. Exact full-split counts, first crossings,
+sample exposure, paired provenance and zero replay are checked against the raw
+histories. No training or scoring is performed by this report.
+
+![All recorded key/value learning observations](results/key-value-curves.png)
+
+Scaled Peri-RMS alone first reaches 99% training accuracy at epochs 41, 35 and 42,
+but never exceeds held-out accuracies 48.63%, 46.88% and 47.66% through the fixed
+468.75-epoch budget. Embedding RMS alone has a delayed held-out rise and reaches
+99% at epochs 146, 115 and 192. The combined model reaches that threshold at
+15, 9 and 20 epochs, versus 16, 26 and 4 for the original LR×2 model. These are
+three individual paired seeds, not evidence that the combination always improves.
+The [CSV](results/key-value-curves.csv), [SVG](results/key-value-curves.svg), and
+[figure provenance](results/key-value-curves-figure.json) preserve every curve,
+including the initial zero-update points and budget misses, without smoothing.
+
+```bash
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.early99_core_ablations_reporting.key_value_curves
+MPLCONFIGDIR=/tmp/gpt-core-curves-mpl /usr/bin/python3 research/early99_core_ablations_reporting/plot_key_value.py
+```
+
 Status: the remaining two screens continue from validated source `00b6224`.
 No full-suite result or new winner is established yet.
 The incomplete Muon study and proposed numerical repair remain deferred.

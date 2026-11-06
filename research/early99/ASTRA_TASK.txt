@@ -826,3 +826,14 @@ type-inference proof source/log and all final evidence. The zero-input result is
 not evidence that the measured embeddings operate near zero, and does not bound
 the full residual/readout network or explain its learning failures. No benchmark
 source, setting, selection rule or unresolved numerical-stress result changed.
+
+The retrospective key/value learning-curve report retains all1962observations
+from12completed runs: originalLR2,embedding-only,scaledPeri-only,andboth,each
+withthree seeds. The task was chosen after observing the three Peri-only misses;
+this descriptive report performs no training/scoring and changes no selection.
+Allthree Peri-only runs first cross99%training at41/35/42epochs but remain below
+49%held-out through468.75epochs. Embedding-only crosses99%held-out at146/115/192;
+both at15/9/20;original at16/26/4. Preserve each seed,all initial observations,
+the full budget misses and raw provenance; do not infer long-suite causality.
+Exact full-split counts,first crossings,paired exposure and zero replay are
+verified. CSV,PNG,SVG and source/figure hashes are in the core-ablation results.
