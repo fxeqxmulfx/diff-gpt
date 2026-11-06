@@ -52,15 +52,41 @@ task and seed scope. Reports remain separate from the fixed benchmark ranking.
 The [initialization audit](../cubic_initialization_diagnostic/README.md) confirms
 that widening under the unchanged `Normal(0, 0.02)` recipe changes activation
 and local gradient scales. Those changes are part of this declared intervention.
-The first two completed new cells (two layers, width 128, original LR1) both
-exhaust their 100,000-update budgets. Seed 0 peaks at 97.05% held-out accuracy
-and finishes at 88.06%; seed 1 peaks at 96.94% and finishes at 86.87%. Final
-training accuracy is 99.87% and 99.98%, respectively. The
-[seed-0 audit](results/partial-audit-depth-original-lr1-seed0.json) and
-[seed-1 audit](results/partial-audit-depth-original-lr1-seed1.json) verify native
-checkpoints, sources, initialization, optimizer states and complete observations,
-with no resumption or replay. **2/27 new cells** are complete; seed 2 is running.
-This is not yet a three-seed conclusion about depth or the enlarged normalized model.
+The first complete three-seed contrast is the original architecture at LR 0.001:
+the one-layer controls reach 99% held-out accuracy on **3/3 seeds**, while the
+two-layer model reaches it on **0/3** within 100,000 updates per seed. Width stays
+128; parameters increase from 208,896 to 405,376. The
+[complete group audit](results/partial-group-cubic-depth-original-lr1.json)
+verifies all six native checkpoints, source archives, initialized tensors,
+optimizer states and complete observations, with no resumption or replay.
+
+| Seed | One-layer first-99 epochs | Two-layer peak held-out | Two-layer final held-out | Two-layer final train |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 3,531 | 97.05% | 88.06% | 99.87% |
+| 1 | 3,197 | 96.94% | 86.87% | 99.98% |
+| 2 | 4,315 | 87.40% | 85.67% | 99.91% |
+
+Each two-layer miss consumes 5,263.163265 epochs. No first-99 average or speed
+ratio is assigned to those misses. The [learning curves](results/partial-group-cubic-depth-original-lr1.png)
+show every seed and both complete splits; [SVG](results/partial-group-cubic-depth-original-lr1.svg)
+and the [paired comparison CSV](results/partial-group-cubic-depth-original-lr1.csv)
+are also available. Earlier individual seed audits remain preserved.
+
+This completes **3/27 new cells**, not the capacity study. Adding depth under
+this particular original-model recipe did not improve coverage within the
+fixed budget. Width, the higher learning rate and the enlarged normalized model
+remain pending. The dispatcher continues with two layers at original LR 0.002;
+the remaining 24 cells and the subsequent usual-gain test keep their declared order.
+
+The partial reporter requires all three seeds and writes separate artifacts
+that cannot close the full study. Its incomplete-group guard rejected the
+two-seed subset before the third result existed. Reproduce this six-cell audit
+and figure without retraining:
+
+```sh
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr1
+MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr1
+```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:
 
