@@ -1,0 +1,71 @@
+{
+  "declared_at_utc": "2026-11-06T16:18:46.802626+00:00",
+  "question": "Which individual additions change learning when applied to the original Q/K-normalized architecture rather than the combined inverse-width stack?",
+  "user_direction": "Return to the old model and isolate architecture changes. Preserve interrupted Muon work; defer the remaining optimizer and numerical-repair studies.",
+  "configurations": [
+    {
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "baseline",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "name": "core-embedding-rms-lr2",
+      "mechanism": "embedding_rms"
+    },
+    {
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "baseline",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "name": "core-scaled-peri-rms-lr2",
+      "mechanism": "scaled_peri_rms"
+    },
+    {
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "baseline",
+      "schedule": "constant",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.5,
+      "name": "core-ssmax-lr2",
+      "mechanism": "ssmax"
+    }
+  ],
+  "control": "adamw-lr2",
+  "screen_control": "runs/early99/candidates/adamw-lr2",
+  "shared_incumbent": "peri-rms-scaled-ssmax-inverse-width-lr2",
+  "shared_incumbent_short_gm_epochs": 16.266050125508265,
+  "embedding_rms": "Add parameter-free RMS only to token embeddings, preserving the tied readout tensor. Residual branches and attention remain original.",
+  "scaled_peri_rms": "Add parameter-free RMS to both branch output projections and post-RMS coefficient1/sqrt(2L). Keep original unnormalized embeddings, fixed Q/K gain and ordinary softmax. The separately completed unscaled Peri-RMS screen is retained as a negative control.",
+  "ssmax": "Multiply normalized queries after fixed RoPE by log(visible keys), retaining the original fixed per-head gain exp(log_alpha)/d, approximately1/sqrt(d). Keep original embeddings and unnormalized, unit-scaled residual branches. No inverse-width override.",
+  "invariants": "Original Q/K RMS, centered XSA, SwiGLU, fixed RoPE, tied weights, initialization/RNG and parameter names/order/count. Native AdamW(.9,.98),epsilon1e-8,case weight decay,LR2,50completed-update warmup from zero then constant. Fixed data/seeds/batches/budgets/exact full-heldout scoring and cadence. FP32 highest; no numerical repair or optimizer ablation.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_policy": "Complete all3 declared18-cell screens. Each requires18/18passes and at least3 of6 improved paired task medians against original-model LR2. Reconstruct gates for every admissible replay-exposure interval; ambiguous promotion needs a separately declared repeat. Preserve all misses/errors; no filtered screen mean.",
+  "full_policy": "Complete all75short cells for every promoted arm. Report all paired rows, per-task medians/worst, coverage and runtime against LR2,baseline and the inverse-width shared incumbent, plus completed corresponding combined-stack controls. Full-suite means require75/75. Keep inverse-width as the previously selected benchmark incumbent unless a new complete candidate has a lower all75 mean. Use upper/lower physical-exposure bounds; ambiguity between potential winners requires a separately declared repeat. A favorable branch-relative result alone does not silently replace the global incumbent.",
+  "long_policy": "Only a newly frozen and committed all75 shared winner gets one reused30-cell long diagnostic. No duplicate long run for a retained incumbent. Do not use long outcomes for model/rate selection or tuning. These short single-addition tests alone cannot establish the cause of prior long failures.",
+  "validation": "Independent forward and all-gradient equations; exact initialization/weights/buffers/RNG and capacity across all35task specifications; actual Q/K gain and SSMax singleton/causal/cached counts; embedding tying and explicit normalization epsilon; native CUDA graph/eager updates and nonempty optimizer restoration for all3mechanisms, with tails and zero-rate first update; complete CPU trainer resume, unchanged journal and benchmark integrity.",
+  "mathematics": "Check the precise changed sites. Embedding-only bounds its input but does not bound unnormalized residual branches. Scaled-Peri without embedding RMS bounds hidden growth relative to the initial embedding norm, not by the previous absolute1+sqrt(2L) bound. SSMax keeps the original rounded gain and its corresponding normalized-score bound. State real-arithmetic assumptions, finite-precision tests and learning results separately.",
+  "source_policy": "Commit plan before implementation validation and validated scientific sources before training. Separate scientific/reporting siblings; reuse the unchanged native journaled training loop. Preserve every old frozen source, control, failure, selection and interrupted Muon artifact.",
+  "evidence_sha256": {
+    "research/early99/suite.json": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436",
+    "runs/early99/candidates/adamw-lr2/plan.json": "eb55f026d26144db633be17ec41b6ded461a69906b93f98327f74b0490bade9c",
+    "research/early99/results/round2/final-short-summary.json": "d61d2839f395fc4d155b1ea964efc573f176908c4e875c7d8967be9575c7db7c",
+    "research/early99/results/round2/screen-peri-rms-lr2.json": "b404a99890bf3a51fa980ed4995a50ea88916d9acc1c1ca06f67eb9d3f142ca8",
+    "research/early99_dimension_gain/results/shared-selection.json": "dfa88e7d98a789281983f58a4eb15dcbf190f0dd908eaed686022895ac626e28",
+    "research/early99_dimension_gain/results/selection-integrity.json": "91b7eb9742213dbc61709011f9900f1a02b0ab39555d2a431717b10e4a14a736",
+    "research/early99_optimizer_followups/results/muon-pivot-20261106.json": "6ea3c0013c7771404f90ce2fe2e815cf2000a0c08b9bb3afe821a731783f5d9b"
+  }
+}
