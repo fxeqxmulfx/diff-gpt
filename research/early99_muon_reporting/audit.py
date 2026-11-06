@@ -211,6 +211,9 @@ result = {
     "audited_at_utc": datetime.now(UTC).isoformat(),
     "candidates": records,
     "auditor_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    "checkpoint_checker_sha256": hashlib.sha256(
+        Path(__file__).with_name("checkpoint.py").read_bytes()
+    ).hexdigest(),
     "completed_new_scientific_runs": sum(r["completed"] for r in records.values()),
     "all_checkpoints_histories_protocols_and_sources_retained": True,
     "checkpoint_optimizer_steps_and_settings_verified": True,

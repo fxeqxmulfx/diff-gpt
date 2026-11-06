@@ -1,0 +1,105 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________ test_complete_improvement_must_survive_all_replayed_work ___________
+
+    def test_complete_improvement_must_survive_all_replayed_work() -> None:
+        """A lower bound alone cannot justify displacing the parent."""
+        with pytest.raises(AssertionError, match="Overlapping"):
+>           select_winner("parent", 16, {"new": measured(15, 17)})
+
+tests/diff_gpt/application/test_early99_muon_selection.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+research/early99_muon_reporting/selection.py:39: in select_winner
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'Overlapping winner intervals require a separately declared repeat'
+
+    def require(condition: bool, message: str) -> None:  # noqa: FBT001
+        """Keep integrity checks active even if Python is invoked with optimization."""
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Overlapping winner intervals require a separately declared repeat
+
+research/early99_reporting/round2_audit.py:29: ValueError
+_______ test_two_new_winners_with_overlapping_intervals_need_repetition ________
+
+    def test_two_new_winners_with_overlapping_intervals_need_repetition() -> None:
+        """Being better than the parent does not settle ranking between new arms."""
+        with pytest.raises(AssertionError, match="Overlapping"):
+>           select_winner("parent", 16, {"a": measured(13, 14), "b": measured(13.5, 15)})
+
+tests/diff_gpt/application/test_early99_muon_selection.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+research/early99_muon_reporting/selection.py:39: in select_winner
+    require(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False
+message = 'Overlapping winner intervals require a separately declared repeat'
+
+    def require(condition: bool, message: str) -> None:  # noqa: FBT001
+        """Keep integrity checks active even if Python is invoked with optimization."""
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Overlapping winner intervals require a separately declared repeat
+
+research/early99_reporting/round2_audit.py:29: ValueError
+__________ test_ties_retain_parent_and_failures_have_no_filtered_mean __________
+
+    def test_ties_retain_parent_and_failures_have_no_filtered_mean() -> None:
+        """Coverage takes priority; an exact tie retains the first declared incumbent."""
+        assert select_winner("parent", 16, {"new": measured(16, 16)})[0] == "parent"
+        assert select_winner("parent", 16, {"new": measured(16, 17)})[0] == "parent"
+        assert (
+            select_winner("parent", 16, {"fast_but_missing": measured(None, None, 74)})[0]
+            == "parent"
+        )
+        with pytest.raises(AssertionError, match="must not have a mean"):
+>           select_winner("parent", 16, {"filtered": measured(1, 1, 74)})
+
+tests/diff_gpt/application/test_early99_muon_selection.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+research/early99_muon_reporting/selection.py:23: in select_winner
+    require(low is None and high is None, "Failed cells must not have a mean")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, message = 'Failed cells must not have a mean'
+
+    def require(condition: bool, message: str) -> None:  # noqa: FBT001
+        """Keep integrity checks active even if Python is invoked with optimization."""
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Failed cells must not have a mean
+
+research/early99_reporting/round2_audit.py:29: ValueError
+__________________ test_partial_grid_cannot_establish_winner ___________________
+
+    def test_partial_grid_cannot_establish_winner() -> None:
+        """A quick screen is not a 75-cell aggregate even if every screen cell passes."""
+        partial = {**measured(1, 1, 18), "expected": 18}
+        with pytest.raises(AssertionError, match="Incomplete short grid"):
+>           select_winner("parent", 16, {"screen": partial})
+
+tests/diff_gpt/application/test_early99_muon_selection.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+research/early99_muon_reporting/selection.py:19: in select_winner
+    require(measured["expected"] == SHORT_CELLS, "Incomplete short grid")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+condition = False, message = 'Incomplete short grid'
+
+    def require(condition: bool, message: str) -> None:  # noqa: FBT001
+        """Keep integrity checks active even if Python is invoked with optimization."""
+        if not condition:
+>           raise ValueError(message)
+E           ValueError: Incomplete short grid
+
+research/early99_reporting/round2_audit.py:29: ValueError
+=========================== short test summary info ============================
+FAILED tests/diff_gpt/application/test_early99_muon_selection.py::test_complete_improvement_must_survive_all_replayed_work
+FAILED tests/diff_gpt/application/test_early99_muon_selection.py::test_two_new_winners_with_overlapping_intervals_need_repetition
+FAILED tests/diff_gpt/application/test_early99_muon_selection.py::test_ties_retain_parent_and_failures_have_no_filtered_mean
+FAILED tests/diff_gpt/application/test_early99_muon_selection.py::test_partial_grid_cannot_establish_winner
+4 failed in 1.28s

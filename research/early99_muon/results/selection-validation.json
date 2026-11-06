@@ -1,0 +1,27 @@
+{
+  "checked_at_utc": "2026-11-06T10:47:06.454171+00:00",
+  "exit_code": 0,
+  "passed": 5,
+  "source_sha256": {
+    "research/early99_muon_reporting/__init__.py": "9d238409fce5bb27435e1bf44bf75d38b2bd5ba81ef5a128d46355f94ae269f2",
+    "research/early99_muon_reporting/audit.py": "5c41c83f7062ecf80a0354c4b5e66d12b1050743b39ef61ec48b3512d789c2b0",
+    "research/early99_muon_reporting/checkpoint.py": "099b26681a8dd698411d554a6bcc6bea9a72853bf6562af48cb0707078a1acd6",
+    "research/early99_muon_reporting/finalize.py": "c33c127617abaa7908bdbdbe01aee75df8f0219b2763090b7c58e64290d7b59d",
+    "research/early99_muon_reporting/long_metrics.py": "ebadc92d27db7eb084cf58ac7eced99b44f5a82b578d8a5304012f61cf8be3e7",
+    "research/early99_muon_reporting/run_full.py": "f50f3c8d231141319acd53ce6edd8005b539ace0fdb97b718e535b561fdd518e",
+    "research/early99_muon_reporting/run_long.py": "fb71048e474dcf968a20a2e214ca327713f988952f7d2e5d3fbcccbe329e37b7",
+    "research/early99_muon_reporting/run_screens.py": "c6c7f1e5f5722366a278b18be8d1d907756ec590f2bffbaef45f1cf7f9f9837a",
+    "research/early99_muon_reporting/selection.py": "d53b9c164f245b1b821718c4b9f2ad7c0650d413591680a80ed3347f8038aad9",
+    "research/early99_muon_reporting/verify_results.py": "67f724b76ab215de274006bbbbc1d3769fef85e3e7f1f8ca3f0cec69f7183276",
+    "research/early99_muon_reporting/verify_screen.py": "2d4585275b372723df2794f4fb371d1be5ed0e25a0cab96551b83f43a780d22c",
+    "research/early99_optim_reporting/metrics.py": "5a1f5efade6fe81de76c3be5b56173ca7740155b95e4f1175f61a479cd04d56e",
+    "tests/diff_gpt/application/test_early99_muon_selection.py": "6813e99af6ba653f4c6f40b2a8c30f605cc74752268b12a5d2c658d882acd9f6"
+  },
+  "evidence_sha256": {
+    "research/early99_muon/results/selection-validation.txt": "c7925eb2e311d15d85295f1800bb4c1a4615e92948d29ec254aaddfce0d83e98",
+    "research/early99_muon/results/selection-validation.xml": "ddc4a7d2b74d859fc3ada574168d3a1b9acdc5e44da42b6afb374c4a01588a5f",
+    "research/early99_muon/results/selection-validation-initial-failure.txt": "61640507f571fa08cdab1025a1a2567fd1d62f55f0c9ba00e3c9096f4a7ea731"
+  },
+  "scope": "Replay-interval bounds must establish a complete75-cell winner against the parent and every other completed arm; ambiguous intervals require separately declared repetition. Exact ties retain the incumbent; failures cannot receive a filtered mean; a18-cell screen cannot qualify as a full aggregate. Long reports count successes with uncertain costs and retain all censor bounds. Imports of full-short/long/verifiers/closure checked without training. Twelve actual completed optimizer checkpoints independently passed the inventory/state checker.",
+  "initial_failure": "Test initially expected AssertionError while the existing require helper correctly raises ValueError; rejection checks were retained and corrected to that actual exception type."
+}
