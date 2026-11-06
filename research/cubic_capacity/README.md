@@ -18,4 +18,23 @@ declared run, preserve all failures and compare coverage before first-99 epochs.
 This study does not alter the frozen 75-cell benchmark or select its winner.
 Additional model capacity and compute are recorded rather than treated as free.
 
-Status: sizes, controls, seeds and budgets declared; validation and training pending.
+The [initialization inventory](results/inventory.json) verifies all 27 declared
+configuration/seed combinations: paired parameter values/order and RNG, raw tied
+weights, common rotary buffers, head width, exact gain and depth coefficient,
+training data and two complete shuffled epochs. Parameter counts are 405,376
+(depth), 811,520 (width), and 1,598,208 (both), versus 208,896 currently.
+
+Validation passes **22 checks**: 20 CPU checks and two actual CUDA cases at the
+largest size. Captured updates match uncaptured compiled updates under the
+existing tolerances; compiler rounding is checked separately. CUDA preparation
+preserves initialization, nonempty moments and RNG. Actual interrupted CPU
+trainer continuations restore parameters, moments, sampler and RNG exactly.
+The existing nine benchmark and six execution-journal checks also pass.
+
+The [validation record](results/validation.json) freezes training sources and
+evidence before execution. Separate output directories and process locks protect
+the completed controls. Every genuine update is journaled so any future recovery
+retains replay exposure. All 27 runs must finish; budget misses remain outcomes.
+
+Status: implementation validated; commit the source freeze before launching the
+complete declared grid. Reports remain separate from the fixed benchmark ranking.

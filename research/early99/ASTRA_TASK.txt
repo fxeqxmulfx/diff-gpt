@@ -942,3 +942,16 @@ including all failures,without screening or selecting a new75-cell winner.
 Validate configuration/initialization/data andthe larger nativeCUDAupdate and
 resume paths,thenfreeze sources before training. This one-task intervention
 is explicitly authorized after observing its long outcomes; report that scope.
+
+Cubic-sum capacity implementation validated
+All27configuration/seed initializations preserve paired weights/order,RNG,tied
+readout,head width32,gain,depth coefficients,data andtwoepochsampleorders.
+Parameter counts are405376(depth),811520(width),1598208(both),versus208896current.
+TwentyCPUchecks andtwoactualCUDAchecks pass,including9benchmarkand6journalchecks,
+largest-size captured/uncaptured compiled updates,separate compiler-rounding
+checks,nonemptyCUDAstate restoration andexact CPUtrainer continuation. The
+separate runner reuses the frozen native trainer and model factories,archives
+alltraining sources,locks dispatcher/cells,andjournals eachgenuineupdate. Freeze
+andcommit these records before all27trainingruns. No current-size cell is rerun;
+no fixed75-cell selection or oldlongdiagnostic changes. All10numericstressfailures
+remain unresolved; Muon andnumericrepair follow this requested capacity study.

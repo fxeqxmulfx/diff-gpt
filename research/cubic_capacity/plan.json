@@ -192,63 +192,63 @@
   ],
   "configurations": [
     {
-      "name": "cubic-depth-original_lr1",
+      "name": "cubic-depth-original-lr1",
       "size": "depth",
       "architecture": "original",
       "learning_rate_multiplier": 1.0,
       "arm": "original_lr1"
     },
     {
-      "name": "cubic-depth-original_lr2",
+      "name": "cubic-depth-original-lr2",
       "size": "depth",
       "architecture": "original",
       "learning_rate_multiplier": 2.0,
       "arm": "original_lr2"
     },
     {
-      "name": "cubic-depth-normalized_lr2",
+      "name": "cubic-depth-normalized-lr2",
       "size": "depth",
       "architecture": "inverse_width",
       "learning_rate_multiplier": 2.0,
       "arm": "normalized_lr2"
     },
     {
-      "name": "cubic-width-original_lr1",
+      "name": "cubic-width-original-lr1",
       "size": "width",
       "architecture": "original",
       "learning_rate_multiplier": 1.0,
       "arm": "original_lr1"
     },
     {
-      "name": "cubic-width-original_lr2",
+      "name": "cubic-width-original-lr2",
       "size": "width",
       "architecture": "original",
       "learning_rate_multiplier": 2.0,
       "arm": "original_lr2"
     },
     {
-      "name": "cubic-width-normalized_lr2",
+      "name": "cubic-width-normalized-lr2",
       "size": "width",
       "architecture": "inverse_width",
       "learning_rate_multiplier": 2.0,
       "arm": "normalized_lr2"
     },
     {
-      "name": "cubic-depth_width-original_lr1",
+      "name": "cubic-depth-width-original-lr1",
       "size": "depth_width",
       "architecture": "original",
       "learning_rate_multiplier": 1.0,
       "arm": "original_lr1"
     },
     {
-      "name": "cubic-depth_width-original_lr2",
+      "name": "cubic-depth-width-original-lr2",
       "size": "depth_width",
       "architecture": "original",
       "learning_rate_multiplier": 2.0,
       "arm": "original_lr2"
     },
     {
-      "name": "cubic-depth_width-normalized_lr2",
+      "name": "cubic-depth-width-normalized-lr2",
       "size": "depth_width",
       "architecture": "inverse_width",
       "learning_rate_multiplier": 2.0,
@@ -321,5 +321,6 @@
   ],
   "failure_policy": "Retain every budget miss,nonfinite failure,execution error andinterruption; no skipped seeds or filtered means. Resume only a confirmed terminal job and include all replay work from its durable journal.",
   "scope": "One-task capacity study explicitly authorized after observing long outcomes. It supplies descriptive evidence about this task and does not constitute untouched holdout evidence,universal scaling evidence,or tuning of the fixed75-cell selection.",
-  "next_after_completion": "Report and commit all outcomes; return to the unfinished Muon and numerical-repair work unless steered otherwise."
+  "next_after_completion": "Report and commit all outcomes; return to the unfinished Muon and numerical-repair work unless steered otherwise.",
+  "implementation_identifier_note": "Before training, output/configuration identifiers use hyphens because the frozen native configuration rejects underscores; the nine settings and their order are unchanged."
 }
