@@ -83,6 +83,33 @@ Ratios below one mean earlier observed 99% accuracy. This rejects embedding RMS
 as an isolated addition under this screen; it does not establish its effect in
 the combined stack or explain prior long-suite failures.
 
+The scaled-Peri-only arm completed all 18 runs with **14 passes and four budget
+misses**, and only **1/6** improved task medians. It does **not** advance.
+Its [checkpoint audit](results/audit-core-scaled-peri-rms-lr2-screen.json)
+verifies all 18 checkpoints, histories, update journals and 68 frozen source
+files, including finite final weights and complete finite AdamW moments with
+nonnegative second moments. There are no execution errors, resumptions or replay.
+All five control comparisons and their cell/task CSV files are retained; the
+promotion comparison is [against original LR×2](results/screen-core-scaled-peri-rms-lr2-vs-parent.json).
+
+| Screen task | Passed seeds | Median paired epoch ratio versus LR×2 |
+|---|---:|---:|
+| Boolean AND | 3/3 | 1.000 |
+| Power division, p193 k2 | 3/3 | 0.832 |
+| Power division, p97 k2 | 3/3 | 7.931 |
+| Key/value binding | 0/3 | Undefined: budget misses |
+| Square-sum | 2/3 | Undefined: one budget miss |
+| Linear transport | 3/3 | 1.000 |
+
+The three key/value misses each use the full 30,000-update budget. Square-sum
+seeds 0/1 reach 99% at 5,218/4,294 epochs, versus 420/419 for original LR×2.
+Seed 2 exhausts 100,000 updates (5,263.1633 epochs) without a crossing; its best
+held-out accuracy is 98.9586% and final accuracy is 98.4697%. Original LR×2 passes
+that seed at 451 epochs. The censored seed is retained, so no square-sum median
+ratio or aggregate screen mean is reported. These results isolate the declared
+scaled Peri-RMS addition with the original attention gain; they do not identify
+the cause of previous combined-stack long failures.
+
 A separate [initial-scale diagnostic](../core_initial_scale/README.md) completed
 72 forward measurements on the fixed screen's training prefixes, with no updates
 or held-out scoring. The first attention branch/residual RMS ratio ranges from
@@ -117,6 +144,7 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.ea
 MPLCONFIGDIR=/tmp/gpt-core-curves-mpl /usr/bin/python3 research/early99_core_ablations_reporting/plot_key_value.py
 ```
 
-Status: the remaining two screens continue from validated source `00b6224`.
+Status: the SSMax-only screen continues from validated source `00b6224`.
+Both completed normalization-only screens are rejected under the declared gate.
 No full-suite result or new winner is established yet.
 The incomplete Muon study and proposed numerical repair remain deferred.
