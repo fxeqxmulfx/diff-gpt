@@ -1,0 +1,42 @@
+{
+  "declared_at_utc": "2026-11-06T04:05:55.314511+00:00",
+  "question": "Can zero-initialized feed-forward biases improve the remaining residual generalization failures across both teachers?",
+  "parent_completion_commit": "1c39647",
+  "diagnosis_commit": "b50c8d7",
+  "motivation": "At decay 0.1, learned-even-zero reaches 15/24 (odd 12/12, mixed 3/12), while shifted reaches 9/24. All 24 selected-arm training scores meet the unchanged threshold. In the complete 144-checkpoint reflection diagnosis, mixed-teacher held-out odd and even errors both remain substantial (means 0.048040 and 0.047239 under one symmetric-probe normalization). A bias could help represent offsets and shifted features; that hypothesis is not established by the diagnosis.",
+  "single_change": "Add deterministic zero-initialized trainable FFN bias vectors, with two separate new arms: output projection bias only; or both gate/value hidden biases and output projection bias. Implement explicit additions around the same original bias-free linear modules. Preserve all original parameters and their RNG draws. Keep the existing even coefficient initialization, scalar residual gates, pre/post RMS and scaling.",
+  "bias_modes": [
+    "output",
+    "all"
+  ],
+  "control_bias_mode": "none",
+  "activation_variants": [
+    "shifted",
+    "learned_even"
+  ],
+  "teachers": [
+    "original_odd",
+    "mixed"
+  ],
+  "even_gain_initial": 0.0,
+  "variant": "peri_rezero",
+  "learning_rate": 0.01,
+  "weight_decay": 0.1,
+  "expected_new_cells": 96,
+  "reused_control_cells": 48,
+  "total_comparison_cells": 144,
+  "added_parameters": "For depth D, width d=16 and hidden h=43: output adds D*d; all adds D*(2*h+d). There is no new matrix or RNG draw. Explicitly report the capacity increase; do not call this a parameter-matched architecture comparison.",
+  "unchanged_protocol": "Both fixed sphere-input teachers; depths 4/16, strengths 0.25/1, seeds 0/1/2; dimension16/hidden43; train512 and heldout512, data seed1; batch64, full512updates even after crossing, cadence32, warmup16; native AdamW betas0.9/0.98, epsilon1e-8 and weight decay0.1 on every parameter including biases; initial matrix std0.1. First held-out relativeMSE<=0.05 is success. CPU FP32 highest, one thread. No augmentation or altered target/threshold/budget.",
+  "controls": "Reuse all48 decay0.1 cells from the completed decay study, including its failures. Keep all previous controls, weight-decay regressions, activation/initialization and numerical studies unchanged.",
+  "selection": "Require the full exact144-cell grid. Rank each of six activation/bias configurations on all24 cells across both teachers by pooled threshold coverage, then geometric-mean first-crossing updates only with all24 successes; otherwise worst final held-out relativeMSE, median as tie-break. Report every paired seed, every miss and each teacher separately. No teacher-specific selection or successful-only mean.",
+  "validation": "Before training verify identical original matrices/RNG, exact initial function with zero biases including nonzero residual gates, declared added capacity, independent biased activation forward/backward equations and unchanged training loop/optimizer/data/batch protocol. Archive committed source and validation before training. Audit every new checkpoint by replaying full train/heldout scores, histories, crossings, optimizer steps/settings/state and sampler state.",
+  "mathematical_scope": "The existing finite-epsilon RMS output norm and post-RMS residual radius bounds still apply to any biased raw branch output. Trained biases can break input oddness, so do not carry over a bias-free oddness claim. No new whole-network Jacobian, generalization or convergence theorem follows from adding biases.",
+  "source_policy": "A new sibling package; copy the exact existing parity training loop with an explicit new model constructor and honest initialization/capacity metadata. Preserve every completed scientific Python file and plan. Put post-run audits outside the frozen package.",
+  "scope": "Adaptive synthetic residual follow-up, independent of the running inverse-width attention benchmark. It does not modify the full GPT or use any early99 long-suite outcome.",
+  "evidence_sha256": {
+    "research/transformer_stress_decay/results/summary.json": "3c8a982c2a6291404b2856939ad9229fb23642f80442a0393cd43d3a6a98aabc",
+    "research/transformer_stress_decay/results/audit.json": "d444852afdb42eb7e1d73298fa0b1c5bb2d2a90590d99cb5cb6f098846cbfdff",
+    "research/stress_audits/results/residual-parity-components.json": "f32c508639be12f396002788c25700d1044535518a7ad254321f481efd741534",
+    "research/transformer_stress_decay/plan.json": "88d215b7abf7190222f2341cf09689b47a9f5aef4481e9055b34a674e2d7de41"
+  }
+}
