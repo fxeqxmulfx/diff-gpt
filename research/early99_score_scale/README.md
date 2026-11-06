@@ -6,6 +6,14 @@ Peri-RMS, embedding RMS, centered XSA, SwiGLU, ordinary fixed RoPE, tied weights
 parameter-free normalization and LR ×2. No tensors, parameter counts, random
 draws, data, budgets or optimizer settings change.
 
+**Both full short suites are complete and audited. The frozen shared-model
+choice is quarter-scale SSMax, with Q/K RMS retained:** **75/75 passes** and
+**17.3257 geometric-mean epochs**, **49.4% fewer than LR ×2** and **28.8% fewer
+than the Q/K parent**. It is also 17.4% earlier than the previous no-Q/K ablation
+on the complete aggregate. Its worst slowdown against LR ×2 is **17.5×**;
+every regression is retained. The single reused long diagnostic is next;
+short selection does not establish a universal replacement.
+
 The [plan](plan.json) was declared after round two's results were committed as
 `1138c62`, and before new benchmark training. Short results motivate the test:
 SSMax/QK passes 75/75 at 24.3271 geometric-mean epochs; the no-QK ablation passes
@@ -83,8 +91,9 @@ Maximum probability error was `6.4692e-7`; maximum relative gradient error was
 `1.5498e-5`. The [validation record](results/validation.json) and
 [complete stress rows](results/score-stress.json) preserve the evidence and scope.
 Both 18-cell screens are complete and audited; both meet the declared gate.
-The half-scale arm has also completed and passed its full 75-cell suite;
-quarter-scale is still running. Final shared-model selection awaits both arms.
+Both full 75-cell suites passed. The complete shared-model selection is frozen
+in [shared-selection.json](results/shared-selection.json), with independently
+reconstructed evidence in [selection-integrity.json](results/selection-integrity.json).
 
 Run both screens or regenerate their four-control reports with
 `python -m research.early99_score_scale_reporting.run_screens --run` or
@@ -139,7 +148,7 @@ Its [checkpoint audit](results/audit-peri-rms-scaled-ssmax-gain-quarter-lr2-scre
 also verifies all 18 cells and 31 archived sources, with no errors, resumptions
 or capacity changes.
 
-Both arms now advance to **all 75 short cells** with the same frozen sources.
+Both arms completed **all 75 short cells** with the same frozen sources.
 The [full-suite driver](../early99_score_scale_reporting/run_full.py) reconstructs
 both promotion decisions, runs each full suite, checks its checkpoints and all
 four paired comparisons, then freezes a shared-model choice. It performs no
@@ -169,6 +178,44 @@ checked Lean theorems to each new coefficient and links the improved RMS
 Lipschitz proof. It explicitly records the weaker conditional concentration
 bound. These algebraic specializations are not a new Lean compilation or a
 formally verified translation of the PyTorch implementation.
+
+## Complete comparison and frozen choice
+
+All five configurations below pass the same 75 short cells. The newly selected
+quarter-scale coefficient changes only fixed attention-score strength; the
+full shared architecture retains scaled Peri-RMS, embedding RMS, Q/K RMS,
+centered XSA, SwiGLU, tied weights and ordinary fixed RoPE. It does not combine
+the prior LeRoPE or independent numerical/activation repairs with this trial.
+
+| Configuration | GM first-99 epochs | Ratio to LR ×2 | Ratio to Q/K parent |
+|---|---:|---:|---:|
+| LR ×2 control | 34.2499 | 1.0000 | 1.4079 |
+| SSMax/QK parent, s=1 | 24.3271 | 0.7103 | 1.0000 |
+| Previous no-Q/K ablation | 20.9798 | 0.6125 | 0.8624 |
+| Half-scale, Q/K retained | 18.5238 | 0.5408 | 0.7614 |
+| **Quarter-scale, Q/K retained** | **17.3257** | **0.5059** | **0.7122** |
+
+The original baseline passes 75/75 at 57.1653 epochs; quarter-scale uses 69.7%
+fewer aggregate epochs. Original parameter counts remain 100,736–1,183,488.
+Quarter-scale's summed trainer time is 1133.38 seconds, including setup and
+scoring. Runtime does not determine selection.
+
+| Quarter-scale comparison | Earlier / tied / later cells | Worst paired slowdown |
+|---|---:|---:|
+| Q/K parent | 50 / 7 / 18 | 6.2308× |
+| LR ×2 | 49 / 9 / 17 | 17.5× |
+| Original baseline | 55 / 6 / 14 | 14× |
+| Previous no-Q/K ablation | 55 / 8 / 12 | 4.3333× |
+
+The largest regression versus LR ×2 is key-value binding, seed 2, **4 → 70
+epochs**; versus the Q/K parent it is seed 0 of that task, **13 → 81 epochs**.
+The [complete summary](results/full-short-summary.json) and adjacent four-control
+JSON/CSV reports preserve every seed, per-task median/worst, runtime and failure
+field. The [quarter-scale checkpoint audit](results/audit-peri-rms-scaled-ssmax-gain-quarter-lr2-full-short.json)
+verifies all 75 cells and 31 archived sources with no execution errors or
+resumptions. Together with half-scale, all eight complete paired comparisons
+were independently reconstructed before choice was frozen. The old round-two
+selection is unchanged; the new shared-model choice retains Q/K RMS throughout.
 
 ## Audit and subsequent long diagnostic
 

@@ -333,9 +333,13 @@ The half-scale full short suite is now complete and audited: 75/75 passes,
 geometric mean 18.5237965738 epochs, 23.9% fewer than the Q/K parent and 45.9%
 fewer than LR x2. Its four control comparisons were reconstructed from raw
 histories. Keep all ten parent-relative regressions, including division-p193
-seed 1 at 9 -> 64 epochs (7.1111x). Quarter-scale remains in progress and must
-complete before shared selection. After both suites, use the separate reporting
-verifier to freeze selection-integrity.json, commit it with the decision, then
-run only the new shared winner once using the guarded long launcher. Compare
-the three controls with existing long data; the Q/K parent has no long suite.
-Do not promote from the partial queue or tune using long outcomes.
+seed 1 at 9 -> 64 epochs (7.1111x). Quarter-scale also completed 75/75, with
+geometric mean 17.3257083726 epochs, 28.8% fewer than the Q/K parent and 49.4%
+fewer than LR x2. It wins the declared short-only policy. Preserve its 18
+parent-relative regressions, including recall seed 0 at 13 -> 81 epochs;
+its worst LR x2 regression is recall seed 2 at 4 -> 70 epochs (17.5x).
+Both full checkpoint audits and all eight complete comparison reconstructions
+passed. shared-selection.json and selection-integrity.json freeze the decision.
+Commit those records before running only the quarter-scale shared winner once
+using the guarded long launcher. Compare the three controls with existing long
+data; the Q/K parent has no long suite. Never tune using long outcomes.

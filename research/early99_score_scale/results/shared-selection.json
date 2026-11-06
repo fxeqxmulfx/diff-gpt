@@ -1,0 +1,24 @@
+{
+  "selected_at_utc": "2026-11-06T01:51:29.861998+00:00",
+  "selected_name": "peri-rms-scaled-ssmax-gain-quarter-lr2",
+  "new_shared_winner": true,
+  "eligible_full_short_gm_epochs": {
+    "peri-rms-scaled-ssmax-lr2": 24.327068672012203,
+    "peri-rms-scaled-ssmax-gain-half-lr2": 18.523796573783496,
+    "peri-rms-scaled-ssmax-gain-quarter-lr2": 17.32570837255021
+  },
+  "policy": "Run all 75 short cells for each arm passing its screen. Select a new shared-model winner only with full coverage and a lower all-75 geometric mean than the Q/K parent. Retain the parent if no arm improves. Compare every eligible arm with baseline, LR x2, parent and the measured no-QK ablation; keep their separate overall and shared-model rankings.",
+  "promoted": [
+    "peri-rms-scaled-ssmax-gain-half-lr2",
+    "peri-rms-scaled-ssmax-gain-quarter-lr2"
+  ],
+  "search_plan_sha256": "2e28832eea7094903d43cb5bd89d39943f31ebb5e440fa40e08bb0c0073b00f5",
+  "candidate_plan_sha256": {
+    "peri-rms-scaled-ssmax-lr2": "f2e2838bd0e3892a2cdc0818cebd1822b77fc281bf327a383150ec09a68a5479",
+    "peri-rms-scaled-ssmax-gain-half-lr2": "85748d3ca32853d582cbc54a303bfbfbe7b4b75dd60deddc109d7d29e2db8dc8",
+    "peri-rms-scaled-ssmax-gain-quarter-lr2": "522ace904afde1d7e23a108ac2f717b8a8ddc0fc8ebd34f57560bfd0279c0da1"
+  },
+  "round2_selection_sha256": "ec56a5245f2c9626eab67e1d809bc8c6b7889010adf2cf3e774698cb5db24c81",
+  "long_outcomes_used_for_selection": false,
+  "noqk_ablation_is_separate_measured_reference": true
+}

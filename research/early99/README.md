@@ -39,12 +39,15 @@ The [next declared study](../early99_score_scale/README.md) retains **Q/K RMS**,
 reducing the SSMax score coefficient to one-half or one-quarter. Both arms
 passed all 18 screen cells and their audits; half-scale improves four paired
 task medians and quarter-scale three versus the Q/K parent. Both full 75-cell
-suites are required. Half-scale has completed and passed **75/75** at **18.5238
-geometric-mean epochs**, **23.9% fewer than its Q/K parent** and **45.9% fewer than
-LR ×2**, with 10 parent-relative regressions and a worst ratio of 7.1111×.
-Quarter-scale is running; shared-model selection waits for its complete suite.
-All nine CPU/CUDA checks and 90 score-stress cases passed before training. The
-completed round-two selection remains unchanged.
+suites are complete with **75/75 passes each**. The audited shared-model choice
+is **quarter-scale**, at **17.3257 geometric-mean epochs**, **28.8% fewer than its
+Q/K parent** and **49.4% fewer than LR ×2**. It keeps 18 parent-relative
+regressions (worst 6.2308×); its worst LR ×2 regression is 17.5×. Half-scale
+also improves the aggregate to 18.5238 epochs. All eight complete comparisons
+and both checkpoint audits passed before the choice was frozen. Its one reused
+long diagnostic is next, without tuning or reselection. All nine CPU/CUDA checks
+and 90 score-stress cases passed before training. The completed round-two
+selection remains unchanged.
 
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
