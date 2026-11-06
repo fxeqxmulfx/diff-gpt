@@ -53,5 +53,6 @@ existing numerical-stress relative L2 threshold of 0.001. This is a local update
 check, not a whole-model numerical stress pass or proof of equivalent training
 trajectories. No scientific model code changed in response to this diagnostic.
 
-Status: validated implementation; source freeze precedes benchmark training.
+Status: all three screens are running from validated source commit `00b6224`.
+No screen promotion, full-suite result or new winner is established yet.
 The incomplete Muon study and proposed numerical repair remain deferred.

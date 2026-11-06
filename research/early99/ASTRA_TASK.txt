@@ -772,3 +772,20 @@ long diagnostic. No long outcomes choose these settings or the short winner.
 Validate unchanged tensors/RNG/capacity, independent equations/gradients, causal
 caches, native CUDA updates and full resume before training; state the differing
 normalization and residual guarantees for each individual mechanism precisely.
+
+Benchmark-selection clarification and original-model ablation launch
+The user asks whether these tasks were selected from successes. Yes: the fixed
+35-task suite is conditioned on the original model's seed1 successes. The
+historical long subset passed10/10 with that seed; the fresh three-seed baseline
+passed29/30, not30/30. Its sole miss is Fibonacci seed0, final98.6395% after100000
+updates. Preserve this selection bias in reports: the suite measures retention
+and acceleration of known abilities, not superiority on an independently
+selected population or proof of a universal architecture.
+The three original-model additions are implemented and frozen at00b6224, with
+33implementation/journal/benchmark checks, including3realCUDA checks,5selection
+checks and4scoped Lean statements with only standard axioms. Preserve the initial
+CUDA comparison failure, rounding diagnostic and failed proof-example compile.
+Capture and compiler rounding are now checked separately; no scientific model
+code changed in response. Allthree18-cell screens have started; no promotion,
+full75 result or new selection exists yet. Reporting is committed atc827791.
+Continue the declared short-only study; Muon and numerical repair stay deferred.
