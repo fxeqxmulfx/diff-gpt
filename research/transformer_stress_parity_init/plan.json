@@ -1,0 +1,15 @@
+{
+  "question": "Can a less restrictive initialization retain the original-task gain without losing mixed-teacher learning?",
+  "motivation": "The learned-even arm initialized at0 improved original-odd coverage6/12 to10/12 but regressed on the mixed teacher3/12 to0/12. The same real activation contains the shifted parent at coefficient1. Test that initialization and the fixed midpoint0.5; do not change the activation, task or budget.",
+  "new_initial_values": [0.5, 1.0],
+  "activation_variant": "learned_even",
+  "variant": "peri_rezero",
+  "learning_rate": 0.01,
+  "teachers": ["original_odd", "mixed"],
+  "expected_new_cells": 48,
+  "reused_control_cells": 48,
+  "controls": "Reuse all24 shifted-parent and24 learned-even-initial0 cells from parity-v1. Freeze their complete summary and both data files. Compare four arms: shifted parent, learned0, learned0.5, learned1.",
+  "single_change": "Only fill the learned branch scalar with0.5 or1 after the identical constructor. Preserve all matrix draws, residual gates, tensor shapes, parameter count, AdamW settings, data/sampler seeds0/1/2, depths4/16, strengths0.25/1, two teachers,512updates,32update observations and target relative MSE0.05. Use the same initial value across every task and size. No new training examples or budget extensions.",
+  "selection": "Require all96 rows. Rank the four arms over all24cells by threshold coverage, then geometric-mean first crossing only at full coverage; otherwise worst final relativeMSE, then median. Also report both teachers, every regression, and all censored rows. No filtered success mean or task-specific choice of initialization.",
+  "scope": "Adaptive follow-up on already observed synthetic stress tests, not fresh transfer evidence or a full-GPT result. The previous mixed-teacher regressions remain retained. Mathematical activation identities from ActivationParity.lean apply unchanged; initialization changes do not prove convergence. No original early99 data, source, selection or long diagnostic changes; no long outcomes used."
+}
