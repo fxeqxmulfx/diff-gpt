@@ -1,0 +1,45 @@
+{
+  "checked_at_utc": "2026-11-06T09:45:57.538052+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "statements": 4,
+  "axioms": {
+    "Early99Cosine.factor_bounds": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Cosine.rate_bounds": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Cosine.at_start": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99Cosine.at_floor": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "source_sha256": {
+    "research/early99_cosine/Guarantees.lean": "db4168bf6e6c4d850aed59a1dceac06d6b7ea1a233b7bc37eaa616cdc1d2fe2d"
+  },
+  "output": "research/early99_cosine/results/lean-check.txt",
+  "output_sha256": "ad53856fe16c887019bf1aef32739ebbeb6c9a909507ba74323f3d02a081998c",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "90b1df2e270f56c78e9bc9b4e42a4cef9b63b74e",
+  "external_source_sha256": {
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c",
+    ".lake/packages/mathlib/Mathlib/Analysis/Complex/Trigonometric.lean": "f6f2c2bb6da4d7dac960bef8d07dc2e337c474b417726c1fd15e30c6b74caafb",
+    ".lake/packages/mathlib/Mathlib/Analysis/SpecialFunctions/Trigonometric/Basic.lean": "55b385f7abb43dd591acc7d548d1de8c3dba6111f79d60814d47b000d8f3bce7"
+  },
+  "command": "lake env lean /home/misha/python_projects/gpt/research/early99_cosine/Guarantees.lean",
+  "mapping": "The implemented post-warmup factor is floor+(1-floor)*(1+cos(pi*progress))/2 with floor1/10. For peak>=0,0<=floor<=1, the real rate is nonnegative and between floor*peak and peak. Progress0 gives peak; progress1 gives the floor. The original scheduler holds progress1 after200actualepochs; full tail accounting and warmup are implementation checks.",
+  "limitations": "Real scalar schedule bounds/endpoints only. No transformer convergence, generalization or floating-point theorem. All earlier inverse-width normalization bounds remain pointwise applicable."
+}

@@ -1,0 +1,132 @@
+......FF                                                                 [100%]
+=================================== FAILURES ===================================
+________ test_trainer_resume_restores_native_state_and_journal_exposure ________
+
+tmp_path = PosixPath('/tmp/pytest-of-misha/pytest-2/test_trainer_resume_restores_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x742eb5fa36f0>
+
+    def test_trainer_resume_restores_native_state_and_journal_exposure(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Compare a real uninterrupted trajectory with checkpointed continuation."""
+        case, config = small_case(), Configuration(decay_epochs=2)
+        monkeypatch.setattr(trainer, "CHECKPOINT_INTERVAL", 2)
+>       full = trainer.run(
+            case, 4, tmp_path / "full", "cpu", configuration=config, compiled=False
+        )
+
+tests/diff_gpt/application/test_early99_cosine.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = Case(name='cosine-validation', kind='arithmetic', data={'operation': 'div', 'prime': 7}, width=16, layers=1, heads=2, ...ht_decay=0.1, warmup=2, max_updates=12, observe=2, after_target=0, metric='sequence_accuracy', target=1.0, data_seed=1)
+seed = 4
+output = PosixPath('/tmp/pytest-of-misha/pytest-2/test_trainer_resume_restores_n0/full')
+device = 'cpu', resume = False, compiled = False
+configuration = Configuration(name='peri-rms-inverse-width-adamw-cosine200-floor01-lr2', learning_rate_multiplier=2.0, beta1=0.9, beta...i-rms-embedding-scaled-ssmax', schedule='cosine', decay_epochs=2, minimum_lr_ratio=0.1, gain_rule='inverse_head_width')
+factories = Factories(model=<function dimension_model at 0x742eb5e541a0>, optimizer=<function native_adamw at 0x742eb5e296f0>)
+
+    def run(
+        case: Case,
+        seed: int,
+        output: Path,
+        device: str = "cuda",
+        *,
+        resume: bool = False,
+        compiled: bool = True,
+        configuration: Configuration = BASELINE_CONFIGURATION,
+        factories: Factories | None = None,
+    ) -> dict:
+        """Reuse the frozen loop with explicit construction and stricter resume checks."""
+        if factories is None:
+            factories = configured_factories(configuration)
+        directory = output / case.name / f"seed{seed}"
+        checkpoint = directory / "checkpoint.pt"
+        if directory.exists() and not resume:
+            msg = f"Refusing to overwrite {directory}"
+            raise FileExistsError(msg)
+        directory.mkdir(parents=True, exist_ok=True)
+        torch.set_num_threads(2)
+        torch.set_float32_matmul_precision("highest")
+        reference = verify_model_reference()
+        started = time.monotonic()
+        task = data.build(case, device)
+        interval = case.observe or max(
+            1, (len(task.splits["train"]) + case.batch - 1) // case.batch
+        )
+        torch.manual_seed(seed)
+        model = factories.model(task, case, device)
+        metadata = {
+            "case": asdict(case),
+            "experiment": configuration.metadata(case),
+            "experiment_source_plan": str(output / "plan.json"),
+            "seed": seed,
+            "batch_seed": seed + 10_000,
+            **parameter_metadata(model.model),
+            "device": device,
+            "torch": str(torch.__version__),
+            "optimizer": "torch.optim.AdamW",
+            "optimizer_betas": list(configuration.betas),
+            "optimizer_eps": 1e-8,
+            "optimizer_fused": device == "cuda",
+            "compiled_loss": compiled and device == "cuda",
+            "warmup_uses_completed_updates": True,
+            "execution_journal": "durable per genuine update; CUDA synchronized after step",
+            "source_model_commit": reference["model_commit"],
+            "data_fingerprints": task.fingerprints,
+            "data_metadata": task.metadata,
+            "selection_baseline": task.baseline,
+            "model_source_reference": reference,
+            "observe_updates": interval,
+            "checkpoint_interval_updates": CHECKPOINT_INTERVAL,
+            "grokking_definition": (
+                "At least two observed fitted-train/near-baseline heldout "
+                "states before reaching the declared target; also retain raw "
+                "timing and fast generalization."
+            ),
+        }
+>       stepper = FactoryStepper(
+            model,
+            task,
+            case,
+            device,
+            configuration=configuration,
+            factories=factories,
+            compiled=compiled,
+        )
+E       TypeError: FactoryStepper.__init__() missing 1 required keyword-only argument: 'journal_path'
+
+research/early99_cosine/trainer.py:105: TypeError
+_ test_trainer_preserves_entire_original_protocol_outside_execution_accounting _
+
+    def test_trainer_preserves_entire_original_protocol_outside_execution_accounting() -> (
+        None
+    ):
+        """Restrict changes to the constructor, journal metadata and final journal record."""
+        source = inspect.getsource(parent_run)
+        edits = [
+            (
+                '        "warmup_uses_completed_updates": True,',
+                '        "warmup_uses_completed_updates": True,\n'
+                '        "execution_journal": "durable per genuine update; CUDA synchronized after step",',
+            ),
+            (
+                "        factories=factories,\n    )",
+                '        factories=factories,\n        journal_path=directory / "execution-journal.json",\n    )',
+            ),
+            (
+                '        "metadata": metadata,\n    }',
+                '        "metadata": metadata,\n        "execution_journal": stepper.execution_journal.summary(completed),\n    }',
+            ),
+        ]
+        for before, after in edits:
+>           assert source.count(before) == 1
+E           assert 0 == 1
+E            +  where 0 = <built-in method count of str object at 0x39f7f060>('        factories=factories,\n    )')
+E            +    where <built-in method count of str object at 0x39f7f060> = 'def run(\n    case: Case,\n    seed: int,\n    output: Path,\n    device: str = "cuda",\n    *,\n    resume: bool = F...  result["final_extra"] = task.final_metrics(model)\n    write(directory / "result.json", result)\n    return result\n'.count
+
+tests/diff_gpt/application/test_early99_cosine.py:267: AssertionError
+=========================== short test summary info ============================
+FAILED tests/diff_gpt/application/test_early99_cosine.py::test_trainer_resume_restores_native_state_and_journal_exposure
+FAILED tests/diff_gpt/application/test_early99_cosine.py::test_trainer_preserves_entire_original_protocol_outside_execution_accounting
+2 failed, 6 passed, 2 deselected in 2.28s
