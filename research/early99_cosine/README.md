@@ -49,3 +49,19 @@ the same screen decision and any claimed full-suite improvement.
 
 The older cosine experiment and both completed Schedule-Free negatives remain
 controls. Muon/AdamW and all-matrix Muon are the queued optimizer follow-ups.
+
+The completed screen passes **18/18 cells**, but improves **0/6 task medians**
+against the constant-rate inverse-width parent, so it does not advance. Median
+paired epoch ratios are 1.0 for Boolean AND, division193 and division97; 1.2857
+for key/value binding; 1.5294 for square-sum; and 1.25 for linear transport.
+The largest observed slowdown is square-sum seed0: 129 to 207 epochs (1.6047×).
+There is no screen geometric mean, full75 run or new long diagnostic.
+
+The [complete audit](results/complete-audit.json) reconstructs all five controls'
+18-cell JSON/CSV reports and checks every checkpoint, history, initialization,
+native optimizer state, journal and 58 frozen source files. All five additional
+reporting checks pass. An interruption left the next cell's directory empty
+before any update; all15 completed cells were preserved byte-for-byte, and the
+remaining three completed from their declared initialization with no replay.
+The constant-rate parent remains selected. This result tests the declared
+200-epoch, 0.1-floor schedule; it does not rule out all possible schedules.
