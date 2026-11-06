@@ -1,0 +1,148 @@
+{
+  "checked_at_utc": "2026-11-06T07:35:14.300543+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "new_theorems": 9,
+  "concrete_examples": 11,
+  "compiled_modules": 10,
+  "command": "bash research/mhc_scaled/check.sh",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "model_parent": "peri-rms-scaled-ssmax-inverse-width-lr2",
+  "latest_optimizer_study": "research/early99_schedule_free/plan.json",
+  "scope": "Lean proof only: proposed four-stream mHC adaptation around the latest shared model; no Python implementation or training changes.",
+  "variants": {
+    "scaled": {
+      "post_rms_coefficient": "1/sqrt(2L)",
+      "per_stream_and_mean_rms_bound": "1+2*sqrt(2L)",
+      "positive_depth_required": true
+    },
+    "unscaled": {
+      "post_rms_coefficient": "1",
+      "per_stream_and_mean_rms_bound": "1+4L",
+      "zero_depth_allowed": true
+    }
+  },
+  "shared_results": {
+    "attention_score_absolute_bound": "log(N), with per-head Q/K RMS, fixed rotary phases and exact inverse-width gain 1/head_width",
+    "final_normalized_feature_rms_bound": "1 for either branch coefficient, before the learned tied readout matrix",
+    "comparison": "The scaled uniform upper bound is strictly below the unscaled bound for positive integer depth; this does not compare actual activations or learning speed."
+  },
+  "hypotheses_and_equations": [
+    "Exact real arithmetic; epsilon>0 and positive feature/head widths. L counts decoder blocks, each containing attention then SwiGLU.",
+    "Four streams initialized by copying the parameter-free RMS-normalized embedding.",
+    "Each sublayer computes RMS before its arbitrary raw branch and RMS after it, then applies the chosen fixed coefficient.",
+    "Input-dependent routing logits are arbitrary functions of current streams. Read gates are sigmoid and write gates are 2*sigmoid, so writes are positive and below two.",
+    "Skip mixing uses exactly 20 exp-initialized column-then-row normalization cycles from Transformer.MHC.finiteMHCStep. Positivity and exact final row sums suffice; exact double stochasticity is not assumed.",
+    "No denominator regularization or floating-point rounding is included. Final stream collapse is an unweighted mean, followed by the existing final RMS.",
+    "The existing SSMax score equation and bound are imported unchanged, for arbitrary projected queries, keys and rotary phases. This is a pointwise score bound."
+  ],
+  "limitations": [
+    "The raw attention/SwiGLU branches and routing predictors are abstract functions; this is not a formally verified translation of the PyTorch forward.",
+    "The current Python experiment uses ordinary residual additions; mHC here is a proposed adaptation only.",
+    "No complete input-dependent Jacobian, gradient stability, nonvanishing signal, convergence, generalization, learning speed, or finite-precision guarantee.",
+    "Final RMS bounds the features, not logits independently of learned readout weights.",
+    "The separately modeled released epsilon-regularized, transposed Sinkhorn implementation is not this paper-algorithm theorem."
+  ],
+  "axioms": {
+    "MHCScaled.collapse_norm_le": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.current_model_bounds": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.final_feature_rms_le_one": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.run_norm_le": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.scaled_bound_lt_unscaled_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.scaled_model_rms_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.step_norm_le": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.unscaled_current_model_bounds": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "MHCScaled.unscaled_model_rms_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "dependency_order": [
+    "research/early99/guarantees/NormalizedScores.lean",
+    "research/normalization_guarantees/RMSLipschitz.lean",
+    "research/normalization_guarantees/AttentionSensitivity.lean",
+    "research/normalization_guarantees/SoftmaxLipschitz.lean",
+    "research/normalization_guarantees/AttentionSensitivityImproved.lean",
+    "research/normalization_guarantees/AttentionSelectivity.lean",
+    "research/early99_dimension_gain/Guarantees.lean",
+    "research/mhc_scaled/Bounds.lean",
+    "research/mhc_scaled/CurrentModel.lean",
+    "research/mhc_scaled/Checks.lean"
+  ],
+  "source_sha256": {
+    "research/early99/guarantees/NormalizedScores.lean": "4a789a11e8ef68a650cc8ef47b8b631ffd941609b26fab72253bf572ef9907e4",
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "research/normalization_guarantees/AttentionSensitivity.lean": "a789f2de4a10282d8e266a337ff3554f95176c2c9dc101e8a3dc1983d4f6afc7",
+    "research/normalization_guarantees/SoftmaxLipschitz.lean": "3702c8c60e5c7468aac65323475a1154ae64f9bf3f1c9dfc8f54e61569e62e5f",
+    "research/normalization_guarantees/AttentionSensitivityImproved.lean": "993568752d6562c75c6c311401174237f56f54f622d2d6ff208fc06cc9f1e1de",
+    "research/normalization_guarantees/AttentionSelectivity.lean": "41a0913177b71fe2586f8613c06e4142ff881cd2ab5a006aa44d4765f0d802fd",
+    "research/early99_dimension_gain/Guarantees.lean": "401d79f4b67828436c7c12de24762b4a361547149e19d44aadb3771c2a970330",
+    "research/mhc_scaled/Bounds.lean": "2509570d52c4f831304df5d21ae2e126d2eb56192170edc4f4109e4a79bcefc5",
+    "research/mhc_scaled/CurrentModel.lean": "919c39da482bea340ea3c9204eeaa98c69e4b43b52ac15a1e57070096250f551",
+    "research/mhc_scaled/Checks.lean": "4d192d772f8b23f7453bc6b0f1b908f83a1f9d25c3c16d267146ec3428e334b1",
+    "research/mhc_scaled/check.sh": "0ad457c2fbbbf722bbd46cce7ead4687bdaa64663a6a35408896d0485c611169"
+  },
+  "model_correspondence_source_sha256": {
+    "research/early99_dimension_gain/factories.py": "0c1309238bf0cae46015d505c6e1d9ba81b8a0a2730ba28ad36d6950d74921ca",
+    "research/early99/experiments/models.py": "3e7e6f19bf9027f66e47a61975a846d1f8e4c426b8a9a70a63541919e76e2dbf",
+    "research/early99/experiments/scalable_softmax.py": "4ec54ddeb8f29dee12f2e01f6de339533db3111d68d8da5f212c45a5927a8e6a",
+    "src/diff_gpt/domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+    "src/diff_gpt/domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+    "src/diff_gpt/domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "src/diff_gpt/domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+    "research/early99_schedule_free/plan.json": "f6fc3bb504f349ef00a322b4234b90a8442f01fa1289f5e37e22eff7fa9a13e3"
+  },
+  "external_source_sha256": {
+    "src/Transformer/Residual/Basic.lean": "64d535ff74b3b0cfa6ccd019c3bf84d3e3f9b3343331e29a005382bdea72432e",
+    "src/Transformer/MHC/Section4_Stability.lean": "068a1ea81daa1487dd373edf253a9bb33cb3ab5a3afe1c10ce5d10d5decf3f6d",
+    "src/Transformer/MHC/Section4_Sinkhorn.lean": "65b32fb91e9f155549fd610efa16213e5f2c957dac800fe4719fe85890733258",
+    "src/Transformer/MHC/Section4_Parameterization.lean": "6fe3e5c36a8b4ed2179e610e45af10de2ac1ce32105991f4087d30b8c43ddd83",
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/SequenceModel/Rotary.lean": "41365fb1e51eec1d61b2bb3f6feacd11b9e76b0752cbdb9ef360bcb097b581a3",
+    "src/Transformer/Perspective/Softmax.lean": "6f8117f0d9cca80d140a2aaa6691953a8bbd7bc6be02f0a612d4812714ee9fe5",
+    "src/Transformer/Homogenized/SoftmaxDerivatives.lean": "49792cc18926e0af62c196802020c3849275b07f3a311e6079198979907caa84",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "papers/arXiv-2512.24880v2/main.tex": "44fe9a05dbfd2e8c1b3bab67fc0b19bb754cb704890a219b932f2ca3fc8dce0f"
+  },
+  "output": "research/mhc_scaled/lean-check.txt",
+  "output_sha256": "618791269c5829c6abfd8cc96a745231c4ad5c05c5acd877de8c3249d272bc5e"
+}
