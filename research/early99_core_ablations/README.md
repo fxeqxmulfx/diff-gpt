@@ -72,6 +72,14 @@ Ratios below one mean earlier observed 99% accuracy. This rejects embedding RMS
 as an isolated addition under this screen; it does not establish its effect in
 the combined stack or explain prior long-suite failures.
 
+A separate [initial-scale diagnostic](../core_initial_scale/README.md) completed
+72 forward measurements on the fixed screen's training prefixes, with no updates
+or held-out scoring. The first attention branch/residual RMS ratio ranges from
+0.41–1.14 in the original model, 0.0076–0.0225 with embedding RMS alone,
+22.55–26.06 with scaled Peri-RMS alone, and 0.476–0.500 with both. This describes
+the initial scale interaction, not the cause of later learning outcomes. It does
+not change the declared candidates or selection policy.
+
 Status: the remaining two screens continue from validated source `00b6224`.
 No full-suite result or new winner is established yet.
 The incomplete Muon study and proposed numerical repair remain deferred.
