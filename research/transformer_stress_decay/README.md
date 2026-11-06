@@ -69,6 +69,17 @@ All 96 runs are finite: 36 passes and 60 budget misses. The source and validatio
 were committed as `8d83f9e` before training. Raw evidence remains under
 `runs/transformer-stress/decay-v1/`; no old result was overwritten.
 
+A separate [144-checkpoint component diagnosis](../stress_audits/results/residual-parity-components.json)
+evaluates each saved residual at `x` and `-x`, without optimizer updates or
+training augmentation. It verifies that symmetric squared error equals the sum
+of odd and even component errors. For the selected configuration on the mixed
+teacher, the held-out-plus-reflections means are 0.048040 odd and 0.047239 even
+error, under a common teacher-energy denominator. Both components contribute
+substantially; suppressing an unwanted even component alone is not an adequate
+description of the remaining failure. These additional probe metrics do not
+replace the original held-out scores or threshold. Every configuration, split,
+checkpoint hash and component value is retained.
+
 The unchanged forward equations retain their existing mathematical bounds.
 Weight decay alone does not prove a smaller function Jacobian, generalization
 or convergence. These adaptively reused synthetic tasks are independent of the
