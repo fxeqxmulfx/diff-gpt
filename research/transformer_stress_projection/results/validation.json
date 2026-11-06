@@ -1,0 +1,20 @@
+{
+  "checked_at_utc": "2026-11-06T04:47:26.866861+00:00",
+  "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_transformer_stress_projection.py",
+  "exit_code": 0,
+  "passed": 7,
+  "duration_seconds": 1.63,
+  "ruff": "All checks passed!",
+  "test_source_sha256": "da7de4473ccbbd99b7dd89688b75922e169bf2ca9e1c7fd4fa995dcbfce32c32",
+  "stdout_sha256": "9b2ec355346c8a3a02ec64e60af25be656f8ccdae8dfebc93e038c8c78af5232",
+  "source_sha256": {
+    "research/transformer_stress_projection/__init__.py": "4755c91e84c00e9ce4cc6fa0177d267e46b2de154cf42b61ff75a04128e66d3e",
+    "research/transformer_stress_projection/learning.py": "6524447c90ea7fff8259098fcd440b38bdcea37b73a433fc5bafa0fb31724725",
+    "research/transformer_stress_projection/models.py": "593af5476ca0aa37001a9b5c79492bc970ac610ae4e90f5df92ff6eeef99d4c7",
+    "research/transformer_stress_projection/run.py": "a035330250086502ddefa0902449405dabe7e8fedd85766de06f7b766de85ec2",
+    "research/transformer_stress_projection/stress.py": "f75ac693850c6fd709214abb8b9c45a89ac5daa4c98e0f5fcdc517c2e4e5768a"
+  },
+  "initial_boundary_failure_preserved": "research/transformer_stress_projection/results/validation-initial-failure.txt",
+  "initial_failure_sha256": "604c33118873b3f5e3a10915805ef66064dc7b76622f7669ed03284302e804ef",
+  "boundary_repair": "The initial clamp_min implementation chose the interior derivative on the boundary in this Torch build. Explicit torch.where(relative_norm<1,1,relative_norm) now chooses the declared exterior derivative without changing the forward function. All7checks and80numericalcases passed afterward."
+}

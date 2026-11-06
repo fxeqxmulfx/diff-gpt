@@ -16,13 +16,16 @@ def project_branch(value: torch.Tensor) -> torch.Tensor:
     Leave RMS <= 1 unchanged; bound larger rows using FP64 intermediates.
 
     This changes the real function from RMS normalization. At the boundary,
-    clamp_min selects the exterior derivative; classical differentiability is
+    an explicit branch selects the exterior derivative; differentiability is
     not claimed there. vector_norm supplies a finite zero derivative at zero.
     """
     wide = value.double()
     radius = math.sqrt(value.shape[-1])
     relative_norm = torch.linalg.vector_norm(wide, dim=-1, keepdim=True) / radius
-    return (wide / relative_norm.clamp_min(1)).to(value.dtype)
+    denominator = torch.where(
+        relative_norm < 1, torch.ones_like(relative_norm), relative_norm
+    )
+    return (wide / denominator).to(value.dtype)
 
 
 class ProjectedNetwork(BiasedNetwork):

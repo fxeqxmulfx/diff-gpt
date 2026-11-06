@@ -1,0 +1,31 @@
+..F....                                                                  [100%]
+=================================== FAILURES ===================================
+______________ test_zero_interior_exterior_and_boundary_jacobians ______________
+
+    def test_zero_interior_exterior_and_boundary_jacobians() -> None:
+        """Do not use finite differences at the kink; check the chosen exterior VJP."""
+        radius = 2.0
+        for value in (
+            torch.zeros(4),
+            torch.tensor([0.1, -0.2, 0.3, -0.4]),
+            torch.tensor([8.0, -6.0, 0.0, 0.0]),
+            torch.tensor([2.0, 0.0, 0.0, 0.0]),
+        ):
+            x = value.double()
+            length = x.norm().item()
+            expected = torch.eye(4, dtype=torch.float64)
+            if length >= radius:
+                unit = x / length
+                expected = radius / length * (expected - torch.outer(unit, unit))
+            actual = torch.autograd.functional.jacobian(project_branch, x)
+>           assert_close(actual, expected, rtol=1e-12, atol=1e-12)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 1 / 16 (6.2%)
+E           Greatest absolute difference: 1.0 at index (0, 0) (up to 1e-12 allowed)
+E           Greatest relative difference: inf at index (0, 0) (up to 1e-12 allowed)
+
+tests/diff_gpt/application/test_transformer_stress_projection.py:114: AssertionError
+=========================== short test summary info ============================
+FAILED tests/diff_gpt/application/test_transformer_stress_projection.py::test_zero_interior_exterior_and_boundary_jacobians
+1 failed, 6 passed in 1.62s
