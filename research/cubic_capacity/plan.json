@@ -1,0 +1,325 @@
+{
+  "declared_at_utc": "2026-11-06T21:11:49.548019+00:00",
+  "objective": "Test the user-requested depth and width increases on the retrospectively chosen cubic-sum task after completing the existing-model gradient diagnostic.",
+  "task": {
+    "case": {
+      "after_target": 0,
+      "batch": 256,
+      "data": {
+        "operation": "sum-cube",
+        "prime": 97
+      },
+      "data_seed": 1,
+      "heads": 4,
+      "kind": "arithmetic",
+      "layers": 1,
+      "learning_rate": 0.001,
+      "max_updates": 100000,
+      "metric": "sequence_accuracy",
+      "name": "arithmetic-sum-cube",
+      "observe": 19,
+      "target": 0.99,
+      "warmup": 50,
+      "weight_decay": 0.1,
+      "width": 128
+    },
+    "data_fingerprints": {
+      "train": "46c16e9ce5b4d78a14cff7f63aea5ade52ffed486ae0b8679eb1d340d5ce60f4",
+      "validation": "68756b674469bdb4549ec0967a5628067b937b599d52da0b4af69553920d922f"
+    },
+    "heldout_examples": 4705,
+    "historical_seed1": {
+      "batch": 256,
+      "complete_epochs": 3552,
+      "epochs": 3552.6530612244896,
+      "examples_seen": 16711680,
+      "first99_accuracy": 0.9904357066950054,
+      "first99_seconds_including_setup": 100.90890625199972,
+      "first99_updates": 67500,
+      "history_path": "runs/current-grokking/arithmetic-sum-cube/seed1/history.jsonl",
+      "train_examples": 4704,
+      "updates": 67500,
+      "updates_per_epoch": 19
+    },
+    "name": "arithmetic-sum-cube",
+    "selection": "validation",
+    "tier": "long",
+    "train_examples": 4704
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "shapes": [
+    {
+      "name": "current",
+      "layers": 1,
+      "width": 128,
+      "heads": 4,
+      "head_width": 32,
+      "unique_parameters": 208896,
+      "case": {
+        "name": "arithmetic-sum-cube",
+        "kind": "arithmetic",
+        "data": {
+          "operation": "sum-cube",
+          "prime": 97
+        },
+        "width": 128,
+        "layers": 1,
+        "heads": 4,
+        "batch": 256,
+        "learning_rate": 0.001,
+        "weight_decay": 0.1,
+        "warmup": 50,
+        "max_updates": 100000,
+        "observe": 19,
+        "after_target": 0,
+        "metric": "sequence_accuracy",
+        "target": 0.99,
+        "data_seed": 1
+      },
+      "reuse_existing": true
+    },
+    {
+      "name": "depth",
+      "layers": 2,
+      "width": 128,
+      "heads": 4,
+      "head_width": 32,
+      "unique_parameters": 405376,
+      "case": {
+        "name": "arithmetic-sum-cube",
+        "kind": "arithmetic",
+        "data": {
+          "operation": "sum-cube",
+          "prime": 97
+        },
+        "width": 128,
+        "layers": 2,
+        "heads": 4,
+        "batch": 256,
+        "learning_rate": 0.001,
+        "weight_decay": 0.1,
+        "warmup": 50,
+        "max_updates": 100000,
+        "observe": 19,
+        "after_target": 0,
+        "metric": "sequence_accuracy",
+        "target": 0.99,
+        "data_seed": 1
+      },
+      "reuse_existing": false
+    },
+    {
+      "name": "width",
+      "layers": 1,
+      "width": 256,
+      "heads": 8,
+      "head_width": 32,
+      "unique_parameters": 811520,
+      "case": {
+        "name": "arithmetic-sum-cube",
+        "kind": "arithmetic",
+        "data": {
+          "operation": "sum-cube",
+          "prime": 97
+        },
+        "width": 256,
+        "layers": 1,
+        "heads": 8,
+        "batch": 256,
+        "learning_rate": 0.001,
+        "weight_decay": 0.1,
+        "warmup": 50,
+        "max_updates": 100000,
+        "observe": 19,
+        "after_target": 0,
+        "metric": "sequence_accuracy",
+        "target": 0.99,
+        "data_seed": 1
+      },
+      "reuse_existing": false
+    },
+    {
+      "name": "depth_width",
+      "layers": 2,
+      "width": 256,
+      "heads": 8,
+      "head_width": 32,
+      "unique_parameters": 1598208,
+      "case": {
+        "name": "arithmetic-sum-cube",
+        "kind": "arithmetic",
+        "data": {
+          "operation": "sum-cube",
+          "prime": 97
+        },
+        "width": 256,
+        "layers": 2,
+        "heads": 8,
+        "batch": 256,
+        "learning_rate": 0.001,
+        "weight_decay": 0.1,
+        "warmup": 50,
+        "max_updates": 100000,
+        "observe": 19,
+        "after_target": 0,
+        "metric": "sequence_accuracy",
+        "target": 0.99,
+        "data_seed": 1
+      },
+      "reuse_existing": false
+    }
+  ],
+  "arms": [
+    {
+      "name": "original_lr1",
+      "architecture": "original",
+      "learning_rate_multiplier": 1.0
+    },
+    {
+      "name": "original_lr2",
+      "architecture": "original",
+      "learning_rate_multiplier": 2.0
+    },
+    {
+      "name": "normalized_lr2",
+      "architecture": "inverse_width",
+      "learning_rate_multiplier": 2.0
+    }
+  ],
+  "configurations": [
+    {
+      "name": "cubic-depth-original_lr1",
+      "size": "depth",
+      "architecture": "original",
+      "learning_rate_multiplier": 1.0,
+      "arm": "original_lr1"
+    },
+    {
+      "name": "cubic-depth-original_lr2",
+      "size": "depth",
+      "architecture": "original",
+      "learning_rate_multiplier": 2.0,
+      "arm": "original_lr2"
+    },
+    {
+      "name": "cubic-depth-normalized_lr2",
+      "size": "depth",
+      "architecture": "inverse_width",
+      "learning_rate_multiplier": 2.0,
+      "arm": "normalized_lr2"
+    },
+    {
+      "name": "cubic-width-original_lr1",
+      "size": "width",
+      "architecture": "original",
+      "learning_rate_multiplier": 1.0,
+      "arm": "original_lr1"
+    },
+    {
+      "name": "cubic-width-original_lr2",
+      "size": "width",
+      "architecture": "original",
+      "learning_rate_multiplier": 2.0,
+      "arm": "original_lr2"
+    },
+    {
+      "name": "cubic-width-normalized_lr2",
+      "size": "width",
+      "architecture": "inverse_width",
+      "learning_rate_multiplier": 2.0,
+      "arm": "normalized_lr2"
+    },
+    {
+      "name": "cubic-depth_width-original_lr1",
+      "size": "depth_width",
+      "architecture": "original",
+      "learning_rate_multiplier": 1.0,
+      "arm": "original_lr1"
+    },
+    {
+      "name": "cubic-depth_width-original_lr2",
+      "size": "depth_width",
+      "architecture": "original",
+      "learning_rate_multiplier": 2.0,
+      "arm": "original_lr2"
+    },
+    {
+      "name": "cubic-depth_width-normalized_lr2",
+      "size": "depth_width",
+      "architecture": "inverse_width",
+      "learning_rate_multiplier": 2.0,
+      "arm": "normalized_lr2"
+    }
+  ],
+  "new_training_cells": 27,
+  "reused_current_size_cells": 9,
+  "controls": {
+    "original_lr1": "runs/early99/baseline",
+    "original_lr2": "runs/early99/candidates/adamw-lr2",
+    "normalized_lr2": "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2"
+  },
+  "control_artifacts_sha256": {
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/checkpoint.pt": "a5190d45d0955fce81df8798aafbfdc1656dbb4d96ce10d9a8c2f48d71a91281",
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/early99_result.json": "617c656b5914f665ae8567b93d1ca6c1f83dfeedcca373e555e36834d5ce99dc",
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/history.jsonl": "b34f38a56a2c9abea2a2b3aa1726faa727d08fb3f977c5fc4cb9012875b2df7d",
+    "runs/early99/baseline/arithmetic-sum-cube/seed0/protocol.json": "0055d6a535209d2354509607ffde07056475540e2b4e592018237c9b559f7874",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/checkpoint.pt": "734d37f34acf979ca39f435cb4545e75f2e646e78a9a3819fe3105592c4684df",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/early99_result.json": "8f20364d9470dafe277293e4d24c6f0771e33e89b1f111fe5be5b57c0dbded05",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/history.jsonl": "ef88d819592ae0cbaa86ab57784371a745e2c0be90b7855d1dd9cebe681d356c",
+    "runs/early99/baseline/arithmetic-sum-cube/seed1/protocol.json": "ab626cadb730fbaa3cb3d42832c1e33afc176cb48a263f2f76a7ee6fb01a3f63",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/checkpoint.pt": "628222ca3bba64ec06feea297773e1cef7aa162c18df3e96929ba40a95f7f048",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/early99_result.json": "09e42ec3ee7795c66d18c6d28b25e050f7c83a07b3420762d8d52b028ea427d0",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/history.jsonl": "5d44ec1aa16cca012b2dd58c963cdc5d21599b4c03046edc777b311cdf950d23",
+    "runs/early99/baseline/arithmetic-sum-cube/seed2/protocol.json": "88efa1a66eb655c35aa84b211cc9fbaef8e81b0faa2733b5c986d923e3d655f2",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/checkpoint.pt": "e1b848bc4ffc86e18083693b3ea9a4a4b69553d5e0486072e2c676bcd7ba2672",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/early99_result.json": "d49d686e95fad43c8cb5d882d4d2cdacc179646d9aedf86bba4bf721f1939a62",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/history.jsonl": "3f2274781841c28d600163bde7632f34130b6838082deee3c0ffb05cd706a82f",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed0/protocol.json": "e4d1ace875b4a607e58b3270243ec825d7b773749597b093110e7f80cb5c132d",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/checkpoint.pt": "07b23d813b5eb857c8ec25886045615eb48098e9cf9885d3f22cb96d20cd3501",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/early99_result.json": "75d431f46184205ae8ef240ee5ae7d078a91e7e561ef4d4279c0ec7155517fef",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/history.jsonl": "7277b0c54246b38ecfb5ce530fce666c502b92d53dd916972718d517556188e7",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed1/protocol.json": "4dd17ee39642ece0a6dd19d65a5471bcf69728c7a33808ff1e762621019c13a8",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/checkpoint.pt": "ca495222dd89a2a2649be89d1181edb4be093f96ccab615ed04bc5ad770f853b",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/early99_result.json": "22ec54fcbdac524088da3f4a983ddab0449f78e2d25d29f4853794649e988e2b",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/history.jsonl": "85c6613a58e5ebf1ed5743303c889ec50c253c33bd038b0faea5208a5dd1a73e",
+    "runs/early99/candidates/adamw-lr2/arithmetic-sum-cube/seed2/protocol.json": "b20c77300a15b095e9033fb45ffac88b548d96aee1927598b887402bd60cfcc4",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/checkpoint.pt": "d8a181c65fff3c295ddf9c6b931f1159cdd8e941b4e27bfae52731d6de0b7f02",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/early99_result.json": "7557d110cb82f34569380c546be7a6182674be4ccdb2a0beb7c51a88c93158c4",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/history.jsonl": "e69d24ad39b9b8617841c0ece051cd8f837150389181c8cddfe95ec382eaf2b6",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed0/protocol.json": "9471be7f54ff49da034fc5d6d7f106c6122e5e08a44871491d6c60773c425d5b",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/checkpoint.pt": "4b7591e06360165106cbe48a242eda08a902cd1eaa2ccaefca7a9ce7b2335177",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/early99_result.json": "3f19bc257ead5bfd650e3dd856e83d7152ea00a0ab921919607c00b79a3c4651",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/history.jsonl": "c939cec01bd4e7e175efe8d29b4eff60f4810923afa92606b037fa586b13a066",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed1/protocol.json": "e738c45ee8ec7ec1e3a58864bf0c3d652b42addd259ab4dce3397832807d64e0",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/checkpoint.pt": "2ad09ac147dab4fd8447d417d2c461f98359d3e323f77e659766dff2ac764b48",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/early99_result.json": "2a33a1f5f1b5b4beeb52f6bac6627887a2ab344b33574d3ec6d5a6bf68b3bc7c",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/history.jsonl": "5a8451675a3320b7b58698f3fd7ddb79a1760627bb068e6463468299483f40b2",
+    "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2/arithmetic-sum-cube/seed2/protocol.json": "e4f229b3e8ac25aebe5698337baf6f6c8b84b1edab47601686c36dcf28422110"
+  },
+  "evidence_sha256": {
+    "research/early99/suite.json": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436",
+    "research/early99_core_ablations/results/study-complete.json": "6370bdee88bbb84b79b853057c2df3ef9b2d6f11212cb0d361b304a228ea541e",
+    "research/early99_core_ablations/results/shared-selection.json": "cfe2f23045d2b93bce9c49431b88d7bf70316284c1e64a50caef395247690fcc",
+    "research/transformer_path_diagnostic/plan.json": "4ffd0e4c20877523d85203209ded9d4cd1f658304be9fa5ca4f99234632e7044",
+    "research/transformer_path_diagnostic/results/complete-audit.json": "5343a0f5e6e73f026c599e5f28bdb77f690b1015cf899fc0b487d1d885da9bb5",
+    "research/transformer_path_diagnostic/results/measurements.json": "728cb1643ab69bb660438f2ae6e0277e5305a8fd71bb5bd0c6708a5ea7e1d0f8",
+    "research/transformer_path_diagnostic/results/summary.json": "f25cf9b717aafa42599dc44db1ac6933e67a9a4c87a4c010656d1337dc3ef620"
+  },
+  "training": "Existing compiled CUDA native AdamW and durable genuine-update journal; betas(0.9,0.98),epsilon1e-8,weight_decay0.1,50-update completed-step warmup,constant rates0.001or0.002. Preserve batch256,all100000updates,one-epoch observation cadence(19updates),original initialization rule,data andmodel/shuffle seeds. Stop at first full heldout exact>=0.99 or budget.",
+  "head_width_control": "Keep head_width32; width128 uses4heads andwidth256 uses8. Original gain andinverse1/dgain retain their previous values. Fixed RoPE tables retain the same dimensions.",
+  "depth_scaling": "Normalized branches retain1/sqrt(2L),so increasing depth changes that declared coefficient; original branches remain unit-scaled.",
+  "comparison": "Complete all27newcells with no screen-based rejection. Compare all36cells including9reused controls; show passes,censors,first99epochs,allpairedseed ratios,capacity andruntime. A size/arm mean requires allthree seeds to pass. Do not select a new75-cell benchmark winner or schedule another long suite.",
+  "validation": [
+    "All nine new configurations and all three seeds: exact old/new parameter initialization and ordering,tied weights,head width,gain,depth scaling,data andsample order.",
+    "Preserve all frozen trainer/model sources and rerun relevant benchmark/journal integrity checks.",
+    "Targeted native compiled/captured CUDA updates for both architectures at the largest size,plus actual checkpoint continuation using the unchanged journaled loop.",
+    "Audit every completed checkpoint,history,source archive,optimizer step/moment andexecution/replay exposure."
+  ],
+  "failure_policy": "Retain every budget miss,nonfinite failure,execution error andinterruption; no skipped seeds or filtered means. Resume only a confirmed terminal job and include all replay work from its durable journal.",
+  "scope": "One-task capacity study explicitly authorized after observing long outcomes. It supplies descriptive evidence about this task and does not constitute untouched holdout evidence,universal scaling evidence,or tuning of the fixed75-cell selection.",
+  "next_after_completion": "Report and commit all outcomes; return to the unfinished Muon and numerical-repair work unless steered otherwise."
+}
