@@ -1,0 +1,26 @@
+{
+  "fixture": "research/transformer_stress_parity/ActivationParity.lean",
+  "fixture_sha256": "4319f28946568cd6483b962a9a15e66a647d5a2472e6fad345e3e2ca0fc63fff",
+  "source_implementation_commit": "95ce273",
+  "transformer_project": "/home/misha/lean_projects/transformer",
+  "transformer_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "lean": "4.35.0",
+  "mathlib_commit": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "command": "lake env lean /home/misha/python_projects/gpt/research/transformer_stress_parity/ActivationParity.lean",
+  "exit_code": 0,
+  "warnings": 0,
+  "extra_axioms": [],
+  "allowed_axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "checked_new_theorems": [
+    "silu_decomposition",
+    "recovers_parent",
+    "initial_product_odd",
+    "even_component",
+    "odd_component"
+  ],
+  "scope": "Real-arithmetic SiLU decomposition, recovery of shifted parent at even coefficient1, odd initialization and odd/even components of the pre-projection product. No optimization, finite-precision or full-transformer odd-symmetry guarantee."
+}
