@@ -1,0 +1,52 @@
+{
+  "repository": "/home/misha/lean_projects/transformer",
+  "commit": "90b1df2e270f56c78e9bc9b4e42a4cef9b63b74e",
+  "module": "Transformer.MHC.PeriRMS",
+  "namespace": "Transformer.MHC.PeriRMS",
+  "entrypoint": "src/Transformer/MHC/PeriRMS.lean",
+  "proof_modules": [
+    "src/Transformer/MHC/PeriRMS/Basic.lean",
+    "src/Transformer/MHC/PeriRMS/CurrentModel.lean",
+    "src/Transformer/MHC/PeriRMS/Dynamics.lean",
+    "src/Transformer/MHC/PeriRMS/Scores.lean",
+    "src/Transformer/MHC/PeriRMS/SqrtGain.lean"
+  ],
+  "axiom_check": "scripts/MHCPeriRMSAxioms.lean",
+  "validation": "review/mhc_peri_rms/validation.json",
+  "native_theorems": 17,
+  "concrete_examples": 19,
+  "variants": [
+    {
+      "attention_gain": "1/head_width",
+      "residual_coefficient": "1/sqrt(2L)",
+      "per_stream_and_mean_rms_bound": "1+2*sqrt(2L)",
+      "ssmax_score_absolute_bound": "log(N)"
+    },
+    {
+      "attention_gain": "1/head_width",
+      "residual_coefficient": "1",
+      "per_stream_and_mean_rms_bound": "1+4L",
+      "ssmax_score_absolute_bound": "log(N)"
+    },
+    {
+      "attention_gain": "1/sqrt(head_width)",
+      "residual_coefficient": "1/sqrt(2L)",
+      "per_stream_and_mean_rms_bound": "1+2*sqrt(2L)",
+      "ssmax_score_absolute_bound": "sqrt(head_width)*log(N)"
+    },
+    {
+      "attention_gain": "1/sqrt(head_width)",
+      "residual_coefficient": "1",
+      "per_stream_and_mean_rms_bound": "1+4L",
+      "ssmax_score_absolute_bound": "sqrt(head_width)*log(N)"
+    }
+  ],
+  "original_proof_commit": "c6c517bb061ff5163723dca0e078da555faa13f1",
+  "commands_from_destination": [
+    "LAKE_ARTIFACT_CACHE=false lake build",
+    "LAKE_ARTIFACT_CACHE=false lake env lean scripts/MHCPeriRMSAxioms.lean",
+    "./run.py audit",
+    "./run.py index",
+    "./run.py forbidden"
+  ]
+}
