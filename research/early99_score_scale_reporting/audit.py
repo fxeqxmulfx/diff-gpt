@@ -38,6 +38,11 @@ for name in args.name:
     plan = json.loads(raw_plan)
     config = Configuration(**plan["configuration"])
     require(
+        plan["configuration"]
+        == next(c for c in search["configurations"] if c["name"] == name),
+        "Executed configuration differs from the declared search plan",
+    )
+    require(
         json.loads((root / "configuration.json").read_text()) == plan["configuration"],
         "Mismatch: json.loads((root / 'configuration.json').read_tex...",
     )

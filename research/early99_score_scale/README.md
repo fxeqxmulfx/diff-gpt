@@ -66,3 +66,17 @@ with `--configuration PATH --write-plan`, then `--run --tier short --case NAME`
 for each declared screen task. `--run --tier short` completes all 75 cells only
 for a promoted arm; it reuses already completed screen cells. Preserve the
 source snapshot before training and use a new output directory for any change.
+
+The scientific source is frozen at **`dfecdc9`**. All **9 CPU/CUDA checks** passed,
+and all **90 score probes** passed the predeclared bounds and accuracy limits.
+Maximum probability error was `6.4692e-7`; maximum relative gradient error was
+`1.5498e-5`. The [validation record](results/validation.json) and
+[complete stress rows](results/score-stress.json) preserve the evidence and scope.
+The two benchmark screens are running; no learning improvement is established.
+
+Run both screens or regenerate their four-control reports with
+`python -m research.early99_score_scale_reporting.run_screens --run` or
+`--report`, using the environment shown above. Do not launch a duplicate active
+driver. The [checkpoint auditor](../early99_score_scale_reporting/audit.py) accepts
+`--name NAME --output PATH` for a screen, `--full` for 75 short cells, or
+`--full --long` for 105 cells after a selected winner's diagnostic.

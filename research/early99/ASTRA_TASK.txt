@@ -302,3 +302,25 @@ compile without warnings or extra axioms; examples use the actual FP32 epsilon.
 This improves the earlier factor-two estimate without changing the model or
 claiming a full-network, floating-point, optimization or learning guarantee.
 The original frozen guarantee records are preserved.
+
+Round 3: isolated SSMax score strength, with Q/K RMS retained
+The completed round-two reports are committed as 1138c62. The next declared
+study is research/early99_score_scale/plan.json, scientific source dfecdc9.
+Test fixed multipliers 1/2 and 1/4 on the SSMax/QK parent's attention gain,
+equivalent to effective SSMax s=0.5 and s=0.25. Keep all original weights, model
+dimensions, RNG, optimizer settings, LR x2, data and update budgets. No LeRoPE,
+activation, residual or numerical repair is combined with this isolation.
+The hypothesis uses short evidence only: test whether softer attention improves
+learning while retaining and tightening the projection-independent score bound.
+Its screen uses the same six short tasks and seeds 0/1/2, but requires 18/18
+passes and three improved task medians versus the Q/K parent. This new parent
+gate was declared before training. Complete all 75 short cells for each promoted
+arm; preserve baseline, LR x2 and no-QK comparisons and every failure. Select a
+new shared-model winner only with full coverage and a lower all-75 geometric
+mean than the Q/K parent, then one reused long diagnostic without tuning.
+All nine CPU/CUDA implementation checks and all 90 declared normalized-score
+stress cases passed before training. The two 18-cell screens are now running
+under research.early99_score_scale_reporting.run_screens. Do not duplicate them.
+Keep this study's Python, configurations and plan frozen until training/audits
+finish. Source archiving includes the declared plan; reporting and audits live
+in the separate research/early99_score_scale_reporting package.

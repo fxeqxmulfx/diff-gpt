@@ -40,6 +40,11 @@ def write_json(path: Path, value: dict) -> None:
 def report_screen(name: str) -> dict:
     """Reconstruct all 18 rows; only the declared parent determines promotion."""
     plan = read(STUDY / "plan.json")
+    declared = next(c for c in plan["configurations"] if c["name"] == name)
+    require(
+        read(RUNS / name / "plan.json")["configuration"] == declared,
+        "Executed candidate differs from the declared search configuration",
+    )
     task_lookup = {t["name"]: t for t in selected("short")}
     controls = {
         "parent": ROOT / plan["screen_control"],
@@ -124,6 +129,10 @@ def main() -> None:
     summaries = []
     for config in plan["configurations"]:
         name = config["name"]
+        require(
+            read(STUDY / "configs" / f"{name}.json") == config,
+            "Configuration file differs from the declared search plan",
+        )
         if args.run:
             write_json(PROGRESS, {"phase": "screen_running", "candidate": name})
             command = [
