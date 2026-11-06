@@ -36,5 +36,23 @@ evidence before execution. Separate output directories and process locks protect
 the completed controls. Every genuine update is journaled so any future recovery
 retains replay exposure. All 27 runs must finish; budget misses remain outcomes.
 
-Status: implementation validated; commit the source freeze before launching the
-complete declared grid. Reports remain separate from the fixed benchmark ranking.
+Training launched from source freeze `13cfe6c`. The complete declared grid remains
+in progress. The separate auditor reconstructs initialized tensors, complete
+oracles, first crossings, checkpoints, moments and actual execution exposure.
+Four reporting checks pass, rejecting omitted failures, duplicated seeds,
+incorrect crossing termination and collapsed replay bounds. All nine reused
+controls have also passed the new deep audit.
+
+The final report will retain all 36 cells, 12 size/arm groups and 51 paired-seed
+contrasts. Historical controls predate the new per-update execution journal, so
+their recorded runtimes remain visible but runtime ratios against them are
+omitted. Capacity and first-99 epoch comparisons remain valid within the stated
+task and seed scope. Reports remain separate from the fixed benchmark ranking.
+
+After the dispatcher finishes, run the separate auditor, reporter and plotter:
+
+```sh
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.audit
+PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.report
+MPLCONFIGDIR=/tmp/cubic-capacity-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot
+```
