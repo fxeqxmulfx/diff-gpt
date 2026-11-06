@@ -72,5 +72,21 @@ medians, so it does not advance. Parent-relative median ratios are1.75forAND,
 square-sum and1.0for linear transport. Square-sumseed2 is the worst slowdown:
 123to500epochs(4.065×). All18checkpoints and62frozen source files pass the
 [arm audit](results/audit-hybrid-lr2-screen.json), with no training errors,
-resumptions or replay intervals. The other three declared arms remain in progress;
-there is no full-suite optimizer selection yet.
+resumptions or replay intervals.
+
+Hybrid Muon LR×4 also passes 18/18 and improves 4/6 task medians, qualifying for
+the full short suite after all four screens finish. Parent-relative median ratios
+are 1.5 for AND, 0.4286 for division193, 0.7333 for division97, 0.6 for key/value
+binding, 0.3866 for square-sum and 1.25 for linear transport. The worst paired
+slowdown is 2×, in AND seed1 and linear transport seed2. All 18 checkpoints and
+62 frozen source files pass the [LR×4 audit](results/audit-hybrid-lr4-screen.json),
+with no errors, resumptions or replay intervals. Both pure-Muon screens remain
+pending or in progress; there is no full-suite optimizer selection yet.
+
+The separate [matrix bounds](../early99_muon_math/README.md) extend the frozen
+scalar proof to the epsilon floor, finite matrix iterations and transpose branch.
+Eight checked statements show that the real matrix direction, with its declared
+shape multiplier, has RMS at most 1/4 under explicit singular-representation
+assumptions. The update from the decayed parameter has RMS at most learning rate
+divided by four. This does not cover floating-point rounding, auxiliary AdamW,
+the weight-decay displacement, or transformer convergence.

@@ -685,3 +685,17 @@ All4screens runsequentially; preserve the live dispatcher. HybridMuonLR2complete
 Worstcell square-sumseed2slows123->500epochs. All18checkpoints/62sourcesauditclean,
 noresumptionsorreplay. HybridLR4andpureMuonLR2/LR4muststillfinish beforefullshort
 selection; no longdiagnostic isauthorizedunlessanewcomplete75cellwinnerisfrozen.
+
+Hybrid Muon LR4 screen completed and matrix bounds checked
+Hybrid LR4 completes 18/18 and improves 4/6 parent task medians, so it qualifies
+for full75 after the two pure-Muon screens finish. Median ratios are 1.5 for AND,
+0.4286 for division193, 0.7333 for division97, 0.6 for KV, 0.3866 for square-sum,
+and 1.25 for linear transport. Worst paired ratio is 2.0. All18 checkpoints and
+62 frozen sources audit clean, with no errors or replay. Preserve all five control
+comparisons. The sibling research/early99_muon_math proves eight real-arithmetic
+statements for the actual epsilon floor, finite matrix steps and transpose branch:
+with explicit orthonormal singular representation, scaled direction RMS <= 1/4
+and displacement from the decayed parameter RMS <= learning rate/4. No claim
+includes floating-point rounding, auxiliary AdamW, decay displacement or faster
+learning. The model's ten numerical stress failures remain unresolved. Keep the
+existing dispatcher running; finish all screens before full-suite selection.
