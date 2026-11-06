@@ -35,11 +35,13 @@ rejected screens, mathematical tradeoffs, all long failures and the 105-cell
 checkpoint audit. The user-requested next round will use short evidence and
 mathematics, preserving the original suite and all completed results.
 
-The [next declared study](../early99_score_scale/README.md) is now running two
-short screens with **Q/K RMS retained**, reducing the SSMax score coefficient
-to one-half or one-quarter. All nine CPU/CUDA checks and 90 score-stress cases
-passed before training. Its independently declared gate compares task medians
-with the Q/K parent, while the completed round-two selection remains unchanged.
+The [next declared study](../early99_score_scale/README.md) retains **Q/K RMS**,
+reducing the SSMax score coefficient to one-half or one-quarter. Both arms
+passed all 18 screen cells and their audits; half-scale improves four paired
+task medians and quarter-scale three versus the Q/K parent. Both full 75-cell
+suites are now queued, with half-scale running first. All nine CPU/CUDA checks
+and 90 score-stress cases passed before training. The completed round-two
+selection remains unchanged.
 
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
