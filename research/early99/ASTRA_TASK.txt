@@ -474,3 +474,18 @@ are a hypothesis about representing offsets and shifted features, not a proved
 repair. The generic RMS/branch-radius bounds still apply, but trained biases can
 break input oddness. Keep this study independent of the running inverse-width
 benchmark and all completed long diagnostics.
+
+Residual bias follow-up completed
+Validated source was frozen as a0d0135 before all96new cells. The full144cell
+comparison selects learned-even with hidden/output biases at17/24, versus15/24
+without biases. It recovers3shallow weak mixed-teacher cases, but loses odd
+depth4/strength0.25/seed1 at final0.0500355988. Do not round that into a pass.
+Keep5common-pair slowdowns. Every strong mixed-teacher cell still fails at both
+depths. Output-only learned-even retains15/24; shifted output-only gives10/24
+and shifted hidden/output gives12/24. No configuration passes24/24; no pooled
+first-crossing mean is available. The selected arm adds408/1632bias scalars at
+depth4/16 (about4.94% capacity). All96new checkpoints and58archived files are
+audited, with full-split final metrics reproduced;54passes and42budget misses,
+all finite. Complete pairs and negative results are in
+research/transformer_stress_bias/README.md and results/. This partial synthetic
+repair does not change the independently running inverse-width attention trial.
