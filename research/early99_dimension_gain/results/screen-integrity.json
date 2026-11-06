@@ -1,0 +1,57 @@
+{
+  "ready_for_full_short": true,
+  "comparisons": {
+    "parent": {
+      "passed": 18,
+      "improved_task_medians": 4,
+      "earlier": 11,
+      "tied": 4,
+      "later": 3,
+      "worst_ratio": 1.25
+    },
+    "lr2": {
+      "passed": 18,
+      "improved_task_medians": 3,
+      "earlier": 10,
+      "tied": 4,
+      "later": 4,
+      "worst_ratio": 19.25
+    },
+    "baseline": {
+      "passed": 18,
+      "improved_task_medians": 3,
+      "earlier": 10,
+      "tied": 3,
+      "later": 5,
+      "worst_ratio": 15.4
+    },
+    "noqk": {
+      "passed": 18,
+      "improved_task_medians": 4,
+      "earlier": 13,
+      "tied": 2,
+      "later": 3,
+      "worst_ratio": 3.85
+    }
+  },
+  "evidence_sha256": {
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-parent.json": "61cc6bb9938619f25213546feb4d7f36fcbb3f830b98ec36bded35ebfc13ff0b",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-parent.csv": "775ee067bc70267d79bbfc6400ac797f670e01b3511648f8c753c57cafb3252d",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-parent-tasks.csv": "4ff9bce77875d80c2a96bac766ae1e253e51fbc098c4abbef7043a112ef64958",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-lr2.json": "542f09550e5be00767ea89c46cf660e138bee4ac676834a44fe2a406b3f3cbb1",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-lr2.csv": "e837313598a5f540c2e0bdec9c22d4154aa053150ec1b6d5f74bdd6e59596c62",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-lr2-tasks.csv": "cac61a1cb88abaf3c749349cf3ecc0a9b75a1d24e0db236c74b19576618c982c",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-baseline.json": "a555db4d42d8343bf520f52c811981fe7135e2e45a1b9ab9517f95394f08ea22",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-baseline.csv": "4015a57474a76bf309df70f5981d16bdd8561efa0626e37335bd80f31fb67723",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-baseline-tasks.csv": "61dc8f9d87642e18115c852a29765bedde322eeeb16288c6c39fe5a9d50a0ff4",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-noqk.json": "b90fe762cad74158d927f9414c5c3b7d3d0506e90eaa2aaf6e71a5a3b177fe63",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-noqk.csv": "cbb2bf8f50aae350ed1c0d064f4dbe967966c3d8423347b65defc72f45e61401",
+    "research/early99_dimension_gain/results/screen-peri-rms-scaled-ssmax-inverse-width-lr2-vs-noqk-tasks.csv": "8226ec8889934be367997efa50df1540d1942bf901755b66a010872f203d5f4c",
+    "research/early99_dimension_gain/results/audit-screen.json": "fef96b4764c3dc8de9af4a1f363d1c6b10b82f91607716dc99bbb23d396fc7b5",
+    "research/early99_dimension_gain/results/guarantees.json": "5e9304ea4f204021356ade82e6a37a032dc49be2459b1120396a313dc0a20cf0",
+    "research/early99_dimension_gain/results/score-stress.json": "5fa568ddb0c888fed92bcabeeaac4c44d2fcc57e04f65b50a0b36bc537b267d0",
+    "research/early99_dimension_gain/results/width16-probe.json": "c62dd52c04f5f47b9d3710097c4c9e7dc2bbd266d031d26bc51195485b27086f"
+  },
+  "source_sha256": "b6023cb07ddc3db501c89a634be3680bade65319df0baaaec06f7c52ff67a8d5",
+  "equal_gain_caveat": "Eager gradients agree in all three seed-0 probes, but compiled and repeated compiled gradients show small differences. Width-16 learning trajectories are not bitwise controls. All three width-32 task medians improve, so promotion does not rely on a width-16 gain."
+}

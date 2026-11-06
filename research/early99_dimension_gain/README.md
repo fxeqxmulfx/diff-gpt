@@ -53,19 +53,51 @@ of two, so `1/d` is exactly representable there. The earlier general theorems
 still cover arbitrary fixed rounded gains. Compile the record's dependency order
 to a common temporary Lean import root before checking `Guarantees.lean`.
 
-Benchmark training is pending. The unchanged screen uses six tasks × three seeds
-and requires 18/18 passes and improved paired medians on at least three tasks
-versus the quarter-scale parent. Three tasks have unchanged width-16 gains; the
-other three have width 32. No screen geometric mean is used. Only a promoted
-candidate receives the remaining short cells, and only all 75 successes plus a
-lower complete geometric mean can select it. A new short winner receives one
-already observed long diagnostic after its decision is committed. Otherwise the
-parent and its existing long result are retained without another long run.
+The screen completed **18/18 passes**, with **four improved paired task medians**
+against the quarter-scale parent. It passes the unchanged three-improved-task
+gate. Source and pretraining evidence were committed as `a5aaa89` before training.
+All 18 checkpoints and 34 archived sources passed the [audit](results/audit-screen.json),
+with no execution errors or resumptions. All four control comparisons were
+[reconstructed](results/screen-integrity.json) from raw histories and metadata.
+
+| Screen task | Head width | Median paired epoch ratio vs quarter-scale |
+|---|---:|---:|
+| Boolean AND | 16 | 1.0000 |
+| Division p193 | 32 | 0.8235 |
+| Division p97 | 32 | 0.9375 |
+| Key-value binding | 16 | 1.1000 |
+| Square sum | 32 | 0.9021 |
+| Linear transport | 16 | 0.8000 |
+
+There are 11 earlier, four tied and three later paired cells versus the parent.
+Preserve the regressions: key-value binding seeds 1/2 take 16→20 and 70→77 epochs;
+linear transport seed 1 takes 4→5. Against LR ×2 the worst screen slowdown is
+key-value binding seed 2, 4→77 epochs (19.25×). No screen geometric mean is used.
+
+The width-16 cases exposed a numerical limitation of the expected unchanged
+controls. Their fixed gains are exactly equal, but their learning trajectories
+can differ. A [read-only CUDA probe](results/width16-probe.json) of all three
+seed-0 first batches found identical eager losses and gradients, while compiled
+parent/candidate gradients differ by up to 3.71223e-7 in relative L2 norm.
+Even repeated compiled calls within one factory differ, up to 1.01934e-7 here.
+No optimizer updates were issued by the probe. These observations establish
+numerical differences and nondeterminism, not a causal replay of entire training
+trajectories. Matched seeds do not supply bitwise training reproducibility.
+All three width-32 task medians improve, so promotion does not rely on the
+width-16 linear-transport improvement. The original declaration and every
+observed row remain intact.
+
+Full-short evaluation is pending. The promoted candidate receives the remaining
+57 short cells, and only all 75 successes plus a lower complete geometric mean
+can select it. A new short winner receives one already observed long diagnostic
+after its decision is committed. Otherwise the parent and its existing long
+result are retained without another long run.
 
 ```bash
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_dimension_gain.py
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain.stress
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain_reporting.run_screens --run
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain_reporting.run_full --run
 ```
 
 The runner requires committed source, configurations and passing evidence before

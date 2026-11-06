@@ -1,0 +1,263 @@
+{
+  "scope": "Read-only first-batch seed-0 differentiation of all three width-16 screen controls. No optimizer updates or benchmark reruns; no causal attribution of a whole learning trajectory from this local probe.",
+  "rows": [
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 0,
+      "head_width": 16,
+      "batch_size": 32,
+      "initialization": {
+        "initial_parameters_sha256": "313471342e5fe460aabac5db7e68115440b2e55f9a50e3195489a1bbd724f279",
+        "parameters": 104832,
+        "model_class": "diff_gpt.domain.model.gpt.GPT"
+      },
+      "gain": {
+        "quarter": [
+          0.0625,
+          0.0625,
+          0.0625,
+          0.0625
+        ],
+        "inverse": [
+          0.0625,
+          0.0625,
+          0.0625,
+          0.0625
+        ]
+      },
+      "eager": {
+        "losses": {
+          "quarter": 4.585992336273193,
+          "inverse": 4.585992336273193
+        },
+        "parent_vs_candidate_gradients": {
+          "maximum_absolute_difference": 0.0,
+          "relative_l2_difference": 0.0,
+          "unequal_elements": 0,
+          "total_elements": 104832
+        },
+        "repeated_same_factory_gradients": {
+          "quarter": {
+            "maximum_absolute_difference": 0.0,
+            "relative_l2_difference": 0.0,
+            "unequal_elements": 0,
+            "total_elements": 104832
+          },
+          "inverse": {
+            "maximum_absolute_difference": 0.0,
+            "relative_l2_difference": 0.0,
+            "unequal_elements": 0,
+            "total_elements": 104832
+          }
+        },
+        "repeated_same_factory_loss_equal": {
+          "quarter": true,
+          "inverse": true
+        }
+      },
+      "compiled": {
+        "losses": {
+          "quarter": 4.585992336273193,
+          "inverse": 4.585992336273193
+        },
+        "parent_vs_candidate_gradients": {
+          "maximum_absolute_difference": 1.7881393432617188e-07,
+          "relative_l2_difference": 5.016795553311384e-08,
+          "unequal_elements": 94,
+          "total_elements": 104832
+        },
+        "repeated_same_factory_gradients": {
+          "quarter": {
+            "maximum_absolute_difference": 3.5762786865234375e-07,
+            "relative_l2_difference": 5.867819937861542e-08,
+            "unequal_elements": 59,
+            "total_elements": 104832
+          },
+          "inverse": {
+            "maximum_absolute_difference": 2.384185791015625e-07,
+            "relative_l2_difference": 5.2246832261409214e-08,
+            "unequal_elements": 95,
+            "total_elements": 104832
+          }
+        },
+        "repeated_same_factory_loss_equal": {
+          "quarter": true,
+          "inverse": true
+        }
+      }
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 0,
+      "head_width": 16,
+      "batch_size": 32,
+      "initialization": {
+        "initial_parameters_sha256": "313471342e5fe460aabac5db7e68115440b2e55f9a50e3195489a1bbd724f279",
+        "parameters": 104832,
+        "model_class": "diff_gpt.domain.model.gpt.GPT"
+      },
+      "gain": {
+        "quarter": [
+          0.0625,
+          0.0625,
+          0.0625,
+          0.0625
+        ],
+        "inverse": [
+          0.0625,
+          0.0625,
+          0.0625,
+          0.0625
+        ]
+      },
+      "eager": {
+        "losses": {
+          "quarter": 4.5947675704956055,
+          "inverse": 4.5947675704956055
+        },
+        "parent_vs_candidate_gradients": {
+          "maximum_absolute_difference": 0.0,
+          "relative_l2_difference": 0.0,
+          "unequal_elements": 0,
+          "total_elements": 104832
+        },
+        "repeated_same_factory_gradients": {
+          "quarter": {
+            "maximum_absolute_difference": 0.0,
+            "relative_l2_difference": 0.0,
+            "unequal_elements": 0,
+            "total_elements": 104832
+          },
+          "inverse": {
+            "maximum_absolute_difference": 0.0,
+            "relative_l2_difference": 0.0,
+            "unequal_elements": 0,
+            "total_elements": 104832
+          }
+        },
+        "repeated_same_factory_loss_equal": {
+          "quarter": true,
+          "inverse": true
+        }
+      },
+      "compiled": {
+        "losses": {
+          "quarter": 4.5947675704956055,
+          "inverse": 4.5947675704956055
+        },
+        "parent_vs_candidate_gradients": {
+          "maximum_absolute_difference": 8.568167686462402e-08,
+          "relative_l2_difference": 3.712227069507428e-07,
+          "unequal_elements": 96905,
+          "total_elements": 104832
+        },
+        "repeated_same_factory_gradients": {
+          "quarter": {
+            "maximum_absolute_difference": 2.9802322387695312e-08,
+            "relative_l2_difference": 2.3238451452925376e-08,
+            "unequal_elements": 129,
+            "total_elements": 104832
+          },
+          "inverse": {
+            "maximum_absolute_difference": 2.9802322387695312e-08,
+            "relative_l2_difference": 2.100951397583722e-08,
+            "unequal_elements": 57,
+            "total_elements": 104832
+          }
+        },
+        "repeated_same_factory_loss_equal": {
+          "quarter": true,
+          "inverse": true
+        }
+      }
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 0,
+      "head_width": 16,
+      "batch_size": 32,
+      "initialization": {
+        "initial_parameters_sha256": "d83071a08b851072355b22484549d4d6d9ff75a3649aeddf799135fed5507cc5",
+        "parameters": 102848,
+        "model_class": "diff_gpt.domain.model.gpt.GPT"
+      },
+      "gain": {
+        "quarter": [
+          0.0625,
+          0.0625,
+          0.0625,
+          0.0625
+        ],
+        "inverse": [
+          0.0625,
+          0.0625,
+          0.0625,
+          0.0625
+        ]
+      },
+      "eager": {
+        "losses": {
+          "quarter": 3.7646641731262207,
+          "inverse": 3.7646641731262207
+        },
+        "parent_vs_candidate_gradients": {
+          "maximum_absolute_difference": 0.0,
+          "relative_l2_difference": 0.0,
+          "unequal_elements": 0,
+          "total_elements": 102848
+        },
+        "repeated_same_factory_gradients": {
+          "quarter": {
+            "maximum_absolute_difference": 0.0,
+            "relative_l2_difference": 0.0,
+            "unequal_elements": 0,
+            "total_elements": 102848
+          },
+          "inverse": {
+            "maximum_absolute_difference": 0.0,
+            "relative_l2_difference": 0.0,
+            "unequal_elements": 0,
+            "total_elements": 102848
+          }
+        },
+        "repeated_same_factory_loss_equal": {
+          "quarter": true,
+          "inverse": true
+        }
+      },
+      "compiled": {
+        "losses": {
+          "quarter": 3.7646639347076416,
+          "inverse": 3.7646639347076416
+        },
+        "parent_vs_candidate_gradients": {
+          "maximum_absolute_difference": 2.980232238769531e-07,
+          "relative_l2_difference": 1.173215730469608e-07,
+          "unequal_elements": 227,
+          "total_elements": 102848
+        },
+        "repeated_same_factory_gradients": {
+          "quarter": {
+            "maximum_absolute_difference": 1.7881393432617188e-07,
+            "relative_l2_difference": 9.755887647648154e-08,
+            "unequal_elements": 212,
+            "total_elements": 102848
+          },
+          "inverse": {
+            "maximum_absolute_difference": 2.980232238769531e-07,
+            "relative_l2_difference": 1.0193386045129518e-07,
+            "unequal_elements": 218,
+            "total_elements": 102848
+          }
+        },
+        "repeated_same_factory_loss_equal": {
+          "quarter": true,
+          "inverse": true
+        }
+      }
+    }
+  ],
+  "source_sha256": "cb15e442e97686f2b35fcc7e14465783a06f5e9eaddb3025cbe7e40cb0ed251d",
+  "torch": "2.14.1+cu126",
+  "device": "NVIDIA GeForce RTX 3050 Laptop GPU"
+}
