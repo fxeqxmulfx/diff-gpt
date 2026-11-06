@@ -1,0 +1,38 @@
+{
+  "question": "Can the existing real-function-preserving arithmetic repairs recover all ten inverse-width complete-model numerical failures without losing ordinary controls?",
+  "status": "Preparation and CPU implementation validation only until the requested Muon optimizer study is complete and committed. Scientific stress execution is gated on its closure record. No benchmark training or optimizer change is part of this study.",
+  "parent": "research/inverse_width_stack_stress/results/summary.json",
+  "optimizer_dependency": "research/early99_muon/results/study-complete.json",
+  "variants": [
+    "range_rms",
+    "wide_xsa",
+    "wide_swiglu",
+    "all_numeric"
+  ],
+  "range_rms": "Reuse the checked maximum-scaled FP64 RMS forward and pairwise FP64 VJP, returning the input dtype. Preserve every explicit epsilon; resolve an implicit epsilon to the original FP32 value before widening. No learned normalization parameters.",
+  "wide_xsa": "Retain FP32 QKV, Q/K RMS, fixed RoPE tables, SSMax, cached values and original clipping epsilon. Widen centered XSA and the output projection through Peri-RMS to FP64. Explicitly retain the inverse-head-width gain; the old generic wrapper alone would discard that override.",
+  "wide_swiglu": "Widen the two input halves, SiLU/product and output projection through Peri-RMS to FP64, then return the residual input dtype. Preserve both original matrices, the actual output-normalization epsilon and post-RMS residual coefficient.",
+  "all_numeric": "Combine only the three numerical repairs above. Keep fixed RoPE: no learned frequencies or bounded-frequency equation is introduced.",
+  "grid": "For each of four variants, repeat exactly the parent's five depth/context shapes and ten applicable control/embedding/QKV/SwiGLU interventions, using its seed, width, heads, vocabulary, tokens and targets. Exactly 200 new numerical cells, each paired with the preserved 50-cell parent. The original 15 learned-frequency interventions remain explicitly inapplicable.",
+  "expected_per_variant": 50,
+  "expected_new_cells": 200,
+  "reference": "Build the original frozen inverse-width model, apply the same intervention, and promote an unrepaired copy with the same quantized parameters, stored rotary tables and FP32 epsilon to FP64. Only then install the candidate on the actual FP32 copy. Reference computation must not call the candidate repair. Compare all named parameter gradients, logits and cross-entropy loss, retaining missing and nonfinite gradients.",
+  "relative_error_threshold": 0.001,
+  "acceptance": "Require finite logits/loss and all parameter gradients, finite FP64 reference, relative L2 logits and global gradient errors <=0.001, and relative loss error <=0.001. Retain every cell, per-parameter error, every original failure and all new regressions. No filtered success-only aggregate or learning claim.",
+  "validation": "Check exact parameter identity/order/values, buffers, tied embedding/readout, RNG and residual scales; reject unsupported parents. Validate independent original-FP64 outputs and every gradient on ordinary small models at head widths8 and32 for all variants. Check explicit RMS/XSA epsilons, singleton zero output, causal/tokenwise/chunked/shared-prefix cache behavior and selected readout. Scientific preparation must refuse to create outputs before committed optimizer closure and committed validated sources.",
+  "mathematics": "No model equation or new mathematical guarantee is introduced. Reuse the existing real RMS scaling/VJP and centered-XSA identities with the original epsilons and inverse-width coefficient. Wider intermediates are a finite-precision repair hypothesis; the fixed numerical grid is not a proof for all inputs or learning outcomes.",
+  "source_policy": "Use a separate sibling package; preserve all frozen optimizer, benchmark, parent stress and previous repair sources. Commit this plan before validation, then commit validated implementation/evidence before any of the 200 scientific cells. Archive exact dependencies and bind every record and preserved comparison by hashes.",
+  "evidence_sha256": {
+    "research/inverse_width_stack_stress/plan.json": "f53ae9d908c2ddc5b2baeba3ebd0ce92c232005ed7d01747550c200e7d150a89",
+    "research/inverse_width_stack_stress/results/summary.json": "d566768e56a6e7bb0dc6dc3ba0ab5d4b38ed3952025a6a672fbf42127c7dd49f",
+    "research/inverse_width_stack_stress/results/audit.json": "bc8a35f28596b79c52e5afab416e02bd3c6d49e460b9cd0971f9e4f07f26b595",
+    "research/inverse_width_stack_stress/results/manifest.json": "d90d6e5667cd82df9b08fc97667343e291b3cf314755fc0af3a11670459b4208",
+    "research/transformer_stress/plan.json": "2f931000db4813a80695a5858972f562a253cdf731eb357aa116e6ff632123eb",
+    "research/transformer_stress_fixes/plan.json": "88aa974b1798a9afa1715a21039c49da70b6ae0bc552d874bffff80dd765f412",
+    "research/transformer_stress_fixes/models.py": "9d4f270b31487a378d10c086ebf1555584531e158288d04c1be194626776350c",
+    "research/transformer_stress_fixes/results/guarantees.json": "c0b73f3b4fccc462f233ee4a6b22ace58f93400bcd835074c9e32b31d712d9bc",
+    "research/early99_muon/plan.json": "dc1a62ce7cdb578302e785f122697cfb20d4803a9e094449ed1cb24f99d5e8b8",
+    "research/early99_optimizer_followups/queue.json": "46c06d989448f421215ac5a012a3af2120645aaa60b75e8bea52271bbbb8f83d"
+  },
+  "declared_at_utc": "2026-11-06T11:25:10.525544+00:00"
+}
