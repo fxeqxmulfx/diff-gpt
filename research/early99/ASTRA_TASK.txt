@@ -426,3 +426,20 @@ and0.05threshold. Require the complete144cell grid, preserve every failure and
 audit the saved checkpoints and full-split scores. No forward-model or new
 generalization guarantee is claimed. Implement, validate and freeze this
 independent study before training.
+
+Residual decay follow-up completed
+The validated source was frozen as 8d83f9e before all96new cells. The complete
+144cell grid selects learned-even-zero with decay0.1:15/24passes, versus10/24
+at decay0.01. It recovers5cells without a new miss;4common passes cross earlier
+and6tie. Odd teacher12/12now passes, but mixed teacher remains3/12. All24final
+training errors meet0.05, so the remaining9heldout misses still exhibit a gap.
+Keep the stronger-decay negatives: decay1 gives6/24for either activation,
+losing3previous shifted passes and4learned-even passes. Shifted decay0.1stays9/24.
+All96new checkpoints reproduce their full-split final scores;50source/control/
+validation files and all histories, initializations, optimizer and sampler
+states are verified. All new runs are finite:36passes,60budget misses. No pooled
+first-crossing mean is available because no configuration passes24/24. Details
+and every paired row are in research/transformer_stress_decay/README.md and
+results/. This is a partial synthetic repair, not a full-GPT or universal-model
+claim. Continue the separately declared inverse-width attention study; its
+benchmark training has not started.
