@@ -37,7 +37,18 @@ OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_
 PYTHONPATH=. .venv/bin/python -m research.cubic_usual_gain_reporting.record_validation
 # Commit the validated sources and evidence before training.
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.cubic_usual_gain.run --run
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_usual_gain_reporting.audit
 ```
+
+The separate auditor requires all three completed seeds and the full source,
+checkpoint, optimizer, exact-oracle and update-journal checks. It reports all
+nine comparisons against the three reused controls, retaining every budget miss
+and replay interval. Aggregate epoch ratios require every paired seed to pass;
+historical wall-clock ratios are omitted because journal overhead differs.
+Three reporting checks pass using synthetic raw files: they retain a censored
+seed, preserve uncertainty from unjournaled recovery, and reject changed
+initialization or missing/duplicate seeds. Reproduce them with
+`.venv/bin/pytest -q tests/diff_gpt/application/test_cubic_usual_gain_reporting.py`.
 
 Status: implementation and CPU validation complete; CUDA validation and the three
 scientific runs are queued. No new scientific training has started.
