@@ -1,0 +1,53 @@
+{
+  "inspected_at_utc": "2026-11-06T07:49:31.987649+00:00",
+  "status": "Implementation review only; no new optimizer arm or learning-rate grid declared and no Muon training performed.",
+  "native_torch_muon": {
+    "torch": "2.14.1+cu126",
+    "source": "/home/misha/python_projects/gpt/.venv/lib/python3.14/site-packages/torch/optim/_muon.py",
+    "sha256": "c17abbb8af4c935d125b189c38d3cbaec295f1cfd232d2712bdb75e13184b972",
+    "orthogonalization_dtype": "BF16 via grad.bfloat16(), even with FP32 parameters",
+    "steps": 5,
+    "coefficients": [
+      3.4445,
+      -4.775,
+      2.0315
+    ],
+    "epsilon": 1e-07,
+    "default_shape_adjustment": "original: sqrt(max(1,fan_out/fan_in))",
+    "other_shape_adjustments": {
+      "match_rms_adamw": "0.2*sqrt(max(fan_out,fan_in))",
+      "spectral_unclamped": "sqrt(fan_out/fan_in)"
+    },
+    "decay": "Uses the unadjusted group rate; shape scaling applies to the matrix direction."
+  },
+  "local_lean_optim_muon": {
+    "source": "/home/misha/lean_projects/transformer/optimizers/src/lean_optim/matrix.py",
+    "sha256": "12343e153384e572885f6b7915ef2199f85816a6ca52e8de57b1c015e106d699",
+    "orthogonalization_dtype": "Inherits matrix dtype; FP32 when given FP32 matrices.",
+    "normalization": "Frobenius norm; zero norm replaced by one.",
+    "steps": 5,
+    "coefficients": [
+      3.4445,
+      -4.775,
+      2.0315
+    ],
+    "shape_adjustment": "0.2*sqrt(max(shape))",
+    "auxiliary_betas": [
+      0.9,
+      0.999
+    ],
+    "benchmark_auxiliary_betas": [
+      0.9,
+      0.98
+    ],
+    "note": "Do not silently inherit the local auxiliary Adam settings; declare a dedicated AdamW group with benchmark settings for the hybrid."
+  },
+  "formal_definitions_inspected": [
+    "Transformer.Muon.schulzIterate_zero",
+    "Transformer.Muon.printed_step_identity",
+    "Transformer.Muon.schulz_limit_fixed",
+    "Transformer.Muon.schulzStep_spectrum"
+  ],
+  "mathematical_caution": "The printed quintic changes a unit singular value to.701 after one step. Finite-step Newton-Schulz with these coefficients is not exact polar projection, so exact orthogonality/spectral-unit/convergence claims must not be transferred to the implemented update. Library statements were inspected; no new Muon proof check has run in this task.",
+  "before_training": "Freeze the dtype, shape scaling, momentum, epsilon, group rates and decay conventions; independently validate actual updates, zero/rectangular/rank-deficient matrices, mode/state resumption and CUDA. Keep the inherited model unchanged."
+}
