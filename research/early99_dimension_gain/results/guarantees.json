@@ -1,0 +1,74 @@
+{
+  "checked_at_utc": "2026-11-06T03:47:11.889546+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "statements": 4,
+  "axioms": {
+    "Early99DimensionGain.score_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99DimensionGain.probability_ceiling": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99DimensionGain.inverse_width_coefficient": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99DimensionGain.query_sensitivity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "source_sha256": {
+    "research/early99_dimension_gain/Guarantees.lean": "401d79f4b67828436c7c12de24762b4a361547149e19d44aadb3771c2a970330",
+    "research/early99/guarantees/NormalizedScores.lean": "4a789a11e8ef68a650cc8ef47b8b631ffd941609b26fab72253bf572ef9907e4",
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904",
+    "research/normalization_guarantees/AttentionSensitivity.lean": "a789f2de4a10282d8e266a337ff3554f95176c2c9dc101e8a3dc1983d4f6afc7",
+    "research/normalization_guarantees/SoftmaxLipschitz.lean": "3702c8c60e5c7468aac65323475a1154ae64f9bf3f1c9dfc8f54e61569e62e5f",
+    "research/normalization_guarantees/AttentionSensitivityImproved.lean": "993568752d6562c75c6c311401174237f56f54f622d2d6ff208fc06cc9f1e1de",
+    "research/normalization_guarantees/AttentionSelectivity.lean": "41a0913177b71fe2586f8613c06e4142ff881cd2ab5a006aa44d4765f0d802fd"
+  },
+  "output": "research/early99_dimension_gain/results/lean-check.txt",
+  "output_sha256": "cec6e454c04c72ceca05fbb88d5981656b824949ed337e452b40725fb60b7a0c",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "external_source_sha256": {
+    "src/Transformer/Perspective/Softmax.lean": "6f8117f0d9cca80d140a2aaa6691953a8bbd7bc6be02f0a612d4812714ee9fe5",
+    "src/Transformer/Homogenized/SoftmaxDerivatives.lean": "49792cc18926e0af62c196802020c3849275b07f3a311e6079198979907caa84",
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/SequenceModel/Rotary.lean": "41365fb1e51eec1d61b2bb3f6feacd11b9e76b0752cbdb9ef360bcb097b581a3",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "observed_command": "lake env bash -c 'export LEAN_PATH=\"/tmp/early99-dimension-gain:$LEAN_PATH\"; lean -R /home/misha/python_projects/gpt -o /tmp/early99-dimension-gain/research/normalization_guarantees/AttentionSensitivityImproved.olean /home/misha/python_projects/gpt/research/normalization_guarantees/AttentionSensitivityImproved.lean && lean -R /home/misha/python_projects/gpt /home/misha/python_projects/gpt/research/early99_dimension_gain/Guarantees.lean'",
+  "dependency_order": [
+    "research/early99/guarantees/NormalizedScores.lean",
+    "research/normalization_guarantees/RMSLipschitz.lean",
+    "research/normalization_guarantees/AttentionSensitivity.lean",
+    "research/normalization_guarantees/SoftmaxLipschitz.lean",
+    "research/normalization_guarantees/AttentionSensitivityImproved.lean",
+    "research/normalization_guarantees/AttentionSelectivity.lean"
+  ],
+  "hypotheses": [
+    "Real arithmetic; positive integer head width; epsilon > 0; N=n+1 visible keys.",
+    "Fixed exact inverse-width gain 1/d. Arbitrary projected queries, keys and rotary phases.",
+    "Query sensitivity holds with keys and phases fixed; the variable is the projected query before RMS."
+  ],
+  "statements_in_words": [
+    "Absolute SSMax score <= log(N), independent of d.",
+    "Each probability <= 1/(1+(N-1)/N^2); an upper bound, not guaranteed concentration.",
+    "For c>=0 the sensitivity coefficient reduces to c/(sqrt(d)*sqrt(epsilon)).",
+    "The complete probability row l1 query sensitivity is at most log(N)/(sqrt(d)*sqrt(epsilon))."
+  ],
+  "mapping": "Reviewed against finite-epsilon RMS, rotary and the exact gain in factories.py; not a formal PyTorch translation. All four theorems have concrete nonvacuity examples at FP32 epsilon.",
+  "limitations": "No bound on projection weights, XSA, values, residual/readout paths, phase changes, floating-point arithmetic or training convergence. Exact 1/d in reals is distinct from a rounded stored gain; the general prior bounds accept that actual gain."
+}

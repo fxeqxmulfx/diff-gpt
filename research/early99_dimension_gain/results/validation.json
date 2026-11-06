@@ -1,0 +1,25 @@
+{
+  "checked_at_utc": "2026-11-06T03:47:11.890032+00:00",
+  "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_dimension_gain.py",
+  "exit_code": 0,
+  "passed": 13,
+  "skipped": 0,
+  "cuda_tests_passed": 2,
+  "duration_seconds": 21.28,
+  "test_source_sha256": "efc08d60f81ab3c896cab07e1f932cc5dcd1af16d3363e399ed9c9f53e6e27c0",
+  "source_sha256": {
+    "research/early99_dimension_gain/readiness.py": "ed4ee3a328055ca595b6981e1db314a79215e0655966880fd47c7164a69a06b0",
+    "research/early99_dimension_gain/factories.py": "0c1309238bf0cae46015d505c6e1d9ba81b8a0a2730ba28ad36d6950d74921ca",
+    "research/early99_dimension_gain/run.py": "e7f5a6d81e4cbe47d224b909377157094c467c4a27906319d5c5d8030c70d93c",
+    "research/early99_dimension_gain/__init__.py": "f60cb27fb968b92c3516af513cf63cdbc13e554ab4e5829cf453d9f4fc6e4ee9",
+    "research/early99_dimension_gain/stress.py": "c3a840aa1dd78e2078e011065a09f73a31c7483277bf4ed8f146cfe5bfab5936",
+    "research/early99_dimension_gain/Guarantees.lean": "401d79f4b67828436c7c12de24762b4a361547149e19d44aadb3771c2a970330"
+  },
+  "evidence_sha256": {
+    "research/early99_dimension_gain/results/validation-pytest.txt": "eaff7d45d9d4935ce4e7ad5704e5b9a01887dca507ac888544230896a5f9c4b6",
+    "research/early99_dimension_gain/results/guarantees.json": "5e9304ea4f204021356ade82e6a37a032dc49be2459b1120396a313dc0a20cf0",
+    "research/early99_dimension_gain/results/lean-check.txt": "cec6e454c04c72ceca05fbb88d5981656b824949ed337e452b40725fb60b7a0c",
+    "research/early99_dimension_gain/results/score-stress.json": "5fa568ddb0c888fed92bcabeeaac4c44d2fcc57e04f65b50a0b36bc537b267d0"
+  },
+  "previous_check": "An archive-test literal still named the previous package: 11 passed, 1 failed before correcting that test path; final 13 checks all pass. No model or numerical tolerance changed in response."
+}
