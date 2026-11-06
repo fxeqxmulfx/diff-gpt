@@ -1,0 +1,55 @@
+{
+  "declared_at_utc": "2026-11-06T09:30:08.900872+00:00",
+  "user_request": "After Schedule-Free, check AdamW with a schedule (cosine), then Muon/AdamW and pure Muon.",
+  "parent": "peri-rms-scaled-ssmax-inverse-width-lr2",
+  "parent_short_gm_epochs": 16.266050125508265,
+  "configurations": [
+    {
+      "name": "peri-rms-inverse-width-adamw-cosine200-floor01-lr2",
+      "learning_rate_multiplier": 2.0,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "model_variant": "peri-rms-embedding-scaled-ssmax",
+      "schedule": "cosine",
+      "decay_epochs": 200.0,
+      "minimum_lr_ratio": 0.1,
+      "gain_rule": "inverse_head_width"
+    }
+  ],
+  "change": "Retain the exact inverse-width shared model and native AdamW; change only the post-warmup rate from constant to cosine decay.",
+  "schedule": "At completed update u<=50, use the unchanged peak*min(1,u/50), including the first zero-rate update. Afterwards set progress=min((actual_epochs(u)-actual_epochs(50))/200,1); rate=peak*(0.1+0.9*(1+cos(pi*progress))/2). Peak is twice the original case rate. Hold0.1peak after200post-warmup epochs, without restarts. Exposure includes short tail batches. Restoring a checkpoint restores the trajectory clock; replayed work is counted separately in the metric.",
+  "optimizer": "Native torch.optim.AdamW, betas(.9,.98),epsilon1e-8, original case weight decay, FP32highest; existing fused/capturable CUDA updates and original compiled loss.",
+  "model_invariants": "Original inverse-width factory and all matrices, initialization/RNG/order/count, Q/K RMS, SSMaxlogN/d, fixedRoPE, Peri-RMS, embedding RMS, tied embedding/readout, parameter-free RMS and residual scaling remain unchanged. No model numeric repair or activation change.",
+  "execution_journal": "New durable before/after records surround only genuine training steps; fsync+atomic replacement before issuing, CUDA synchronization then fsync after completion. Graph preparation is unchanged and excluded. On interruption at most one pending batch per segment has uncertain execution; preserve every old journal and bound all replay exposure. This changes I/O/synchronization, not issued updates, losses, batches, RNG or evaluation cadence. Validate CPU/CUDA equivalence before training.",
+  "screen_tasks": [
+    "suite-boolean-and-random",
+    "power-division-p193-k2",
+    "power-division-p97-k2",
+    "gpt-probe-key-value-binding",
+    "arithmetic-square-sum",
+    "gpt-probe-linear-transport"
+  ],
+  "screen_seeds": [
+    0,
+    1,
+    2
+  ],
+  "screen_control": "runs/early99/candidates/peri-rms-scaled-ssmax-inverse-width-lr2",
+  "screen_policy": "Complete all18cells at original budgets. Advance only with18/18passes and at least3of6improved median paired actual-exposure epoch ratios against the unchanged parent. Keep all misses/errors; no screen geometric mean. With replay intervals, prove the same decision for the entire interval; otherwise resolve with a separately declared repeat.",
+  "full_policy": "Every promoted arm completes75short cells. Retain coverage, all paired medians/worst/regressions versus parent,quarter,LR2,baseline,noQK. A new winner needs75/75 and a lower complete-suite geometric mean than16.266050125508265. If interruption leaves an interval, require its upper complete GM below the parent; a lower bound alone cannot establish a winner. No filtered means.",
+  "long_policy": "Freeze and commit a new short winner before evaluating it once on the reused30longcells. No new long run if parent retained. Never use long outcomes to design/tune/select.",
+  "validation": "Reuse prior native optimizer/graph checks. Verify current schedule using independent tail-exposure clock/endpoints/monotonicity/floor checks, actual model initialization/RNG/capacity, journal pending/resume/tail accounting, original trainer AST except explicit constructor/journal metadata/output, and real CUDA parameter/moment equivalence with short batches. Check real scalar cosine bounds/endpoints in Lean with actual floor1/10; no convergence claim.",
+  "source_policy": "New scientific and reporting siblings plus reusable execution journal. Preserve every prior frozen scientific source, plan, result and launcher hash. Archive every relevant dependency and pin all validated source before benchmark updates.",
+  "prior_negative_evidence": {
+    "older_cosine": "research/early99/results/round2/screen-adamw-lr3-cosine200.json:18/18,1/6improved on an earlier architecture with floor.5; preserve this negative.",
+    "schedule_free": "research/early99_schedule_free_recovery/results/complete-audit.json:bothrates18/18,2/6improved; studycomplete0857b85."
+  },
+  "unresolved_numeric_failures": "Current inverse-width full stack remains40/50; ten extreme QKV/SwiGLU failures are preserved and not repaired in this experiment.",
+  "evidence_sha256": {
+    "research/early99_dimension_gain/results/shared-selection.json": "dfa88e7d98a789281983f58a4eb15dcbf190f0dd908eaed686022895ac626e28",
+    "research/early99_dimension_gain/results/selection-integrity.json": "91b7eb9742213dbc61709011f9900f1a02b0ab39555d2a431717b10e4a14a736",
+    "research/early99_schedule_free_recovery/results/complete-audit.json": "06b351b7604747ca598f984253e7340023dfc6b048ddb73b1f906222977be2d2",
+    "research/early99/results/round2/screen-adamw-lr3-cosine200.json": "015500f6097f2160171aeefa2979b5c33830ab11d91219a8c0e6a431e67af4bf",
+    "research/early99_optimizer_followups/queue.json": "46c06d989448f421215ac5a012a3af2120645aaa60b75e8bea52271bbbb8f83d"
+  }
+}

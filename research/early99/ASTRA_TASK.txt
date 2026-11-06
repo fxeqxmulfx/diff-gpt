@@ -634,3 +634,13 @@ predeclaredgate, and no filteredGM is computed. Complete reports are under
 research/early99_schedule_free_recovery/results/. Continue the queued cosine
 AdamW,hybridMuon/AdamW,andpureMuonstudies; the10full-stack numerical failures stay
 visible and deferred. Keep all earlier negative optimizer and schedule evidence.
+
+Next optimizer study: cosine AdamW on the shared inverse-width parent
+research/early99_cosine/plan.json declares the originalLRx2peak and50updatewarmup,
+then cosine decay over200actualpost-warmupepochs to0.1peak. NativeAdamWandthemodel
+remain fixed. A durable per-update execution journal brackets genuine steps so
+pause/resume accounting is bounded to one pending batch per interrupted segment.
+Validate the schedule, unchanged updates/RNG and journal on CPU/CUDA, check scalar
+cosinebounds inLean, and freeze sources before18screen cells. Apply the existing
+18/18and3medianimprovements gate; full75andnewwinnerlongonlyifqualified. Preserve
+allpriorcosine/Schedule-Free negatives. MuonhybridandpureMuonremainnext.
