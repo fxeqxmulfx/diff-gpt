@@ -1211,3 +1211,21 @@ It doesnot equate arbitrary old/new model gradients ortheir training paths.
 The independentDecimal reference passes bothclosed-form checks, including
 zero-rate moment insertion. Thefailed record-equality elaboration isretained.
 Commit validatedsources beforeall18 syntheticCPUtraces; no modelrun isadded.
+
+Complete AdamW gradient-scaling supplement audited
+Frozen sourcee707f30 completes18/18 syntheticCPUcases and10368/10368 comparisons,
+with2304 nativeoptimizer updates, noexecutionerrors andnomodeltraining ortask
+scores. Allparameters/moments matchindependent80digit Decimal references within
+theunchanged0.001criterion; maximumrelativeerror is1.6375021e-6 inFP32 and
+1.8832000e-15 inFP64. Thedirect scalingidentities match exactly onthedeclared
+power-of-two grid. Separate audit reconstructseveryinput,reference anderror,
+checks allraw/sourcearchives andretains thecompletecoverage andproofattempts.
+For thezero-buffer adaptive direction atsameepsilon1e-8, dividinggradient1e-4
+byeight changesdirection byonlyabout.070percent; atgradient1e-12 theratio is
+about.12501. These areanalyticillustrations beforelearning-rate multiplication,
+not newmodelobservations. Thebenchmark'sfirstactualrate remainszero.
+Do not translate themeasured old/new Q/KgradientRMS gap intoaproportionalAdamW
+update gap: direction,momenthistory,epsilon andparameter-relativeupdates matter.
+Theusualgain experiment stilltests achangedattentionfunction andscoreenvelope.
+No initializer isnamedbest; keepcapacity/gain order,preferredPeri/embeddingnorm
+andtiedweights, andthedeferredMuon/full-stackrepair workunchanged.

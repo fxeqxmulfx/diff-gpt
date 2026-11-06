@@ -1,0 +1,67 @@
+{
+  "audited_at_utc": "2026-11-06T23:22:25.083739+00:00",
+  "complete": true,
+  "cases": 18,
+  "passed_cases": 18,
+  "comparisons": 10368,
+  "passed_comparisons": 10368,
+  "execution_errors": 0,
+  "groups": [
+    {
+      "dtype": "float32",
+      "cases": 9,
+      "passed_cases": 9,
+      "maximum_relative_l2": 1.6375020984696774e-06
+    },
+    {
+      "dtype": "float64",
+      "cases": 9,
+      "passed_cases": 9,
+      "maximum_relative_l2": 1.883200037176481e-15
+    }
+  ],
+  "maximum_identity_relative_l2": 0.0,
+  "native_synthetic_updates": 2304,
+  "model_training_updates": 0,
+  "new_task_scores": 0,
+  "limits": [
+    "Real-arithmetic identities concern a fixed positive factor across every supplied gradient in one coordinate and matching moment histories. A ratio of whole-layer gradient RMS values does not satisfy that condition.",
+    "Model initialization changes parameters and may change gradient directions, future gradients, tied-weight pathways and finite-epsilon RMS functions. These proofs do not identify two such training trajectories.",
+    "Optimizer epsilon is1e-8 and is distinct from the model RMS epsilon2^-23. Preserve both explicitly.",
+    "Synthetic CPU native AdamW checks do not validate fused or captured CUDA kernels, train a model, evaluate task data, choose an initializer or prove convergence.",
+    "Keep the current27-cell capacity queue and subsequent3-seed usual-gain study unchanged. Muon and full-stack numerical-repair preparation remain deferred."
+  ],
+  "source_sha256": {
+    "research/adamw_gradient_scaling_reporting/audit.py": "bb277bfefd5e5a49364149ec2973714a60bf9ebd904e406223071ce7bd71380f",
+    "research/adamw_gradient_scaling/plan.json": "0fb80ec77fbeab55835ec3686de7401f224c6c604349da20565d93abf150b978",
+    "research/adamw_gradient_scaling/reference.py": "93dc158c6f5701b239b5e067a6e6c9b4d11d5876aad7a88dd36ecd4d3b1cdcbb",
+    "research/adamw_gradient_scaling/run.py": "f61738a18ce76e2c03e62e3ceb6d4146399274a9be627b58159960c8af1ecc21"
+  },
+  "artifacts_sha256": {
+    "research/adamw_gradient_scaling/results/measurements.json": "5ca1fa0b301988d4f6edf483dbbfd3d9a4f539589986ce212f1f366888045081",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-0.125-constant.json": "8f4ffeb7758f463489cb48646e9ef6521ace57ffc178ce71d73b04b17edf3e7b",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-0.125-alternating.json": "13049092a3e9e995bbbc4df1f7c114af67689b75b87845f9f5a0f11c4c6dbec1",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-0.125-delayed_pulse.json": "dc4733697f8380ce42a6fb5ab4570f13fd496636f21f8904e3361bb5acb7dcb1",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-0.5-constant.json": "ea9707758959aaf2a8b21fbf05f024082f968e717b55474d9cf46ccd5944284e",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-0.5-alternating.json": "397abe1efc604c3ae886fc5367b38af35622c74ac48fd2f10bbf88623960b9be",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-0.5-delayed_pulse.json": "35021033a765696b2a4e455e627e615284c97de10fdd4d6ad1980b385236f6f5",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-8-constant.json": "51c764b39bd4576b81bb82f3aed2e69faac4d76c392b53981e87751852eabf01",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-8-alternating.json": "366bd0b6c7297575b9eea6f60d538f91aa7e6614ce314d08f207157ebfc37dbf",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float32-8-delayed_pulse.json": "01d583607529352c7e1a8e51cad21b127f32179718e1d1022e280793f4de8013",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-0.125-constant.json": "c4a2c3d861e7f4667c9e247dcc9a4a1c1249c05e255bf04eaec3ea9c65cb80e4",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-0.125-alternating.json": "292da1120a81ea8b8c4ecd3bdda5588a975e832600e8141abe031d74ee9bd11d",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-0.125-delayed_pulse.json": "b4239a6436cacd72642f53ceb2047882d87bfe757ab60982bc2280ca3344e874",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-0.5-constant.json": "2191f2b8ea4cf369e37d9f63bfc2a32a8a0db2846b9621f5a747247e86edf50d",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-0.5-alternating.json": "b90b531c650955d0acc493fdbf647c15726b9ab540c995eeef9588dac08c8343",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-0.5-delayed_pulse.json": "3f85ce37d965406bba5c77f2549ba22d6814546eb6e16be97099cb5fe15543e7",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-8-constant.json": "de4a196f906688cf4ae6b4eadc5edf2b09660012392433320f10bc057f2fba77",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-8-alternating.json": "609ddd4fe875762f04ef028c14bd5907ef11bd4d7b3a4f9b9eebef283544a7ff",
+    "runs/adamw-gradient-scaling/optimizer-traces-v1/float64-8-delayed_pulse.json": "bc0af107fa8f4677dc2ef25ff8db7d12e130a448601b45b8ad63aa6b94f44b22",
+    "research/adamw_gradient_scaling/results/summary.json": "f8bfc4e54343f49075a149f01a161ed074c09d56e1a8f6525b664de14cac9a61",
+    "research/adamw_gradient_scaling/results/cells.csv": "448925af3b07834ec1867833d8c262eb46e829fcb22ca0d50ab3ea9af48b9540",
+    "research/adamw_gradient_scaling/results/first-direction-illustrations.csv": "e85d4fce205bc00e327e3f5eff438ba5792c1fe45c9cf040a7c083353aab2087",
+    "research/adamw_gradient_scaling/results/comparisons.csv": "72313f705c79ea30589c0d934bcd9d552cddb4f317ec94588a0b8765bb25d6bd",
+    "research/adamw_gradient_scaling/results/groups.csv": "6028b7ddbf2cecfcd62d4ce482e341ad86d96ea4596eef9dbc3c38f6590533c6"
+  },
+  "evidence": "All represented inputs, every Decimal state and all comparison errors were reconstructed; all raw/source archive bytes and complete 18-case coverage were checked."
+}
