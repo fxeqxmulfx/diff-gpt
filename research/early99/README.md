@@ -45,7 +45,7 @@ Q/K parent** and **49.4% fewer than LR ×2**. It keeps 18 parent-relative
 regressions (worst 6.2308×); its worst LR ×2 regression is 17.5×. Half-scale
 also improves the aggregate to 18.5238 epochs. All eight complete comparisons
 and both checkpoint audits passed before the choice was frozen. Its one reused
-long diagnostic is next, without tuning or reselection. All nine CPU/CUDA checks
+long diagnostic is running, without tuning or reselection. All nine CPU/CUDA checks
 and 90 score-stress cases passed before training. The completed round-two
 selection remains unchanged.
 

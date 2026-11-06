@@ -11,7 +11,7 @@ choice is quarter-scale SSMax, with Q/K RMS retained:** **75/75 passes** and
 **17.3257 geometric-mean epochs**, **49.4% fewer than LR ×2** and **28.8% fewer
 than the Q/K parent**. It is also 17.4% earlier than the previous no-Q/K ablation
 on the complete aggregate. Its worst slowdown against LR ×2 is **17.5×**;
-every regression is retained. The single reused long diagnostic is next;
+every regression is retained. The single reused long diagnostic is running;
 short selection does not establish a universal replacement.
 
 The [plan](plan.json) was declared after round two's results were committed as
@@ -241,3 +241,12 @@ The reporting guards are tested separately in
 [test_early99_score_reporting.py](../../tests/diff_gpt/application/test_early99_score_reporting.py),
 including missing/changed selection, undeclared configurations, pending cells,
 censored rows, misleading stress summaries and overwriting completed evidence.
+
+The short selection and evidence were committed as **`8256d95`** before the
+[long launch](results/long-launch.json). Its selected configuration and source
+hashes remain fixed. The supplemental
+[attention sensitivity proof](../normalization_guarantees/README.md#normalized-attention-sensitivity)
+now also bounds changes in one probability row with fixed keys and rotations.
+It is separate from the already frozen selection manifest and changes no model
+or experiment. Long outcomes will be reported once the complete diagnostic and
+checkpoint audits finish.
