@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/misha/python_projects/gpt/research/early99_dimension_gain_reporting/audit.py", line 91, in <module>
+    require(
+    ~~~~~~~^
+        not metadata.get("resumptions"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "Mismatch: not metadata.get('resumptions')",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/misha/python_projects/gpt/research/early99_reporting/round2_audit.py", line 29, in require
+    raise ValueError(message)
+ValueError: Mismatch: not metadata.get('resumptions')

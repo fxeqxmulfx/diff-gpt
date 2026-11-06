@@ -120,12 +120,48 @@ comparison and freeze the short-only choice. The checks inspect saved weights,
 optimizer states, histories and provenance; they do not replay all full-GPT
 held-out forwards.
 
-The short decision was committed as `dc4411b`. Its single already observed
-30-cell long diagnostic started at **2026-11-06 04:26:05 UTC** and is running;
-the exact source/selection hashes are in [long-launch.json](results/long-launch.json).
-It compares the quarter-scale parent, LR ×2, baseline and no-Q/K controls.
-Preserve all budget misses and do not use long results to tune or reselect the
-model. Do not launch a second dispatcher or restart a completed older diagnostic.
+The short decision was committed as `dc4411b` before the single reused long
+regression diagnostic launched at **2026-11-06 04:26:05 UTC**. It completed
+**19/30 passes**, with **11 original-budget misses**. This is worse long coverage
+than quarter-scale (21/30), LR ×2 (26/30), the original baseline (29/30), and
+no-Q/K (20/30). The short-only selection remains frozen; these results do not
+establish a universal improvement or change subsequent optimizer rates.
+
+| Long control | Passes | New misses / recoveries / joint misses | Common passes: earlier / tied / later | Worst observed successful ratio |
+|---|---:|---:|---:|---:|
+| Quarter-scale parent | 21/30 | 3 / 1 / 8 | 6 / 1 / 11 | 1.5714× |
+| LR ×2 | 26/30 | 7 / 0 / 4 | 12 / 0 / 7 | 2.8559× |
+| Original baseline | 29/30 | 10 / 0 / 1 | 12 / 0 / 7 | 9.3235× |
+| No-Q/K ablation | 20/30 | 1 / 0 / 10 | 11 / 0 / 8 | 1.8538× |
+
+All three fourth-power and all three cube seeds miss 100,000 updates. The other
+misses are recall-easy seed 0 (20,000), Fibonacci seeds 0/2 (100,000), and
+parity24 seeds 0/2 (100,000). Relative to quarter-scale, fourth-power seed 0,
+recall-easy seed 0 and parity24 seed 2 become misses; parity24 seed 1 recovers at
+45.8 epochs. The worst common-pass slowdown is associative-divisor seed 0,
+7→11 epochs. Against LR ×2, parity20 seed 1 takes 22.2→63.4 epochs. Every cell,
+final accuracy, censoring budget and task median is retained in the
+[complete long report](../early99_dimension_gain_recovery/results/long-summary.json)
+and its four JSON/CSV comparisons. No filtered long geometric mean is reported.
+
+The pause/resume interruption required recovery of recall-easy seed 0 from its
+1,000-update checkpoint, while preserving all 18 previously completed long
+cells. Its discarded history reaches update 1,050 without a crossing. Recovery
+therefore repeated at least 50 updates / 3,200 examples / 0.16 epochs. The final
+canonical trajectory is 63.8992 epochs; actual executed exposure is at least
+64.0592 epochs. Further unobserved work before process loss cannot be counted
+exactly. Both raw segments, the old checkpoint/history, and all hashes are
+retained. Summed observed trainer segments total 4,782.73 seconds for the long
+suite; unobserved time before process loss is excluded and resumed time ratios
+are omitted.
+
+The frozen original auditor rejected resumptions as expected; its error is
+preserved. A separate [recovery-aware audit](../early99_dimension_gain_recovery/results/complete-audit.json)
+verifies all 105 checkpoints (94 passes, 11 misses), the unchanged 34-source
+experiment plan, all prior completed-cell hashes, the restored history prefix,
+and the four complete long comparisons. It records one resumption and zero
+training execution errors. The original launcher, plan and short selection
+hashes remain unchanged. This diagnostic is complete; do not restart it.
 
 ```bash
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_dimension_gain.py

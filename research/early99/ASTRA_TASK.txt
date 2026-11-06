@@ -599,3 +599,20 @@ Newton-Schulz implementation before training. Keep the model and benchmark
 protocol fixed, validate actual updates/resumption/CUDA, retain prior cosine
 and Schedule-Free negative results, and never tune using long diagnostics.
 The full-model numerical repair remains deferred, with all10failures retained.
+
+Inverse-width long diagnostic completed with explicit recovery audit
+The unchanged short-selected candidate completes19/30longpasses and11budgetmisses,
+versusquarter21,LR2=26,baseline29,noQK20. Againstquarter:3newmisses,1recovery,8joint
+misses; common18passes have6earlier,1tie,11later, worst7->11epochs. AgainstLR2:
+7newmisses,0recoveries,4jointmisses; worstcommon22.2->63.4parity20seed1. Keep all
+30rows and censored cells; no filteredlongGM. The complete105checkpointaudit has
+94passes,11misses,0trainingerrors,1declaredresumption. Recovery replayed at least
+50updates/.16epochs; canonical recall-easyseed0ends63.8992epochs, actualexecuted
+exposure>=64.0592. Additional unobserved work/time before process loss is unknown.
+Frozen launcher/selection/plan hashes and18preinterruptioncells remain unchanged.
+The original zero-resumption auditor's incompatibility is retained; the separate
+recovery-aware auditor and fullreports are in research/early99_dimension_gain_recovery.
+Do not restart this completed long diagnostic or tune from its outcomes.
+Schedule-Free implementation now passes28CPU/CUDAchecks,9benchmark-integritychecks,
+and3existingLeanidentitychecks with0warnings/extraaxioms. Freeze those records and
+run the declared36screen cells next; cosine/hybridMuon/pureMuon remain queued.

@@ -1,0 +1,110 @@
+{
+  "audited_at_utc": "2026-11-06T07:36:33.609534+00:00",
+  "candidates": {
+    "peri-rms-scaled-ssmax-inverse-width-lr2": {
+      "completed": 105,
+      "passed": 94,
+      "censored": [
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 0,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 1,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-sum-pow4",
+          "seed": 2,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 0,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 1,
+          "updates": 100000
+        },
+        {
+          "case": "arithmetic-sum-cube",
+          "seed": 2,
+          "updates": 100000
+        },
+        {
+          "case": "basis-recall-easy",
+          "seed": 0,
+          "updates": 20000
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 0,
+          "updates": 100000
+        },
+        {
+          "case": "recurrence-fibonacci-k1-c2-lgt",
+          "seed": 2,
+          "updates": 100000
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 0,
+          "updates": 100000
+        },
+        {
+          "case": "basis-parity24",
+          "seed": 2,
+          "updates": 100000
+        }
+      ],
+      "execution_errors": 0,
+      "resumed": 1,
+      "candidate_plan_sha256": "83c715abeddb50bef01c778b21810a5bfe7748d7cc45f6d057c72e8e09ead229",
+      "source_files_verified": 34,
+      "minimum_parameters": 100736,
+      "maximum_parameters": 1183488
+    }
+  },
+  "auditor_sha256": "53d4fe1ff2c1025ccdf36260a4ad27f6d6542b1de41a83525115e20f7eff622e",
+  "completed_new_scientific_runs": 105,
+  "all_checkpoints_histories_protocols_and_sources_retained": true,
+  "checkpoint_optimizer_steps_and_settings_verified": true,
+  "stop_at_first_exact_crossing_or_original_budget_verified": true,
+  "original_initialization_data_seeds_cadence_and_oracles_verified": true,
+  "capacity_policy": "Original capacity and initialization matched; the fixed inverse-width gain adds no parameters.",
+  "source_archives_match_frozen_plans_and_current_implementation": true,
+  "previous_round_reports_and_selection_preserved": true,
+  "recovery": {
+    "case": "basis-recall-easy",
+    "seed": 0,
+    "resumptions": 1,
+    "saved_updates": 1000,
+    "discarded_updates_replayed": 50,
+    "discarded_examples_replayed": 3200,
+    "discarded_epochs_replayed": 0.16,
+    "canonical_completed_exposure": {
+      "updates": 20000,
+      "train_examples": 20000,
+      "batch": 64,
+      "updates_per_epoch": 313,
+      "examples_seen": 1277984,
+      "epochs": 63.8992,
+      "complete_epochs": 63
+    },
+    "actual_executed_examples_lower_bound": 1281184,
+    "actual_executed_epochs_lower_bound": 64.0592,
+    "exposure_caveat": "The last durable observation proves 50 discarded updates. Any further updates before process loss were unobserved; total actual work is therefore a lower bound, not an exact total.",
+    "original_segment_last_observed_seconds": 57.453208269987954,
+    "resumed_segment_seconds": 581.0129349150001,
+    "sum_of_observed_segment_seconds": 638.466143184988,
+    "unobserved_time_before_process_loss": "Unknown; not included in segment sum",
+    "first99_lost_before_resume": false,
+    "first99_actual_executed_epochs_lower_bound": null,
+    "old_history_rows_retained": 22,
+    "restored_history_prefix_rows": 21
+  }
+}
