@@ -58,6 +58,10 @@ medians, so it does **not** advance. Its [checkpoint audit](results/audit-core-e
 verified all 18 runs with no errors, resumptions or replayed work. All five
 control comparisons are retained; the promotion comparison is
 [against original LR×2](results/screen-core-embedding-rms-lr2-vs-parent.json).
+The [extended checkpoint audit](results/audit-core-embedding-rms-lr2-screen-with-moments.json)
+also verifies a complete, unique native AdamW state for every optimized parameter,
+finite FP32 final moments and nonnegative second moments in all 18 checkpoints.
+This additional check is included in the auditor for the remaining arms.
 
 | Screen task | Median paired epoch ratio versus LR×2 |
 |---|---:|

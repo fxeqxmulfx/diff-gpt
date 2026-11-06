@@ -198,6 +198,21 @@ for name in args.name:
             require(len(groups) == 1, "Mismatch: len(groups) == (2 if lerope else 1)")
             group = groups[0]
             require(
+                len(group["params"]) == len(set(group["params"]))
+                and set(saved["optimizer"]["state"]) == set(group["params"]),
+                "Native AdamW checkpoint has missing or duplicated parameter states",
+            )
+            for state in saved["optimizer"]["state"].values():
+                first, second = state["exp_avg"], state["exp_avg_sq"]
+                require(
+                    first.dtype == second.dtype == torch.float32
+                    and first.shape == second.shape
+                    and torch.isfinite(first).all().item()
+                    and torch.isfinite(second).all().item()
+                    and (second >= 0).all().item(),
+                    "Invalid final native AdamW moments",
+                )
+            require(
                 group["betas"] == config.betas,
                 "Mismatch: group['betas'] == config.betas",
             )
@@ -246,6 +261,7 @@ result = {
     "completed_new_scientific_runs": sum(r["completed"] for r in records.values()),
     "all_checkpoints_histories_protocols_and_sources_retained": True,
     "checkpoint_optimizer_steps_and_settings_verified": True,
+    "final_optimizer_moments_finite_and_second_moments_nonnegative": True,
     "stop_at_first_exact_crossing_or_original_budget_verified": True,
     "original_initialization_data_seeds_cadence_and_oracles_verified": True,
     "capacity_policy": (
