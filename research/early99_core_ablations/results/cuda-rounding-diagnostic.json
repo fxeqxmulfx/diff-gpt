@@ -1,0 +1,4191 @@
+{
+  "fixture": "unchanged original failed scaled_peri_rms fixture",
+  "steps": [
+    {
+      "completed": 1,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.21757373164584543
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5483464663518959
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.3208912402799955
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7184991797766005
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5247588892913624
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5577382878001813
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.301190608194736
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7505821856042523
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5369284700748924
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.3045383788665148
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.038710211823152416
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.1602990639367841
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.013394125795872597
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.10068797004400769
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.003158494675522223
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.1715198979345531
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.004929141954922575
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.13030268710231718
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0032984690755399945
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0894366764910314
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0021250239731757602
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.06581223966135853
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0011296672736332502
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.10565449037057012
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0017539716960989573
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.080494504407706
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.001302097477080707
+          }
+        }
+      }
+    },
+    {
+      "completed": 1,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.21757373164584543
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5483464663518959
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.3208912402799955
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7184991797766005
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5247588892913624
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5577382878001813
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.301190608194736
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7505821856042523
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5369284700748924
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 5.21540641784668e-08,
+            "relative_l2": 5.886529451923507e-07,
+            "expected_norm": 0.3045383612013753
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1175870895385742e-08,
+            "relative_l2": 7.350991830561681e-07,
+            "expected_norm": 0.038710206718809856
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.2351741790771484e-08,
+            "relative_l2": 7.370712500345325e-07,
+            "expected_norm": 0.16029902064857154
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.450580596923828e-09,
+            "relative_l2": 6.773796685753988e-07,
+            "expected_norm": 0.013394118319089042
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.60770320892334e-08,
+            "relative_l2": 8.260278361234535e-07,
+            "expected_norm": 0.10068793191290068
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.3283064365386963e-09,
+            "relative_l2": 1.2138096941410921e-06,
+            "expected_norm": 0.0031584918728749275
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.909211277961731e-08,
+            "relative_l2": 5.827820061983801e-07,
+            "expected_norm": 0.1715198946471865
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.0954757928848267e-09,
+            "relative_l2": 7.06973928194056e-07,
+            "expected_norm": 0.004929140100665343
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.2351741790771484e-08,
+            "relative_l2": 6.568916523204372e-07,
+            "expected_norm": 0.13030266569884033
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.2514647096395493e-09,
+            "relative_l2": 8.742386836564487e-07,
+            "expected_norm": 0.0032984680241418454
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.7695128917694092e-08,
+            "relative_l2": 7.978585070019183e-07,
+            "expected_norm": 0.08943667932999175
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.731149137020111e-10,
+            "relative_l2": 9.521184775378756e-07,
+            "expected_norm": 0.00212502439623154
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0244548320770264e-08,
+            "relative_l2": 6.916157719679193e-07,
+            "expected_norm": 0.06581223698943056
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.0745362639427185e-10,
+            "relative_l2": 9.132937826764595e-07,
+            "expected_norm": 0.0011296672059225414
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 8.381903171539307e-09,
+            "relative_l2": 3.840719192647357e-07,
+            "expected_norm": 0.10565449513850834
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.2014213502407074e-10,
+            "relative_l2": 4.417312219680681e-07,
+            "expected_norm": 0.0017539719150140274
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 5.587935447692871e-09,
+            "relative_l2": 3.7935126648262085e-07,
+            "expected_norm": 0.0804945084960811
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.6193447411060333e-10,
+            "relative_l2": 4.822621013869664e-07,
+            "expected_norm": 0.0013020976078537312
+          }
+        }
+      }
+    },
+    {
+      "completed": 2,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.21869675334769512
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5499873732933959
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.32339545892081495
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7219182257013325
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5259833524922941
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5624493640296755
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.3027343156824893
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7543587268479444
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5377765900626185
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.9802322387695312e-08,
+            "relative_l2": 8.654527285695672e-08,
+            "expected_norm": 0.42339161881871124
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.4901161193847656e-08,
+            "relative_l2": 1.4912607236661836e-07,
+            "expected_norm": 0.11430064909147934
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.2549172091376725
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.026925325889054077
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.18381119582205452
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.01042005717609268
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.20451200389221247
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0071771436001256995
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.150636479958317
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.00526736342394969
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.12042930215697173
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.004383331438908796
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.09614796451258967
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0024836830619763277
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.12137398875236889
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0020266042005258277
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0826664376055968
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0013955634768680436
+          }
+        }
+      }
+    },
+    {
+      "completed": 2,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 3.67872416973114e-08,
+          "relative_l2": 2.042783603493564e-07,
+          "expected_norm": 0.21869675689190682
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 3.725290298461914e-07,
+          "relative_l2": 7.108810681868441e-07,
+          "expected_norm": 0.5499873852153212
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.4062970876693726e-07,
+          "relative_l2": 4.67792814412077e-07,
+          "expected_norm": 0.32339545284085197
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 3.166496753692627e-08,
+          "relative_l2": 1.7778701715679537e-07,
+          "expected_norm": 0.72191822429919
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 2.421438694000244e-08,
+          "relative_l2": 1.4070298476347625e-07,
+          "expected_norm": 0.5259833493810986
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 7.450580596923828e-08,
+          "relative_l2": 2.640837869482085e-07,
+          "expected_norm": 0.5624493674784826
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 4.6566128730773926e-08,
+          "relative_l2": 1.9760430429380295e-07,
+          "expected_norm": 0.3027343212281223
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 6.379559636116028e-08,
+          "relative_l2": 1.583463099902674e-07,
+          "expected_norm": 0.7543587260185973
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 7.031485438346863e-08,
+          "relative_l2": 1.9620786731393082e-07,
+          "expected_norm": 0.5377765834186563
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.3783574104309082e-07,
+            "relative_l2": 8.298780275827275e-07,
+            "expected_norm": 0.4233915863069033
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.940696716308594e-08,
+            "relative_l2": 9.486756170686652e-07,
+            "expected_norm": 0.114300713656356
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 4.842877388000488e-08,
+            "relative_l2": 1.0913340940428377e-06,
+            "expected_norm": 0.25491723977492453
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.450580596923828e-09,
+            "relative_l2": 7.081302419142008e-07,
+            "expected_norm": 0.026925325274689774
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 4.6566128730773926e-08,
+            "relative_l2": 1.0259488140250233e-06,
+            "expected_norm": 0.18381121930766278
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.725290298461914e-09,
+            "relative_l2": 9.359972174682934e-07,
+            "expected_norm": 0.010420061055221936
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.284083843231201e-08,
+            "relative_l2": 1.002029486525861e-06,
+            "expected_norm": 0.20451199728575076
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.3760443329811096e-09,
+            "relative_l2": 1.0945844612994993e-06,
+            "expected_norm": 0.007177144527371203
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.3283064365386963e-08,
+            "relative_l2": 9.314143066686454e-07,
+            "expected_norm": 0.15063645452374858
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.5133991837501526e-09,
+            "relative_l2": 9.176637733015722e-07,
+            "expected_norm": 0.00526736420478036
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 5.529727786779404e-08,
+            "relative_l2": 1.4904338656279655e-06,
+            "expected_norm": 0.12042929529957389
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.540197551250458e-09,
+            "relative_l2": 1.965392880660125e-06,
+            "expected_norm": 0.004383335728468952
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.7695128917694092e-08,
+            "relative_l2": 9.188066473239557e-07,
+            "expected_norm": 0.09614796770699738
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.566995918750763e-10,
+            "relative_l2": 8.862607823485237e-07,
+            "expected_norm": 0.0024836836169802473
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0710209608078003e-08,
+            "relative_l2": 6.041987958960892e-07,
+            "expected_norm": 0.12137399138595166
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.346940502524376e-10,
+            "relative_l2": 5.745679270621912e-07,
+            "expected_norm": 0.0020266043042486935
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 8.847564458847046e-09,
+            "relative_l2": 6.230096547079503e-07,
+            "expected_norm": 0.08266643969385454
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.6193447411060333e-10,
+            "relative_l2": 5.857745442959282e-07,
+            "expected_norm": 0.0013955635826272527
+          }
+        }
+      }
+    },
+    {
+      "completed": 3,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.862645149230957e-09,
+          "relative_l2": 8.666916089648833e-09,
+          "expected_norm": 0.22315164478212596
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5650419299527556
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.32743630283339487
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7419752972261392
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5396531617741139
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5800439187732722
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.30764854153246984
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.7739963847910577
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 0.0,
+          "relative_l2": 0.0,
+          "expected_norm": 0.5518453464629585
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.4901161193847656e-08,
+            "relative_l2": 5.192954451972006e-08,
+            "expected_norm": 0.4936223906381645
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.4901161193847656e-08,
+            "relative_l2": 1.4172052584481017e-07,
+            "expected_norm": 0.12042476401771254
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.3841434420726744
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.038955964850984126
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.27565717558534
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.02083212246963467
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.26711236546891254
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.01112873666416689
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.18098997255233115
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.007250685912463867
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.17961215758977836
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.008136515123008949
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.1444238974038585
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.006945087789846248
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.14033274259246253
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.002525481264136936
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.10392419347229641
+          },
+          "exp_avg_sq": {
+            "max_absolute": 0.0,
+            "relative_l2": 0.0,
+            "expected_norm": 0.0019245453268367451
+          }
+        }
+      }
+    },
+    {
+      "completed": 3,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 4.540197551250458e-08,
+          "relative_l2": 5.429649258876528e-07,
+          "expected_norm": 0.2231516537796172
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 3.725290298461914e-07,
+          "relative_l2": 1.0149387117012886e-06,
+          "expected_norm": 0.5650419477973562
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.8812716007232666e-07,
+          "relative_l2": 7.420433157332866e-07,
+          "expected_norm": 0.32743630268761054
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.0593794286251068e-07,
+          "relative_l2": 4.6912393999717653e-07,
+          "expected_norm": 0.7419753004283954
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 1.4528632164001465e-07,
+          "relative_l2": 5.635808002006545e-07,
+          "expected_norm": 0.5396531488102179
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 9.452924132347107e-08,
+          "relative_l2": 6.664656184139775e-07,
+          "expected_norm": 0.5800439343465373
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 7.869675755500793e-08,
+          "relative_l2": 5.771154546988818e-07,
+          "expected_norm": 0.3076485460001845
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 7.473863661289215e-08,
+          "relative_l2": 3.508841155457042e-07,
+          "expected_norm": 0.7739963822053807
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 7.334165275096893e-08,
+          "relative_l2": 3.6174171778580823e-07,
+          "expected_norm": 0.5518453344791179
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.60770320892334e-07,
+            "relative_l2": 2.0393026564317827e-06,
+            "expected_norm": 0.49362214283733796
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.195638656616211e-08,
+            "relative_l2": 1.246133135629077e-06,
+            "expected_norm": 0.12042480721054297
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.4156103134155273e-07,
+            "relative_l2": 1.925667534875967e-06,
+            "expected_norm": 0.3841434429650861
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.4202669262886047e-08,
+            "relative_l2": 1.2139704763390844e-06,
+            "expected_norm": 0.03895595750006684
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.4901161193847656e-07,
+            "relative_l2": 2.1722022632079313e-06,
+            "expected_norm": 0.27565693199583347
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.026798367500305e-08,
+            "relative_l2": 2.6651805511669423e-06,
+            "expected_norm": 0.02083209214709696
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.862645149230957e-07,
+            "relative_l2": 2.38533145643848e-06,
+            "expected_norm": 0.2671120446076339
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.632158041000366e-08,
+            "relative_l2": 4.281839761328443e-06,
+            "expected_norm": 0.011128706501157586
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.705522537231445e-08,
+            "relative_l2": 2.191915697660331e-06,
+            "expected_norm": 0.1809897957671073
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.122274160385132e-09,
+            "relative_l2": 1.8740614108320313e-06,
+            "expected_norm": 0.007250679690444727
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0244548320770264e-07,
+            "relative_l2": 2.4990647636241994e-06,
+            "expected_norm": 0.17961197202186946
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.6763806343078613e-08,
+            "relative_l2": 3.3193835265748432e-06,
+            "expected_norm": 0.008136499340802204
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.798654794692993e-08,
+            "relative_l2": 1.5679226493861748e-06,
+            "expected_norm": 0.1444238321819928
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.28642737865448e-09,
+            "relative_l2": 1.520672412757976e-06,
+            "expected_norm": 0.006945084048118666
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.7008354663848877e-08,
+            "relative_l2": 1.0983490486050288e-06,
+            "expected_norm": 0.1403327338606649
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.456968210637569e-10,
+            "relative_l2": 8.244250007947296e-07,
+            "expected_norm": 0.0025254812613055883
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.0954757928848267e-08,
+            "relative_l2": 1.0819089939050457e-06,
+            "expected_norm": 0.10392418852945347
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.89530235528946e-10,
+            "relative_l2": 9.320102548645128e-07,
+            "expected_norm": 0.001924545020354233
+          }
+        }
+      }
+    },
+    {
+      "completed": 4,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 3.725290298461914e-09,
+          "relative_l2": 4.790957874851391e-08,
+          "expected_norm": 0.2322172724294789
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 1.1175870895385742e-08,
+          "relative_l2": 6.763172827834843e-08,
+          "expected_norm": 0.587601897071734
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.6763806343078613e-08,
+          "relative_l2": 8.710461968900886e-08,
+          "expected_norm": 0.3362087812777053
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.1175870895385742e-08,
+          "relative_l2": 4.5511021163579367e-08,
+          "expected_norm": 0.7677467673193226
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 7.450580596923828e-09,
+          "relative_l2": 3.567445896369478e-08,
+          "expected_norm": 0.5567608919946168
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 5.587935447692871e-09,
+          "relative_l2": 4.33617255622579e-08,
+          "expected_norm": 0.6029561708087954
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 5.587935447692871e-09,
+          "relative_l2": 4.462661573372895e-08,
+          "expected_norm": 0.31764626192352974
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 7.450580596923828e-09,
+          "relative_l2": 4.064037288551305e-08,
+          "expected_norm": 0.8016199812864371
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 3.725290298461914e-09,
+          "relative_l2": 4.01547963851144e-08,
+          "expected_norm": 0.5717493048231019
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 7.450580596923828e-08,
+            "relative_l2": 3.5738284925751607e-07,
+            "expected_norm": 0.5011547020905804
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.4901161193847656e-08,
+            "relative_l2": 2.1212503936643462e-07,
+            "expected_norm": 0.12805850436590835
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 4.284083843231201e-08,
+            "relative_l2": 3.878455720136462e-07,
+            "expected_norm": 0.406899033239766
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.28642737865448e-09,
+            "relative_l2": 3.2119382009236764e-07,
+            "expected_norm": 0.04553938060270204
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.421438694000244e-08,
+            "relative_l2": 2.8165614716724024e-07,
+            "expected_norm": 0.2982941716118582
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.7939677238464355e-09,
+            "relative_l2": 1.8460751911686276e-07,
+            "expected_norm": 0.02724284582451898
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0244548320770264e-08,
+            "relative_l2": 1.8526784933913166e-07,
+            "expected_norm": 0.2734271894842487
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.984919309616089e-10,
+            "relative_l2": 1.1088574274177929e-07,
+            "expected_norm": 0.011751374117128644
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 5.587935447692871e-09,
+            "relative_l2": 1.4172988273353565e-07,
+            "expected_norm": 0.18703490093132666
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.0745362639427185e-10,
+            "relative_l2": 1.024853186941113e-07,
+            "expected_norm": 0.007962715311144362
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 9.313225746154785e-09,
+            "relative_l2": 1.68348975184646e-07,
+            "expected_norm": 0.17676226300249387
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.0745362639427185e-10,
+            "relative_l2": 1.0423452143580733e-07,
+            "expected_norm": 0.008634890772535592
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 5.587935447692871e-09,
+            "relative_l2": 1.5076356822262025e-07,
+            "expected_norm": 0.14510060535923194
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.4551915228366852e-10,
+            "relative_l2": 6.21009270288837e-08,
+            "expected_norm": 0.007145585768178668
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.725290298461914e-09,
+            "relative_l2": 1.5146374975819754e-07,
+            "expected_norm": 0.15311442479724421
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.275957614183426e-11,
+            "relative_l2": 9.739152584351083e-08,
+            "expected_norm": 0.0027524944301945357
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.7939677238464355e-09,
+            "relative_l2": 1.5059945727716279e-07,
+            "expected_norm": 0.10550340900255939
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.820766091346741e-11,
+            "relative_l2": 9.833921180364444e-08,
+            "expected_norm": 0.0020428876526047616
+          }
+        }
+      }
+    },
+    {
+      "completed": 4,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.019798219203949e-07,
+          "relative_l2": 1.3060674614031816e-06,
+          "expected_norm": 0.23221727674187045
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 3.809109330177307e-07,
+          "relative_l2": 1.7176931091141904e-06,
+          "expected_norm": 0.5876019369139109
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.9744038581848145e-07,
+          "relative_l2": 1.2740754210444073e-06,
+          "expected_norm": 0.33620879763834016
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.7532147467136383e-07,
+          "relative_l2": 8.494691077495355e-07,
+          "expected_norm": 0.7677467798401697
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 1.8067657947540283e-07,
+          "relative_l2": 8.760142272670027e-07,
+          "expected_norm": 0.5567608769336361
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.5320256352424622e-07,
+          "relative_l2": 1.081863467516476e-06,
+          "expected_norm": 0.6029561946309275
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 9.12696123123169e-08,
+          "relative_l2": 8.705855464160579e-07,
+          "expected_norm": 0.3176462565712348
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 1.2945383787155151e-07,
+          "relative_l2": 5.924304897527441e-07,
+          "expected_norm": 0.8016199804753338
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 7.520429790019989e-08,
+          "relative_l2": 6.057657257214029e-07,
+          "expected_norm": 0.5717492975038825
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 7.80448317527771e-07,
+            "relative_l2": 5.166181338120907e-06,
+            "expected_norm": 0.5011537437239392
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.555308699607849e-07,
+            "relative_l2": 2.6178061091741794e-06,
+            "expected_norm": 0.1280584663642055
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 5.345791578292847e-07,
+            "relative_l2": 6.520929310799397e-06,
+            "expected_norm": 0.4068982689409624
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.122274160385132e-08,
+            "relative_l2": 3.2278426477498398e-06,
+            "expected_norm": 0.04553931961750119
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.5890767574310303e-07,
+            "relative_l2": 3.984605521987557e-06,
+            "expected_norm": 0.29829370858684423
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.587935447692871e-08,
+            "relative_l2": 3.85557534695967e-06,
+            "expected_norm": 0.027242785059545045
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.564621925354004e-07,
+            "relative_l2": 3.3576699816789358e-06,
+            "expected_norm": 0.2734269008330266
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.5390257835388184e-08,
+            "relative_l2": 4.210479613058154e-06,
+            "expected_norm": 0.011751345634588592
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0244548320770264e-07,
+            "relative_l2": 3.091727312199574e-06,
+            "expected_norm": 0.18703474465628625
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.9371814131736755e-09,
+            "relative_l2": 2.35610169086795e-06,
+            "expected_norm": 0.00796270635176432
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.491280272603035e-07,
+            "relative_l2": 3.8093231346478556e-06,
+            "expected_norm": 0.1767620545695687
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.6763806343078613e-08,
+            "relative_l2": 3.6535748535723162e-06,
+            "expected_norm": 0.008634875000574834
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 8.568167686462402e-08,
+            "relative_l2": 2.515706731888246e-06,
+            "expected_norm": 0.14510054289008403
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.28642737865448e-09,
+            "relative_l2": 1.6832602663433504e-06,
+            "expected_norm": 0.007145581128049121
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 5.4016709327697754e-08,
+            "relative_l2": 2.208873074463316e-06,
+            "expected_norm": 0.1531143541075349
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.367880031466484e-09,
+            "relative_l2": 1.5375370910617767e-06,
+            "expected_norm": 0.002752494060282685
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.585591912269592e-08,
+            "relative_l2": 2.1792735360013986e-06,
+            "expected_norm": 0.10550337067035281
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1641532182693481e-09,
+            "relative_l2": 1.3380681104527553e-06,
+            "expected_norm": 0.0020428869420160427
+          }
+        }
+      }
+    },
+    {
+      "completed": 5,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.1175870895385742e-08,
+          "relative_l2": 9.453592153051267e-08,
+          "expected_norm": 0.24252179704039561
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 2.9802322387695312e-08,
+          "relative_l2": 1.7475855596973801e-07,
+          "expected_norm": 0.613726613971822
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.9802322387695312e-08,
+          "relative_l2": 1.6032708992406737e-07,
+          "expected_norm": 0.3470514662361561
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.862645149230957e-08,
+          "relative_l2": 9.492698541741596e-08,
+          "expected_norm": 0.7973468248863462
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 7.450580596923828e-09,
+          "relative_l2": 8.903231917571879e-08,
+          "expected_norm": 0.5759369627849787
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 2.60770320892334e-08,
+          "relative_l2": 1.3388545039005243e-07,
+          "expected_norm": 0.6269363231946566
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 1.30385160446167e-08,
+          "relative_l2": 1.3913740401071557e-07,
+          "expected_norm": 0.32884305306580985
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 2.7008354663848877e-08,
+          "relative_l2": 1.0390160777944809e-07,
+          "expected_norm": 0.8324507425179567
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.5832483768463135e-08,
+          "relative_l2": 9.930141445142687e-08,
+          "expected_norm": 0.5954866518681932
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 8.009374141693115e-08,
+            "relative_l2": 4.797102247067558e-07,
+            "expected_norm": 0.6066931626875903
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.955777406692505e-08,
+            "relative_l2": 3.4475183142540164e-07,
+            "expected_norm": 0.14299852363949145
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 8.940696716308594e-08,
+            "relative_l2": 7.282585103840621e-07,
+            "expected_norm": 0.4657389021269659
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.514570951461792e-08,
+            "relative_l2": 7.364121200632815e-07,
+            "expected_norm": 0.060530680709955265
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 5.21540641784668e-08,
+            "relative_l2": 5.732256245636669e-07,
+            "expected_norm": 0.32088928599854033
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0244548320770264e-08,
+            "relative_l2": 4.9706028378618e-07,
+            "expected_norm": 0.030653561277214136
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.7939677238464355e-08,
+            "relative_l2": 5.035562037859516e-07,
+            "expected_norm": 0.2840875238954356
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.2118911147117615e-09,
+            "relative_l2": 3.2893482366779076e-07,
+            "expected_norm": 0.012555930560331689
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.6542693376541138e-08,
+            "relative_l2": 6.030465880022267e-07,
+            "expected_norm": 0.201827418625876
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.280568540096283e-09,
+            "relative_l2": 4.0821361240421725e-07,
+            "expected_norm": 0.00861027959680764
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.421438694000244e-08,
+            "relative_l2": 6.599391634885912e-07,
+            "expected_norm": 0.19566404229968212
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3969838619232178e-09,
+            "relative_l2": 4.357039450622779e-07,
+            "expected_norm": 0.01021193578753755
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.468004822731018e-08,
+            "relative_l2": 6.451838868980332e-07,
+            "expected_norm": 0.1464981730863663
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.675246939063072e-10,
+            "relative_l2": 2.664295681638642e-07,
+            "expected_norm": 0.007385985614440016
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.257285475730896e-08,
+            "relative_l2": 5.241922098638961e-07,
+            "expected_norm": 0.14745027401195862
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.2014213502407074e-10,
+            "relative_l2": 3.3234482539107596e-07,
+            "expected_norm": 0.002920171165876916
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.7345882952213287e-08,
+            "relative_l2": 5.253693757825714e-07,
+            "expected_norm": 0.10469280601392733
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.764863893389702e-10,
+            "relative_l2": 2.858165448174976e-07,
+            "expected_norm": 0.002119111868469223
+          }
+        }
+      }
+    },
+    {
+      "completed": 5,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.8870923668146133e-07,
+          "relative_l2": 1.9966946360948744e-06,
+          "expected_norm": 0.2425217603852587
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 3.9301812648773193e-07,
+          "relative_l2": 2.715036589734717e-06,
+          "expected_norm": 0.6137266697727446
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.1047890186309814e-07,
+          "relative_l2": 1.8549108599070214e-06,
+          "expected_norm": 0.3470514794955776
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 2.407468855381012e-07,
+          "relative_l2": 1.3017019847361923e-06,
+          "expected_norm": 0.7973468303527308
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 1.4528632164001465e-07,
+          "relative_l2": 1.2348492922186276e-06,
+          "expected_norm": 0.5759369460168327
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 2.337619662284851e-07,
+          "relative_l2": 1.6773743322201943e-06,
+          "expected_norm": 0.6269363522186939
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 1.2852251529693604e-07,
+          "relative_l2": 1.6154196156006886e-06,
+          "expected_norm": 0.3288430528525001
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 4.0885061025619507e-07,
+          "relative_l2": 1.1847488469437599e-06,
+          "expected_norm": 0.8324507331978965
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.2665987014770508e-07,
+          "relative_l2": 1.0435223448987799e-06,
+          "expected_norm": 0.5954866303679623
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 9.164214134216309e-07,
+            "relative_l2": 4.8093506727961685e-06,
+            "expected_norm": 0.6066927553677343
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.993030309677124e-07,
+            "relative_l2": 3.1801442118697913e-06,
+            "expected_norm": 0.14299854287000446
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 9.424984455108643e-07,
+            "relative_l2": 7.579697956133774e-06,
+            "expected_norm": 0.4657390485343142
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.9744038581848145e-07,
+            "relative_l2": 6.002114667286124e-06,
+            "expected_norm": 0.06053077209866763
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 4.6193599700927734e-07,
+            "relative_l2": 5.79802657054966e-06,
+            "expected_norm": 0.3208892293334836
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.406358003616333e-08,
+            "relative_l2": 5.551808626422177e-06,
+            "expected_norm": 0.030653554517755376
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.6228448152542114e-07,
+            "relative_l2": 5.534959159892097e-06,
+            "expected_norm": 0.2840871887350417
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.4924596548080444e-08,
+            "relative_l2": 5.459258324126883e-06,
+            "expected_norm": 0.01255589915511279
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.3422762751579285e-07,
+            "relative_l2": 5.4921570705327854e-06,
+            "expected_norm": 0.20182715566108086
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.469214662909508e-09,
+            "relative_l2": 3.5860943075221065e-06,
+            "expected_norm": 0.008610268760910566
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.2863969206809998e-07,
+            "relative_l2": 6.526871193692988e-06,
+            "expected_norm": 0.1956639238890309
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.4901161193847656e-08,
+            "relative_l2": 4.5011344659034334e-06,
+            "expected_norm": 0.010211924433300533
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.380700945854187e-07,
+            "relative_l2": 7.1598243037752674e-06,
+            "expected_norm": 0.1464981190287898
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.529727786779404e-09,
+            "relative_l2": 2.79199457137172e-06,
+            "expected_norm": 0.007385982341249009
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.4901161193847656e-07,
+            "relative_l2": 5.5193671381974875e-06,
+            "expected_norm": 0.14745022603234995
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.103640094399452e-09,
+            "relative_l2": 3.6219367640394768e-06,
+            "expected_norm": 0.0029201707896647435
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.048764145001769e-07,
+            "relative_l2": 5.5894746060539975e-06,
+            "expected_norm": 0.10469279783329824
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.6961864680051804e-09,
+            "relative_l2": 3.183609255941911e-06,
+            "expected_norm": 0.00211911151701625
+          }
+        }
+      }
+    },
+    {
+      "completed": 6,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.4901161193847656e-08,
+          "relative_l2": 1.5911391980899286e-07,
+          "expected_norm": 0.2556574579949678
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 4.0978193283081055e-08,
+          "relative_l2": 2.6967585744944693e-07,
+          "expected_norm": 0.6412694761193835
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 4.0978193283081055e-08,
+          "relative_l2": 2.282852092125087e-07,
+          "expected_norm": 0.3607663399815757
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 2.421438694000244e-08,
+          "relative_l2": 1.5562611689614153e-07,
+          "expected_norm": 0.8303798458415173
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 1.4901161193847656e-08,
+          "relative_l2": 1.6225435819151361e-07,
+          "expected_norm": 0.5976168864048845
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 4.470348358154297e-08,
+          "relative_l2": 2.496973337394787e-07,
+          "expected_norm": 0.6533935014030614
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 2.421438694000244e-08,
+          "relative_l2": 2.206540080327001e-07,
+          "expected_norm": 0.3407987997040502
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 3.259629011154175e-08,
+          "relative_l2": 1.6932805874444544e-07,
+          "expected_norm": 0.8653429956789938
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 2.0489096641540527e-08,
+          "relative_l2": 1.4812195157470472e-07,
+          "expected_norm": 0.6203732468530033
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 8.195638656616211e-08,
+            "relative_l2": 5.647811832810123e-07,
+            "expected_norm": 0.6041856220811874
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.955777406692505e-08,
+            "relative_l2": 3.443693257677735e-07,
+            "expected_norm": 0.14979204942895577
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0058283805847168e-07,
+            "relative_l2": 8.034915351394608e-07,
+            "expected_norm": 0.42860236174163463
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.7008354663848877e-08,
+            "relative_l2": 7.632533235881031e-07,
+            "expected_norm": 0.06100326166499796
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 4.6100467443466187e-08,
+            "relative_l2": 7.063010145763128e-07,
+            "expected_norm": 0.30400474486857315
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0244548320770264e-08,
+            "relative_l2": 4.998280878000191e-07,
+            "expected_norm": 0.031186166358493868
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.91155481338501e-08,
+            "relative_l2": 6.635311937210115e-07,
+            "expected_norm": 0.26160942686590166
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.2118911147117615e-09,
+            "relative_l2": 3.341891853871165e-07,
+            "expected_norm": 0.012823186301110833
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.5390257835388184e-08,
+            "relative_l2": 8.583839663949871e-07,
+            "expected_norm": 0.19610621831563052
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3096723705530167e-09,
+            "relative_l2": 3.8842555512338545e-07,
+            "expected_norm": 0.009388435357809283
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 4.0978193283081055e-08,
+            "relative_l2": 9.659538744153995e-07,
+            "expected_norm": 0.20965777571677072
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.3283064365386963e-09,
+            "relative_l2": 5.283728322036727e-07,
+            "expected_norm": 0.012043428908100841
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.7939677238464355e-08,
+            "relative_l2": 7.436160812164689e-07,
+            "expected_norm": 0.14905659555492506
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.0954757928848267e-09,
+            "relative_l2": 4.501010828290743e-07,
+            "expected_norm": 0.008171779221395331
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.862645149230957e-08,
+            "relative_l2": 6.667360675942122e-07,
+            "expected_norm": 0.1525948149128537
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3969838619232178e-09,
+            "relative_l2": 6.352491041301563e-07,
+            "expected_norm": 0.0033527463851742044
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0710209608078003e-08,
+            "relative_l2": 5.629305478723793e-07,
+            "expected_norm": 0.10748188714729637
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.9103830456733704e-10,
+            "relative_l2": 3.6491559892121544e-07,
+            "expected_norm": 0.0022732306190512844
+          }
+        }
+      }
+    },
+    {
+      "completed": 6,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 2.9243528842926025e-07,
+          "relative_l2": 2.852299415487918e-06,
+          "expected_norm": 0.2556574093312099
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 6.752088665962219e-07,
+          "relative_l2": 4.054240394502029e-06,
+          "expected_norm": 0.6412695079229419
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.3469328880310059e-07,
+          "relative_l2": 2.366960742469458e-06,
+          "expected_norm": 0.36076635406988583
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 3.0174851417541504e-07,
+          "relative_l2": 1.9428476098704975e-06,
+          "expected_norm": 0.8303798652231715
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 2.039596438407898e-07,
+          "relative_l2": 1.931875741411564e-06,
+          "expected_norm": 0.5976168434028575
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 2.989545464515686e-07,
+          "relative_l2": 2.500558861048372e-06,
+          "expected_norm": 0.6533935160870871
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 2.086162567138672e-07,
+          "relative_l2": 2.65344541385702e-06,
+          "expected_norm": 0.34079882051684685
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 4.6566128730773926e-07,
+          "relative_l2": 1.9131327474576746e-06,
+          "expected_norm": 0.8653429880932422
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 2.0302832126617432e-07,
+          "relative_l2": 1.6839298217883593e-06,
+          "expected_norm": 0.6203732331172127
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.3774260878562927e-06,
+            "relative_l2": 8.138215429798452e-06,
+            "expected_norm": 0.6041856566201875
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.0675361156463623e-07,
+            "relative_l2": 4.065669260064727e-06,
+            "expected_norm": 0.14979215220155465
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.1846423149108887e-06,
+            "relative_l2": 1.028456987691043e-05,
+            "expected_norm": 0.42860297634698397
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.2724270820617676e-07,
+            "relative_l2": 6.311734316039611e-06,
+            "expected_norm": 0.06100339157673105
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.48200511932373e-07,
+            "relative_l2": 8.301355957034545e-06,
+            "expected_norm": 0.3040049398915354
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1082738637924194e-07,
+            "relative_l2": 5.681136791300415e-06,
+            "expected_norm": 0.031186174678842864
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.7532299757003784e-07,
+            "relative_l2": 8.599211884690774e-06,
+            "expected_norm": 0.2616090838170034
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.3993273973464966e-08,
+            "relative_l2": 5.676155409645519e-06,
+            "expected_norm": 0.012823157183015733
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.520399332046509e-07,
+            "relative_l2": 9.844698889957066e-06,
+            "expected_norm": 0.1961059228119247
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.207280188798904e-09,
+            "relative_l2": 3.5169166471318437e-06,
+            "expected_norm": 0.00938842804437667
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 5.252659320831299e-07,
+            "relative_l2": 1.22960197360949e-05,
+            "expected_norm": 0.2096574730737394
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.1548552215099335e-08,
+            "relative_l2": 8.041730235298995e-06,
+            "expected_norm": 0.012043387990858525
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.5297125577926636e-07,
+            "relative_l2": 1.2010032335043663e-05,
+            "expected_norm": 0.1490565920887567
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.3760443329811096e-08,
+            "relative_l2": 7.5726857549102836e-06,
+            "expected_norm": 0.008171751260447785
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.9942020773887634e-07,
+            "relative_l2": 1.0287070473120383e-05,
+            "expected_norm": 0.15259466523244275
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3271346688270569e-08,
+            "relative_l2": 8.927923860178158e-06,
+            "expected_norm": 0.003352744470697691
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.812594175338745e-07,
+            "relative_l2": 9.765806314445319e-06,
+            "expected_norm": 0.10748173611946985
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.993083611130714e-09,
+            "relative_l2": 7.496026860120588e-06,
+            "expected_norm": 0.0022732273871999067
+          }
+        }
+      }
+    },
+    {
+      "completed": 7,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 3.166496753692627e-08,
+          "relative_l2": 2.827655021391288e-07,
+          "expected_norm": 0.2680772882790236
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 5.960464477539063e-08,
+          "relative_l2": 3.7404838506988187e-07,
+          "expected_norm": 0.6661961344648978
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 4.6566128730773926e-08,
+          "relative_l2": 3.730156459426987e-07,
+          "expected_norm": 0.3741169942390381
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 3.3527612686157227e-08,
+          "relative_l2": 2.611714886058341e-07,
+          "expected_norm": 0.8612568510836992
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 3.725290298461914e-08,
+          "relative_l2": 2.704021736964357e-07,
+          "expected_norm": 0.619772319779576
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 5.960464477539063e-08,
+          "relative_l2": 4.830338069894285e-07,
+          "expected_norm": 0.6794908621192541
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 2.60770320892334e-08,
+          "relative_l2": 3.0839011495263007e-07,
+          "expected_norm": 0.3538483855278392
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 4.470348358154297e-08,
+          "relative_l2": 2.9750637967157506e-07,
+          "expected_norm": 0.8988226693145409
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 5.029141902923584e-08,
+          "relative_l2": 3.104288669699335e-07,
+          "expected_norm": 0.6454057175978399
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 6.92903995513916e-07,
+            "relative_l2": 2.1037198108160992e-06,
+            "expected_norm": 0.8156385913802667
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.8067657947540283e-07,
+            "relative_l2": 1.999438026410841e-06,
+            "expected_norm": 0.2133937221129698
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.644956111907959e-07,
+            "relative_l2": 2.512075147230741e-06,
+            "expected_norm": 0.5129017068883214
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.936009645462036e-08,
+            "relative_l2": 1.6507920010068754e-06,
+            "expected_norm": 0.08575160578323496
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.528540790081024e-07,
+            "relative_l2": 2.057673781852393e-06,
+            "expected_norm": 0.36982225398124496
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.7229467630386353e-08,
+            "relative_l2": 1.2630838176603978e-06,
+            "expected_norm": 0.041916978131026586
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 8.847564458847046e-08,
+            "relative_l2": 1.7589388260889635e-06,
+            "expected_norm": 0.29038050910340873
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.313225746154785e-09,
+            "relative_l2": 1.187859347176319e-06,
+            "expected_norm": 0.020049951078156214
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.542541086673737e-08,
+            "relative_l2": 1.7482654758789645e-06,
+            "expected_norm": 0.2035901061347537
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.190951585769653e-09,
+            "relative_l2": 1.0090207125787536e-06,
+            "expected_norm": 0.010737458080817757
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 7.776543498039246e-08,
+            "relative_l2": 2.1173418235740264e-06,
+            "expected_norm": 0.20828833717679818
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.6088749766349792e-09,
+            "relative_l2": 7.74950635133739e-07,
+            "expected_norm": 0.013072150828601149
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 7.078051567077637e-08,
+            "relative_l2": 1.7370491316919205e-06,
+            "expected_norm": 0.1519033769540988
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.773028194904327e-09,
+            "relative_l2": 8.990447820306827e-07,
+            "expected_norm": 0.00846494709748359
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.585591912269592e-08,
+            "relative_l2": 1.918521198557197e-06,
+            "expected_norm": 0.15283010151727464
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3969838619232178e-09,
+            "relative_l2": 1.07246985514583e-06,
+            "expected_norm": 0.0035634367780091633
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 9.313225746154785e-08,
+            "relative_l2": 2.4675156716259665e-06,
+            "expected_norm": 0.10549702407837874
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.0590960048139095e-09,
+            "relative_l2": 1.2842672716569809e-06,
+            "expected_norm": 0.002352224621301819
+          }
+        }
+      }
+    },
+    {
+      "completed": 7,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 7.085036486387253e-07,
+          "relative_l2": 5.662279680628494e-06,
+          "expected_norm": 0.26807708196710023
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 1.7993152141571045e-06,
+          "relative_l2": 7.159456274967525e-06,
+          "expected_norm": 0.6661960067339193
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 9.98377799987793e-07,
+          "relative_l2": 6.789801902885126e-06,
+          "expected_norm": 0.3741169868930446
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 7.003545761108398e-07,
+          "relative_l2": 4.600832213389574e-06,
+          "expected_norm": 0.8612568221840257
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 1.8030405044555664e-06,
+          "relative_l2": 5.319281590377848e-06,
+          "expected_norm": 0.6197723505671302
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 5.308538675308228e-07,
+          "relative_l2": 4.340966962508643e-06,
+          "expected_norm": 0.6794908426316162
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 5.755573511123657e-07,
+          "relative_l2": 5.774261590344277e-06,
+          "expected_norm": 0.35384839643299226
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 9.387731552124023e-07,
+          "relative_l2": 3.9360251864179445e-06,
+          "expected_norm": 0.8988225269353479
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 6.677582859992981e-07,
+          "relative_l2": 3.843981124607982e-06,
+          "expected_norm": 0.6454057411757835
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.8380582332611084e-05,
+            "relative_l2": 7.098366864441109e-05,
+            "expected_norm": 0.8156630780072767
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1336058378219604e-05,
+            "relative_l2": 0.0001016837318644248,
+            "expected_norm": 0.21340185030537423
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 7.1516260504722595e-06,
+            "relative_l2": 6.92077382941649e-05,
+            "expected_norm": 0.5129166750537119
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.1550804376602173e-06,
+            "relative_l2": 5.158086168982188e-05,
+            "expected_norm": 0.08575274801167698
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 4.433095455169678e-06,
+            "relative_l2": 5.447287876002096e-05,
+            "expected_norm": 0.3698259042601881
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.094364941120148e-07,
+            "relative_l2": 4.10602882583147e-05,
+            "expected_norm": 0.041917226490025036
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.650303602218628e-06,
+            "relative_l2": 3.905674321816352e-05,
+            "expected_norm": 0.29038157267902004
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1990778148174286e-07,
+            "relative_l2": 1.7032886194354494e-05,
+            "expected_norm": 0.02004989384444885
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 4.2244791984558105e-06,
+            "relative_l2": 5.596532689329274e-05,
+            "expected_norm": 0.20359318291007886
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.939494490623474e-07,
+            "relative_l2": 6.696209212346775e-05,
+            "expected_norm": 0.010737714744833435
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.555549144744873e-06,
+            "relative_l2": 4.1407693662464144e-05,
+            "expected_norm": 0.2082909372252147
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.7427373677492142e-07,
+            "relative_l2": 2.7153245822333754e-05,
+            "expected_norm": 0.013072278114953187
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.6158446669578552e-06,
+            "relative_l2": 4.292252496417323e-05,
+            "expected_norm": 0.15190461967792632
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.821371011435986e-08,
+            "relative_l2": 1.9474019228271827e-05,
+            "expected_norm": 0.0084649457657051
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.4030374586582184e-06,
+            "relative_l2": 3.4632428201755944e-05,
+            "expected_norm": 0.15283058671250657
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.151661414653063e-08,
+            "relative_l2": 2.828736933603389e-05,
+            "expected_norm": 0.00356345842778873
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.34157913736999e-07,
+            "relative_l2": 3.165739582152249e-05,
+            "expected_norm": 0.10549722926969042
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.2027157936245203e-08,
+            "relative_l2": 1.4365038546290668e-05,
+            "expected_norm": 0.0023522280038466344
+          }
+        }
+      }
+    },
+    {
+      "completed": 8,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 6.05359673500061e-08,
+          "relative_l2": 4.3040874744294175e-07,
+          "expected_norm": 0.2831584257891042
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 9.313225746154785e-08,
+          "relative_l2": 5.934997391709716e-07,
+          "expected_norm": 0.691817412758789
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 7.916241884231567e-08,
+          "relative_l2": 5.639234245772399e-07,
+          "expected_norm": 0.38791145260527243
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 5.4016709327697754e-08,
+          "relative_l2": 3.999807103747225e-07,
+          "expected_norm": 0.8918542710724617
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 4.470348358154297e-08,
+          "relative_l2": 3.9623738940468737e-07,
+          "expected_norm": 0.6418204917221293
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.1548399925231934e-07,
+          "relative_l2": 7.706348240895223e-07,
+          "expected_norm": 0.705861425761202
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 4.423782229423523e-08,
+          "relative_l2": 4.706413051691973e-07,
+          "expected_norm": 0.3674905377412717
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 7.264316082000732e-08,
+          "relative_l2": 4.767233318747208e-07,
+          "expected_norm": 0.9309198544385319
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 9.033828973770142e-08,
+          "relative_l2": 5.190826246859521e-07,
+          "expected_norm": 0.668907762764759
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 5.885958671569824e-07,
+            "relative_l2": 2.0673962369333013e-06,
+            "expected_norm": 0.7842334613839789
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.7695128917694092e-07,
+            "relative_l2": 2.003576343482612e-06,
+            "expected_norm": 0.2171872124189048
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.384185791015625e-07,
+            "relative_l2": 2.5195219136526465e-06,
+            "expected_norm": 0.4622446828971597
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.842877388000488e-08,
+            "relative_l2": 1.630146641287316e-06,
+            "expected_norm": 0.08494170958835841
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.350425347685814e-07,
+            "relative_l2": 2.1890100014719023e-06,
+            "expected_norm": 0.331989372587459
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.7462298274040222e-08,
+            "relative_l2": 1.2288062749012385e-06,
+            "expected_norm": 0.042662341056766584
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.1781230568885803e-07,
+            "relative_l2": 2.370639586274869e-06,
+            "expected_norm": 0.26740863591186254
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.847564458847046e-09,
+            "relative_l2": 1.4102047681725972e-06,
+            "expected_norm": 0.02062225558245134
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.239861249923706e-08,
+            "relative_l2": 2.0735212656026115e-06,
+            "expected_norm": 0.19324141744236123
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.423782229423523e-09,
+            "relative_l2": 1.2055320252711206e-06,
+            "expected_norm": 0.011113444810777768
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 7.078051567077637e-08,
+            "relative_l2": 2.342155168050865e-06,
+            "expected_norm": 0.19155701775197007
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.958120942115784e-09,
+            "relative_l2": 8.223701810566846e-07,
+            "expected_norm": 0.013126525791266247
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 7.671769708395004e-08,
+            "relative_l2": 2.31683224696689e-06,
+            "expected_norm": 0.1423740319336213
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.6566128730773926e-09,
+            "relative_l2": 9.308248178224457e-07,
+            "expected_norm": 0.008586096393186395
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.377216100692749e-08,
+            "relative_l2": 2.3715076079455673e-06,
+            "expected_norm": 0.14973062725948258
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.3865140974521637e-09,
+            "relative_l2": 1.3669263512646135e-06,
+            "expected_norm": 0.003969992378911757
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 7.82310962677002e-08,
+            "relative_l2": 2.627462140700118e-06,
+            "expected_norm": 0.1018517654625916
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.117303665727377e-09,
+            "relative_l2": 1.282451306860997e-06,
+            "expected_norm": 0.002429893493810255
+          }
+        }
+      }
+    },
+    {
+      "completed": 8,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.4093238860368729e-06,
+          "relative_l2": 9.313250865894453e-06,
+          "expected_norm": 0.2831580772314973
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 2.903863787651062e-06,
+          "relative_l2": 1.1937254933594886e-05,
+          "expected_norm": 0.6918172381073312
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.8123537302017212e-06,
+          "relative_l2": 1.1446393188190738e-05,
+          "expected_norm": 0.3879114556061907
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.0933727025985718e-06,
+          "relative_l2": 7.370462496315193e-06,
+          "expected_norm": 0.891854264218238
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 2.3134052753448486e-06,
+          "relative_l2": 7.968800478103497e-06,
+          "expected_norm": 0.6418205677497597
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 7.995404303073883e-07,
+          "relative_l2": 6.5222714497190195e-06,
+          "expected_norm": 0.7058614085627122
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 8.419156074523926e-07,
+          "relative_l2": 8.972981068841463e-06,
+          "expected_norm": 0.367490586561244
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 1.1436641216278076e-06,
+          "relative_l2": 5.9800325671016046e-06,
+          "expected_norm": 0.9309195818124756
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.1241063475608826e-06,
+          "relative_l2": 6.056067848164121e-06,
+          "expected_norm": 0.6689078113566022
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.658499240875244e-05,
+            "relative_l2": 6.670599462088817e-05,
+            "expected_norm": 0.7842540793893602
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1108815670013428e-05,
+            "relative_l2": 9.79163922814675e-05,
+            "expected_norm": 0.21719493974778703
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 6.400048732757568e-06,
+            "relative_l2": 6.909080285835272e-05,
+            "expected_norm": 0.4622577589436635
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.119690179824829e-06,
+            "relative_l2": 5.1055359972379824e-05,
+            "expected_norm": 0.08494283808198694
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.874301910400391e-06,
+            "relative_l2": 5.415852624317364e-05,
+            "expected_norm": 0.3319925176199585
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.931383490562439e-07,
+            "relative_l2": 4.001463657887212e-05,
+            "expected_norm": 0.042662538430534344
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.3271346688270569e-06,
+            "relative_l2": 3.79326774003964e-05,
+            "expected_norm": 0.26740935864664783
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.25030055642128e-07,
+            "relative_l2": 1.6741808273189394e-05,
+            "expected_norm": 0.02062218264236672
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.831461071968079e-06,
+            "relative_l2": 5.289860651283744e-05,
+            "expected_norm": 0.19324414675552798
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.859167918562889e-07,
+            "relative_l2": 6.34035912069126e-05,
+            "expected_norm": 0.011113672705099258
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.455897629261017e-06,
+            "relative_l2": 4.252925764186309e-05,
+            "expected_norm": 0.19155935940098673
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.7049023881554604e-07,
+            "relative_l2": 2.6099502376247317e-05,
+            "expected_norm": 0.013126641536971505
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.4649704098701477e-06,
+            "relative_l2": 4.288032947751635e-05,
+            "expected_norm": 0.14237512706534253
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.649658411741257e-08,
+            "relative_l2": 1.9374460780262627e-05,
+            "expected_norm": 0.008586088319412648
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.2004747986793518e-06,
+            "relative_l2": 3.141561543710175e-05,
+            "expected_norm": 0.14973083686839841
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.6566128730773926e-08,
+            "relative_l2": 2.7253698545500613e-05,
+            "expected_norm": 0.003970022272829607
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.075715646147728e-07,
+            "relative_l2": 2.985305977675978e-05,
+            "expected_norm": 0.10185148830208497
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1961674317717552e-08,
+            "relative_l2": 1.4485863643935694e-05,
+            "expected_norm": 0.0024298975313675735
+          }
+        }
+      }
+    },
+    {
+      "completed": 9,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 7.729977369308472e-08,
+          "relative_l2": 5.39218468126809e-07,
+          "expected_norm": 0.2994436261054167
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 1.30385160446167e-07,
+          "relative_l2": 7.958332104266928e-07,
+          "expected_norm": 0.7173063057472183
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.1082738637924194e-07,
+          "relative_l2": 7.481675129882247e-07,
+          "expected_norm": 0.4011720914958177
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 8.009374141693115e-08,
+          "relative_l2": 5.312199380215189e-07,
+          "expected_norm": 0.9210133004325464
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 5.587935447692871e-08,
+          "relative_l2": 5.249998946439663e-07,
+          "expected_norm": 0.6634277823636712
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.6391277313232422e-07,
+          "relative_l2": 1.0300478182042399e-06,
+          "expected_norm": 0.7318114222562662
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 6.612390279769897e-08,
+          "relative_l2": 6.201633216916369e-07,
+          "expected_norm": 0.38120521056215195
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 1.1734664440155029e-07,
+          "relative_l2": 6.43046589119705e-07,
+          "expected_norm": 0.9629451888980815
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.2526288628578186e-07,
+          "relative_l2": 6.854581847561133e-07,
+          "expected_norm": 0.692321753032569
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 5.103647708892822e-07,
+            "relative_l2": 1.871036270739954e-06,
+            "expected_norm": 0.7826329754433156
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.6577541828155518e-07,
+            "relative_l2": 1.948474492114271e-06,
+            "expected_norm": 0.21772301217019213
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.1979212760925293e-07,
+            "relative_l2": 2.549734448228331e-06,
+            "expected_norm": 0.4146026271983033
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.7497451305389404e-08,
+            "relative_l2": 1.6155619797455415e-06,
+            "expected_norm": 0.08371248654388504
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.0710285753011703e-07,
+            "relative_l2": 2.2472551238403448e-06,
+            "expected_norm": 0.30963949567296845
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.6996636986732483e-08,
+            "relative_l2": 1.2016588818998479e-06,
+            "expected_norm": 0.042929797919327516
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.1175870895385742e-07,
+            "relative_l2": 2.472536504499071e-06,
+            "expected_norm": 0.25016870832022137
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.847564458847046e-09,
+            "relative_l2": 1.4028119387590866e-06,
+            "expected_norm": 0.020403121122204257
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.239861249923706e-08,
+            "relative_l2": 2.2674634757048594e-06,
+            "expected_norm": 0.17882731505250157
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.540197551250458e-09,
+            "relative_l2": 1.1799591602948225e-06,
+            "expected_norm": 0.011244727851638828
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 6.51925802230835e-08,
+            "relative_l2": 2.405738497035374e-06,
+            "expected_norm": 0.17362674272682208
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.725290298461914e-09,
+            "relative_l2": 8.125379248371233e-07,
+            "expected_norm": 0.013002049883771074
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.007030606269836e-08,
+            "relative_l2": 2.145259500951457e-06,
+            "expected_norm": 0.13709509891532357
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.122274160385132e-09,
+            "relative_l2": 9.489562888159116e-07,
+            "expected_norm": 0.008743952334889813
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 6.05359673500061e-08,
+            "relative_l2": 2.3662718820099145e-06,
+            "expected_norm": 0.14463056956156378
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.3283064365386963e-09,
+            "relative_l2": 1.3965118839096462e-06,
+            "expected_norm": 0.004071944533304349
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 7.217749953269958e-08,
+            "relative_l2": 2.4385050735195676e-06,
+            "expected_norm": 0.10212638751933018
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.0372681319713593e-09,
+            "relative_l2": 1.3127559108176207e-06,
+            "expected_norm": 0.0024906385974001583
+          }
+        }
+      }
+    },
+    {
+      "completed": 9,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.9886065274477005e-06,
+          "relative_l2": 1.202044216796243e-05,
+          "expected_norm": 0.2994431687426539
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 3.863126039505005e-06,
+          "relative_l2": 1.6028457169694042e-05,
+          "expected_norm": 0.7173061299470213
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.3115426301956177e-06,
+          "relative_l2": 1.50027349001707e-05,
+          "expected_norm": 0.40117215774106435
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.3150274753570557e-06,
+          "relative_l2": 9.735285397711703e-06,
+          "expected_norm": 0.9210133281445431
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 2.7455389499664307e-06,
+          "relative_l2": 1.0381748438442779e-05,
+          "expected_norm": 0.6634278387495754
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.0766088962554932e-06,
+          "relative_l2": 8.78166827877891e-06,
+          "expected_norm": 0.7318114578372741
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 1.0021030902862549e-06,
+          "relative_l2": 1.1756458681987092e-05,
+          "expected_norm": 0.381205328332283
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 1.5026889741420746e-06,
+          "relative_l2": 8.22193923026006e-06,
+          "expected_norm": 0.9629447942969961
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.4398247003555298e-06,
+          "relative_l2": 8.070100736203086e-06,
+          "expected_norm": 0.6923218239236232
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.5072524547576904e-05,
+            "relative_l2": 5.9215519489157164e-05,
+            "expected_norm": 0.7826461465510012
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0892748832702637e-05,
+            "relative_l2": 9.60935133849363e-05,
+            "expected_norm": 0.21773043054005525
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 5.597248673439026e-06,
+            "relative_l2": 6.841208378575731e-05,
+            "expected_norm": 0.4146140616588819
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.0796433091163635e-06,
+            "relative_l2": 5.067904676315583e-05,
+            "expected_norm": 0.0837135716710049
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.2633543014526367e-06,
+            "relative_l2": 5.1634822019093704e-05,
+            "expected_norm": 0.309641954985066
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.717179298400879e-07,
+            "relative_l2": 3.850635154148577e-05,
+            "expected_norm": 0.042929966647891026
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 1.3005919754505157e-06,
+            "relative_l2": 4.588883282956618e-05,
+            "expected_norm": 0.25016924630747295
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3457611203193665e-07,
+            "relative_l2": 1.757611813138853e-05,
+            "expected_norm": 0.0204030496828353
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.3546239137649536e-06,
+            "relative_l2": 6.0496995039899196e-05,
+            "expected_norm": 0.17883010982908978
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.782333806157112e-07,
+            "relative_l2": 6.363448821306186e-05,
+            "expected_norm": 0.011244992692200605
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.196989953517914e-06,
+            "relative_l2": 4.314471215835399e-05,
+            "expected_norm": 0.17362822367520125
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.6711419448256493e-07,
+            "relative_l2": 2.6061222868949427e-05,
+            "expected_norm": 0.013002159788331885
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.2498348951339722e-06,
+            "relative_l2": 4.430149670176081e-05,
+            "expected_norm": 0.13709596694011633
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.486676961183548e-08,
+            "relative_l2": 1.974663028836367e-05,
+            "expected_norm": 0.008743936462222917
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.0368024706840515e-06,
+            "relative_l2": 4.975448730726437e-05,
+            "expected_norm": 0.14463108226393648
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.672336556017399e-08,
+            "relative_l2": 3.601777623178569e-05,
+            "expected_norm": 0.00407199592213155
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 9.434297680854797e-07,
+            "relative_l2": 4.0936757304398515e-05,
+            "expected_norm": 0.10212656320843215
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.8958311304450035e-08,
+            "relative_l2": 2.47973760944406e-05,
+            "expected_norm": 0.0024906531086429035
+          }
+        }
+      }
+    },
+    {
+      "completed": 10,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 7.264316082000732e-08,
+          "relative_l2": 5.881076719855754e-07,
+          "expected_norm": 0.3170257420970335
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 1.564621925354004e-07,
+          "relative_l2": 1.056348990768244e-06,
+          "expected_norm": 0.7420820942204729
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 1.1362135410308838e-07,
+          "relative_l2": 8.350830051075437e-07,
+          "expected_norm": 0.4140272344609581
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 9.592622518539429e-08,
+          "relative_l2": 6.538430491465375e-07,
+          "expected_norm": 0.9491991479018809
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 8.312053978443146e-08,
+          "relative_l2": 6.920113292119719e-07,
+          "expected_norm": 0.684267504413622
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.955777406692505e-07,
+          "relative_l2": 1.2347811770851023e-06,
+          "expected_norm": 0.7572481701270342
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 8.754432201385498e-08,
+          "relative_l2": 8.912553944797705e-07,
+          "expected_norm": 0.3943297429154346
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 1.564621925354004e-07,
+          "relative_l2": 9.234622769231556e-07,
+          "expected_norm": 0.994443469935776
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.601874828338623e-07,
+          "relative_l2": 8.696937026809481e-07,
+          "expected_norm": 0.715825392819017
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.55415216088295e-06,
+            "relative_l2": 6.84489670127817e-06,
+            "expected_norm": 0.7775920729756721
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.6938657760620117e-07,
+            "relative_l2": 3.655570839232055e-06,
+            "expected_norm": 0.22087034685097656
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0151416063308716e-06,
+            "relative_l2": 1.2026049018758484e-05,
+            "expected_norm": 0.37460994947067316
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.614733815193176e-08,
+            "relative_l2": 2.774364760365532e-06,
+            "expected_norm": 0.08271038378646421
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.1883676052093506e-06,
+            "relative_l2": 1.140762013269157e-05,
+            "expected_norm": 0.3023969288160978
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.2596137821674347e-07,
+            "relative_l2": 5.558491498322242e-06,
+            "expected_norm": 0.04290928836371641
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.246830940246582e-07,
+            "relative_l2": 7.677818109953053e-06,
+            "expected_norm": 0.24125507783087377
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.3981556296348572e-08,
+            "relative_l2": 2.499729966508229e-06,
+            "expected_norm": 0.02023324543933433
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.230517566204071e-07,
+            "relative_l2": 6.040218914085088e-06,
+            "expected_norm": 0.17255184157731032
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.6461431086063385e-09,
+            "relative_l2": 1.6099208146682452e-06,
+            "expected_norm": 0.011173935374209147
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.501757651567459e-07,
+            "relative_l2": 4.133226920833504e-06,
+            "expected_norm": 0.1616444386823319
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.6088749766349792e-09,
+            "relative_l2": 9.6458975419857e-07,
+            "expected_norm": 0.012817639009352028
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.300366759300232e-07,
+            "relative_l2": 6.365580471800685e-06,
+            "expected_norm": 0.1275495056179057
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.238689482212067e-09,
+            "relative_l2": 1.3608178532188759e-06,
+            "expected_norm": 0.008705890784760324
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.1047890186309814e-07,
+            "relative_l2": 7.591643784596683e-06,
+            "expected_norm": 0.14017738396653331
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.631591193377972e-09,
+            "relative_l2": 2.6976994673323e-06,
+            "expected_norm": 0.004080099187748391
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 9.685754776000977e-08,
+            "relative_l2": 5.13362163424717e-06,
+            "expected_norm": 0.10515592649316409
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.648448571562767e-09,
+            "relative_l2": 1.7433821379238961e-06,
+            "expected_norm": 0.002551203652275595
+          }
+        }
+      }
+    },
+    {
+      "completed": 10,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 2.1490268409252167e-06,
+          "relative_l2": 1.2758275031149956e-05,
+          "expected_norm": 0.3170250586486562
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 4.738569259643555e-06,
+          "relative_l2": 2.0535741295667868e-05,
+          "expected_norm": 0.7420817682666874
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.3692846298217773e-06,
+          "relative_l2": 1.7266228582879716e-05,
+          "expected_norm": 0.4140271012891033
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.7210841178894043e-06,
+          "relative_l2": 1.1828760767232447e-05,
+          "expected_norm": 0.949199089832946
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 3.155320882797241e-06,
+          "relative_l2": 1.3111229251668749e-05,
+          "expected_norm": 0.6842675447057359
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.5096738934516907e-06,
+          "relative_l2": 1.0840992120195429e-05,
+          "expected_norm": 0.7572482635990041
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 1.2069940567016602e-06,
+          "relative_l2": 1.465458047196563e-05,
+          "expected_norm": 0.3943298523733938
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 1.8114224076271057e-06,
+          "relative_l2": 1.1057773528779893e-05,
+          "expected_norm": 0.9944429603815036
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 1.817941665649414e-06,
+          "relative_l2": 1.0729668903317691e-05,
+          "expected_norm": 0.7158252860923399
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.4177134037017822e-05,
+            "relative_l2": 8.109758641522671e-05,
+            "expected_norm": 0.7776072494601294
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0736286640167236e-05,
+            "relative_l2": 9.825925254224937e-05,
+            "expected_norm": 0.22087945109202478
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0358169674873352e-05,
+            "relative_l2": 0.00013470274290007923,
+            "expected_norm": 0.3746247823927439
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.034008502960205e-06,
+            "relative_l2": 5.627641283846482e-05,
+            "expected_norm": 0.08271203389898127
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0663643479347229e-05,
+            "relative_l2": 0.00011576552199449376,
+            "expected_norm": 0.3024088481097028
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1781230568885803e-06,
+            "relative_l2": 6.49493434842024e-05,
+            "expected_norm": 0.042909970626859376
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.888271749019623e-06,
+            "relative_l2": 8.229284903764769e-05,
+            "expected_norm": 0.2412589467811672
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.2188760340213776e-07,
+            "relative_l2": 2.707799481910506e-05,
+            "expected_norm": 0.02023326438843309
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.032386302947998e-06,
+            "relative_l2": 8.004979472477554e-05,
+            "expected_norm": 0.17255528822365976
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.7031713873147964e-07,
+            "relative_l2": 6.390463662627035e-05,
+            "expected_norm": 0.011174220299615244
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.8584541976451874e-06,
+            "relative_l2": 5.66551777079473e-05,
+            "expected_norm": 0.16164689248526934
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.6379635781049728e-07,
+            "relative_l2": 2.6489032568362822e-05,
+            "expected_norm": 0.012817758266633537
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.1783635020256042e-06,
+            "relative_l2": 6.952675212684594e-05,
+            "expected_norm": 0.12755124957523006
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.326605893671513e-08,
+            "relative_l2": 2.186038254305793e-05,
+            "expected_norm": 0.008705883104052006
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.779066562652588e-06,
+            "relative_l2": 8.427030043368482e-05,
+            "expected_norm": 0.14018057976018594
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.30942701920867e-08,
+            "relative_l2": 4.677491341047485e-05,
+            "expected_norm": 0.004080169364624593
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0933727025985718e-06,
+            "relative_l2": 5.8293703254864566e-05,
+            "expected_norm": 0.10515547786757237
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.9598595574498177e-08,
+            "relative_l2": 2.1088206426160818e-05,
+            "expected_norm": 0.0025512065204557973
+          }
+        }
+      }
+    },
+    {
+      "completed": 11,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.2665987014770508e-07,
+          "relative_l2": 8.492858167487626e-07,
+          "expected_norm": 0.33631702615447023
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 3.0919909477233887e-07,
+          "relative_l2": 1.9758017191165668e-06,
+          "expected_norm": 0.7658830940821302
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.2724270820617676e-07,
+          "relative_l2": 1.2926018042240096e-06,
+          "expected_norm": 0.426691071253404
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 1.648440957069397e-07,
+          "relative_l2": 9.660118239514272e-07,
+          "expected_norm": 0.9759485090273826
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 1.3899989426136017e-07,
+          "relative_l2": 9.843231003494726e-07,
+          "expected_norm": 0.7044457343456266
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 2.2910535335540771e-07,
+          "relative_l2": 1.4937720761951326e-06,
+          "expected_norm": 0.7814088200289047
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 1.4901161193847656e-07,
+          "relative_l2": 1.3143420947016415e-06,
+          "expected_norm": 0.40710459363807977
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 2.3096799850463867e-07,
+          "relative_l2": 1.2814935522993836e-06,
+          "expected_norm": 1.025364584800267
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 2.3096799850463867e-07,
+          "relative_l2": 1.1265922621277267e-06,
+          "expected_norm": 0.7391776334156525
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.25752592086792e-06,
+            "relative_l2": 5.860059119299148e-06,
+            "expected_norm": 0.7989824125642305
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.544854164123535e-07,
+            "relative_l2": 3.5709630919823065e-06,
+            "expected_norm": 0.2202795242678364
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 9.201467037200928e-07,
+            "relative_l2": 1.1931350855189108e-05,
+            "expected_norm": 0.3407261808203581
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.381903171539307e-08,
+            "relative_l2": 2.7585643036463255e-06,
+            "expected_norm": 0.08131540936788903
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0728836059570312e-06,
+            "relative_l2": 1.2140031723454937e-05,
+            "expected_norm": 0.27098013675727967
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.234002411365509e-07,
+            "relative_l2": 5.439761153896844e-06,
+            "expected_norm": 0.04243113763044919
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.8743019104003906e-07,
+            "relative_l2": 8.226984241221489e-06,
+            "expected_norm": 0.21703093098714554
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.3399479687213898e-08,
+            "relative_l2": 2.469434713094552e-06,
+            "expected_norm": 0.019993622142962533
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.9650906324386597e-07,
+            "relative_l2": 6.469746610383775e-06,
+            "expected_norm": 0.15685769738353533
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.762558430433273e-09,
+            "relative_l2": 1.6089854103581713e-06,
+            "expected_norm": 0.011089893964149588
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.9744038581848145e-07,
+            "relative_l2": 4.9805501551315755e-06,
+            "expected_norm": 0.1444955514303706
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.4924596548080444e-09,
+            "relative_l2": 9.164759952936666e-07,
+            "expected_norm": 0.012638997359857186
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.8905848264694214e-07,
+            "relative_l2": 6.521992808636184e-06,
+            "expected_norm": 0.11860469051740248
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.122274160385132e-09,
+            "relative_l2": 1.2796962989405836e-06,
+            "expected_norm": 0.008620894976189812
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.076849341392517e-07,
+            "relative_l2": 7.861919383002548e-06,
+            "expected_norm": 0.12987346173064082
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.2677933126688e-09,
+            "relative_l2": 2.663873676737888e-06,
+            "expected_norm": 0.004065526931171998
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 8.163624443113804e-08,
+            "relative_l2": 5.0645069227021775e-06,
+            "expected_norm": 0.10057701060118364
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.648448571562767e-09,
+            "relative_l2": 1.7613018650291209e-06,
+            "expected_norm": 0.0025579609391738955
+          }
+        }
+      }
+    },
+    {
+      "completed": 11,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 2.213055267930031e-06,
+          "relative_l2": 1.4379170495187949e-05,
+          "expected_norm": 0.33631612262223126
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 5.329027771949768e-06,
+          "relative_l2": 2.776533104196216e-05,
+          "expected_norm": 0.7658827836562087
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.3115426301956177e-06,
+          "relative_l2": 2.1091270967455513e-05,
+          "expected_norm": 0.42669083586053835
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 2.1667219698429108e-06,
+          "relative_l2": 1.505571050627724e-05,
+          "expected_norm": 0.9759483859399137
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 3.475695848464966e-06,
+          "relative_l2": 1.6404238539985135e-05,
+          "expected_norm": 0.704445702546541
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 1.959037035703659e-06,
+          "relative_l2": 1.3275954714915449e-05,
+          "expected_norm": 0.7814089958343619
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 1.5189871191978455e-06,
+          "relative_l2": 1.8556069117147467e-05,
+          "expected_norm": 0.4071046787558722
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 2.5480985641479492e-06,
+          "relative_l2": 1.4819300164922277e-05,
+          "expected_norm": 1.0253640793770744
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 2.0228326320648193e-06,
+          "relative_l2": 1.3898767468728895e-05,
+          "expected_norm": 0.739177333052303
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.1453946828842163e-05,
+            "relative_l2": 6.973085766123641e-05,
+            "expected_norm": 0.798995734273582
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.050904393196106e-05,
+            "relative_l2": 9.649426797585676e-05,
+            "expected_norm": 0.2202884159599538
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 9.583309292793274e-06,
+            "relative_l2": 0.0001328191684224241,
+            "expected_norm": 0.34073931816817826
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.998618245124817e-06,
+            "relative_l2": 5.619933858364717e-05,
+            "expected_norm": 0.08131702005714997
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 9.543262422084808e-06,
+            "relative_l2": 0.00012485238888729683,
+            "expected_norm": 0.27098810516344524
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1560041457414627e-06,
+            "relative_l2": 6.412176607779496e-05,
+            "expected_norm": 0.04243180905545294
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.7313438951969147e-06,
+            "relative_l2": 9.161038234729342e-05,
+            "expected_norm": 0.21703322623720028
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.1723099052906036e-07,
+            "relative_l2": 2.6986595299614395e-05,
+            "expected_norm": 0.01999365013633584
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.6617199182510376e-06,
+            "relative_l2": 8.481403991780568e-05,
+            "expected_norm": 0.156860316450343
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.628665581345558e-07,
+            "relative_l2": 6.345651839046912e-05,
+            "expected_norm": 0.011090179428592715
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.844950020313263e-06,
+            "relative_l2": 6.552147785396627e-05,
+            "expected_norm": 0.14449682007278572
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.605367287993431e-07,
+            "relative_l2": 2.6589249105768374e-05,
+            "expected_norm": 0.012639116336967609
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.9562430679798126e-06,
+            "relative_l2": 7.455015413282596e-05,
+            "expected_norm": 0.11860551081215055
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.16071406006813e-08,
+            "relative_l2": 2.0945462138945673e-05,
+            "expected_norm": 0.008620889041707656
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 2.732500433921814e-06,
+            "relative_l2": 9.024179860877192e-05,
+            "expected_norm": 0.12987627690236447
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.851041689515114e-08,
+            "relative_l2": 4.625925840828791e-05,
+            "expected_norm": 0.004065593578213633
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0030344128608704e-06,
+            "relative_l2": 5.9359901899845394e-05,
+            "expected_norm": 0.10057665640610865
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.847809810191393e-08,
+            "relative_l2": 2.1347106974668287e-05,
+            "expected_norm": 0.0025579643051049077
+          }
+        }
+      }
+    },
+    {
+      "completed": 12,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 1.6391277313232422e-07,
+          "relative_l2": 1.0678597716685377e-06,
+          "expected_norm": 0.3558657703599408
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 4.544854164123535e-07,
+          "relative_l2": 2.8225150229976106e-06,
+          "expected_norm": 0.7881655047080705
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 3.2223761081695557e-07,
+          "relative_l2": 1.7685720901386102e-06,
+          "expected_norm": 0.43842514629071255
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 2.5797635316848755e-07,
+          "relative_l2": 1.4263183149755485e-06,
+          "expected_norm": 1.0020128575090859
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 2.3469328880310059e-07,
+          "relative_l2": 1.3604437096278051e-06,
+          "expected_norm": 0.7241742439605908
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 2.8870999813079834e-07,
+          "relative_l2": 1.9353464835919296e-06,
+          "expected_norm": 0.8041157510471135
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 2.2351741790771484e-07,
+          "relative_l2": 1.7825882897553434e-06,
+          "expected_norm": 0.41922165555232904
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 3.0547380447387695e-07,
+          "relative_l2": 1.6479312964986457e-06,
+          "expected_norm": 1.0547620176625634
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 3.0174851417541504e-07,
+          "relative_l2": 1.4234908447519366e-06,
+          "expected_norm": 0.7612981562475761
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.8514692783355713e-06,
+            "relative_l2": 5.843206464023465e-06,
+            "expected_norm": 0.8069921063611527
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.470348358154297e-07,
+            "relative_l2": 4.417009911743985e-06,
+            "expected_norm": 0.23135518030755084
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 9.182840585708618e-07,
+            "relative_l2": 1.2659302129609588e-05,
+            "expected_norm": 0.32737588721427713
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.182825356721878e-08,
+            "relative_l2": 2.8859372346103414e-06,
+            "expected_norm": 0.08162180389165749
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.34296715259552e-06,
+            "relative_l2": 1.400620436022762e-05,
+            "expected_norm": 0.2635592620715663
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.2083910405635834e-07,
+            "relative_l2": 5.801922436662479e-06,
+            "expected_norm": 0.04359378154764623
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.1350722312927246e-07,
+            "relative_l2": 1.038923518882561e-05,
+            "expected_norm": 0.20786266848531945
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.270098775625229e-08,
+            "relative_l2": 2.559203783119325e-06,
+            "expected_norm": 0.019900143984393496
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.6670826375484467e-07,
+            "relative_l2": 9.403727938075584e-06,
+            "expected_norm": 0.14955181385747018
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.770722731947899e-09,
+            "relative_l2": 1.9905831904794218e-06,
+            "expected_norm": 0.011003282028171258
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.4400651454925537e-07,
+            "relative_l2": 8.416673015959657e-06,
+            "expected_norm": 0.13489054832973776
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.958120942115784e-09,
+            "relative_l2": 1.1019456271403885e-06,
+            "expected_norm": 0.01262258875192092
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.498272806406021e-07,
+            "relative_l2": 9.23289331697896e-06,
+            "expected_norm": 0.11435618655303556
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.255018085241318e-09,
+            "relative_l2": 2.0818479199373842e-06,
+            "expected_norm": 0.008827876458574153
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.173481673002243e-07,
+            "relative_l2": 1.0381090209334483e-05,
+            "expected_norm": 0.12658511218383897
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.436028681695461e-09,
+            "relative_l2": 3.933841657255438e-06,
+            "expected_norm": 0.004278979693038569
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 8.66129994392395e-08,
+            "relative_l2": 6.65943341718273e-06,
+            "expected_norm": 0.0925588818349896
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.1723175197839737e-09,
+            "relative_l2": 2.60341780161338e-06,
+            "expected_norm": 0.0027156161612748786
+          }
+        }
+      }
+    },
+    {
+      "completed": 12,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 2.232147380709648e-06,
+          "relative_l2": 1.6219416192051165e-05,
+          "expected_norm": 0.3558647038557565
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 5.941838026046753e-06,
+          "relative_l2": 3.486650804008743e-05,
+          "expected_norm": 0.7881653828766707
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 2.93925404548645e-06,
+          "relative_l2": 2.5556681505081467e-05,
+          "expected_norm": 0.43842478503881926
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 2.950429916381836e-06,
+          "relative_l2": 1.9396317181172334e-05,
+          "expected_norm": 1.002012676163978
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 3.732740879058838e-06,
+          "relative_l2": 2.0143062869240413e-05,
+          "expected_norm": 0.7241742480671732
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 2.469867467880249e-06,
+          "relative_l2": 1.6384370529820596e-05,
+          "expected_norm": 0.8041160907856378
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 2.1532177925109863e-06,
+          "relative_l2": 2.29287393733502e-05,
+          "expected_norm": 0.4192218065178626
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 3.259629011154175e-06,
+          "relative_l2": 1.8606135997452995e-05,
+          "expected_norm": 1.0547616853615116
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 2.2836029529571533e-06,
+          "relative_l2": 1.70319877257822e-05,
+          "expected_norm": 0.7612977872764748
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 1.8358230590820312e-05,
+            "relative_l2": 6.960772869913197e-05,
+            "expected_norm": 0.8069975278529422
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0348856449127197e-05,
+            "relative_l2": 9.203208844580309e-05,
+            "expected_norm": 0.2313608892870565
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0184943675994873e-05,
+            "relative_l2": 0.0001396069993244145,
+            "expected_norm": 0.32738157189489536
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.9082799553871155e-06,
+            "relative_l2": 5.37411672102581e-05,
+            "expected_norm": 0.08162291516672701
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.3083219528198242e-05,
+            "relative_l2": 0.000145148201249119,
+            "expected_norm": 0.26355671263747354
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1220108717679977e-06,
+            "relative_l2": 6.487522183059593e-05,
+            "expected_norm": 0.0435939158438634
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.628673195838928e-06,
+            "relative_l2": 0.0001089819353215055,
+            "expected_norm": 0.207861506260213
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.1175947040319443e-07,
+            "relative_l2": 2.6785006821355508e-05,
+            "expected_norm": 0.019900126625514273
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.402121365070343e-06,
+            "relative_l2": 0.00010130548693650195,
+            "expected_norm": 0.14955226583297032
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.555323928594589e-07,
+            "relative_l2": 6.29419152483847e-05,
+            "expected_norm": 0.011003541309342925
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 2.3739412426948547e-06,
+            "relative_l2": 8.483528509615444e-05,
+            "expected_norm": 0.1348915606122999
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.575099304318428e-07,
+            "relative_l2": 2.726497446116142e-05,
+            "expected_norm": 0.012622677679557482
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 2.6030465960502625e-06,
+            "relative_l2": 9.393817452164161e-05,
+            "expected_norm": 0.11435483104940894
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.260838851332664e-08,
+            "relative_l2": 2.595578925638005e-05,
+            "expected_norm": 0.008827833245750464
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 3.3923424780368805e-06,
+            "relative_l2": 0.0001049999007278207,
+            "expected_norm": 0.1265857319568459
+          },
+          "exp_avg_sq": {
+            "max_absolute": 5.7800207287073135e-08,
+            "relative_l2": 4.720535730532296e-05,
+            "expected_norm": 0.0042789882440495185
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.0998919606208801e-06,
+            "relative_l2": 7.223237569659107e-05,
+            "expected_norm": 0.09255826261451411
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.8070644475519657e-08,
+            "relative_l2": 2.8978152250732715e-05,
+            "expected_norm": 0.0027155943606974675
+          }
+        }
+      }
+    },
+    {
+      "completed": 13,
+      "reference": "compiled",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 2.2724270820617676e-07,
+          "relative_l2": 1.461749134983402e-06,
+          "expected_norm": 0.37620405469895274
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 5.103647708892822e-07,
+          "relative_l2": 4.147089637826801e-06,
+          "expected_norm": 0.8074189413524542
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 4.2282044887542725e-07,
+          "relative_l2": 2.343776786215264e-06,
+          "expected_norm": 0.44964434723575464
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 3.855675458908081e-07,
+          "relative_l2": 2.0879428550986663e-06,
+          "expected_norm": 1.026946505745648
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 3.3155083656311035e-07,
+          "relative_l2": 1.924445576077414e-06,
+          "expected_norm": 0.7429944932693062
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 3.5390257835388184e-07,
+          "relative_l2": 2.472327726798454e-06,
+          "expected_norm": 0.8254905118885688
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 3.0547380447387695e-07,
+          "relative_l2": 2.4912592698902157e-06,
+          "expected_norm": 0.4309914784994505
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 4.731118679046631e-07,
+          "relative_l2": 2.198846695584214e-06,
+          "expected_norm": 1.0829836753548678
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 3.129243850708008e-07,
+          "relative_l2": 1.8839691561469937e-06,
+          "expected_norm": 0.7831814053205772
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 3.300607204437256e-06,
+            "relative_l2": 1.0550309500478693e-05,
+            "expected_norm": 0.8216314354267352
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.034970283508301e-07,
+            "relative_l2": 5.445674993001969e-06,
+            "expected_norm": 0.23323681284647282
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.51805579662323e-06,
+            "relative_l2": 2.1880975491327368e-05,
+            "expected_norm": 0.3139454882206697
+          },
+          "exp_avg_sq": {
+            "max_absolute": 8.905772119760513e-08,
+            "relative_l2": 3.82395502831334e-06,
+            "expected_norm": 0.08065738547036758
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.7918646335601807e-06,
+            "relative_l2": 2.0436056955666128e-05,
+            "expected_norm": 0.234013874997142
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.227017492055893e-07,
+            "relative_l2": 6.7592666551691996e-06,
+            "expected_norm": 0.0440426558681227
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 8.4657222032547e-07,
+            "relative_l2": 1.867083537867184e-05,
+            "expected_norm": 0.19248122712859936
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.841705620288849e-08,
+            "relative_l2": 3.685203454914354e-06,
+            "expected_norm": 0.019749484892462928
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 7.35744833946228e-07,
+            "relative_l2": 1.5775560127928195e-05,
+            "expected_norm": 0.1450868072111831
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.3562384992837906e-08,
+            "relative_l2": 2.7831326507359236e-06,
+            "expected_norm": 0.010938857279232153
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 3.21422703564167e-07,
+            "relative_l2": 1.322566549484918e-05,
+            "expected_norm": 0.12548688888454507
+          },
+          "exp_avg_sq": {
+            "max_absolute": 4.307366907596588e-09,
+            "relative_l2": 1.3391597567300756e-06,
+            "expected_norm": 0.012481042305690368
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 4.309695214033127e-07,
+            "relative_l2": 1.708583739473575e-05,
+            "expected_norm": 0.10674284464579332
+          },
+          "exp_avg_sq": {
+            "max_absolute": 9.66247171163559e-09,
+            "relative_l2": 2.7738978338231427e-06,
+            "expected_norm": 0.008806242361799627
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.516914486885071e-07,
+            "relative_l2": 1.770754120846924e-05,
+            "expected_norm": 0.11425497827407871
+          },
+          "exp_avg_sq": {
+            "max_absolute": 7.62520357966423e-09,
+            "relative_l2": 4.5341787008916055e-06,
+            "expected_norm": 0.004240038593649389
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.7695128917694092e-07,
+            "relative_l2": 1.2672225283599572e-05,
+            "expected_norm": 0.0884566570279662
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.14321368932724e-09,
+            "relative_l2": 3.015959716214011e-06,
+            "expected_norm": 0.0027204074451144637
+          }
+        }
+      }
+    },
+    {
+      "completed": 13,
+      "reference": "eager",
+      "parameters": {
+        "model.token_embedding_table.weight": {
+          "max_absolute": 2.4382025003433228e-06,
+          "relative_l2": 1.8529352394303776e-05,
+          "expected_norm": 0.3762028104294403
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "max_absolute": 6.249174475669861e-06,
+          "relative_l2": 4.529154190296067e-05,
+          "expected_norm": 0.8074202538271779
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "max_absolute": 3.87243926525116e-06,
+          "relative_l2": 3.065231160515696e-05,
+          "expected_norm": 0.44964382293290633
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "max_absolute": 4.8764050006866455e-06,
+          "relative_l2": 2.5344397241250988e-05,
+          "expected_norm": 1.0269463110890193
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "max_absolute": 4.281289875507355e-06,
+          "relative_l2": 2.5292794013235523e-05,
+          "expected_norm": 0.7429943906758437
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "max_absolute": 3.010965883731842e-06,
+          "relative_l2": 2.1352925800141503e-05,
+          "expected_norm": 0.8254909583204901
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "max_absolute": 2.9336661100387573e-06,
+          "relative_l2": 2.803046532971527e-05,
+          "expected_norm": 0.4309917568063309
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "max_absolute": 4.26173210144043e-06,
+          "relative_l2": 2.400472257771069e-05,
+          "expected_norm": 1.0829836904027774
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "max_absolute": 2.736225724220276e-06,
+          "relative_l2": 2.1593268868442638e-05,
+          "expected_norm": 0.7831810435223263
+        }
+      },
+      "moments": {
+        "model.token_embedding_table.weight": {
+          "exp_avg": {
+            "max_absolute": 2.931058406829834e-05,
+            "relative_l2": 0.00010127395422992216,
+            "expected_norm": 0.821630398069521
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0013580322265625e-05,
+            "relative_l2": 9.284430879590232e-05,
+            "expected_norm": 0.23324070868999444
+          }
+        },
+        "model.blocks.0.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 1.3712793588638306e-05,
+            "relative_l2": 0.00021467031201228328,
+            "expected_norm": 0.3139353001613145
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.8654391169548035e-06,
+            "relative_l2": 5.802240208168796e-05,
+            "expected_norm": 0.08065827905656883
+          }
+        },
+        "model.blocks.0.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.6072764992713928e-05,
+            "relative_l2": 0.00018929233903667824,
+            "expected_norm": 0.2340108554685108
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.1015217751264572e-06,
+            "relative_l2": 6.975526077321316e-05,
+            "expected_norm": 0.04404312593889908
+          }
+        },
+        "model.blocks.0.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 7.684342563152313e-06,
+            "relative_l2": 0.00017425221504970603,
+            "expected_norm": 0.19248095474486154
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.953456714749336e-07,
+            "relative_l2": 3.262063971628889e-05,
+            "expected_norm": 0.019749512409980963
+          }
+        },
+        "model.blocks.0.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 6.959773600101471e-06,
+            "relative_l2": 0.0001536977736210227,
+            "expected_norm": 0.14508788872228656
+          },
+          "exp_avg_sq": {
+            "max_absolute": 3.484310582280159e-07,
+            "relative_l2": 6.475606862561203e-05,
+            "expected_norm": 0.010939118033682948
+          }
+        },
+        "model.blocks.1.sa.c_attn.weight": {
+          "exp_avg": {
+            "max_absolute": 3.374996595084667e-06,
+            "relative_l2": 0.00013298104695997167,
+            "expected_norm": 0.12548723903565695
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.5326077118515968e-07,
+            "relative_l2": 2.7268012679381864e-05,
+            "expected_norm": 0.01248113513616911
+          }
+        },
+        "model.blocks.1.sa.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 3.95067036151886e-06,
+            "relative_l2": 0.00015893781447205428,
+            "expected_norm": 0.10674078748439073
+          },
+          "exp_avg_sq": {
+            "max_absolute": 1.0617077350616455e-07,
+            "relative_l2": 3.138408993124369e-05,
+            "expected_norm": 0.008806192973069532
+          }
+        },
+        "model.blocks.1.ffwd.c_fc.weight": {
+          "exp_avg": {
+            "max_absolute": 4.178844392299652e-06,
+            "relative_l2": 0.00017466913678278369,
+            "expected_norm": 0.11425847859680315
+          },
+          "exp_avg_sq": {
+            "max_absolute": 6.413029041141272e-08,
+            "relative_l2": 5.0845349361041146e-05,
+            "expected_norm": 0.004240037966723283
+          }
+        },
+        "model.blocks.1.ffwd.c_proj.weight": {
+          "exp_avg": {
+            "max_absolute": 1.7345882952213287e-06,
+            "relative_l2": 0.00012685796925484413,
+            "expected_norm": 0.08845628744114523
+          },
+          "exp_avg_sq": {
+            "max_absolute": 2.584420144557953e-08,
+            "relative_l2": 3.1140697004878994e-05,
+            "expected_norm": 0.002720381050362097
+          }
+        }
+      }
+    }
+  ]
+}
