@@ -489,3 +489,20 @@ audited, with full-split final metrics reproduced;54passes and42budget misses,
 all finite. Complete pairs and negative results are in
 research/transformer_stress_bias/README.md and results/. This partial synthetic
 repair does not change the independently running inverse-width attention trial.
+
+Inverse-width full short selection completed
+The candidate passes75/75 with geometric mean16.2660501255epochs, versus the
+quarter-scale parent's17.3257083726:6.12% fewer. Ratios versus LR x2, baseline and
+no-QK are0.474922/0.284544/0.775320. Keep all13parent-relative slowdowns, including
+depth-hard seed0 at1.2->5.2epochs and permutation-add seed0 at108->371. The worst
+LR x2 regression remains key-value binding seed2 at4->77epochs (19.25x).
+All75checkpoints and34archived files are audited, with0errors/resumptions;4full
+comparisons are reconstructed. Parameters are unchanged. Recorded trainer time
+is1205.27seconds and does not affect selection. Equal-width16 gains retain the
+documented compiled-gradient variability. The complete57width32cells still give
+ratio0.937374, but no subgroup changes the declared all75selection rule.
+shared-selection.json and selection-integrity.json freeze inverse-width as the
+new shared winner. Commit them before the guarded run_long launcher. Run only
+this new winner once on the reused30long cells, preserving every failure and
+comparing all4controls including the quarter-scale parent. Do not tune or reselect
+using long outcomes. Earlier long runs remain complete and must not be restarted.

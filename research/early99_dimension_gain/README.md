@@ -87,17 +87,51 @@ All three width-32 task medians improve, so promotion does not rely on the
 width-16 linear-transport improvement. The original declaration and every
 observed row remain intact.
 
-Full-short evaluation is pending. The promoted candidate receives the remaining
-57 short cells, and only all 75 successes plus a lower complete geometric mean
-can select it. A new short winner receives one already observed long diagnostic
-after its decision is committed. Otherwise the parent and its existing long
-result are retained without another long run.
+The full short suite completed **75/75**, selecting inverse-width SSMax under
+the original policy. Its geometric mean is **16.2660501255 epochs**, versus
+17.3257083726 for quarter-scale: **6.12% fewer epochs**. This is an observed
+three-seed benchmark result, not a deterministic or universal convergence claim.
+
+| Reference, all 75 passed | Candidate/reference GM epoch ratio | Earlier / tied / later | Worst paired slowdown |
+|---|---:|---:|---:|
+| Quarter-scale Q/K parent | 0.938839 | 40 / 22 / 13 | 4.3333× |
+| LR ×2 | 0.474922 | 48 / 10 / 17 | 19.25× |
+| Original baseline | 0.284544 | 55 / 6 / 14 | 15.4× |
+| No-Q/K ablation | 0.775320 | 57 / 7 / 11 | 4.6667× |
+
+Preserve every regression. Against the parent, depth-hard seed 0 takes 1.2→5.2
+epochs and permutation-addition seed 0 takes 108→371. Against LR ×2, key-value
+binding seed 2 takes 4→77. Against no-Q/K, branch-amplitudes seed 1 takes 3→14.
+All paired rows and per-task medians/worst values are in the four `*-short.json`
+and CSV comparisons under [results](results/).
+
+A supplemental grouping of the complete 75 rows by head width shows a 0.937374
+ratio on all 57 width-32 cells (36 earlier, 13 tied, eight later), and 0.943494
+on all 18 width-16 cells (four earlier, nine tied, five later). These are complete
+groups, not filtered successes, and were not used to change the selection rule.
+The numerical caveat for equal width-16 gains remains.
+
+Parameter counts remain unchanged at 100,736–1,183,488. Recorded trainer time is
+1,205.27 seconds, versus the parent's 1,133.38; time does not determine promotion.
+All 75 checkpoints and 34 archived sources passed the full audit, with zero
+errors or resumptions. The [selection](results/shared-selection.json) and
+[integrity manifest](results/selection-integrity.json) reconstruct every full
+comparison and freeze the short-only choice. The checks inspect saved weights,
+optimizer states, histories and provenance; they do not replay all full-GPT
+held-out forwards.
+
+The new winner now requires its single already observed 30-cell long diagnostic,
+after the short decision is committed. Compare the quarter-scale parent, LR ×2,
+baseline and no-Q/K controls. Preserve all budget misses and do not use long
+results to tune or reselect the model.
 
 ```bash
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_dimension_gain.py
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain.stress
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain_reporting.run_screens --run
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain_reporting.run_full --run
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain_reporting.verify_results --freeze
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/python -m research.early99_dimension_gain_reporting.run_long --run
 ```
 
 The runner requires committed source, configurations and passing evidence before
