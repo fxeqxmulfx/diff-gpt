@@ -1,0 +1,4781 @@
+{
+  "verified_at_utc": "2026-11-06T11:13:38.248300+00:00",
+  "case_count": 35,
+  "configuration_count": 4,
+  "verified_scalar_conditions": 140,
+  "maximum_rate_times_decay": 0.0004,
+  "scope": "The declared constant schedule clips the nonnegative warmup multiplier at one; all peak rates satisfy rate*decay <= 1 with positive decay and epsilon. Boundary probes check the unchanged implementation. The theorem remains conditional on real arithmetic and the stated singular representation, and excludes auxiliary AdamW. No training or outcome-based selection is performed by this mapping.",
+  "evidence_sha256": {
+    "research/early99_muon_math/audit_decay.py": "b60e51f622344206b02bb1d2faecff2d9cb1bc7ddf4a5774ebb7acd3f0b621ab",
+    "research/early99_muon/plan.json": "dc1a62ce7cdb578302e785f122697cfb20d4803a9e094449ed1cb24f99d5e8b8",
+    "research/early99_muon_math/results/decay-guarantees.json": "b5cbce6f7a97468ef063f8b47234c28495fe9c71ad12c37876cb090ebbe39b9c",
+    "research/early99/suite.json": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436",
+    "research/early99/experiments/factories.py": "02891e8d9c2113dfe407238d37bb6d998a32ce146eca8f5aed0dfaa104c90681",
+    "research/early99_muon/factories.py": "f977028977fc23c8263df333921ba6ea1852169bf658ca1f5e2ce3c7e70de66f",
+    "research/early99_muon/optimizer.py": "8f34a3dd2a87ac7fb27f57e18b3a5a5136cb93f73e2fa5869c0bb4a0b41dce62",
+    "research/early99_muon/results/validation.json": "50ce9132ac6f04a4f3ed4018c1c9ba96cd4fc13fc39390f0ab60ea75d5ba21ca",
+    "research/early99_reporting/round2_audit.py": "c1ba104d9a3fe27b9fa373cec55dd75ce4b7f772611ba7c2a44769f283e3439e"
+  },
+  "rows": [
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "suite-boolean-and-shift",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "suite-boolean-and-random",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "power-division-p97-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-cube-plus",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "power-division-p193-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "power-division-p193-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "power-division-p97-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-square-times",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-sub",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-mul",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "gpt-probe-key-value-binding",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "power-division-p193-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "division-p193",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "basis-depth-easy",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-square-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "gpt-probe-branch-amplitudes",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "power-division-p97-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-half-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-sum-square",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "basis-depth-hard",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-affine-product",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-perm-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "gpt-probe-linear-transport",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-div",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-abs-diff-blind",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-abs-diff",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-sum-pow4",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "basis-parity20",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "basis-parity16",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "arithmetic-sum-cube",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "basis-recall-easy",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "associative-divisor-n2-l1-w0",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr2",
+      "case": "basis-parity24",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "suite-boolean-and-shift",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "suite-boolean-and-random",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "power-division-p97-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-cube-plus",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "power-division-p193-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "power-division-p193-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "power-division-p97-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-square-times",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-sub",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-mul",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "gpt-probe-key-value-binding",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "power-division-p193-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "division-p193",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "basis-depth-easy",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-square-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "gpt-probe-branch-amplitudes",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "power-division-p97-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-half-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-sum-square",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "basis-depth-hard",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-affine-product",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-perm-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "gpt-probe-linear-transport",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-div",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-abs-diff-blind",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-abs-diff",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-sum-pow4",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "basis-parity20",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "basis-parity16",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "arithmetic-sum-cube",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "basis-recall-easy",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "associative-divisor-n2-l1-w0",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-muon-adamw-fp32-lr4",
+      "case": "basis-parity24",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": true
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "suite-boolean-and-shift",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "suite-boolean-and-random",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "power-division-p97-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-cube-plus",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "power-division-p193-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "power-division-p193-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "power-division-p97-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-square-times",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-sub",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-mul",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "gpt-probe-key-value-binding",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "power-division-p193-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "division-p193",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "basis-depth-easy",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-square-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "gpt-probe-branch-amplitudes",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "power-division-p97-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-half-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-sum-square",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "basis-depth-hard",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-affine-product",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-perm-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "gpt-probe-linear-transport",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-div",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-abs-diff-blind",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-abs-diff",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-sum-pow4",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "basis-parity20",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "basis-parity16",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "arithmetic-sum-cube",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "basis-recall-easy",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "associative-divisor-n2-l1-w0",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.002,
+      "peak_times_decay": 0.0002,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 4e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00196
+        },
+        {
+          "completed": 50,
+          "rate": 0.002
+        },
+        {
+          "completed": 51,
+          "rate": 0.002
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr2",
+      "case": "basis-parity24",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0006,
+      "peak_times_decay": 5.9999999999999995e-05,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 1.1999999999999999e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.000588
+        },
+        {
+          "completed": 50,
+          "rate": 0.0006
+        },
+        {
+          "completed": 51,
+          "rate": 0.0006
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "suite-boolean-and-shift",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "suite-boolean-and-random",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "power-division-p97-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-cube-plus",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "power-division-p193-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "power-division-p193-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "power-division-p97-k2",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-square-times",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-sub",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-mul",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "gpt-probe-key-value-binding",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "power-division-p193-k3",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "division-p193",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "basis-depth-easy",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-square-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "gpt-probe-branch-amplitudes",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "power-division-p97-k5",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-half-sum",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-sum-square",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "basis-depth-hard",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-affine-product",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-perm-add",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "gpt-probe-linear-transport",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-div",
+      "tier": "short",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-abs-diff-blind",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-abs-diff",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-sum-pow4",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "basis-parity20",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "basis-parity16",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "arithmetic-sum-cube",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "basis-recall-easy",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "recurrence-fibonacci-k1-c2-lgt",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "associative-divisor-n2-l1-w0",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.004,
+      "peak_times_decay": 0.0004,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 8e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.00392
+        },
+        {
+          "completed": 50,
+          "rate": 0.004
+        },
+        {
+          "completed": 51,
+          "rate": 0.004
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    },
+    {
+      "configuration": "peri-rms-inverse-width-pure-muon-fp32-lr4",
+      "case": "basis-parity24",
+      "tier": "long",
+      "weight_decay": 0.1,
+      "matrix_peak_rate": 0.0012,
+      "peak_times_decay": 0.00011999999999999999,
+      "epsilon": 1e-07,
+      "warmup_updates": 50,
+      "warmup_boundary_rates": [
+        {
+          "completed": 0,
+          "rate": 0.0
+        },
+        {
+          "completed": 1,
+          "rate": 2.3999999999999997e-05
+        },
+        {
+          "completed": 49,
+          "rate": 0.001176
+        },
+        {
+          "completed": 50,
+          "rate": 0.0012
+        },
+        {
+          "completed": 51,
+          "rate": 0.0012
+        }
+      ],
+      "cap_above_initial_rms": 2.5,
+      "auxiliary_adamw_excluded": false
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "verified_at_utc": "2026-11-06T11:11:33.745645+00:00",
+  "exit_code": 0,
+  "warnings": 0,
+  "statements": 4,
+  "axioms": {
+    "Early99MuonDecay.energy_convex": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99MuonDecay.rms_convex_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99MuonDecay.step_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99MuonDecay.trajectory_bound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "extra_axioms": [],
+  "source_sha256": {
+    "research/early99_muon/Guarantees.lean": "9979e27f74f3525e9da91e377d0c90970d4962531da8fba093473812acc5efd5",
+    "research/early99_muon_math/Bounds.lean": "177955d1389ef79825e1a4629babc794becc370f2fa2d3af08e6c80ac446c0b2",
+    "research/early99_muon_math/DecayBounds.lean": "55af09b6144ca1dab7acdec3b74bb42a7a16061e5a64ddce11d29a82346fc1c6",
+    "research/early99_muon_math/check_decay.py": "b9320bd752632b8668e163c8f9d6f1bfb938324ebaf36698a692a4cac3d89ac3"
+  },
+  "output": "research/early99_muon_math/results/decay-attempt-20261106T111125016875.txt",
+  "output_sha256": "1805dffa2d4fd3cdb8d0751fff90217496c61de5e53b13b08535eb326de4b5af",
+  "prerequisite_record_sha256": "97df70fb07dee0c6ea74e0675a806112cf407a91c7e21ca6b6466ab60e26d91c",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_source_sha256": {
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c",
+    "src/Transformer/Muon/AppendixA_RMS.lean": "2f05150b32c36487c0dcc00ba127e2250c8f78c4085a323444a15bc446c28d24",
+    "src/Transformer/Muon/AppendixC_GateModel.lean": "138c7b4839d21941d604de5035ea7b4c544e94f1f1810c50edc288db4b5c883f",
+    "src/Transformer/Muon/AppendixC_GateScaling.lean": "32a593945778dc99f0538df0026697d1752ed20909986581209cd4a001cc6fca",
+    "src/Transformer/Muon/AppendixC_Routing.lean": "a2d859ebead241557e82640688a6d565e9b5e2a1bd9bf3ae8a7113412d0d392a",
+    "src/Transformer/Muon/Section2_Approximation.lean": "4220a31c6cc6f20b280116c33a181fb42e7de685338e438dc60d06a1e806e876",
+    "src/Transformer/Muon/Section2_Costs.lean": "17117958e2b751350aac02ab0d55a60b832a092a1176a3790805bd47a468792a",
+    "src/Transformer/Muon/Section2_Distributed.lean": "99518f3d754fb7e19c2419cc83ef52f6b369b313f4efe33c68e96747ac25bb3b",
+    "src/Transformer/Muon/Section2_Euclidean.lean": "b110255e67e4e3f9f649a3b429ee1c511df6c16cc0280242cd9eb7ed1deea60b",
+    "src/Transformer/Muon/Section2_Models.lean": "da957b95a747ea206d63e9b0e1c8250b026c463e68dd6e44d48769382df1966b",
+    "src/Transformer/Muon/Section2_NewtonSchulz.lean": "b86065aee8304f2e4000a67660798bc68f205eaf7de4fb4f34e6b8012ab582b6",
+    "src/Transformer/Muon/Section2_PolarIdentities.lean": "a17892a3c2e32987bd79e2e24474a49df9438b6f86d33d8937a6eb636f67505c",
+    "src/Transformer/Muon/Section2_Rank.lean": "d04ee741bdf9fb886055f6c4ece5c03f1a58b71168060396efe635fd38903218",
+    "src/Transformer/Muon/Section2_Scaling.lean": "281151ccfc25ea2fc0a70d1b77e0965bed01b6064741790429e64509be204428",
+    "src/Transformer/Muon/Section2_Spectral.lean": "d2ccf11b3b8c7f7b8318234d1a582fd1097de4d2afd3aecfc1fb0c3d8ee96998",
+    "src/Transformer/Muon/Section2_SteepestDescent.lean": "a8541ca7af88e14e25573409aa1aa31337273f9727f31ea1167706d1a09080de",
+    "src/Transformer/Muon/Section2_TrainingConvergence.lean": "f627e79cbb64a15ff1dc4fbcb8812bf80e83b342471e8eefe5a994812ef789da",
+    "src/Transformer/Muon/Section2_TrainingCounterexample.lean": "0608d1f3e4bbda0b80fd9e5456de32a2d01899ddce8f98e79516783799fc4235",
+    "src/Transformer/Muon/Section2_TrainingCycleStep.lean": "9ca07e3e41d2ca88319d2cb813559e2322c2eef5f765e301332017e434295103",
+    "src/Transformer/Muon/Section2_TrainingModels.lean": "4e017a3b686866794128ede8f176f6253d428f5d005b65507631194095d2860e",
+    "src/Transformer/Muon/Section3_Entropy.lean": "4586d9468ecc50eefcd8e28af832a7721c4eb9493bb9a75bf9f26489b4d79c2f",
+    "src/Transformer/Muon/Section3_ScalingLaws.lean": "74bb6a1ac89bfa158250b6859ca1b4772d37e282806a6a79e0f91074c0983c5a"
+  },
+  "command": "lake env python3 /home/misha/python_projects/gpt/research/early99_muon_math/check_decay.py",
+  "mapping": "For nonnegative rates with rate*decay <= 1 and positive decay and epsilon, every real matrix iterate has RMS <= max(initial RMS, 1/(4*decay)). Each direction uses the actual five-step quintic and epsilon-floor normalization, with an explicit orthonormal singular representation and nonnegative coefficients. Zero rates during warmup and zero singular coefficients are allowed.",
+  "limitations": "Does not include floating-point rounding or auxiliary AdamW. The all-iterate cap requires positive decay and rate*decay <= 1; it is not a claim of convergence, generalization or faster learning. A fixed r-column singular representation is assumed at each step; the actual rank may be smaller."
+}

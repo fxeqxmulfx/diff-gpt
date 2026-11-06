@@ -699,3 +699,14 @@ and displacement from the decayed parameter RMS <= learning rate/4. No claim
 includes floating-point rounding, auxiliary AdamW, decay displacement or faster
 learning. The model's ten numerical stress failures remain unresolved. Keep the
 existing dispatcher running; finish all screens before full-suite selection.
+
+Supplemental Muon trajectory guarantee
+research/early99_muon_math/DecayBounds.lean adds four checked statements: under
+positive decay/epsilon, nonnegative rates with rate*decay <= 1, and the explicit
+orthonormal singular representation at every step, all real Muon matrix iterates
+have RMS <= max(initial RMS, 1/(4*decay)). This uses the actual finite quintic,
+epsilon floor and decoupled decay, allowing zero-rate warmup and deficient rank.
+The scalar application audit covers all4 configurations and35 task settings:
+decay0.1 and maximum rate*decay0.0004 give max(initial RMS,2.5). Exclude FP32
+rounding and auxiliary AdamW; do not infer convergence or earlier generalization.
+Preserve the original eight-statement record and the initial failed compile log.

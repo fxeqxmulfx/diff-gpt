@@ -1,0 +1,34 @@
+'Early99Muon.quintic_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99Muon.finite_scalar_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99Muon.unit_not_fixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Transformer.Muon.schulzStep_spectrum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Transformer.Muon.schulzIterate_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Transformer.Muon.printed_step_identity' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+'Early99MuonMath.denominator_pos' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.normalized_coefficients' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.floorNorm_spectrum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.finiteSteps_spectrum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.oriented_direction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.direction_energy' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.adjusted_direction_rms' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonMath.update_rms' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+/home/misha/python_projects/gpt/research/early99_muon_math/DecayBounds.lean:34:16: error(lean.unknownIdentifier): Unknown identifier `matrixRMS_nonneg`
+/home/misha/python_projects/gpt/research/early99_muon_math/DecayBounds.lean:33:43: error: unsolved goals
+a b : ℕ
+t cap : ℝ
+ht : 0 ≤ t
+ht1 : t ≤ 1
+X Y : Matrix (Fin a) (Fin b) ℝ
+ha : 0 < a
+hb : 0 < b
+hX : matrixRMS X ≤ cap
+hY : matrixRMS Y ≤ cap
+⊢ matrixRMS ((1 - t) • X + t • Y) ≤ cap
+/home/misha/python_projects/gpt/research/early99_muon_math/DecayBounds.lean:61:40: error: No goals to be solved
+/home/misha/python_projects/gpt/research/early99_muon_math/DecayBounds.lean:67:6: error: No goals to be solved
+'Early99MuonDecay.energy_convex' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Early99MuonDecay.rms_convex_bound' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'Early99MuonDecay.step_bound' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'Early99MuonDecay.trajectory_bound' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
