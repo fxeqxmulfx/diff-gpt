@@ -53,6 +53,25 @@ existing numerical-stress relative L2 threshold of 0.001. This is a local update
 check, not a whole-model numerical stress pass or proof of equivalent training
 trajectories. No scientific model code changed in response to this diagnostic.
 
-Status: all three screens are running from validated source commit `00b6224`.
-No screen promotion, full-suite result or new winner is established yet.
+The embedding-only arm completed **18/18**, with just **2/6** improved task
+medians, so it does **not** advance. Its [checkpoint audit](results/audit-core-embedding-rms-lr2-screen.json)
+verified all 18 runs with no errors, resumptions or replayed work. All five
+control comparisons are retained; the promotion comparison is
+[against original LR×2](results/screen-core-embedding-rms-lr2-vs-parent.json).
+
+| Screen task | Median paired epoch ratio versus LR×2 |
+|---|---:|
+| Boolean AND | 3.000 |
+| Power division, p193 k2 | 0.832 |
+| Power division, p97 k2 | 14.571 |
+| Key/value binding | 9.125 |
+| Square-sum | 0.857 |
+| Linear transport | 1.500 |
+
+Ratios below one mean earlier observed 99% accuracy. This rejects embedding RMS
+as an isolated addition under this screen; it does not establish its effect in
+the combined stack or explain prior long-suite failures.
+
+Status: the remaining two screens continue from validated source `00b6224`.
+No full-suite result or new winner is established yet.
 The incomplete Muon study and proposed numerical repair remain deferred.
