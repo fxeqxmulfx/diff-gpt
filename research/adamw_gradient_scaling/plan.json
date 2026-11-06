@@ -1,0 +1,101 @@
+{
+  "declared_at_utc": "2026-11-06T23:14:20.700818+00:00",
+  "motivation": "The initialization diagnostic measured raw gradient changes. AdamW divides by its retained second moment, so those changes cannot be equated with proportional optimizer updates.",
+  "proof_targets": [
+    "Positive or arbitrary scalar rescaling of every input and initial buffer rescales the existing exponential moment recurrence by the same scalar.",
+    "For one fixed c>0 applied to an entire supplied gradient history and epsilon>0, the bias-corrected Adam direction at epsilon equals the unscaled-history direction at epsilon/c. Retain both zero-initialized moment histories and the completed-update clock.",
+    "Starting from the same parameter and zero buffers, the native AdamW recurrence driven by c*g at epsilon has the same complete parameter trajectory as the recurrence driven by g at epsilon/c, with first moments multiplied by c and second moments by c^2. Use the same arbitrary rate schedule and decoupled decay. Gradients are supplied sequences, not gradients assumed unchanged after a model intervention."
+  ],
+  "reused_first_step_lemma": "Transformer.Grokking.AdamW.first_direction_positive_gradient_scaling",
+  "numerical_grid": {
+    "device": "cpu",
+    "fused": false,
+    "foreach": false,
+    "capturable": false,
+    "amsgrad": false,
+    "dtypes": [
+      "float32",
+      "float64"
+    ],
+    "positive_scales": [
+      0.125,
+      0.5,
+      8.0
+    ],
+    "profiles": [
+      "constant",
+      "alternating",
+      "delayed_pulse"
+    ],
+    "expected_cases": 18,
+    "steps": 64,
+    "betas": [
+      0.9,
+      0.98
+    ],
+    "epsilon": 1e-08,
+    "weight_decay": 0.1,
+    "peak_learning_rate": 0.002,
+    "warmup_completed_updates": 50,
+    "gradient_base": [
+      0.0,
+      1e-12,
+      -1e-12,
+      1e-08,
+      -1e-08,
+      0.0001,
+      -0.0001,
+      1.0
+    ],
+    "initial_parameters": [
+      0.0,
+      0.01,
+      -0.01,
+      0.02,
+      -0.02,
+      0.03,
+      -0.03,
+      0.04
+    ],
+    "profile_rules": {
+      "constant": "multiplier 1 at every zero-indexed update k",
+      "alternating": "multiplier 1 when k is even, -0.5 when k is odd",
+      "delayed_pulse": "multiplier 0 for k<16, 1 for 16<=k<32, -1 for 32<=k<48, 0 thereafter"
+    },
+    "arms": {
+      "scaled": "c times represented gradients, epsilon unchanged",
+      "counterpart": "represented gradients, epsilon/c"
+    },
+    "reference": "Independent 80-digit Decimal recurrence evaluated on actual represented initial parameters, gradients and Python scalar hyperparameters; check every parameter, first moment and second moment vector at all64 updates in both arms.",
+    "comparisons_per_case": 576,
+    "comparison_count_note": "64 updates times nine vector comparisons: both arms versus independent reference (six), plus direct parameter/first-moment/second-moment scaling identities (three).",
+    "relative_error_limit": 0.001,
+    "exact_zero_reference_requires_exact_zero": true,
+    "policy": "Retain every vector and all failures. No changed tolerances after execution. Check the independent reference and compile the proofs, then commit all validated sources before the18 traces."
+  },
+  "limits": [
+    "Real-arithmetic identities concern a fixed positive factor across every supplied gradient in one coordinate and matching moment histories. A ratio of whole-layer gradient RMS values does not satisfy that condition.",
+    "Model initialization changes parameters and may change gradient directions, future gradients, tied-weight pathways and finite-epsilon RMS functions. These proofs do not identify two such training trajectories.",
+    "Optimizer epsilon is1e-8 and is distinct from the model RMS epsilon2^-23. Preserve both explicitly.",
+    "Synthetic CPU native AdamW checks do not validate fused or captured CUDA kernels, train a model, evaluate task data, choose an initializer or prove convergence.",
+    "Keep the current27-cell capacity queue and subsequent3-seed usual-gain study unchanged. Muon and full-stack numerical-repair preparation remain deferred."
+  ],
+  "sources_sha256": {
+    "research/stored_rope_guarantees/check.py": "c32daf88d0de108448294d6e088456e752f157c9b01c2d1fd9198894eea2a809",
+    "research/cubic_initialization_diagnostic/results/complete-audit.json": "c48e369a62756ab1e5ea68c011c1a87e81736404728a7dd8c6875ed49e3f4294",
+    "research/rms_initialization_scaling/results/guarantees.json": "3f451efd0e4593d71c8752fa90bed8879adc0e281e75399ac233385aa2429c59"
+  },
+  "external_sha256": {
+    "src/Transformer/Grokking/AdamW/ScalarRecurrence.lean": "0d976bbd80c814e79fb8ea6af8a2d91e613edec05c0a71abe14de552769dc397",
+    "src/Transformer/Grokking/AdamW/MomentRecurrence.lean": "fbae52cf2dd5cc79dd61703a67c456dd889de2068992454fa77acfb6e64258bd",
+    "src/Transformer/Grokking/AdamW/LossDirection.lean": "3d2e33d5b738192d73e2216e9c5149d5788bb91aa31a6e9a366bfb5ad90755d5",
+    "lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "installed_optimizer_sha256": {
+    ".venv/lib/python3.14/site-packages/torch/optim/adamw.py": "39c5eaa04f83632285b114fd093eeb0006866e4adf59ad50cc28de12e63a8459",
+    ".venv/lib/python3.14/site-packages/torch/optim/adamax.py": "57a7a7be11ec37683d54898300359c7b5eea4d744d419d178c030690c92bddf9",
+    ".venv/lib/python3.14/site-packages/torch/optim/adam.py": "6f4a96e7bccd5e233a66f846c39f7a9da0157cf657c2275d2a269a78a6b90921"
+  },
+  "external_commit": "90b1df2e270f56c78e9bc9b4e42a4cef9b63b74e"
+}
