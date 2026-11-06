@@ -120,10 +120,12 @@ comparison and freeze the short-only choice. The checks inspect saved weights,
 optimizer states, histories and provenance; they do not replay all full-GPT
 held-out forwards.
 
-The new winner now requires its single already observed 30-cell long diagnostic,
-after the short decision is committed. Compare the quarter-scale parent, LR ×2,
-baseline and no-Q/K controls. Preserve all budget misses and do not use long
-results to tune or reselect the model.
+The short decision was committed as `dc4411b`. Its single already observed
+30-cell long diagnostic started at **2026-11-06 04:26:05 UTC** and is running;
+the exact source/selection hashes are in [long-launch.json](results/long-launch.json).
+It compares the quarter-scale parent, LR ×2, baseline and no-Q/K controls.
+Preserve all budget misses and do not use long results to tune or reselect the
+model. Do not launch a second dispatcher or restart a completed older diagnostic.
 
 ```bash
 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. .venv/bin/pytest -q tests/diff_gpt/application/test_early99_dimension_gain.py
