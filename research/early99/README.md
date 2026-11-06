@@ -27,6 +27,8 @@ recommendation. SSMax/QK is the strongest completed Q/K-normalized arm at
 The [reporting audit](../early99_reporting/README.md) reconstructs every screen
 decision and full short comparison from raw histories, verifies JSON/CSV and
 frozen hashes, and checks the long reports once the diagnostic finishes.
+The [round-two report](ROUND2_REPORT.md) collects the complete short table,
+rejected screens, mathematical tradeoffs and remaining long-diagnostic work.
 
 Success is **one exhaustive held-out observation with at least 99% exact
 sequences**. Delay and final retention do not enter this criterion. Numeric
