@@ -1,0 +1,28 @@
+{
+  "recorded_at_utc": "2026-11-06T07:29:15.896284+00:00",
+  "user_requests": [
+    "after it, check adamw with schedule (cos?), adamw with muon",
+    "or only muon"
+  ],
+  "status": "Queued after the already-declared Schedule-Free AdamW study. This is a research queue, not an exact hyperparameter preregistration.",
+  "dependency": "Complete both Schedule-Free18cell screens; all75cells for every promoted arm; freeze short choice; finish any required new-winner long diagnostic and report it. Do not interrupt or change the current Schedule-Free plan.",
+  "queued_comparisons": [
+    {
+      "name": "adamw_cosine",
+      "change": "Native AdamW with a declared cosine learning-rate decay after the original completed-step warmup; constant-AdamW control with identical peak rate. Fix horizon/floor and rate grid before new measurements; include already-completed earlier-architecture cosine negative evidence."
+    },
+    {
+      "name": "muon_adamw_hybrid",
+      "change": "Muon on hidden matrix weights; AdamW on tied embedding/readout and any nonmatrix parameters. Explicitly enumerate unique parameter IDs, disjoint/exhaustive groups, orientation/shape scaling, momentum/Nesterov, Newton-Schulz coefficients/iteration count/dtype, group rates, decay and warmup before training."
+    },
+    {
+      "name": "pure_muon",
+      "change": "User-requested ablation applying Muon to all trainable matrices, including the tied embedding/readout exactly once. Confirm every model parameter is matrix-shaped first; any vector/scalar fallback must be explicitly declared and prevents labeling the arm as pure Muon. This is an experimental departure from the upstream hidden-weight-only recipe, not an assumed improvement."
+    }
+  ],
+  "controls_and_protocol": "Keep the inverse-width shared architecture and original suite/data/seeds/budgets/scoring fixed. Compare each optimizer change separately before combining cosine with Muon. Decide detailed rates only from existing short evidence or a newly frozen short-only plan; never use long outcomes. Preserve both prior cosine and Schedule-Free negatives, every seed, misses, errors, capacity and runtime. Full-suite aggregate requires75/75.",
+  "validation": "Check actual update equations against an independent scalar/matrix reference, zero-gradient/rank-deficient/rectangular-matrix behavior, tied-weight deduplication, optimizer state/checkpoint resumption, and real CUDA updates. Distinguish approximate finite-step Newton-Schulz behavior from exact polar-factor results in the local Lean library.",
+  "primary_reference": "https://github.com/KellerJordan/Muon",
+  "reference_checked_at_utc": "2026-11-06T07:29:15.896295+00:00",
+  "unresolved_after_requested_optimizer_work": "The inverse-width model still has10failures in its50case complete-stack numerical stress; retain and separately repair them after these requested optimizer studies. Do not quietly combine a repair with an optimizer arm."
+}

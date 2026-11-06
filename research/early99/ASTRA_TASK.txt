@@ -586,3 +586,16 @@ being resumed from1000updates with18completedcells preserved; the discarded50
 updates and old elapsed times are archived for explicit recovery accounting.
 The not-yet-declared numerical repair is deferred to prioritize this user request.
 Do not integrate it into the optimizer experiment or forget its10stressfailures.
+
+User-requested optimizer follow-ups after Schedule-Free
+research/early99_optimizer_followups/queue.json records the requested next
+comparisons: native AdamW with cosine decay, Muon on hidden matrices with
+AdamW on the remaining parameters, and a pure-Muon all-matrix ablation.
+Complete the currently declared Schedule-Free study first; do not replace it.
+For pure Muon include the tied embedding/readout exactly once and verify that
+all trainable tensors are matrices; do not silently call a hybrid pure Muon.
+Freeze exact schedules, group partition, rates, decay, matrix scaling and
+Newton-Schulz implementation before training. Keep the model and benchmark
+protocol fixed, validate actual updates/resumption/CUDA, retain prior cosine
+and Schedule-Free negative results, and never tune using long diagnostics.
+The full-model numerical repair remains deferred, with all10failures retained.
