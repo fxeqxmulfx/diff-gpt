@@ -1,0 +1,76 @@
+{
+  "checked_at_utc": "2026-11-06T01:55:58.660530+00:00",
+  "fixture": "research/normalization_guarantees/AttentionSensitivity.lean",
+  "fixture_sha256": "a789f2de4a10282d8e266a337ff3554f95176c2c9dc101e8a3dc1983d4f6afc7",
+  "output": "research/normalization_guarantees/results/attention-sensitivity-lean-check.txt",
+  "output_sha256": "8f693b920e9c6901f279ae140725c55fdfb8d405e8c6f34315c04963eb9ef942",
+  "external_project": "/home/misha/lean_projects/transformer",
+  "external_commit": "8890a98585ecc9e54792f7580883f97e5a63d755",
+  "external_worktree_clean": true,
+  "lean_toolchain": "leanprover/lean4:v4.35.0",
+  "mathlib_revision": "56a005855ea17e0b0958f73ec801ae140b0a1679",
+  "local_dependency_sha256": {
+    "research/normalization_guarantees/RMSLipschitz.lean": "2d3e30c45338858a8f8e34cad7a18e8fede5d14f32ba626c0d9a2dc4d5f88904"
+  },
+  "external_source_sha256": {
+    "src/Transformer/GPTMini/RMSNorm.lean": "fc06f20c8d67a921dec468d32d5faeb69e2f5421f4850b968f1b909632ce52c5",
+    "src/Transformer/SequenceModel/Rotary.lean": "41365fb1e51eec1d61b2bb3f6feacd11b9e76b0752cbdb9ef360bcb097b581a3",
+    "src/Transformer/Perspective/Softmax.lean": "6f8117f0d9cca80d140a2aaa6691953a8bbd7bc6be02f0a612d4812714ee9fe5",
+    "lake-manifest.json": "0df12cca293bdc709fb2e76faba860814afd131f3e88ac071ce6cb260c0ae715"
+  },
+  "reviewed_implementation_sha256": {
+    "src/diff_gpt/domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+    "research/early99/experiments/scalable_softmax.py": "4ec54ddeb8f29dee12f2e01f6de339533db3111d68d8da5f212c45a5927a8e6a",
+    "research/early99_score_scale/factories.py": "4dec1dbfac71796ea897de4f1def134cd5e5c150c1e85bd135428c74c8202c0e"
+  },
+  "commands": [
+    "mkdir -p /tmp/early99-sensitivity/research/normalization_guarantees",
+    "lake env lean -R /home/misha/python_projects/gpt -o /tmp/early99-sensitivity/research/normalization_guarantees/RMSLipschitz.olean /home/misha/python_projects/gpt/research/normalization_guarantees/RMSLipschitz.lean",
+    "lake env bash -c 'export LEAN_PATH=\"/tmp/early99-sensitivity:$LEAN_PATH\"; lean -R /home/misha/python_projects/gpt /home/misha/python_projects/gpt/research/normalization_guarantees/AttentionSensitivity.lean'"
+  ],
+  "cwd": "/home/misha/lean_projects/transformer",
+  "exit_code": 0,
+  "warnings": 0,
+  "extra_axioms": [],
+  "axioms": {
+    "Early99AttentionSensitivity.rotateHead_sub": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99AttentionSensitivity.normalized_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99AttentionSensitivity.score_query_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Early99AttentionSensitivity.attention_row_query_lipschitz": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "hypotheses": [
+    "Positive integer width d and epsilon > 0.",
+    "A nonempty row of N visible keys.",
+    "Keys and arbitrary rotary angles stay fixed while the projected query before RMS varies.",
+    "The fixed real gain gamma may equal m*log(N)*g for the implemented SSMax coefficient m and original head gain g."
+  ],
+  "score_query_bound": "abs(score(q,k)-score(q2,k)) <= C * norm(q-q2), C=abs(gamma)*sqrt(d)/sqrt(epsilon).",
+  "probability_row_bound": "sum_j abs(p_j(q)-p_j(q2)) <= 4*C*norm(q-q2). The factor 4 is conservative, inherited from the existing checked softmax theorem, not claimed sharp.",
+  "ssmax_specialization": "For m>=0 and N>=1, C=m*log(N)*abs(g)*sqrt(d)/sqrt(epsilon). Ideal original gain g=1/sqrt(d) cancels sqrt(d). Half and quarter multiply both displayed constants by 1/2 and 1/4 relative to the same parent.",
+  "nonvacuity": "All four statements have examples. The normalized examples use width 8, epsilon 1/8388608, nonzero angles, arbitrary projected vectors, and a four-key row with nonzero gain.",
+  "mapping": "Uses actual GPTMini.rmsNormEps, SequenceModel.rotateHead and Perspective.softmaxWeight; the real equation matches the visible-key softmax row. PyTorch-to-Lean translation is reviewed, not formally verified.",
+  "limitations": [
+    "No control of unbounded query projection matrices before the measured input.",
+    "The query-only theorem holds keys and rotations fixed; it does not bound simultaneous changes to all token projections or learned frequencies.",
+    "No bound on value changes, XSA, readout, the whole transformer or training Jacobians.",
+    "No floating-point or learning guarantee. Small epsilon still permits large sensitivity constants.",
+    "Smaller m weakens the separate conditional concentration bound for a fixed original margin."
+  ],
+  "preservation": "Supplemental analysis of the unchanged model. No scientific Python, plans, original proof records, selected configuration or frozen selection-integrity manifest changed."
+}
