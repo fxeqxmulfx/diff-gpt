@@ -1,0 +1,276 @@
+{
+  "candidate": "peri-rms-inverse-width-sf-adamw-lr2",
+  "control": "noqk",
+  "passed": 18,
+  "expected": 18,
+  "canonical_improved_task_medians": 3,
+  "guaranteed_improved_task_medians": 3,
+  "possible_improved_task_medians": 3,
+  "advance_for_all_replay_costs": null,
+  "advance_for_some_replay_costs": null,
+  "decision_invariant_to_unknown_work": true,
+  "geometric_mean_epoch_ratio": null,
+  "recovery": null,
+  "tasks": [
+    {
+      "case": "suite-boolean-and-random",
+      "median_epoch_ratio_lower_bound": 0.75,
+      "median_epoch_ratio_upper_bound": 0.75,
+      "guaranteed_improved": true,
+      "possibly_improved": true
+    },
+    {
+      "case": "power-division-p193-k2",
+      "median_epoch_ratio_lower_bound": 0.8421052631578947,
+      "median_epoch_ratio_upper_bound": 0.8421052631578947,
+      "guaranteed_improved": true,
+      "possibly_improved": true
+    },
+    {
+      "case": "power-division-p97-k2",
+      "median_epoch_ratio_lower_bound": 2.25,
+      "median_epoch_ratio_upper_bound": 2.25,
+      "guaranteed_improved": false,
+      "possibly_improved": false
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "median_epoch_ratio_lower_bound": 4.653846153846154,
+      "median_epoch_ratio_upper_bound": 4.653846153846154,
+      "guaranteed_improved": false,
+      "possibly_improved": false
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "median_epoch_ratio_lower_bound": 4.45933014354067,
+      "median_epoch_ratio_upper_bound": 4.45933014354067,
+      "guaranteed_improved": false,
+      "possibly_improved": false
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "median_epoch_ratio_lower_bound": 0.75,
+      "median_epoch_ratio_upper_bound": 0.75,
+      "guaranteed_improved": true,
+      "possibly_improved": true
+    }
+  ],
+  "runs": [
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 0,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 2.0,
+      "actual_first99_epochs_lower_bound": 2.0,
+      "actual_first99_epochs_upper_bound": 2.0,
+      "baseline_first99_epochs": 7.0,
+      "epoch_ratio_lower_bound": 0.2857142857142857,
+      "epoch_ratio_upper_bound": 0.2857142857142857,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 1,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 2.0,
+      "actual_first99_epochs_lower_bound": 2.0,
+      "actual_first99_epochs_upper_bound": 2.0,
+      "baseline_first99_epochs": 2.0,
+      "epoch_ratio_lower_bound": 1.0,
+      "epoch_ratio_upper_bound": 1.0,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "suite-boolean-and-random",
+      "seed": 2,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 3.0,
+      "actual_first99_epochs_lower_bound": 3.0,
+      "actual_first99_epochs_upper_bound": 3.0,
+      "baseline_first99_epochs": 4.0,
+      "epoch_ratio_lower_bound": 0.75,
+      "epoch_ratio_upper_bound": 0.75,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seed": 0,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 34.0,
+      "actual_first99_epochs_lower_bound": 34.0,
+      "actual_first99_epochs_upper_bound": 34.0,
+      "baseline_first99_epochs": 42.0,
+      "epoch_ratio_lower_bound": 0.8095238095238095,
+      "epoch_ratio_upper_bound": 0.8095238095238095,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seed": 1,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 41.0,
+      "actual_first99_epochs_lower_bound": 41.0,
+      "actual_first99_epochs_upper_bound": 41.0,
+      "baseline_first99_epochs": 41.0,
+      "epoch_ratio_lower_bound": 1.0,
+      "epoch_ratio_upper_bound": 1.0,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "power-division-p193-k2",
+      "seed": 2,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 32.0,
+      "actual_first99_epochs_lower_bound": 32.0,
+      "actual_first99_epochs_upper_bound": 32.0,
+      "baseline_first99_epochs": 38.0,
+      "epoch_ratio_lower_bound": 0.8421052631578947,
+      "epoch_ratio_upper_bound": 0.8421052631578947,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 0,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 70.0,
+      "actual_first99_epochs_lower_bound": 70.0,
+      "actual_first99_epochs_upper_bound": 70.0,
+      "baseline_first99_epochs": 19.0,
+      "epoch_ratio_lower_bound": 3.6842105263157894,
+      "epoch_ratio_upper_bound": 3.6842105263157894,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 1,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 36.0,
+      "actual_first99_epochs_lower_bound": 36.0,
+      "actual_first99_epochs_upper_bound": 36.0,
+      "baseline_first99_epochs": 16.0,
+      "epoch_ratio_lower_bound": 2.25,
+      "epoch_ratio_upper_bound": 2.25,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "power-division-p97-k2",
+      "seed": 2,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 42.0,
+      "actual_first99_epochs_lower_bound": 42.0,
+      "actual_first99_epochs_upper_bound": 42.0,
+      "baseline_first99_epochs": 22.0,
+      "epoch_ratio_lower_bound": 1.9090909090909092,
+      "epoch_ratio_upper_bound": 1.9090909090909092,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 0,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 114.0,
+      "actual_first99_epochs_lower_bound": 114.0,
+      "actual_first99_epochs_upper_bound": 114.0,
+      "baseline_first99_epochs": 22.0,
+      "epoch_ratio_lower_bound": 5.181818181818182,
+      "epoch_ratio_upper_bound": 5.181818181818182,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 1,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 121.0,
+      "actual_first99_epochs_lower_bound": 121.0,
+      "actual_first99_epochs_upper_bound": 121.0,
+      "baseline_first99_epochs": 26.0,
+      "epoch_ratio_lower_bound": 4.653846153846154,
+      "epoch_ratio_upper_bound": 4.653846153846154,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "gpt-probe-key-value-binding",
+      "seed": 2,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 79.0,
+      "actual_first99_epochs_lower_bound": 79.0,
+      "actual_first99_epochs_upper_bound": 79.0,
+      "baseline_first99_epochs": 20.0,
+      "epoch_ratio_lower_bound": 3.95,
+      "epoch_ratio_upper_bound": 3.95,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 0,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 853.0,
+      "actual_first99_epochs_lower_bound": 853.0,
+      "actual_first99_epochs_upper_bound": 853.0,
+      "baseline_first99_epochs": 218.0,
+      "epoch_ratio_lower_bound": 3.9128440366972477,
+      "epoch_ratio_upper_bound": 3.9128440366972477,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 1,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 932.0,
+      "actual_first99_epochs_lower_bound": 932.0,
+      "actual_first99_epochs_upper_bound": 932.0,
+      "baseline_first99_epochs": 209.0,
+      "epoch_ratio_lower_bound": 4.45933014354067,
+      "epoch_ratio_upper_bound": 4.45933014354067,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "arithmetic-square-sum",
+      "seed": 2,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 1038.0,
+      "actual_first99_epochs_lower_bound": 1038.0,
+      "actual_first99_epochs_upper_bound": 1038.0,
+      "baseline_first99_epochs": 224.0,
+      "epoch_ratio_lower_bound": 4.633928571428571,
+      "epoch_ratio_upper_bound": 4.633928571428571,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 0,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 3.0,
+      "actual_first99_epochs_lower_bound": 3.0,
+      "actual_first99_epochs_upper_bound": 3.0,
+      "baseline_first99_epochs": 13.0,
+      "epoch_ratio_lower_bound": 0.23076923076923078,
+      "epoch_ratio_upper_bound": 0.23076923076923078,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 1,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 3.0,
+      "actual_first99_epochs_lower_bound": 3.0,
+      "actual_first99_epochs_upper_bound": 3.0,
+      "baseline_first99_epochs": 4.0,
+      "epoch_ratio_lower_bound": 0.75,
+      "epoch_ratio_upper_bound": 0.75,
+      "unobserved_work_uncertain": false
+    },
+    {
+      "case": "gpt-probe-linear-transport",
+      "seed": 2,
+      "candidate_status": "passed",
+      "canonical_first99_epochs": 3.0,
+      "actual_first99_epochs_lower_bound": 3.0,
+      "actual_first99_epochs_upper_bound": 3.0,
+      "baseline_first99_epochs": 3.0,
+      "epoch_ratio_lower_bound": 1.0,
+      "epoch_ratio_upper_bound": 1.0,
+      "unobserved_work_uncertain": false
+    }
+  ]
+}

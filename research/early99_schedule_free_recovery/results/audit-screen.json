@@ -1,0 +1,72 @@
+{
+  "audited_at_utc": "2026-11-06T09:12:42.412919+00:00",
+  "candidates": {
+    "peri-rms-inverse-width-sf-adamw-lr2": {
+      "completed": 18,
+      "passed": 18,
+      "censored": [],
+      "execution_errors": 0,
+      "errors": [],
+      "completed_checkpoint_count": 18,
+      "resumed": 0,
+      "candidate_plan_sha256": "fbd1fd2d03a900e42dceb618ef9ddf5aba869c5483556fc8548a603cd5651f98",
+      "source_files_verified": 61,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    },
+    "peri-rms-inverse-width-sf-adamw-lr4": {
+      "completed": 18,
+      "passed": 18,
+      "censored": [],
+      "execution_errors": 0,
+      "errors": [],
+      "completed_checkpoint_count": 18,
+      "resumed": 1,
+      "candidate_plan_sha256": "0b2aa56569d552dd9d2749e1775c3aa2f388cfebf75e846b2e170da6560a1881",
+      "source_files_verified": 61,
+      "minimum_parameters": 102848,
+      "maximum_parameters": 221184
+    }
+  },
+  "auditor_sha256": "0783f1314ae2c67f26416dbbc2af797e1ef4f1f7d0b5c0b85db0c2e8639c17ab",
+  "completed_new_scientific_runs": 36,
+  "all_checkpoints_histories_protocols_and_sources_retained": true,
+  "checkpoint_optimizer_steps_and_settings_verified": true,
+  "averaged_x_mode_base_second_and_maximum_rate_weights_verified": true,
+  "stop_at_first_exact_crossing_or_original_budget_verified": true,
+  "original_initialization_data_seeds_cadence_and_oracles_verified": true,
+  "capacity_policy": "Original capacity and initialization matched; Schedule-Free changes no model parameters.",
+  "source_archives_match_frozen_plans_and_current_implementation": true,
+  "previous_round_reports_and_selection_preserved": true,
+  "recovery": {
+    "candidate": "peri-rms-inverse-width-sf-adamw-lr4",
+    "case": "arithmetic-square-sum",
+    "seed": 0,
+    "saved_updates": 7049,
+    "last_observed_updates_before_loss": 7524,
+    "known_discarded_updates": 475,
+    "known_discarded_examples": 117600,
+    "known_discarded_epochs": 25.0,
+    "canonical_completed_exposure": {
+      "updates": 8227,
+      "train_examples": 4704,
+      "batch": 256,
+      "updates_per_epoch": 19,
+      "examples_seen": 2036832,
+      "epochs": 433.0,
+      "complete_epochs": 433
+    },
+    "actual_executed_examples_lower_bound": 2154432,
+    "actual_executed_epochs_lower_bound": 458.0,
+    "canonical_first99_epochs": 433.0,
+    "actual_first99_epochs_lower_bound": 458.0,
+    "actual_exposure_upper_bound": null,
+    "unobserved_work_before_loss": "Unknown; actual exposure is a lower bound.",
+    "discarded_recorded_crossings": 0,
+    "original_segment_last_observed_seconds": 29.470620371000223,
+    "resumed_segment_seconds": 47.68159836099994,
+    "sum_observed_segment_seconds": 77.15221873200016,
+    "unobserved_time_before_loss": "Unknown; excluded from observed segment sum.",
+    "declaration_sha256": "29bff4dd6ffdb910f1312c19aa38e54e05a0c2d9d6f10012a831e0cd9f3a2257"
+  }
+}

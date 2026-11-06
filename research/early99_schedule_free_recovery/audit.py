@@ -1,0 +1,277 @@
+"""Preserve the full Schedule-Free audit and allow only the declared recovery."""
+
+import argparse
+import hashlib
+import json
+import math
+from datetime import UTC, datetime
+from pathlib import Path
+from types import SimpleNamespace
+
+import torch
+
+from research.current_grokking.run import verify_model_reference
+from research.early99.experiments.compare import paired_cell
+from research.early99.protocol import selected, specification, suite
+from research.early99_reporting.round2_audit import require
+from research.early99_schedule_free.factories import (
+    Configuration,
+    verify_optimizer_state,
+)
+from research.early99_schedule_free_recovery.accounting import (
+    check_resumption,
+    declaration,
+    trajectory_accounting,
+)
+
+OPTIMIZER_EPS = 1e-08
+TARGET = 0.99
+parser = argparse.ArgumentParser()
+parser.add_argument("--long", action="store_true")
+parser.add_argument("--name", action="append", required=True)
+parser.add_argument("--full", action="store_true")
+parser.add_argument("--output", type=Path, required=True)
+args = parser.parse_args()
+declaration()
+require(
+    verify_model_reference() == suite()["baseline_model_reference"],
+    "Mismatch: verify_model_reference() == suite()['baseline_mod...",
+)
+search = json.loads(Path("research/early99_schedule_free/plan.json").read_text())
+runs_root = Path("/home/misha/python_projects/gpt/runs/early99")
+reference = runs_root / "baseline"
+incumbent = runs_root / "candidates/adamw-lr2"
+records = {}
+for name in args.name:
+    root = runs_root / "candidates" / name
+    raw_plan = (root / "plan.json").read_bytes()
+    plan = json.loads(raw_plan)
+    config = Configuration(**plan["configuration"])
+    require(
+        plan["configuration"]
+        == next(c for c in search["configurations"] if c["name"] == name),
+        "Executed configuration differs from the declared search plan",
+    )
+    require(
+        json.loads((root / "configuration.json").read_text()) == plan["configuration"],
+        "Mismatch: json.loads((root / 'configuration.json').read_tex...",
+    )
+    for path, expected in plan["source_sha256"].items():
+        require(
+            hashlib.sha256((root / "experiment_source" / path).read_bytes()).hexdigest()
+            == expected,
+            "Mismatch: hashlib.sha256((root / 'experiment_source' / path...",
+        )
+        require(
+            hashlib.sha256(Path(path).read_bytes()).hexdigest() == expected,
+            "Mismatch: hashlib.sha256(Path(path).read_bytes()).hexdigest...",
+        )
+    tasks = selected("all" if args.long else "short")
+    if not args.full:
+        tasks = [t for t in tasks if t["name"] in search["screen_tasks"]]
+    count = 0
+    resumed_count = 0
+    passes = 0
+    censored = []
+    parameters = []
+    errors = []
+    for task in tasks:
+        for seed in [0, 1, 2]:
+            cell = root / task["name"] / f"seed{seed}"
+            if (cell / "error.json").exists():
+                require(
+                    not (cell / "result.json").exists(),
+                    "Both error and completed result",
+                )
+                error = json.loads((cell / "error.json").read_text())
+                require(
+                    error["kind"] in {"execution_error", "numerical_training_failure"},
+                    "Unknown error kind",
+                )
+                errors.append(
+                    {
+                        "case": task["name"],
+                        "seed": seed,
+                        "error": error,
+                        "files_sha256": {
+                            str(p.relative_to(root)): hashlib.sha256(
+                                p.read_bytes()
+                            ).hexdigest()
+                            for p in cell.rglob("*")
+                            if p.is_file()
+                        },
+                    }
+                )
+                count += 1
+                continue
+            for filename in [
+                "checkpoint.pt",
+                "early99_result.json",
+                "history.jsonl",
+                "protocol.json",
+                "result.json",
+            ]:
+                require((cell / filename).is_file(), str(cell / filename))
+            result = json.loads((cell / "result.json").read_text())
+            metadata = result["metadata"]
+            require(
+                metadata == json.loads((cell / "protocol.json").read_text()),
+                "Mismatch: metadata == json.loads((cell / 'protocol.json').r...",
+            )
+            require(
+                metadata["experiment"] == config.metadata(specification(task)),
+                "Mismatch: metadata['experiment'] == config.metadata(specifi...",
+            )
+            resumed_count += int(check_resumption(cell, metadata))
+            require(
+                metadata["optimizer_betas"] == list(config.betas),
+                "Mismatch: metadata['optimizer_betas'] == list(config.betas)",
+            )
+            require(
+                metadata["optimizer_eps"] == OPTIMIZER_EPS,
+                "Mismatch: metadata['optimizer_eps'] == 1e-08",
+            )
+            require(
+                not metadata["optimizer_fused"]
+                and metadata["optimizer_cuda_graphs"] is False
+                and metadata["compiled_loss"]
+                and metadata["optimizer_training_point"] == "y"
+                and metadata["optimizer_evaluation_point"] == "x"
+                and metadata["optimizer_checkpoint_point"] == "x",
+                "Mismatch: metadata['optimizer_fused'] and metadata['compile...",
+            )
+            require(
+                metadata["device"] == "cuda", "Mismatch: metadata['device'] == 'cuda'"
+            )
+            for source, expected in metadata["sources"].items():
+                require(
+                    hashlib.sha256((cell / "source" / source).read_bytes()).hexdigest()
+                    == expected,
+                    "Mismatch: hashlib.sha256((cell / 'source' / source).read_by...",
+                )
+            base_pair = paired_cell(task, seed, reference, root)
+            paired_cell(task, seed, incumbent, root)
+            history = [
+                json.loads(line)
+                for line in (cell / "history.jsonl").read_text().splitlines()
+            ]
+            crossings = [
+                h for h in history if h["validation"]["sequence_accuracy"] >= TARGET
+            ]
+            if crossings:
+                require(
+                    result["completed"] == crossings[0]["step"],
+                    "Mismatch: result['completed'] == crossings[0]['step']",
+                )
+                require(
+                    base_pair["candidate_status"] == "passed",
+                    "Mismatch: base_pair['candidate_status'] == 'passed'",
+                )
+                passes += 1
+            else:
+                require(
+                    result["completed"] == task["case"]["max_updates"],
+                    "Mismatch: result['completed'] == task['case']['max_updates'...",
+                )
+                require(
+                    base_pair["candidate_status"] == "budget_exhausted",
+                    "Mismatch: base_pair['candidate_status'] == 'budget_exhauste...",
+                )
+                censored.append(
+                    {"case": task["name"], "seed": seed, "updates": result["completed"]}
+                )
+            saved = torch.load(
+                cell / "checkpoint.pt", map_location="cpu", weights_only=True
+            )
+            require(
+                saved["completed"] == result["completed"],
+                "Mismatch: saved['completed'] == result['completed']",
+            )
+            require(
+                saved["history"] == history, "Mismatch: saved['history'] == history"
+            )
+            require(
+                saved["metadata"] == metadata, "Mismatch: saved['metadata'] == metadata"
+            )
+            groups = saved["optimizer"]["param_groups"]
+            require(len(groups) == 1, "Mismatch: len(groups) == (2 if lerope else 1)")
+            group = groups[0]
+            require(
+                group["betas"] == config.betas,
+                "Mismatch: group['betas'] == config.betas",
+            )
+            require(
+                group["training"] is False and group["warmup"] == 0,
+                "Mismatch: group['fused'] and group['capturable']",
+            )
+            require(
+                group["eps"] == OPTIMIZER_EPS
+                and group["weight_decay"] == task["case"]["weight_decay"],
+                "Mismatch: group['eps'] == 1e-08 and group['weight_decay'] =...",
+            )
+            verify_optimizer_state(
+                SimpleNamespace(
+                    optimizer=SimpleNamespace(
+                        param_groups=groups, state=saved["optimizer"]["state"]
+                    ),
+                    configuration=config,
+                    original_case=specification(task),
+                    train_examples=task["train_examples"],
+                ),
+                result["completed"],
+            )
+            require(
+                sum(s["base"].numel() for s in saved["optimizer"]["state"].values())
+                == metadata["parameters"],
+                "Missing optimizer parameter storage",
+            )
+            expected_rate = config.learning_rate_at(
+                specification(task), result["completed"] - 1, task["train_examples"]
+            )
+            require(
+                math.isclose(
+                    float(group["lr"]), expected_rate, rel_tol=1e-07, abs_tol=1e-12
+                ),
+                "Mismatch: math.isclose(float(group['lr']), expected_rate, r...",
+            )
+            require(
+                all(torch.isfinite(value).all() for value in saved["model"].values()),
+                "Mismatch: all((torch.isfinite(value).all() for value in sav...",
+            )
+            parameters.append(metadata["parameters"])
+            count += 1
+    expected_count = len(tasks) * 3
+    require(count == expected_count, "Mismatch: count == expected_count")
+    records[name] = {
+        "completed": count,
+        "passed": passes,
+        "censored": censored,
+        "execution_errors": len(errors),
+        "errors": errors,
+        "completed_checkpoint_count": count - len(errors),
+        "resumed": resumed_count,
+        "candidate_plan_sha256": hashlib.sha256(raw_plan).hexdigest(),
+        "source_files_verified": len(plan["source_sha256"]),
+        "minimum_parameters": min(parameters, default=None),
+        "maximum_parameters": max(parameters, default=None),
+    }
+result = {
+    "audited_at_utc": datetime.now(UTC).isoformat(),
+    "candidates": records,
+    "auditor_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    "completed_new_scientific_runs": sum(r["completed"] for r in records.values()),
+    "all_checkpoints_histories_protocols_and_sources_retained": True,
+    "checkpoint_optimizer_steps_and_settings_verified": True,
+    "averaged_x_mode_base_second_and_maximum_rate_weights_verified": True,
+    "stop_at_first_exact_crossing_or_original_budget_verified": True,
+    "original_initialization_data_seeds_cadence_and_oracles_verified": True,
+    "capacity_policy": (
+        "Original capacity and initialization matched; "
+        "Schedule-Free changes no model parameters."
+    ),
+    "source_archives_match_frozen_plans_and_current_implementation": True,
+    "previous_round_reports_and_selection_preserved": True,
+    "recovery": trajectory_accounting(),
+}
+args.output.write_text(json.dumps(result, indent=2) + "\n")
+print(json.dumps(result, indent=2))
