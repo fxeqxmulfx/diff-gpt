@@ -4,9 +4,13 @@ mod cohort;
 mod complex;
 #[cfg(test)]
 mod complex_tests;
+mod continuation;
+#[cfg(test)]
+mod continuation_tests;
 mod engine;
 mod gemm;
 mod layout;
+mod long_audit;
 mod ops;
 mod prepare;
 mod random;
@@ -49,6 +53,8 @@ fn source_hash() -> String {
             include_str!("prepare.rs"),
             include_str!("random.rs"),
             include_str!("cohort.rs"),
+            include_str!("continuation.rs"),
+            include_str!("long_audit.rs"),
             include_str!("../Cargo.toml"),
             include_str!("../Cargo.lock")
         )
@@ -289,12 +295,18 @@ fn checkpoint(input: &Input, dir: &Path, completed: usize) -> Result<()> {
 }
 
 fn restore(input: &mut Input, dir: &Path) -> Result<usize> {
+    restore_from_source(input, dir, &source_hash())
+}
+
+// Ordinary resumes remain exact-source-only. The continuation module permits
+// one pinned pilot source after separately checking unchanged kernels and host math.
+fn restore_from_source(input: &mut Input, dir: &Path, expected_source: &str) -> Result<usize> {
     let saved: Value = serde_json::from_slice(&fs::read(dir.join("checkpoint.json"))?)?;
     let bytes = fs::read(dir.join("checkpoint.bin"))?;
     if saved["sha256"] != hash(&bytes)
         || saved["history_sha256"] != hash(&fs::read(dir.join("history.jsonl"))?)
         || saved["input_sha256"] != input.digest
-        || saved["source_sha256"] != source_hash()
+        || saved["source_sha256"] != expected_source
         || saved["ptx_sha256"] != ptx_hash()
     {
         return Err("checkpoint, input or executable source changed".into());
@@ -385,6 +397,14 @@ fn probe(input: &Input, dir: &Path, steps: usize) -> Result<()> {
 
 fn train(input: &mut Input, dir: &Path, limit: usize, resume: bool) -> Result<()> {
     let started = Instant::now();
+    let initial_prior = input.manifest["prior_seconds"].as_f64().unwrap_or(0.0);
+    let prior_seconds = if resume && dir.join("segment.json").exists() {
+        let previous: Value = serde_json::from_slice(&fs::read(dir.join("segment.json"))?)?;
+        number(&previous, "total_seconds")?.max(initial_prior)
+    } else {
+        initial_prior
+    };
+    let seconds_cap = number(&input.manifest, "seconds_cap")? - (prior_seconds - initial_prior);
     let mut completed = if resume { restore(input, dir)? } else { 0 };
     if !limit.is_multiple_of(19) && limit + 1 != input.boundaries.len() {
         return Err("a requested stop must be an observation boundary or the full budget".into());
@@ -416,12 +436,12 @@ fn train(input: &mut Input, dir: &Path, limit: usize, resume: bool) -> Result<()
         if validation["exact"].as_u64().ok_or("missing exact count")? >= 4658 && first99.is_none() {
             first99 = Some(completed);
         }
-        let row = json!({"step":completed,"examples_seen":input.boundaries[completed],"epochs":input.boundaries[completed] as f64/4704.0,"seconds":started.elapsed().as_secs_f64(),"train":training,"validation":validation,"first99_updates":first99});
+        let row = json!({"step":completed,"examples_seen":input.boundaries[completed],"epochs":input.boundaries[completed] as f64/4704.0,"seconds":prior_seconds+started.elapsed().as_secs_f64(),"train":training,"validation":validation,"first99_updates":first99});
         if !reuse_observation {
             writeln!(history, "{row}")?;
         }
         reuse_observation = false;
-        let timed_out = started.elapsed().as_secs_f64() >= number(&input.manifest, "seconds_cap")?;
+        let timed_out = started.elapsed().as_secs_f64() >= seconds_cap;
         let requested_stop = dir.join("STOP").exists();
         let stopping = completed == limit || first99.is_some() || timed_out || requested_stop;
         let at = Instant::now();
@@ -468,7 +488,7 @@ fn train(input: &mut Input, dir: &Path, limit: usize, resume: bool) -> Result<()
         train_seconds += at.elapsed().as_secs_f64();
         completed = end;
     }
-    let result = json!({"completed":completed,"first99_updates":first99,"status":if first99.is_some(){"passed"}else if completed+1==input.boundaries.len(){"budget_exhausted"}else if started.elapsed().as_secs_f64() >= number(&input.manifest,"seconds_cap")? {"wall_time_cap"}else{"stopped_at_declared_boundary"},"epochs":input.boundaries[completed] as f64/4704.0,"input_sha256":input.digest,"source_sha256":source_hash(),"ptx_sha256":ptx_hash(),"gpu":input.engine.cuda.name(),"train_seconds":train_seconds,"evaluation_seconds":evaluation_seconds,"io_seconds":io_seconds,"segment_seconds":started.elapsed().as_secs_f64(),"resumed":resume,"flush_epochs":FLUSH_EPOCHS,"history_in_memory":true,"manifest":input.manifest});
+    let result = json!({"completed":completed,"first99_updates":first99,"status":if first99.is_some(){"passed"}else if completed+1==input.boundaries.len(){"budget_exhausted"}else if started.elapsed().as_secs_f64() >= seconds_cap {"wall_time_cap"}else{"stopped_at_declared_boundary"},"epochs":input.boundaries[completed] as f64/4704.0,"input_sha256":input.digest,"source_sha256":source_hash(),"ptx_sha256":ptx_hash(),"gpu":input.engine.cuda.name(),"train_seconds":train_seconds,"evaluation_seconds":evaluation_seconds,"io_seconds":io_seconds,"segment_seconds":started.elapsed().as_secs_f64(),"total_seconds":prior_seconds+started.elapsed().as_secs_f64(),"prior_seconds":prior_seconds,"resumed":resume,"flush_epochs":FLUSH_EPOCHS,"history_in_memory":true,"manifest":input.manifest});
     record(
         &dir.join(
             if completed + 1 == input.boundaries.len() || first99.is_some() {
@@ -502,6 +522,12 @@ fn benchmark(input: &Input, dir: &Path, steps: usize) -> Result<()> {
 
 fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
+    if args.len() == 4 && args[1] == "long" {
+        return continuation::run(Path::new(&args[2]), Path::new(&args[3]));
+    }
+    if args.len() == 3 && args[1] == "audit-long" {
+        return continuation::audit(Path::new(&args[2]));
+    }
     if args.len() == 3 && args[1] == "pilot" {
         return cohort::run(Path::new(&args[2]));
     }

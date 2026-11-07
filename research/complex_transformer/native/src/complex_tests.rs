@@ -171,8 +171,19 @@ fn complete_model_matches_scalar_oracle_and_directional_derivatives() -> crate::
     let rows = [[3, 7, 30], [0, 0, 0], [19, 80, 8]];
     let data: Vec<_> = rows.iter().flatten().copied().collect();
     let rope = prepare::rope();
-    for architecture in ["real", "complex-diagonal", "complex-product"] {
-        let cfg = config(architecture, false);
+    for (architecture, normalized) in [
+        ("real", true),
+        ("real", false),
+        ("complex-diagonal", true),
+        ("complex-product", true),
+    ] {
+        let mut cfg = config(architecture, false);
+        if !normalized {
+            cfg.normalized = false;
+            cfg.ssmax = false;
+            cfg.gain = ((0.5 * 32.0f64.ln()) as f32).exp() / 32.0;
+            cfg.lr = 0.001;
+        }
         let initial = layout::initialize(128, 1, architecture, 0);
         let engine = Engine::new(cfg.clone(), &initial, &rope, &data, &data, &[0, 1, 2])?;
         engine.forward(false, 0, 3, true)?;

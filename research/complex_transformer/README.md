@@ -123,3 +123,42 @@ passes with warnings denied. The15 training/evaluation/I/O segments total
 separate. Raw states are under `runs/complex-transformer/`. Since every run
 ends at250 epochs, only initial and final states were saved; the regular
 persistence interval remains500 epochs. Source/protocol commit: `1e58a9a`.
+
+## Longer continuation
+
+On the user's request to train for more epochs, continue all15 pilot cells to
+**100000 absolute updates** (about5263.16 epochs), with their existing weights,
+AdamW moments and sample cursor. Add three fresh original-GPT controls at
+LR.001: ordinary attention scaling, no SSMax, and the original normalization
+recipe. The historical Torch seeds reached99% at3531,3197 and4315 epochs;
+these native controls use the cohort's native RNG and are not historical replays.
+The full normalized real control retains LR.002, as do all complex cells.
+
+Freeze all18 outcomes before further learning. Stop at the first observed
+4658/4705 correct, the100000-update limit, or300 seconds per cell including
+the pilot segment. Evaluation and checkpoint I/O count toward this time;
+input preparation is recorded separately, with a300-second cohort setup cap
+and5400-second overall cap checked between cells. Rotate six-arm execution
+order across seeds. No optimizer, rate, gate, or mathematical kernel is changed.
+
+Continuation is explicit because the input horizon and orchestration source
+change. It accepts only the pinned pilot source after checking unchanged host
+math and compiled GPU kernels. Initial weights, data, RoPE and the entire
+issued sample/boundary prefix must match byte for byte. Parameters, both
+moments and the update counter transfer without changing any checkpoint byte;
+the original pilot remains intact. New checkpoints bind to the new source and
+input hashes. A dedicated regression checks continuation past the old horizon
+and through the end of warmup against uninterrupted execution with both
+optimizers. The original-GPT control also passes the independent FP64 model
+and directional derivative checks. Saves remain every500 epochs and at exit.
+
+```sh
+research/complex_transformer/native/target/release/complex-transformer-kernite long runs/complex-transformer runs/complex-transformer-long
+research/complex_transformer/native/target/release/complex-transformer-kernite audit-long runs/complex-transformer-long
+```
+
+The long audit checks every endpoint against its saved correctness and loss,
+all observation steps, first99 crossings, paired initializations and sample
+orders, and the unchanged pilot-history prefix. All misses and errors remain
+in the summary. More epochs test delayed generalization; they do not turn a
+finite accuracy observation into a recovery or uniqueness theorem.
