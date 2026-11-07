@@ -72,47 +72,55 @@ show every seed and both complete splits; [SVG](results/partial-group-cubic-dept
 and the [paired comparison CSV](results/partial-group-cubic-depth-original-lr1.csv)
 are also available. Earlier individual seed audits remain preserved.
 
-That contrast accounts for the first three new cells. Adding depth under this
-particular original-model recipe did not improve coverage within the fixed budget.
-The higher-rate three-seed contrast, width and enlarged normalized-model results
-remain incomplete.
+The second complete contrast, at **LR 0.002**, has **2/3 passes at two layers**
+versus **1/3 at one layer**. Seed 2 newly passes with added depth, seed 1 still
+misses, and seed 0 needs **28.82% more epochs**. Parameters increase by 94.06%.
+The [complete six-cell audit](results/partial-group-cubic-depth-original-lr2.json)
+checks all native states, initialized tensors, source archives, exact oracles
+and first crossings, with no resumption or replay.
 
-The fourth completed cell, two layers at original LR 0.002, **passes seed 0 at
-4,604 epochs** (87,476 updates). Its one-layer LR 0.002 control passes at 3,574
-epochs: the deeper model takes **28.82% more epochs** with **94.06% more parameters**.
-The [paired single-cell audit](results/partial-cell-cubic-depth-original-lr2-seed0.json)
-checks both full trajectories, checkpoints, optimizer states, sources and
-initialized tensors, with no resumption or replay. The crossing bracket is
-(4,603, 4,604] epochs; final exact held-out accuracy is 4,658/4,705 = 99.0011%.
+| Seed | One-layer first-99 epochs | Two-layer first-99 epochs | Paired outcome |
+| --- | ---: | ---: | --- |
+| 0 | 3,574 | 4,604 | 28.82% more epochs with depth |
+| 1 | Budget miss | Budget miss | Both censored |
+| 2 | Budget miss | 4,442 | Newly passes with depth |
 
-The same two-layer seed exhausted its budget at LR 0.001, using the exact same
-initialized parameter tensors. This is a single-seed learning-rate observation;
-all three seeds must finish before interpreting the LR 0.002 group's coverage.
+Seed 2 crosses at 84,398 updates, bracketed by (4,441, 4,442] epochs, with
+4,658/4,705 exact held-out examples. Seed 1 exhausts 100,000 updates: the
+two-layer peak/final held-out accuracies are 36.83%/35.52%, versus 98.19%/96.41%
+for one layer. The one-layer seed-2 miss peaks at 98.38%. All failures remain
+in the comparison. Neither group passes all three seeds, so no aggregate
+first-99 mean or epoch ratio is reported; equal consumed budgets are not ties.
 
-The fifth completed cell, **seed 1 at two layers and LR 0.002**, exhausts all
-100,000 updates without 99%. Its peak held-out accuracy is **36.83%**, final
-held-out accuracy 35.52% and final training accuracy 99.55%. The one-layer
-control also exhausts its budget, peaking at 98.19% and ending at 96.41%
-held-out accuracy. The [seed-1 pair audit](results/partial-cell-cubic-depth-original-lr2-seed1.json)
-verifies both complete trajectories and native states, including 5,263.163265
-epochs each and no resumption or replay. Both first-99 values and their ratio
-remain undefined; equal consumed budgets do not make them first-99 ties.
+The [learning curves](results/partial-group-cubic-depth-original-lr2.png) retain
+all six train/held-out histories; [SVG](results/partial-group-cubic-depth-original-lr2.svg)
+and [paired CSV](results/partial-group-cubic-depth-original-lr2.csv) are available.
+The earlier [seed-0](results/partial-cell-cubic-depth-original-lr2-seed0.json) and
+[seed-1](results/partial-cell-cubic-depth-original-lr2-seed1.json) audits are preserved.
 
-**5/27 new cells** are complete. Seed 2 at depth two and LR 0.002 is running.
-This group's one pass and one miss are incomplete three-seed evidence. The
-remaining 22 cells and the subsequent usual-gain test keep their declared order.
+Each same-size/seed LR1/LR2 pair has identical initialized tensors. At two layers,
+changing LR from 0.001 to 0.002 changes observed coverage from 0/3 to 2/3;
+the one-layer LR 0.001 control still has 3/3 coverage on this task. These outcomes
+do not establish a universal benefit from added depth or choose an initializer.
+
+**6/27 new cells** are complete. The two-layer normalized inverse-width model
+at LR 0.002 is running seed 0. All 21 remaining cells, including the width and
+combined depth/width comparisons, and the subsequent usual-gain test keep
+their declared order. The full study remains open.
 
 The partial reporter requires all three seeds and writes separate artifacts
 that cannot close the full study. Its incomplete-group guard rejected the
-two-seed subset before the third result existed. Reproduce this six-cell audit
-and figure without retraining:
+two-seed subset before the first group's third result existed. Reproduce both
+six-cell audits and figures without retraining:
 
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr1
 MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr1
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr2
+MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr2
 ```
 
-Reproduce the later single-seed pair without retraining:
+Reproduce the earlier single-seed pairs without retraining:
 
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 0

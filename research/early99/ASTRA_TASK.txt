@@ -1257,3 +1257,19 @@ nullratio: sameconsumedbudget isnot afirst99tie. Fiveof27 newcells arecomplete,
 withoriginaldepthLR2seed2 running. Onepass andonemiss do notclose thethree-seed
 group. Preserve all22remainingcells, thenfullaudit/commit beforetheusualgain
 CUDAcheck andthree-seed run. No modelorinitializerselection ismadehere.
+
+Second complete capacity contrast: originaldepthLR2 passes2of3
+Seed2 reaches4658/4705 exactheldout at84398updates,firstobserved4442epochs,
+withthepreceding4441-epoch observation below99. Its1703.926723trainerseconds,
+completehistory, nativecheckpoint,moments,sources andinitialization passaudit,
+withnoresumption orreplay. Thiscloses allthree originaldepthLR2seeds: 4604epochs,
+budgetmiss,4442epochs. Pairedone-layer LR2controls are3574epochs,miss,miss.
+Coverage is2/3versus1/3: one recoveredseed,no newlycensoredseed,one bothcensored
+pair,andone pairedpass taking28.81925percent moreepochs. Parameters growby
+94.05637percent. No filteredfirst99 mean oraggregateepochratio isassigned.
+Thecomplete six-cell partialaudit andPNG/SVG/CSV preserveeveryseed,allcurves,
+source/state hashes andmissingcrossings. Allsame-size/seed LR1/LR2initializations
+match exactly. Theone-layer LR1control retains3/3coverage onthisoneobservedtask.
+Sixof27newcells arecomplete; two-layer normalizedinversewidthLR2seed0 isrunning.
+Preserve all21remainingcells andthelaterusualgain test. Thisdoesnotsettle width,
+thenormalizedmodel,universalcapacitybenefit,initializerchoice orfixed75selection.
