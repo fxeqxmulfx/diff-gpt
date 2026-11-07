@@ -92,6 +92,34 @@ including its microgpt RNG and matrix-multiplication example. Kernite is
 currently checked out at `/home/misha/rust_projects/kgen`, which the manifest
 uses directly. No Kernite library patch is required.
 
-Status before learning: all9 native checks pass (2 CPU and7 CUDA), including
-exact checkpoint continuation before a tail batch with both optimizers.
-Release Clippy passes with warnings denied. The declared pilot is ready.
+All15 pilot runs completed250 epochs; all saved endpoints reproduce their
+exact correctness counts. The [raw summary](results.json) retains every cell,
+checkpoint/history hashes, training accuracy, loss and wall time.
+
+| Arm | Seed0 heldout | Seed1 heldout | Seed2 heldout | Mean |
+| --- | ---: | ---: | ---: | ---: |
+| real-adamw | 58.21% | 53.56% | 64.48% | 58.75% |
+| complex-diagonal-adamw | 63.15% | 49.73% | 49.93% | 54.27% |
+| complex-product-adamw | 95.52% | 94.11% | 94.84% | 94.82% |
+| complex-diagonal-phase | 55.83% | 50.33% | 46.29% | 50.82% |
+| complex-product-phase | 91.56% | 92.37% | 74.39% | 86.11% |
+
+The complex product improves over its paired diagonal control in all three
+seeds with either optimizer. The diagonal arm does not consistently improve
+over the real control; it changes both projections and the gate, so that
+comparison does not isolate projections alone. Ordinary AdamW beats the phase-coupled variant
+on the product in all three seeds at the declared learning rate; phase
+equivariance alone does not establish better optimization.
+
+No cell reached99%. These results support faster early generalization from
+the product in this cohort, not eventual recovery or an architecture promotion.
+The phase-product seed2 also fits training less well (95.71% versus99.87% for
+ordinary AdamW), so that optimizer contrast includes an optimization gap.
+
+All9 native checks pass (2 CPU and7 CUDA), including full-model FP64/derivative
+comparisons and exact checkpoint continuation with both optimizers. Clippy
+passes with warnings denied. The15 training/evaluation/I/O segments total
+166.80 seconds; input generation, compilation, tests and endpoint replay are
+separate. Raw states are under `runs/complex-transformer/`. Since every run
+ends at250 epochs, only initial and final states were saved; the regular
+persistence interval remains500 epochs. Source/protocol commit: `1e58a9a`.

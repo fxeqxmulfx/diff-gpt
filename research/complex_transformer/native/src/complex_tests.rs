@@ -230,6 +230,65 @@ fn complete_model_matches_scalar_oracle_and_directional_derivatives() -> crate::
 fn phase_adamw_is_rotation_equivariant_and_preserves_expansion() -> crate::Result<()> {
     let cuda = Cuda::new()?;
     let kernels = complex::kernels::Kernels::load(&cuda)?;
+    // For [[a,-b],[b,a]], independent derivatives are d_a=g00+g11
+    // and d_b=g10-g01. Check both optimizers against these explicit numbers.
+    for phase in [false, true] {
+        let weights = cuda.upload(&[0.2f32, 0.3, -0.3, 0.2])?;
+        let means = cuda.alloc::<f32>(4)?;
+        let squares = cuda.alloc::<f32>(4)?;
+        let grads = cuda.upload(&[3.0f32, 5.0, 7.0, 11.0])?;
+        let mapping = cuda.upload(&[0u32, 2, 1, 3, 0])?;
+        // SAFETY: one owner covers the four elements of this 2x2 matrix.
+        unsafe {
+            if phase {
+                kernels.adamw::<true>(
+                    Grid::new(1, 256),
+                    weights.ptr(),
+                    means.ptr(),
+                    squares.ptr(),
+                    grads.ptr(),
+                    mapping.ptr(),
+                    1,
+                    0.002,
+                    0.1,
+                    0.1,
+                    0.02f32.sqrt(),
+                )?;
+            } else {
+                kernels.adamw::<false>(
+                    Grid::new(1, 256),
+                    weights.ptr(),
+                    means.ptr(),
+                    squares.ptr(),
+                    grads.ptr(),
+                    mapping.ptr(),
+                    1,
+                    0.002,
+                    0.1,
+                    0.1,
+                    0.02f32.sqrt(),
+                )?;
+            }
+        }
+        let p = weights.read()?;
+        let m = means.read()?;
+        let v = squares.read()?;
+        let (sa, sb) = if phase {
+            (100.0f64, 100.0f64)
+        } else {
+            (196.0f64, 4.0f64)
+        };
+        let a = 0.2 * (1. - 0.002 * 0.1) - 0.002 * 14. / (sa.sqrt() + 1e-8);
+        let b = -0.3 * (1. - 0.002 * 0.1) - 0.002 * 2. / (sb.sqrt() + 1e-8);
+        assert!((p[0] as f64 - a).abs() < 2e-7);
+        assert!((p[2] as f64 - b).abs() < 2e-7);
+        assert!((m[0] - 1.4).abs() < 1e-6);
+        assert!((m[2] - 0.2).abs() < 1e-6);
+        assert!((v[0] as f64 - 0.02 * sa).abs() < 1e-6);
+        assert!((v[2] as f64 - 0.02 * sb).abs() < 1e-6);
+        assert_eq!(p[0], p[3]);
+        assert_eq!(p[1], -p[2]);
+    }
     let theta = 0.73f64;
     let rotate = |a: f64, b: f64| {
         [
