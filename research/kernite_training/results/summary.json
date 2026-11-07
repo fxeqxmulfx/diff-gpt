@@ -1,0 +1,114 @@
+{
+  "scope": "Standalone Rust/Kernite backend for two-token cubic-sum; execution validation, not scientific candidate selection",
+  "model_seed_cases": 18,
+  "comparisons": 1950,
+  "all_comparisons_passed": true,
+  "maximum_local_gradient_relative_l2": 1.1826499281096948e-06,
+  "cuda_kernel_tests_passed": 3,
+  "buffered_recovery": {
+    "scope": "recovery only",
+    "models": [],
+    "checkpoint_bitwise_identical": true,
+    "observation_steps_identical": true,
+    "metrics_identical": true,
+    "corrupt_checkpoint_rejected": true,
+    "uncertain_replay_rejected": true,
+    "passed": true
+  },
+  "actual_500_epoch_flush_check": {
+    "stdout_steps": [
+      0,
+      9500,
+      9519
+    ],
+    "observations": 502,
+    "every_epoch_observed": true,
+    "exact_normal_completion": true,
+    "initial_intent": {
+      "completed": 0,
+      "flush_epochs": 500,
+      "input_sha256": "a250c742f6bfefb5087827e83ace255de69a03093511fe17aa2b9d47d440e3c5",
+      "known_examples": 0,
+      "possible_end": 9500,
+      "possible_examples": 2352000,
+      "source_sha256": "0f8313aa596e7708e329e4a599477594a615e0e317759446c710abf15d716d9a",
+      "version": 2
+    },
+    "passed": true
+  },
+  "timing": {
+    "updates": 608,
+    "torch_prepared_seconds": 11.785046007993515,
+    "torch_full_seconds_including_setup": 21.731884576001903,
+    "torch_full_seconds_after_preparation": 9.939395209003123,
+    "native_buffered_loop_seconds": 2.125847071,
+    "native_train_seconds": 1.4139857739999997,
+    "native_evaluation_seconds": 0.601407356,
+    "native_io_seconds": 0.10986120600000002,
+    "loop_speed_ratio": 4.675498696304445,
+    "native_compute_ms_per_update": 2.371358305921053,
+    "torch_compute_ms_per_update": 2.4282526809249823,
+    "torch_journaled_ms_per_update": 12.64414651809363,
+    "limitations": "One model/GPU timing diagnostic. Model metrics differ after 608 updates; short numerical parity is not identical long-run convergence. Concurrent native timing retained but excluded. Main measured gain is removing per-update disk synchronization."
+  },
+  "development_failures_preserved": [
+    {
+      "attempt": "v1",
+      "checks_failed": 27,
+      "cause": "An if predicate was modified inside a predicated PTX block, suppressing non-target softmax gradient stores and miss/guard writes. Fixed by using distinct predicates; dedicated softmax regression covers hits followed by misses.",
+      "raw_directory": "runs/kernite-probe-v1"
+    },
+    {
+      "attempt": "v2",
+      "checks_failed": 27,
+      "cause": "An if predicate was modified inside a predicated PTX block, suppressing non-target softmax gradient stores and miss/guard writes. Fixed by using distinct predicates; dedicated softmax regression covers hits followed by misses.",
+      "raw_directory": "runs/kernite-probe-v2"
+    }
+  ],
+  "known_limits": [
+    "Only two-token context and the declared FP32 original/inverse-width models; no KV cache or arbitrary task suite port.",
+    "RMS backward retains FP64 computation; this rewrite does not establish new formal convergence guarantees or repair the previously recorded extreme-value stress failures.",
+    "A crash can leave up to 500 epochs of possible work; uncertain replay is rejected.",
+    "The original capacity cohort remains on immutable sources; its suspension is separately recorded."
+  ],
+  "artifacts_sha256": {
+    "buffered-501-epoch-run.json": "154cc1bf0e2fb0298cc064b2b7357cc7186f5bb3727d589e69a4a1178f4f67e8",
+    "buffered-observations.jsonl": "6fcbd17aaab2522ce1d8f0deee40ecd43f2465920121c0f922b6c45021217dfe",
+    "buffered-recovery.json": "76e9939dbd760d4332cf20a0e572691eece1f5b74c9417f43093e4fa5d1d0eee",
+    "buffering.json": "fdba48e415cc62feb4de9a383d8c5bd8ef3ace3871d8113ecbce24589bf22d0f",
+    "build-receipt.json": "2fb5a81ed07afda0b03b48e24468428cd3ea14e068b7cafffca91eadff0bc227",
+    "capacity-suspension.json": "1c8b7832da749228521a42c071ec43b75105e62479f226a0e5c1659265bc1768",
+    "cases/cubic-depth-normalized-lr2-seed0.json": "ef918a85446f05612666460515898d861e885d1ede087f01f260985b28053192",
+    "cases/cubic-depth-normalized-lr2-seed1.json": "0df89ad0a68b6014c5544d2058e0285c496a5300ce22db4c3dd493ca592cbc81",
+    "cases/cubic-depth-normalized-lr2-seed2.json": "95d2a8a3aa38a0929fd9bb06e84407d49670299b384134be30fec5e00c165eb9",
+    "cases/cubic-depth-original-lr2-seed0.json": "df204ae35ef57a30228e99ec4a79939b896b1585e34997b0421cbae5fa07fe52",
+    "cases/cubic-depth-original-lr2-seed1.json": "dbb586dd9858484fbb6e58541fde6a7dd2760cf703e20e053102a5fde2a192ed",
+    "cases/cubic-depth-original-lr2-seed2.json": "0ecd58986c6caf389395d54f2c3c1eb652faea0c1ea461d0dde617437a9fd352",
+    "cases/cubic-depth-width-normalized-lr2-seed0.json": "696913357fc0ed20d6ce6da7ba329c658d52085232e729240ba0bc2d47724acd",
+    "cases/cubic-depth-width-normalized-lr2-seed1.json": "84260e28f7ced939341d621a4ac6f3959725467043ac4b81b37cbeeac7afcfc6",
+    "cases/cubic-depth-width-normalized-lr2-seed2.json": "5616b5ca9efffb1964381f9fa57e9e6c36e59affce86991a3aa5d632a1489143",
+    "cases/cubic-depth-width-original-lr2-seed0.json": "b7a91b90f8e32f4037dcfff21f6a504bb36f98e8416ac338ffcb6e3ab38a0da1",
+    "cases/cubic-depth-width-original-lr2-seed1.json": "1006dc09fa01cb20a9079013dc1af99a1ebb8b810eafff5c23b77b7826e37421",
+    "cases/cubic-depth-width-original-lr2-seed2.json": "59f2e5aa303bd623dc55f9308dd151b0b70a2da3f0ffb780eba1c280238cd98b",
+    "cases/cubic-width-normalized-lr2-seed0.json": "b3718617321ae277d5807164f752bd9f1fcbd136be0f473f050d4d48a16d0ab5",
+    "cases/cubic-width-normalized-lr2-seed1.json": "5fe66a7fa1939a6fb1343f95f9d2b650f7391dd5b8eb29714f2598fd5b6c0d28",
+    "cases/cubic-width-normalized-lr2-seed2.json": "70107b53a62e5a65fbfd34057799f9fc4a01c0383790a73450c5d44b590754b4",
+    "cases/cubic-width-original-lr2-seed0.json": "29f700acd9b11297e5037ba9b0753073b404912b95c77880445a0161c960c5be",
+    "cases/cubic-width-original-lr2-seed1.json": "4caf715f5424f00e078d4f9e75910b4edf9adc2986e911abe59d965add9c0221",
+    "cases/cubic-width-original-lr2-seed2.json": "314279c5452902b70ada5107f5c36b006bb3e2265335c7bd40bef725ef31dbc4",
+    "clippy.txt": "6bfa9e18ffdef821c711a542cfebd7db0982665615563e5a191285e489609c6f",
+    "development-failures/v1.json": "5962820a44330f58b5e6cbd941180da10e22795382ad6921e858076bd40c7715",
+    "development-failures/v2.json": "91cb0d7b866d856367c048a5caa3957ab5ed62563022a64c983463a0a0f79161",
+    "gpu-tests.txt": "39cef5f52dfdeb3ffc2d6f42f92d26794e33359d86a64e49d4344a4a5f938b04",
+    "timings/native_buffered_full_idle.json": "883524dd7851b4001c614b3db91e30119617e944dc75766dd12735b499c2240a",
+    "timings/native_compute_concurrent_excluded.json": "0c0831dd7809302c37b6f295dd7d74bf93a2e7cb03c2fda8a4737e46b99e4dcd",
+    "timings/native_compute_idle.json": "f4749c334df79a5d19001cbd8d5b90fa825c7a8d8664fa5f3330f577d6af3415",
+    "timings/native_per_epoch_writes_full_idle.json": "96f724e5a7a26aafdfe2ec6b2e8577c75935090cd79300437b40e06b27c16db3",
+    "timings/torch_compute_idle.json": "838fde8e927e537a1b34c2f40bdbd8beb8edd2eabb1a7d38e2de5f61985f6ebb",
+    "timings/torch_full_idle.json": "bc6291a543a3d2b95e6107fafd55873d5031a6d0188b5f57220ca00a1522bb7d",
+    "timings/torch_per_update_journal_idle.json": "7aa16a1d7f9bc02d3b12f371ea00126d08fe4c237218765083e34178c21543b5",
+    "validation.json": "35d5d8b1b5eaa7cc95836647473fa46398e0af925763ce54eb477a92f1fd6b74",
+    "user-stop.json": "6f4886c04016ddcf6ad5f9c0fe1cce40af543e42d88b8b3431c5cfa14b27a309"
+  },
+  "user_requested_stop": "user-stop.json"
+}

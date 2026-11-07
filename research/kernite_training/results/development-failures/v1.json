@@ -1,0 +1,334 @@
+{
+  "name": "cubic-depth-normalized-lr2",
+  "seed": 0,
+  "steps": 1,
+  "reference_device": "cpu",
+  "torch": "2.14.1+cu126",
+  "native": {
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "input_sha256": "52e9545f1721f110f17e94cd5768bf350e8dc0fa8ab634f0bad40a2503f9e5cf",
+    "ptx_sha256": "931d512fc7aacff506a76d08efd480b910bef8070e18a76a4c3d21baa5ee053d",
+    "rows": [
+      {
+        "batch": 256,
+        "hits": 0,
+        "loss": 4.649801050312817,
+        "step": 0
+      }
+    ],
+    "seconds": 0.007580038,
+    "source_sha256": "ac8129ac3b0c2582691fb655d0ced30f81337ef796106b061ad19910c6d769fb",
+    "steps": 1
+  },
+  "checks": [
+    {
+      "quantity": "step0/logits",
+      "relative_l2": 3.056525607327934e-07,
+      "absolute_l2": 2.0347696013983112e-05,
+      "max_abs": 9.5367431640625e-07,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/gradients/token_embedding_table.weight",
+      "relative_l2": 0.22908665552588234,
+      "absolute_l2": 0.2532751252949308,
+      "max_abs": 0.011202545370906591,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 0.17494314733427613,
+      "absolute_l2": 0.0603884803391423,
+      "max_abs": 0.002799352165311575,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 0.17551783775294805,
+      "absolute_l2": 0.058897010947363784,
+      "max_abs": 0.0025477020972175524,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 0.20708824076101992,
+      "absolute_l2": 0.09379749900119885,
+      "max_abs": 0.0033000598195940256,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 0.20346771525056098,
+      "absolute_l2": 0.06488422882822084,
+      "max_abs": 0.002538445172831416,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.1.sa.c_attn.weight",
+      "relative_l2": 0.16689081674264894,
+      "absolute_l2": 0.05023549481924656,
+      "max_abs": 0.0026854322059080005,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.1.sa.c_proj.weight",
+      "relative_l2": 0.19052426755227098,
+      "absolute_l2": 0.054683086853073146,
+      "max_abs": 0.0028909229149576277,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.1.ffwd.c_fc.weight",
+      "relative_l2": 0.20438972039168862,
+      "absolute_l2": 0.07494508585271564,
+      "max_abs": 0.0036150231026113033,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/gradients/blocks.1.ffwd.c_proj.weight",
+      "relative_l2": 0.21214768771263956,
+      "absolute_l2": 0.053580217905472724,
+      "max_abs": 0.0021897151600569487,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "step0/exact",
+      "native": 0,
+      "reference": 0,
+      "passed": true
+    },
+    {
+      "quantity": "step0/loss",
+      "native": 4.649801050312817,
+      "reference": 4.6498003005981445,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/token_embedding_table.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.sa.c_attn.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.sa.c_proj.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.1.sa.c_attn.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.1.sa.c_proj.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.1.ffwd.c_fc.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.1.ffwd.c_proj.weight",
+      "relative_l2": 0.0,
+      "absolute_l2": 0.0,
+      "max_abs": 0.0,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg/token_embedding_table.weight",
+      "relative_l2": 0.22908665601927355,
+      "absolute_l2": 0.02532751301104399,
+      "max_abs": 0.0011202545429114252,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.sa.c_attn.weight",
+      "relative_l2": 0.17494314702076216,
+      "absolute_l2": 0.006038848129870442,
+      "max_abs": 0.0002799352223519236,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.sa.c_proj.weight",
+      "relative_l2": 0.17551783801779514,
+      "absolute_l2": 0.0058897012080431285,
+      "max_abs": 0.00025477020972175524,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 0.2070882405489057,
+      "absolute_l2": 0.00937975005229178,
+      "max_abs": 0.00033000597613863647,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 0.20346771545662176,
+      "absolute_l2": 0.00648842300208113,
+      "max_abs": 0.0002538445114623755,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.1.sa.c_attn.weight",
+      "relative_l2": 0.1668908168561189,
+      "absolute_l2": 0.005023549572028595,
+      "max_abs": 0.00026854322641156614,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.1.sa.c_proj.weight",
+      "relative_l2": 0.1905242674498966,
+      "absolute_l2": 0.005468308776358173,
+      "max_abs": 0.0002890923096856568,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.1.ffwd.c_fc.weight",
+      "relative_l2": 0.20438972050251367,
+      "absolute_l2": 0.007494508717948107,
+      "max_abs": 0.0003615023015299812,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.1.ffwd.c_proj.weight",
+      "relative_l2": 0.21214768776032494,
+      "absolute_l2": 0.005358021883721487,
+      "max_abs": 0.00021897154510952532,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/token_embedding_table.weight",
+      "relative_l2": 0.22951074046490713,
+      "absolute_l2": 0.00010748555599256654,
+      "max_abs": 9.810318260861095e-06,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.sa.c_attn.weight",
+      "relative_l2": 0.21058502410783325,
+      "absolute_l2": 6.946479783775549e-06,
+      "max_abs": 7.627190825587604e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.sa.c_proj.weight",
+      "relative_l2": 0.20021492962024717,
+      "absolute_l2": 6.281402942749866e-06,
+      "max_abs": 7.646146968909306e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 0.2605804128917341,
+      "absolute_l2": 6.743735309993918e-06,
+      "max_abs": 6.756439461241825e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 0.25044020176006465,
+      "absolute_l2": 4.539282991608044e-06,
+      "max_abs": 4.415971091020765e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.1.sa.c_attn.weight",
+      "relative_l2": 0.1986576374916734,
+      "absolute_l2": 5.051389287793342e-06,
+      "max_abs": 5.431645035969268e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.1.sa.c_proj.weight",
+      "relative_l2": 0.22919907012846163,
+      "absolute_l2": 5.22140249201852e-06,
+      "max_abs": 4.3730929633056803e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.1.ffwd.c_fc.weight",
+      "relative_l2": 0.26979357380505936,
+      "absolute_l2": 4.6328098239493694e-06,
+      "max_abs": 6.110789243507497e-07,
+      "tolerance": 0.001,
+      "passed": false
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.1.ffwd.c_proj.weight",
+      "relative_l2": 0.26925769874199856,
+      "absolute_l2": 3.080764310261361e-06,
+      "max_abs": 4.236204063090554e-07,
+      "tolerance": 0.001,
+      "passed": false
+    }
+  ],
+  "passed": false
+}

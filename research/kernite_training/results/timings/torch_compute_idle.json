@@ -1,0 +1,31 @@
+{
+  "backend": "original torch.compile + CUDA graphs + fused native AdamW",
+  "journal_per_update": false,
+  "updates": 608,
+  "preparation_seconds": 12.285236466996139,
+  "training_seconds": 1.4763776300023892,
+  "milliseconds_per_update": 2.4282526809249823,
+  "first_full_scoring_seconds": 0.5565553460037336,
+  "steady_full_scoring_seconds": 0.02580503819990554,
+  "train": {
+    "loss": 0.022390481287322076,
+    "token_accuracy": 0.9982993197278912,
+    "sequence_accuracy": 0.9982993197278912,
+    "correct": 4696,
+    "targets": 4704,
+    "exact": 4696,
+    "examples": 4704
+  },
+  "validation": {
+    "loss": 7.196834552047356,
+    "token_accuracy": 0.01849096705632306,
+    "sequence_accuracy": 0.01849096705632306,
+    "correct": 87,
+    "targets": 4705,
+    "exact": 87,
+    "examples": 4705
+  },
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "torch": "2.14.1+cu126",
+  "scope": "Execution timing only; observations are not scientific first99 measurements"
+}

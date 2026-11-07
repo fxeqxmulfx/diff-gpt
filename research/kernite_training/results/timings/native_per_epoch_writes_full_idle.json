@@ -1,0 +1,202 @@
+{
+  "completed": 608,
+  "epochs": 32.0,
+  "evaluation_seconds": 0.606859477,
+  "first99_updates": null,
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "input_sha256": "f78c07e66d17767fe2cd3135d02a9b7d899cb65e8a698ec50bf9e9955cdb7ccc",
+  "io_seconds": 0.362599956,
+  "manifest": {
+    "attention_gain": 0.03125,
+    "batch": 256,
+    "configuration": {
+      "betas": [
+        0.9,
+        0.98
+      ],
+      "configuration": {
+        "beta1": 0.9,
+        "beta2": 0.98,
+        "decay_epochs": 200.0,
+        "gain_rule": "inverse_head_width",
+        "learning_rate_multiplier": 2.0,
+        "minimum_lr_ratio": 0.5,
+        "model_variant": "peri-rms-embedding-scaled-ssmax",
+        "name": "cubic-depth-normalized-lr2",
+        "schedule": "constant"
+      },
+      "dimension_gain": {
+        "added_parameters": 0,
+        "fixed_gain": 0.03125,
+        "head_width": 32,
+        "original_log_alpha_buffer_preserved": true,
+        "parent": "peri-rms-scaled-ssmax-gain-quarter-lr2",
+        "placement": "after Q/K RMS and rotary, with original log(visible keys)",
+        "qk_rms_retained": true,
+        "rule": "inverse_head_width"
+      },
+      "dtype": "torch.float32",
+      "epsilon": 1e-8,
+      "learning_rate": 0.002,
+      "matmul_precision": "highest",
+      "model_factory": "peri_rms_scaled_ssmax_inverse_width",
+      "optimizer": "torch.optim.AdamW",
+      "optimizer_factory": "native_adamw",
+      "qk_rms": true,
+      "residual_scale": 0.5,
+      "rms_backward": "unchanged FP64 calculation",
+      "scalable_softmax": {
+        "bias": 0.0,
+        "placement": "after Q/K normalization and RoPE, before masking",
+        "s": 1.0,
+        "visible_keys": "global causal position + 1"
+      },
+      "schedule": "linear warmup from zero, then constant",
+      "warmup_updates": 50,
+      "warmup_uses_completed_updates": true,
+      "weight_decay": 0.1
+    },
+    "data_fingerprints": {
+      "train": "46c16e9ce5b4d78a14cff7f63aea5ade52ffed486ae0b8679eb1d340d5ce60f4",
+      "validation": "68756b674469bdb4549ec0967a5628067b937b599d52da0b4af69553920d922f"
+    },
+    "files": {
+      "boundaries.u32": {
+        "bytes": 2436,
+        "sha256": "332c1b06d191e82b9fccdfe66724eb2a20576043c510b038748156e7c0dea280"
+      },
+      "order.u32": {
+        "bytes": 602112,
+        "sha256": "4e5fdd445770ccea50a26b054a9be976b1812ed6acffe7b77a2d7a7f8c43066e"
+      },
+      "parameters.f32": {
+        "bytes": 1621504,
+        "sha256": "6ecfaa1549a79bbcac4f95bbfe533def21ef1775b39163d1a3bbc2d97e238c25"
+      },
+      "rope.f32": {
+        "bytes": 256,
+        "sha256": "9c4749f70dfc48a21e56ddc7518f8bb64e801bb07904d8e3b44121b5de01c47d"
+      },
+      "train.u32": {
+        "bytes": 56448,
+        "sha256": "c03a013773bdc58633301731ffbb9843498022aa2cef8ec4338bcdc5707f9123"
+      },
+      "validation.u32": {
+        "bytes": 56460,
+        "sha256": "2d4d7a0acb56b77ad1fbd1c8b7b8adaa820cfda3b0f66cf8c39a817a7217df8b"
+      }
+    },
+    "heads": 4,
+    "initialization": {
+      "initial_parameters_sha256": "3991c1f9dffd5c1c1411baa10d93895d6c45963dcc620a93e9dcc511986e3e1b",
+      "model_class": "diff_gpt.domain.model.gpt.GPT",
+      "parameters": 405376
+    },
+    "layers": 2,
+    "learning_rate": 0.002,
+    "name": "cubic-depth-normalized-lr2",
+    "normalized": true,
+    "observe": 19,
+    "parameter_count": 405376,
+    "parameters": [
+      {
+        "count": 12416,
+        "name": "token_embedding_table.weight",
+        "offset": 0,
+        "shape": [
+          97,
+          128
+        ]
+      },
+      {
+        "count": 49152,
+        "name": "blocks.0.sa.c_attn.weight",
+        "offset": 12416,
+        "shape": [
+          384,
+          128
+        ]
+      },
+      {
+        "count": 16384,
+        "name": "blocks.0.sa.c_proj.weight",
+        "offset": 61568,
+        "shape": [
+          128,
+          128
+        ]
+      },
+      {
+        "count": 87296,
+        "name": "blocks.0.ffwd.c_fc.weight",
+        "offset": 77952,
+        "shape": [
+          682,
+          128
+        ]
+      },
+      {
+        "count": 43648,
+        "name": "blocks.0.ffwd.c_proj.weight",
+        "offset": 165248,
+        "shape": [
+          128,
+          341
+        ]
+      },
+      {
+        "count": 49152,
+        "name": "blocks.1.sa.c_attn.weight",
+        "offset": 208896,
+        "shape": [
+          384,
+          128
+        ]
+      },
+      {
+        "count": 16384,
+        "name": "blocks.1.sa.c_proj.weight",
+        "offset": 258048,
+        "shape": [
+          128,
+          128
+        ]
+      },
+      {
+        "count": 87296,
+        "name": "blocks.1.ffwd.c_fc.weight",
+        "offset": 274432,
+        "shape": [
+          682,
+          128
+        ]
+      },
+      {
+        "count": 43648,
+        "name": "blocks.1.ffwd.c_proj.weight",
+        "offset": 361728,
+        "shape": [
+          128,
+          341
+        ]
+      }
+    ],
+    "seed": 0,
+    "ssmax": true,
+    "target": 0.99,
+    "train_examples": 4704,
+    "updates": 608,
+    "validation_examples": 4705,
+    "version": 1,
+    "vocab": 97,
+    "warmup": 50,
+    "weight_decay": 0.1,
+    "width": 128
+  },
+  "ptx_sha256": "7b2d4d6955996da6fdbb76108bc008f20df06bf5d1fa5e87807e113dc3ea3325",
+  "resumed": false,
+  "segment_seconds": 2.401970708,
+  "source_sha256": "d299904ada106ca638812bad63f21610e83d1b22759e56672ac515211ff1479a",
+  "status": "budget_exhausted",
+  "train_seconds": 1.4237410820000003
+}

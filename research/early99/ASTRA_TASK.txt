@@ -1416,3 +1416,52 @@ The user requested no minute-by-minute checks: let the declared queue run, wait
 at longer intervals and report completed groups or meaningful failures. Inspect
 the live process before giving status; distinguish completed runs from audited
 and committed results when the queue advances between observations.
+
+Native execution and buffered writes: latest user request
+The user now requests a Rust training loop with Kernite-generated PTX, and
+permits patches to /home/misha/rust_projects/kgen if necessary. Runtime
+optimization is now authorized; the first-99 scientific ranking is unchanged.
+The separate research/kernite_training backend implements the current two-token
+cubic workload, retaining FP32 SGEMM, repaired FP64 RMS backward, prefix guards,
+tied weights, original/normalized models and native-equation AdamW. Python
+exports frozen inputs and supplies the independent reference; it does not run
+the native training loop. No kgen patch was necessary.
+
+The user specifically requested buffered writes or a 500-epoch write interval.
+Use Rust BufWriter and flush/fsync history and checkpoints every 500 epochs
+(9500 updates here), plus success, normal completion and explicit stops.
+Continue full-split evaluation every epoch and retain every observation.
+Persist a possible-work intent before each window; an abrupt crash can leave
+up to 500 epochs uncertain. Reject automatic replay of an uncertain window.
+Clean continuation is bitwise identical. Do not claim identical long-run
+learning trajectories merely from finite-precision implementation checks.
+
+Eighteen native shape/seed checks pass 1950 CUDA comparisons; three independent
+GPU kernel tests pass. The actual buffered 501-epoch run retains all 502
+observations and writes boundary records at updates 0,9500,9519. Buffered
+recovery, corruption rejection and uncertain-replay rejection pass. The
+608-update full-loop timing is about 2.13s versus 9.94s after preparation in the
+unchanged runner; compute-only timings are similar and journal removal supplies
+most of the gain. Keep timing diagnostics distinct from candidate selection.
+
+The original capacity cohort retains its immutable sources. Width-normalized
+seed 2 completed while the backend was developed (18/27 complete, 17 audited
+at the preceding commit). The next original depth-width LR1 seed 0 had already
+started when the dispatcher was held. It was suspended in place for exclusive
+timing and then resumed with the dispatcher, without restart or replay. Record
+the 878.526397-second suspension separately; its original wall clock includes
+that interval. All remaining capacity audits, usual-gain training and broader
+ASTRA research remain outstanding; no new fixed-75 winner is selected.
+
+Explicit user stop after native backend completion
+The user requested: if ready, stop, commit and stop. The native backend is
+ready for its documented two-token scope. Stop the capacity dispatcher and
+trainer; do not restart without a new user instruction. Preserve 18 completed
+capacity cells and the in-progress cubic-depth-width-original-lr1 seed 0. Its
+checkpoint is at 43301 updates; the durable journal records 43605 completed
+updates with no pending batch. A future restart from that checkpoint replays
+304 updates / 75264 examples / 16 epochs, which must remain in exposure
+accounting. The recovery snapshot is
+runs/early99-recovery/kernite-user-stop-20261107. See
+research/kernite_training/results/user-stop.json for its full file hashes.
+The wider research goal remains unfinished; this is an explicit stop.

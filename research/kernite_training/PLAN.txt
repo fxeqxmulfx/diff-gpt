@@ -1,0 +1,44 @@
+Native Rust / Kernite PTX execution study
+
+User request, 2026-11-07: replace the inefficient Python training run with
+Rust orchestration and Kernite-generated PTX; kgen patches are authorized if
+needed. This is an execution backend study, not a new architecture selection.
+
+First supported workload: the existing two-token cubic-sum task, vocabulary
+97, head width 32, model widths 128/256, layers 1/2. Support the original and
+normalized models, including usual or inverse-width attention gain. Preserve
+Peri/embedding RMS, tied weights, repaired FP64 RMS backward, centered XSA,
+SwiGLU, RoPE, SSMax and the guarded constant-prefix path where configured.
+
+Python exports frozen data, original initialized weights, RoPE tables and the
+exact EpochSampler permutation sequence once, and supplies independent
+reference checks. The native executable owns forward, backward, AdamW,
+evaluation, stopping, checkpointing and the training loop. No Python process
+or libtorch dependency is part of the native training loop. GPU arithmetic,
+including SGEMM, is Kernite PTX; retain FP32 products (no TF32 substitution).
+
+Keep the existing capacity queue and its immutable sources/results intact
+during implementation. A new backend must pass actual GPU comparisons of
+logits, all parameter gradients, optimizer moments/steps, zero-rate warmup,
+full/tail batches and checkpoint continuation before scientific use. Record
+rounding differences honestly: agreement over a finite trajectory does not
+prove an identical long-run grokking trajectory. New runs have new provenance.
+
+Measure disk journaling independently. Time native and existing compiled
+CUDA paths on an idle GPU, with equivalent observation and durability settings.
+Separate setup, training, complete-split scoring and I/O costs. No speedup
+claim from concurrent GPU workloads or an untested handwritten kernel.
+
+Latest user request: buffer writes and flush every 500 epochs, instead of
+every update. Keep every one-epoch observation in a Rust BufWriter; flush and
+fsync history/checkpoints every 500 epochs (9500 updates here), and immediately
+at success, normal completion or an explicitly requested stop. Persist an
+intent before each such window. A crash leaves an explicit possible-exposure interval;
+never describe an uncertain restart as exact or silently exclude replay.
+Normal completion has exact exposure. Native checkpoints include parameters,
+both moments, completed-update count and sampler cursor, with input/source
+hashes; restart compatibility and corruption must be checked.
+
+Do not promote a model or infer convergence from this execution experiment.
+The broader ASTRA research objective and all pending capacity/gain results
+remain outstanding.

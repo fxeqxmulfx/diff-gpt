@@ -1,0 +1,668 @@
+{
+  "name": "cubic-width-normalized-lr2",
+  "seed": 1,
+  "steps": 64,
+  "reference_device": "cuda",
+  "torch": "2.14.1+cu126",
+  "native": {
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "input_sha256": "ff0006b88cf233766a31d08403458ce6521b6f5ace9be054aac527b65d3b55a8",
+    "ptx_sha256": "7b2d4d6955996da6fdbb76108bc008f20df06bf5d1fa5e87807e113dc3ea3325",
+    "rows": [
+      {
+        "batch": 256,
+        "hits": 3,
+        "loss": 4.8973053195513785,
+        "step": 0
+      },
+      {
+        "batch": 256,
+        "hits": 1,
+        "loss": 4.915163836441934,
+        "step": 1
+      },
+      {
+        "batch": 96,
+        "hits": 2,
+        "loss": 4.4779892812172575,
+        "step": 18
+      },
+      {
+        "batch": 256,
+        "hits": 2,
+        "loss": 4.219360737130046,
+        "step": 19
+      },
+      {
+        "batch": 256,
+        "hits": 13,
+        "loss": 3.491513599641621,
+        "step": 49
+      },
+      {
+        "batch": 256,
+        "hits": 8,
+        "loss": 3.5204433668404818,
+        "step": 50
+      },
+      {
+        "batch": 256,
+        "hits": 19,
+        "loss": 3.483409776352346,
+        "step": 51
+      },
+      {
+        "batch": 256,
+        "hits": 29,
+        "loss": 3.2792319203726947,
+        "step": 63
+      }
+    ],
+    "seconds": 0.236498499,
+    "source_sha256": "d299904ada106ca638812bad63f21610e83d1b22759e56672ac515211ff1479a",
+    "steps": 64
+  },
+  "checks": [
+    {
+      "quantity": "step0/logits",
+      "relative_l2": 3.755604333701102e-07,
+      "absolute_l2": 4.218191443691854e-05,
+      "max_abs": 2.6226043701171875e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/gradients/token_embedding_table.weight",
+      "relative_l2": 5.923901456145404e-07,
+      "absolute_l2": 9.584903212741307e-07,
+      "max_abs": 3.3527612686157227e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 8.43847379039428e-07,
+      "absolute_l2": 5.696996425625993e-07,
+      "max_abs": 1.210719347000122e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 7.052612476402336e-07,
+      "absolute_l2": 4.566152020446744e-07,
+      "max_abs": 9.313225746154785e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.458229638044216e-07,
+      "absolute_l2": 4.872390872431385e-07,
+      "max_abs": 6.05359673500061e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.513441859707993e-07,
+      "absolute_l2": 3.407766479393037e-07,
+      "max_abs": 5.587935447692871e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step0/exact",
+      "native": 3,
+      "reference": 3,
+      "passed": true
+    },
+    {
+      "quantity": "step0/loss",
+      "native": 4.8973053195513785,
+      "reference": 4.897305011749268,
+      "passed": true
+    },
+    {
+      "quantity": "step1/logits",
+      "relative_l2": 3.765266978195585e-07,
+      "absolute_l2": 4.2271743454341075e-05,
+      "max_abs": 2.86102294921875e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step1/gradients/token_embedding_table.weight",
+      "relative_l2": 5.956620281439196e-07,
+      "absolute_l2": 9.58037190596436e-07,
+      "max_abs": 3.3527612686157227e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step1/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 8.368144492855829e-07,
+      "absolute_l2": 5.643005256031116e-07,
+      "max_abs": 1.210719347000122e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step1/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 6.935186296820687e-07,
+      "absolute_l2": 4.5317730464008983e-07,
+      "max_abs": 9.313225746154785e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step1/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.551102280141402e-07,
+      "absolute_l2": 4.864277035232404e-07,
+      "max_abs": 6.51925802230835e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step1/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.526042770551294e-07,
+      "absolute_l2": 3.3672606516769515e-07,
+      "max_abs": 6.05359673500061e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step1/exact",
+      "native": 1,
+      "reference": 1,
+      "passed": true
+    },
+    {
+      "quantity": "step1/loss",
+      "native": 4.915163836441934,
+      "reference": 4.915163993835449,
+      "passed": true
+    },
+    {
+      "quantity": "step18/logits",
+      "relative_l2": 3.405386197798119e-07,
+      "absolute_l2": 2.4638205120515666e-05,
+      "max_abs": 2.86102294921875e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step18/gradients/token_embedding_table.weight",
+      "relative_l2": 4.891091636218834e-07,
+      "absolute_l2": 1.2287808563362592e-06,
+      "max_abs": 5.21540641784668e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step18/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 6.848058220719418e-07,
+      "absolute_l2": 6.28739208781136e-07,
+      "max_abs": 1.4435499906539917e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step18/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 6.192517965256217e-07,
+      "absolute_l2": 5.53225762032848e-07,
+      "max_abs": 1.0710209608078003e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step18/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.295126340937311e-07,
+      "absolute_l2": 5.466108038415764e-07,
+      "max_abs": 1.0710209608078003e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step18/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 5.631490799449747e-07,
+      "absolute_l2": 3.7131959673672907e-07,
+      "max_abs": 6.51925802230835e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step18/exact",
+      "native": 2,
+      "reference": 2,
+      "passed": true
+    },
+    {
+      "quantity": "step18/loss",
+      "native": 4.4779892812172575,
+      "reference": 4.477989673614502,
+      "passed": true
+    },
+    {
+      "quantity": "step19/logits",
+      "relative_l2": 3.482848092632314e-07,
+      "absolute_l2": 4.194568399552347e-05,
+      "max_abs": 2.384185791015625e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step19/gradients/token_embedding_table.weight",
+      "relative_l2": 4.697452135835344e-07,
+      "absolute_l2": 7.753573658568261e-07,
+      "max_abs": 3.725290298461914e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step19/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 7.418716350975291e-07,
+      "absolute_l2": 3.9421601525986366e-07,
+      "max_abs": 1.0244548320770264e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step19/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 5.837233311998769e-07,
+      "absolute_l2": 3.0298226037019037e-07,
+      "max_abs": 7.450580596923828e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step19/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.628896680525925e-07,
+      "absolute_l2": 3.187668038513323e-07,
+      "max_abs": 4.190951585769653e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step19/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.120062281361964e-07,
+      "absolute_l2": 2.3544913493403368e-07,
+      "max_abs": 4.6566128730773926e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step19/exact",
+      "native": 2,
+      "reference": 2,
+      "passed": true
+    },
+    {
+      "quantity": "step19/loss",
+      "native": 4.219360737130046,
+      "reference": 4.219360828399658,
+      "passed": true
+    },
+    {
+      "quantity": "step49/logits",
+      "relative_l2": 2.766110003333588e-07,
+      "absolute_l2": 0.00010921945682421188,
+      "max_abs": 3.814697265625e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step49/gradients/token_embedding_table.weight",
+      "relative_l2": 4.96768661046245e-07,
+      "absolute_l2": 7.285610890184889e-07,
+      "max_abs": 4.0978193283081055e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step49/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 7.053825262886557e-07,
+      "absolute_l2": 2.2603491168502873e-07,
+      "max_abs": 6.28642737865448e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step49/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 6.128792712291198e-07,
+      "absolute_l2": 1.6920328515781284e-07,
+      "max_abs": 4.190951585769653e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step49/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.095400716393516e-07,
+      "absolute_l2": 2.823987240860309e-07,
+      "max_abs": 6.05359673500061e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step49/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.05367656878029e-07,
+      "absolute_l2": 1.6895639357266046e-07,
+      "max_abs": 3.958120942115784e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step49/exact",
+      "native": 13,
+      "reference": 13,
+      "passed": true
+    },
+    {
+      "quantity": "step49/loss",
+      "native": 3.491513599641621,
+      "reference": 3.491513729095459,
+      "passed": true
+    },
+    {
+      "quantity": "step50/logits",
+      "relative_l2": 2.730607373757631e-07,
+      "absolute_l2": 0.00011150667021662607,
+      "max_abs": 3.814697265625e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step50/gradients/token_embedding_table.weight",
+      "relative_l2": 5.075303941094436e-07,
+      "absolute_l2": 6.980305919340938e-07,
+      "max_abs": 2.60770320892334e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step50/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 7.509837971764867e-07,
+      "absolute_l2": 2.1172199308150344e-07,
+      "max_abs": 6.05359673500061e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step50/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 6.258088931515216e-07,
+      "absolute_l2": 1.5970803528494414e-07,
+      "max_abs": 3.637978807091713e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step50/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.399929780421799e-07,
+      "absolute_l2": 2.605882895604304e-07,
+      "max_abs": 5.820766091346741e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step50/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.240009301757019e-07,
+      "absolute_l2": 1.6316585450395008e-07,
+      "max_abs": 3.259629011154175e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step50/exact",
+      "native": 8,
+      "reference": 8,
+      "passed": true
+    },
+    {
+      "quantity": "step50/loss",
+      "native": 3.5204433668404818,
+      "reference": 3.5204434394836426,
+      "passed": true
+    },
+    {
+      "quantity": "step51/logits",
+      "relative_l2": 2.6801447147205373e-07,
+      "absolute_l2": 0.00011195863046159458,
+      "max_abs": 4.0531158447265625e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step51/gradients/token_embedding_table.weight",
+      "relative_l2": 4.904282066952455e-07,
+      "absolute_l2": 6.886411409077894e-07,
+      "max_abs": 3.725290298461914e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step51/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 6.826428633463681e-07,
+      "absolute_l2": 2.191267291613963e-07,
+      "max_abs": 5.820766091346741e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step51/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 5.986796937631432e-07,
+      "absolute_l2": 1.5626761508924666e-07,
+      "max_abs": 3.4924596548080444e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step51/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.354334300391838e-07,
+      "absolute_l2": 2.4574722473197975e-07,
+      "max_abs": 4.307366907596588e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step51/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.250650474824312e-07,
+      "absolute_l2": 1.5218647157456865e-07,
+      "max_abs": 3.4924596548080444e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step51/exact",
+      "native": 19,
+      "reference": 19,
+      "passed": true
+    },
+    {
+      "quantity": "step51/loss",
+      "native": 3.483409776352346,
+      "reference": 3.483409881591797,
+      "passed": true
+    },
+    {
+      "quantity": "step63/logits",
+      "relative_l2": 2.6876401721923324e-07,
+      "absolute_l2": 0.00012042136469050821,
+      "max_abs": 4.291534423828125e-06,
+      "tolerance": 0.0001,
+      "passed": true
+    },
+    {
+      "quantity": "step63/gradients/token_embedding_table.weight",
+      "relative_l2": 5.049900461063644e-07,
+      "absolute_l2": 7.422829571666608e-07,
+      "max_abs": 4.284083843231201e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step63/gradients/blocks.0.sa.c_attn.weight",
+      "relative_l2": 6.900838221803483e-07,
+      "absolute_l2": 2.78803661153649e-07,
+      "max_abs": 8.381903171539307e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step63/gradients/blocks.0.sa.c_proj.weight",
+      "relative_l2": 6.146788816211351e-07,
+      "absolute_l2": 1.970265916412624e-07,
+      "max_abs": 4.423782229423523e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step63/gradients/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.453192016278689e-07,
+      "absolute_l2": 2.580878325235168e-07,
+      "max_abs": 4.423782229423523e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step63/gradients/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.19205497994359e-07,
+      "absolute_l2": 1.542456627008066e-07,
+      "max_abs": 3.026798367500305e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "step63/exact",
+      "native": 29,
+      "reference": 29,
+      "passed": true
+    },
+    {
+      "quantity": "step63/loss",
+      "native": 3.2792319203726947,
+      "reference": 3.2792322635650635,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/token_embedding_table.weight",
+      "relative_l2": 5.059391968913863e-07,
+      "absolute_l2": 1.7563874847789734e-06,
+      "max_abs": 6.332993507385254e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.sa.c_attn.weight",
+      "relative_l2": 6.178958592389684e-07,
+      "absolute_l2": 5.845189144869181e-06,
+      "max_abs": 8.940696716308594e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.sa.c_proj.weight",
+      "relative_l2": 5.661194510868042e-07,
+      "absolute_l2": 3.110465270571709e-06,
+      "max_abs": 8.940696716308594e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 6.080978901256179e-07,
+      "absolute_l2": 7.7518369751115e-06,
+      "max_abs": 1.043081283569336e-07,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/parameters/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 6.014436697218219e-07,
+      "absolute_l2": 5.43841231498412e-06,
+      "max_abs": 1.043081283569336e-07,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg/token_embedding_table.weight",
+      "relative_l2": 1.0634099730741773e-06,
+      "absolute_l2": 3.003227966625595e-07,
+      "max_abs": 1.0710209608078003e-08,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.sa.c_attn.weight",
+      "relative_l2": 1.7654606600778731e-06,
+      "absolute_l2": 1.2475368311403784e-07,
+      "max_abs": 2.6921043172478676e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.sa.c_proj.weight",
+      "relative_l2": 1.4818638100870908e-06,
+      "absolute_l2": 9.649615144049604e-08,
+      "max_abs": 1.7462298274040222e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 1.606896740428264e-06,
+      "absolute_l2": 1.281556822323297e-07,
+      "max_abs": 1.7171259969472885e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 1.484362391516322e-06,
+      "absolute_l2": 7.787175087117344e-08,
+      "max_abs": 1.5133991837501526e-09,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/token_embedding_table.weight",
+      "relative_l2": 9.920044819808303e-07,
+      "absolute_l2": 1.3445565916726097e-08,
+      "max_abs": 8.149072527885437e-10,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.sa.c_attn.weight",
+      "relative_l2": 1.0296516482459536e-06,
+      "absolute_l2": 5.259470574717478e-10,
+      "max_abs": 9.094947017729282e-12,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.sa.c_proj.weight",
+      "relative_l2": 1.003486179773136e-06,
+      "absolute_l2": 4.5679132131528083e-10,
+      "max_abs": 9.549694368615746e-12,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.ffwd.c_fc.weight",
+      "relative_l2": 1.1705926615756847e-06,
+      "absolute_l2": 3.5563161425448936e-10,
+      "max_abs": 1.000444171950221e-11,
+      "tolerance": 0.001,
+      "passed": true
+    },
+    {
+      "quantity": "trajectory/exp_avg_sq/blocks.0.ffwd.c_proj.weight",
+      "relative_l2": 1.0852287617366879e-06,
+      "absolute_l2": 2.1569764017934015e-10,
+      "max_abs": 7.275957614183426e-12,
+      "tolerance": 0.001,
+      "passed": true
+    }
+  ],
+  "passed": true
+}
