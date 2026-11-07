@@ -103,14 +103,13 @@ changing LR from 0.001 to 0.002 changes observed coverage from 0/3 to 2/3;
 the one-layer LR 0.001 control still has 3/3 coverage on this task. These outcomes
 do not establish a universal benefit from added depth or choose an initializer.
 
-The first two completed seeds for the **two-layer normalized inverse-width
-model** both exhaust 100,000 updates without reaching 99%. Their paired
-[seed-0](results/partial-cell-cubic-depth-normalized-lr2-seed0.json) and
-[seed-1](results/partial-cell-cubic-depth-normalized-lr2-seed1.json) audits verify
-all four native checkpoints, complete observations, source archives, initialized
-tensors, optimizer states and execution exposure, with no resumption or replay.
-Each model consumes 5,263.163265 epochs; none has a first-99 value, so both paired
-epoch ratios remain undefined.
+The third complete contrast, the **normalized inverse-width model at LR 0.002**,
+has **0/3 passes at both one and two layers**. All six runs exhaust 100,000 updates.
+The [complete six-cell audit](results/partial-group-cubic-depth-normalized-lr2.json)
+verifies every native checkpoint, complete observation history, source archive,
+initialized tensor, optimizer state and execution record, with no resumption or
+replay. Each run consumes 5,263.163265 epochs. No first-99 mean or epoch ratio is
+assigned; equal consumed budgets do not make these misses first-99 ties.
 
 | Seed | Layers | Peak held-out | Final held-out | Final train | First-99 epochs |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -118,30 +117,42 @@ epoch ratios remain undefined.
 | 0 | 2 | 98.94% | 90.80% | 99.94% | Budget miss |
 | 1 | 1 | 98.77% | 98.62% | 100.00% | Budget miss |
 | 1 | 2 | 98.04% | 88.52% | 99.94% | Budget miss |
+| 2 | 1 | 98.36% | 89.31% | 99.57% | Budget miss |
+| 2 | 2 | 98.75% | 92.84% | 99.85% | Budget miss |
 
-The deeper runs take 2,009.374183 and 2,032.836117 trainer seconds for seeds 0
-and 1. Historical runtime ratios remain omitted because journal overhead differs.
-The depth intervention adds 94.06% more parameters and changes the declared
-residual coefficient from `1/sqrt(2)` to `1/2`. It does not recover either of these
-two seeds within the declared budget. The normalized three-seed contrast remains
-open; these pairs do not settle initializer choice or the remaining capacity
-comparisons.
+The three deeper runs consume 6,077.309565 trainer seconds in total. Historical
+runtime ratios remain omitted because journal overhead differs. The depth
+intervention adds 94.06% more parameters and changes the declared residual
+coefficient from `1/sqrt(2)` to `1/2`. It does not recover any of the three
+normalized seeds within this budget. This result does not settle width,
+initializer choice, normalizer choice or the subsequent usual-gain comparison.
 
-**8/27 new cells** are complete. The two-layer normalized inverse-width model
-at LR 0.002 is running seed 2. All 19 remaining cells, including the width and
-combined depth/width comparisons, and the subsequent usual-gain test keep
-their declared order. The full study remains open.
+The [learning curves](results/partial-group-cubic-depth-normalized-lr2.png)
+retain all six complete train/held-out histories and budget endpoints;
+[SVG](results/partial-group-cubic-depth-normalized-lr2.svg) and
+[paired CSV](results/partial-group-cubic-depth-normalized-lr2.csv) are available.
+The earlier paired [seed-0](results/partial-cell-cubic-depth-normalized-lr2-seed0.json)
+and [seed-1](results/partial-cell-cubic-depth-normalized-lr2-seed1.json) audits
+remain preserved.
+
+**9/27 new cells** are complete: all nine depth runs are audited. The one-layer,
+width-256 original model at LR 0.001 is running seed 0. All 18 remaining width
+and combined depth/width cells, and the subsequent usual-gain test, keep their
+declared order. The full study remains open; no initializer or fixed-75 winner
+is selected by these one-task contrasts.
 
 The partial reporter requires all three seeds and writes separate artifacts
 that cannot close the full study. Its incomplete-group guard rejected the
-two-seed subset before the first group's third result existed. Reproduce both
-six-cell audits and figures without retraining:
+two-seed subset before the first group's third result existed. Reproduce all
+three completed six-cell audits and figures without retraining:
 
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr1
 MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr1
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr2
 MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr2
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-normalized-lr2
+MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-normalized-lr2
 ```
 
 Reproduce the earlier single-seed pairs without retraining:

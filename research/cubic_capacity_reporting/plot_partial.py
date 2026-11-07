@@ -159,6 +159,12 @@ def main() -> None:
     for suffix in ["png", "svg"]:
         target = RESULTS / f"partial-group-{args.name}.{suffix}"
         figure.savefig(target, dpi=160, facecolor="white")
+        if suffix == "svg":
+            # Matplotlib leaves trailing spaces in multiline path attributes.
+            target.write_text(
+                "\n".join(line.rstrip() for line in target.read_text().splitlines())
+                + "\n"
+            )
         outputs.append(target)
     plt.close(figure)
     record = {
