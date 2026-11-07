@@ -1,0 +1,19 @@
+{
+  "status": "passed before scientific learning",
+  "runtime": "Rust 1.99.1; Kernite PTX; NVIDIA GeForce RTX 3050 Laptop GPU",
+  "cpu": {"passed": 2, "command": "cargo test --offline --release --manifest-path research/complex_transformer/native/Cargo.toml"},
+  "cuda": {"passed": 7, "command": "cargo test --offline --release --manifest-path research/complex_transformer/native/Cargo.toml -- --ignored --test-threads=1"},
+  "lint": {"passed": true, "command": "cargo clippy --offline --release --manifest-path research/complex_transformer/native/Cargo.toml --all-targets -- -D warnings"},
+  "checks": [
+    "Independent scalar FP64 full-model logits and cross entropy for all three architectures",
+    "Directional finite differences through every model parameter group",
+    "Complex product forward and four-component backward, including zero gate",
+    "Phase AdamW scalar recurrence and per-parameter phase equivariance",
+    "Canonical complex gradient contraction and exact real block tying after updates",
+    "Nonempty checkpoint restoration and byte-identical tail/full batch continuation with both optimizers",
+    "Ambiguous crash replay interval rejected",
+    "Exhaustive arithmetic split, complex phase addition, unique storage ownership and paired initialization",
+    "Inherited RMS zero/radial derivatives, FP32 SGEMM partial tiles, softmax gradients and argmax transitions"
+  ],
+  "limitations": "Finite numerical tests do not prove convergence or identical long-run trajectories to historical Torch runs. The native cohort uses fresh RNG controls."
+}

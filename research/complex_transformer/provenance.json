@@ -1,0 +1,23 @@
+{
+  "gpt_commit": "73bd227",
+  "kernite_commit": "a1b6bc2c956e1a5f35960e26b209e1b6c213096c",
+  "lean_commit": "90b1df2e",
+  "native_parent": "research/kernite_training/native at eca86f4; source hashes verified after its independent commit",
+  "parent_source_sha256": {
+    "attention.rs": "a8ccd3a116215e4ff3ebfa885182039a1153acf13fb5891f878fdb77dbfddf0e",
+    "engine.rs": "3b7976af050b0c933f11d6e2c3b1f8d93ef1fa8b40c9f95eb8e7d2aab5e0f338",
+    "gemm.rs": "6c3f4260223df0316b2403d5545a7f8f0ee05c59d09c8bff4bcf59def737540b",
+    "main.rs": "810741a2a542bc557c43379cd6ae5cf80d04f933b1f9c92daf98767dceb4d05d",
+    "ops.rs": "771254039a4e038cdfa7a9a5c9c5581a9422449304fc9f30ba8622b1a59497cd",
+    "tests.rs": "5b4400e11eb26db599df7b7a0f0e5a5f78c4d29ad6984d75be1397032303882b",
+    "microgpt/random.rs": "2c06c6bf6a664c4970ac4d4af511874e49f3d924cdd2d24aa9d77685aaf9f892"
+  },
+  "deviations": [
+    "Complex-linear parameter tying and canonical gradient contraction",
+    "Radial gated diagonal/complex product controls",
+    "Coordinate AdamW versus pair-mean second-moment AdamW",
+    "Native microgpt RNG for fresh model and sampler controls",
+    "Scalar FP64 Rust oracle and native checks; no Python runtime",
+    "In-memory history with 500-epoch persistence and finite pilot time caps"
+  ]
+}
