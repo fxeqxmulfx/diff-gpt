@@ -110,3 +110,126 @@ Remove STOP and use the same cell arguments with resume instead of cell.
 Only clean stopped cells can resume; existing cells are never overwritten.
 An unclean work window refuses silent replay. Parameters, both moments, history,
 sampler position, hashes and a compile-time source snapshot accompany each run.
+
+The user subsequently authorized testing this model on 2026-11-07. See
+QUEUED_STUDY.txt: run-after-ffn.sh schedules all420 cells after the current
+210-cell complex_ffn_suite finishes and is audited. Runtime status is in
+/home/misha/python_projects/gpt/runs/complex-geometry-suite/queue-state.json.
+The independent native audit writes results/audit.json and results/audit.tsv.
+
+All420 cells subsequently completed and passed the integrity audit. Long passes:
+real-product23/30, complex-linear29/30, complex-hermitian29/30, phase25/30;
+all arms passed75/75 short. The user's fourth-power seed1 weight inspection is
+in diagnostic/ and results/pow4-diagnosis.txt. It preserves the frozen results.
+
+The subsequently authorized matched continuation of failed Hermitian pow4 seed1
+is complete:1000 additional epochs per arm, identical initial state and samples.
+LR0.0002 reduces final200 accuracy standard deviation from3.2312 to0.04723
+percentage points versus LR0.002, but neither reaches99%. Final held-out
+accuracies are97.7683% and97.7258%. This isolates a strong sensitivity to the
+whole AdamW step, including its LR-scaled decay; it does not localize a faulty
+block or change the frozen benchmark. See results/pow4-lr-continuation.txt,
+the audited JSON, paired TSV and SVG/PNG learning curves.
+
+The subsequent raw-weight diagnosis reads all six continuation states and
+checks inference-only block substitutions. It finds no exploding saved weights;
+stored momentum is locally uphill in every block at the weak +500 snapshot.
+A separate precision oracle confirms severe loss/gradient cancellation at the
+high-confidence lower-LR endpoint, including lost target derivatives on3628/4704
+training examples. It does not yet establish the cause of the earlier crashes
+or a convergence fix. See results/pow4-raw-diagnosis.txt and its complete raw,
+intervention and precision artifacts. Frozen kernels and outcomes are preserved.
+
+The requested gradient fix and stress audit are complete. The separate
+diagnostic candidate fixes softmax target-gradient/loss cancellation and an
+XSA Q/K adjoint cancellation found by the stress suite. All18 saved pow4
+checkpoints pass complete-split rechecks with bitwise-identical logits and
+predictions. Lost target derivatives at the lower-LR endpoint fall3628 to0.
+Independent FP64 AD checks pass42 model cases and1477 parameter-direction
+checks, plus28 primitive rows and five local adjoints. The first failing
+head-width128 case is retained; FP64 XSA accumulation fixes it without changing
+the original tolerances. See results/pow4-fixed-loss.txt and
+results/gradient-path-stress.txt. No new training or convergence claim is made.
+
+The subsequent corrected-gradient sum-pow4 seed1 rerun is complete and audited.
+Identical initial weights, zero moments, sample order and100000-update budget:
+best98.2784%, final93.9426%, train100%;99% remains unreached. Original best/final
+were98.2572%/90.6057%. All12 retained epochs passed raw-state and full-split
+gradient inspection. At the weak4000-epoch state, saved directions oppose the
+training gradient in all8 blocks and FFN historical relative steps reach0.81%;
+weights remain finite and normalization/projection checks are healthy. This
+suggests a targeted optimizer-update diagnostic, not an established causal fix.
+See results/pow4-fixed-grad-seed1.txt, paired curves and pow4-fixed-grad-epochs-01.
+
+The subsequent actual next-update diagnostic confirms a harmful momentum
+direction at the corrected epoch4000 checkpoint: normal AdamW raises full-train
+CE 27.5657%, and one tenth LR still raises it 2.1431%. Resetting only the first
+moment at equal displacement norm lowers CE 10.0749%, with all eight blocks'
+gradient/displacement products becoming negative. All eight disposable branches
+pass independent scalar optimizer checks and input-state preservation audits.
+Norms, residual connections and tied weights remain identical. This isolates
+a local optimizer-state effect; it does not establish a long-run fix or compare
+alternative normalizers/residuals. See results/pow4-next-update.txt and the full
+pow4-next-update-01 artifacts. No sustained continuation was performed.
+
+The subsequently authorized500-epoch continuation is complete: keep moments
+versus resetting only m once, with identical epoch4000 state, LR and batches.
+Neither reaches99%. Best held-out is98.2147%/98.1084%; final98.1722%/90.4145%;
+final200 mean94.1218%/91.6777% (keep/reset). The local one-step reset benefit
+does not persist as a better trajectory. All501 control observations and final
+p/m/v bytes reproduce the original interval. Full subgroup curves, validation,
+source and state references: results/pow4-momentum-500.txt.
+
+The requested flat-spectrum reread finds a source distinction: the latest Lean
+CP bridge covers plain complex multiplication; our FFN has a radial gate.
+That suggests a single-gate ablation, not a proved convergence fix. Its recovery
+and margin hypotheses do not imply AdamW discovers the required features.
+A Rust arithmetic check also shows the quartic task has an available rank-four
+scalar label readout; its existence does not prove learned classification.
+See results/pow4-flat-spectrum-ffn-review.txt and pow4-spectrum-review.rs/.json.
+At that review stage no plain-product transformer experiment had run; the
+subsequently authorized single-gate ablation is recorded below.
+
+The plain-product seed1 ablation completed100000 matched updates and passed its
+audit. Best held-out98.8098% exceeds corrected radial98.2784%, but neither
+reaches99%; final90.0531% versus93.9426%. At the plain peak, off-diagonal accuracy
+is4633/4663 (99.3566%), while held-out diagonals are16/42 and training is100%.
+Oscillations remain; the largest one-observation drop is26.865 percentage points.
+All12 retained states replay and all5265 observations match control exposure.
+The numerical preflight passes40 plain cases,3 radial controls,1534 parameter
+directions,32 product rows and6 local adjoints. The wide-head precision fix is
+inactive for this four-head32 training comparison. See results/pow4-plain-ffn.txt,
+the full curves/JSON and results/plain-ffn-stress.txt. This remains a single known-
+miss diagnostic; norms/residuals/tied weights and frozen results are retained.
+
+The subsequent diagonal/Lean review identifies an attention mechanism: equal
+values have ordinary attention y=v but Hermitian XSA cancels that value. Native
+first/shared-prefix suppression preserves this cancellation. The plain product
+itself does not cancel equal nonzero factors. Checked algebra, the new answer-
+class theory, caveats and the recommended ordinary-attention ablation are in
+results/pow4-diagonal-lean-review.txt. No no-XSA training has run; this is a
+specific hypothesis rather than a demonstrated explanation of the99% failure.
+
+The subsequently authorized ordinary-attention ablation reaches99.0011%
+(4658/4705) at2648 epochs/50312 updates and stops atfirst99. It retains the
+plain FFN, norms,residual scale,tied weights,QK/RoPE and SSMax. Held-out diagonals
+are32/42; the matched-window XSA best has10/42 and equal non-diagonal correctness
+(4626/4663). XSA never reaches99 in100000 updates. All7 retained states replay,
+2649 observations pair by exposure, and full preflight/provenance checks pass.
+The run still oscillates and does not establish sustained99% or universal
+superiority. See results/pow4-no-xsa.txt, exact statistics,validation JSON and
+full SVG/PNG/TSV curves. Frozen benchmark and the stopped capacity queue remain.
+
+The user-requested causal adaptation of arXiv:2410.07799v3 is rejected for this
+seed1 comparison. Pure prefix centering peaks at4.1870% and ends at2.9968%
+held-out accuracy after100000updates. At the ordinary control's50312-update
+99.0011% crossing,centering scores3.2306%,with1/42 diagonals versus32/42.
+Non-diagonal generalization also fails,despite100% training at the peak.
+The Lean proof establishes attention-path cancellation,not full-model
+impossibility. The passing Rust/Kernite preflight includes37 models,4 ordinary
+regressions,1480 parameter directions and30624 primitive coordinates; two
+precision failures were fixed and preserved. All12 saved states replay and all
+provenance checks pass. Control comparisons use only2649 common observations.
+See results/pow4-centering.txt,complete curves,validation and Lean certificates.
+The ordinary model remains the incumbent for this comparison; frozen benchmarks
+and the stopped capacity queue remain unchanged.

@@ -1,0 +1,73 @@
+Transformer gradient-path stress audit, 2026-11-08
+
+The corrected diagnostic candidate passes42/42 model cases,1477/1477
+directional derivative checks across378 parameter-block instances,28/28
+primitive rows and5/5 targeted local adjoints. Rust and Kernite only.
+Full results: gradient-path-stress-02/summary.json and protocol.json.
+The initial failure remains recorded in gradient-path-stress-01/summary.json.
+
+Coverage
+Independent scalar FP64 forward-mode automatic differentiation checks tied
+embedding/readout gradients, embedding and Peri-RMS, complex-linear Q/K/V/O,
+QK RMS, RoPE, causal SSMax, Hermitian XSA, radial complex-product FFN, both
+residual paths, shared repeated-token prefixes and masked cross-entropy.
+Real/SwiGLU and real-product controls also pass. No GPU backward formula is
+reused by the AD oracle; its attention reference directly projects attended
+values rather than reusing the native centered-delta algebra.
+
+There are24 synthetic cases and18 saved pow4 checkpoint cases. Synthetic
+widths are64/128/256, depths1/2/4, head widths16/32/128, sequence lengths1--128.
+Stressors include all-masked targets, batch tails, constant prefixes, tiny
+embeddings, tiny/large QK, zero/clipped/small V, tiny/large product inputs,
+zero branch outputs and highly confident logits. Checkpoint cases use the
+fixed training indices0, floor(n/3), floor(2n/3).
+
+Every parameter block receives two deterministic dense unit directions,
+its largest-gradient coordinate and its normalized gradient direction; the
+last is omitted when the gradient is zero. Complex matrices use independent
+real/imaginary owner coordinates with the required mirrored directions.
+The original acceptance bound is5e-4 times the native independent-coordinate
+block-gradient norm, plus1e-12. The worst check uses79.13% of that bound.
+This bound was fixed before the initial failure and was not changed.
+
+Primitive checks cover3136 RMS input coordinates and476 complex-product input
+coordinates, including exact zero, large radial inputs and tiny epsilon-scale
+inputs. The targeted local AD trace covers2560 input-gradient coordinates
+through Peri-RMS, the output projection and Q/K/V attention adjoints.
+The corrected loss has a separate312-row,17784-gradient-entry CUDA stress test
+with confidence gaps, vocabulary tails, masks and additive logit shifts.
+
+New issue discovered and fixed
+The initial run passed41/42 cases; only the gradient-aligned Q and K directions
+failed for width128, one head, repeated initial tokens. Relative end-to-end
+error was about0.2835%; the other1475 directional checks passed. This is a
+nearly scale-invariant path: Peri-RMS cancels most attention-scale dependence,
+so the remaining derivative is especially sensitive to cancellation.
+
+An independent local VJP at the actual native inputs isolates an additional
+roundoff problem inside the XSA query adjoint. Q and K relative errors were
+0.00322975, while the Peri-RMS and projection vector adjoints already agreed
+with their local references to2.70e-8 and1.94e-7. This is not evidence against
+Peri-normalization, embedding normalization or tied weights.
+
+diagnostic/src/stable_attention.rs evaluates the existing query-adjoint
+geometry and reductions in FP64 and writes the existing FP32 output buffers.
+It is an opt-in candidate; frozen native/ sources and original kernels remain.
+Local Q and K errors fall to2.55099e-8 and3.28901e-8, and V to5.41182e-8.
+The full-model Q derivative is2.1146020e-5 versus2.1137654e-5 in the independent
+FP64 model: about0.0396% relative difference, within the original0.05% bound.
+The separate corrected-loss kernel is also enabled for this final audit.
+Both kernel PTX hashes and the exact diagnostic sources are archived with it.
+
+Limits and preservation
+These are finite numerical checks, not a proof for every weight, individual
+parameter direction, tensor magnitude or nondifferentiable clipping boundary.
+The remaining discrepancy in the weakest direction reflects FP32 boundaries;
+local FP64 reductions do not make the entire model FP64. No speed claim is
+made for the corrected adjoint. Gradient correctness does not establish
+generalization or prove the cause of earlier held-out oscillations.
+
+All18 input checkpoint binaries are unchanged; no optimizer updates were run.
+The complete-split checkpoint audit is reported in pow4-fixed-loss.txt.
+Eleven CPU unit tests, the isolated CUDA loss test, Clippy and formatting pass.
+The original420-cell benchmark and its29/30 complex-arm outcome are preserved.

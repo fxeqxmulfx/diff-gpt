@@ -1,0 +1,49 @@
+Complex geometry transformer, native Rust/Kernite
+
+Build a separate candidate while the existing complex_ffn_suite trains.
+Keep the radial-gated product sigma(sqrt(|g|^2+f32::EPSILON))*g*u/sqrt(2).
+Four arms use identical real width, hidden width, head count and depth:
+  real-product: unrestricted real projections, real XSA (fresh control).
+  complex-linear: complex-linear projections, real XSA (projection ablation).
+  complex-hermitian: complex-linear projections, Hermitian XSA (candidate).
+  complex-hermitian-phase: same candidate with paired-variance AdamW.
+
+Complex vectors use half-split real/imaginary coordinates within each head.
+FFN gate and value each use one half-split complex vector. Every learned
+projection is expanded from A+iB as [[A,-B],[B,A]] in the appropriate layout.
+Embedding entries are free complex coordinates. Readout is Re<E_y,x>.
+RMS retains the original real-coordinate scale: sqrt(eps+sum |z|^2/(2m)).
+Q/K RMS, complex RoPE, real Hermitian attention scores, SSMax log(N)/D,
+and 1/sqrt(2*layers) residual scaling after each branch RMS are unchanged.
+Hermitian XSA is a-v*<v,a>/max(||v||,1e-12)^2, zero on the first query;
+the constant-prefix centering/guard is retained with the same clipped norm.
+Above the clip it removes the entire complex line spanned by v, including iv.
+
+Ordinary coordinate AdamW for the first three arms. The fourth uses one second
+moment per complex pair, driven by (g_real^2+g_imag^2)/2; first moments remain
+complex. This is covariant under rotations of each parameter's complex axes.
+It does not assert invariance under arbitrary mixing of channels or convergence.
+All arms use betas(.9,.98), epsilon1e-8, decay.1, warmup50,
+LR twice the frozen task rate. Contract expanded gradients BEFORE moments,
+then reconstruct exact block constraints. Complex arms share initialization.
+All arms share the frozen sampler. Fixed dimensions are NOT parameter matched:
+complex projection matrices have half as many independent real parameters.
+Record independent and expanded counts. No learning-rate or hidden-width tuning.
+
+All 35 frozen tasks, data hashes, budgets and observation cadence are retained;
+seeds0/1/2, 25 short then10 long, 420 cells if the full cohort is requested.
+Long tasks are diagnostic, not a tuning set. One native sequence engine handles
+both arithmetic and longer sequences. Every miss/error remains in reports.
+Save buffered observations and parameters/moments every500 complete epochs,
+plus initialization, first99 crossing, budget end or clean stop. Never save
+on every epoch. Abrupt execution windows require investigation, not silent replay.
+No competing full cohort is launched as part of this build request.
+
+This is an experimental architecture, not a theorem of optimality or convergence.
+The quadratic product changes global phase by twice the angle; residual addition
+therefore does NOT make the whole model globally phase-equivariant. RMS, real
+scores and radial gates are nonholomorphic, real-differentiable complex operations.
+The flat-spectrum Lean bridge is conditional and does not establish this
+attention rule or guarantee that AdamW learns any specific modular task.
+
+No Python execution. Source and original snapshot hashes accompany the build.

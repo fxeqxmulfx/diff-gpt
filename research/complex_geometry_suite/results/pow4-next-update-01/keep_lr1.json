@@ -1,0 +1,492 @@
+{
+  "batch_gradient_sha256": "f816dd7bd60e62b11cf5a04778d0d470740e36355fe382f47680d7abf6c8d485",
+  "branch": "keep_lr1",
+  "changes": {
+    "batch": {
+      "exact_after": 256,
+      "exact_before": 256,
+      "loss_after": 0.00247565594004584,
+      "loss_before": 0.0036125662697799044,
+      "loss_change": -0.0011369103297340644,
+      "relative_loss_change": -0.31470988899072305
+    },
+    "train": {
+      "exact_after": 4689,
+      "exact_before": 4693,
+      "loss_after": 0.011399997098821979,
+      "loss_before": 0.008936566669830419,
+      "loss_change": 0.00246343042899156,
+      "relative_loss_change": 0.27565736596673385
+    },
+    "validation": {
+      "exact_after": 4298,
+      "exact_before": 4316,
+      "loss_after": 0.315735225782263,
+      "loss_before": 0.3033275321927752,
+      "loss_change": 0.01240769358948779,
+      "relative_loss_change": 0.040905266659415185
+    }
+  },
+  "effective_lr": 0.0020000000949949026,
+  "geometry": {
+    "batch_gradient_dot_displacement": -0.0025769314838880604,
+    "batch_train_gradient_cosine": 0.13578291756081015,
+    "blocks": [
+      {
+        "batch_gradient_dot_displacement": -0.000797804827887474,
+        "batch_train_gradient_cosine": 0.10266389973386313,
+        "block": "embedding_readout",
+        "descent_alignment_batch": 0.19450793831352184,
+        "descent_alignment_train": -0.08356285190102111,
+        "displacement_l2": 0.04636597992187801,
+        "relative_displacement_l2": 0.0029624521273556473,
+        "train_gradient_dot_displacement": 0.0003638169983584517
+      },
+      {
+        "batch_gradient_dot_displacement": -0.00004950058935163536,
+        "batch_train_gradient_cosine": 0.09810297911614829,
+        "block": "Q",
+        "descent_alignment_batch": 0.15841178920421423,
+        "descent_alignment_train": -0.1197463524069755,
+        "displacement_l2": 0.0422132274207041,
+        "relative_displacement_l2": 0.00555745366148574,
+        "train_gradient_dot_displacement": 0.000040506388853147925
+      },
+      {
+        "batch_gradient_dot_displacement": -0.00008116204138911968,
+        "batch_train_gradient_cosine": 0.16526768736994568,
+        "block": "K",
+        "descent_alignment_batch": 0.23613009027303342,
+        "descent_alignment_train": -0.13471499100376705,
+        "displacement_l2": 0.04459326111460431,
+        "relative_displacement_l2": 0.005872816894853081,
+        "train_gradient_dot_displacement": 0.00004119405172671192
+      },
+      {
+        "batch_gradient_dot_displacement": -0.0005014716259187078,
+        "batch_train_gradient_cosine": 0.13361683815489014,
+        "block": "V",
+        "descent_alignment_batch": 0.15005160039119975,
+        "descent_alignment_train": -0.15804230691776927,
+        "displacement_l2": 0.04716067555584413,
+        "relative_displacement_l2": 0.006168895569085139,
+        "train_gradient_dot_displacement": 0.0004071557198168359
+      },
+      {
+        "batch_gradient_dot_displacement": -0.0003906112148088914,
+        "batch_train_gradient_cosine": 0.23046636480327223,
+        "block": "attention_output",
+        "descent_alignment_batch": 0.1238108242385877,
+        "descent_alignment_train": -0.18406993528264456,
+        "displacement_l2": 0.04882802697250993,
+        "relative_displacement_l2": 0.006257828684749269,
+        "train_gradient_dot_displacement": 0.0005255863386641222
+      },
+      {
+        "batch_gradient_dot_displacement": -0.0002847567090544415,
+        "batch_train_gradient_cosine": 0.11217178830505796,
+        "block": "ffn_gate",
+        "descent_alignment_batch": 0.10561607668590198,
+        "descent_alignment_train": -0.07831517898861189,
+        "displacement_l2": 0.07692776893526207,
+        "relative_displacement_l2": 0.007410886438544863,
+        "train_gradient_dot_displacement": 0.00022785929215171288
+      },
+      {
+        "batch_gradient_dot_displacement": -0.0003092958783420555,
+        "batch_train_gradient_cosine": 0.12515668474687447,
+        "block": "ffn_value",
+        "descent_alignment_batch": 0.09235111702036616,
+        "descent_alignment_train": -0.06481996380020645,
+        "displacement_l2": 0.07716121655067563,
+        "relative_displacement_l2": 0.007422749900082719,
+        "train_gradient_dot_displacement": 0.00016562157617330817
+      },
+      {
+        "batch_gradient_dot_displacement": -0.00016232859713573503,
+        "batch_train_gradient_cosine": 0.13907400237007356,
+        "block": "ffn_output",
+        "descent_alignment_batch": 0.08692744544277611,
+        "descent_alignment_train": -0.06623563160748254,
+        "displacement_l2": 0.07506063609074548,
+        "relative_displacement_l2": 0.00686774990988577,
+        "train_gradient_dot_displacement": 0.00008265133493198971
+      }
+    ],
+    "descent_alignment_batch": 0.10654201747404154,
+    "descent_alignment_train": -0.08224082304766218,
+    "displacement_l2": 0.1674349402019108,
+    "train_gradient_dot_displacement": 0.0018543917006762804
+  },
+  "global_completed_before_update": 76000,
+  "identical_input_parameters_and_batch_gradient": true,
+  "lr_scale": 1.0,
+  "matched_displacement_relative_error": null,
+  "moment_policy": "keep",
+  "native_optimizer_updates": 1,
+  "optimizer_completed_before_update": 76000,
+  "passed": true,
+  "restart_lr_warmup": false,
+  "scalar_optimizer_reference": {
+    "bias_correction_completed": 76000,
+    "effective_lr_f32": 0.0020000000949949026,
+    "first_failures": [],
+    "independent_coordinates": 110848,
+    "max_abs_error_parameter_m_v": [
+      6.739335267624824e-8,
+      2.6193447411060333e-10,
+      2.1395659549616752e-11
+    ],
+    "max_fraction_of_bound_parameter_m_v": [
+      0.14447582134950868,
+      0.028056081188463297,
+      0.06575358571839547
+    ],
+    "passed": true
+  },
+  "scores": {
+    "batch": {
+      "accuracy": 1.0,
+      "exact": 256,
+      "examples": 256,
+      "loss": 0.00247565594004584
+    },
+    "train": {
+      "balanced_accuracy": 0.9968935483935095,
+      "classes": {
+        "0": {
+          "accuracy": 1.0,
+          "correct": 52,
+          "count": 52,
+          "name": "0"
+        },
+        "1": {
+          "accuracy": 0.9948717948717949,
+          "correct": 194,
+          "count": 195,
+          "name": "1"
+        },
+        "16": {
+          "accuracy": 1.0,
+          "correct": 220,
+          "count": 220,
+          "name": "16"
+        },
+        "22": {
+          "accuracy": 1.0,
+          "correct": 211,
+          "count": 211,
+          "name": "22"
+        },
+        "24": {
+          "accuracy": 1.0,
+          "correct": 209,
+          "count": 209,
+          "name": "24"
+        },
+        "33": {
+          "accuracy": 0.9841269841269841,
+          "correct": 186,
+          "count": 189,
+          "name": "33"
+        },
+        "35": {
+          "accuracy": 1.0,
+          "correct": 172,
+          "count": 172,
+          "name": "35"
+        },
+        "36": {
+          "accuracy": 0.9947368421052631,
+          "correct": 189,
+          "count": 190,
+          "name": "36"
+        },
+        "4": {
+          "accuracy": 0.9895287958115183,
+          "correct": 189,
+          "count": 191,
+          "name": "4"
+        },
+        "43": {
+          "accuracy": 1.0,
+          "correct": 186,
+          "count": 186,
+          "name": "43"
+        },
+        "47": {
+          "accuracy": 0.9947089947089947,
+          "correct": 188,
+          "count": 189,
+          "name": "47"
+        },
+        "50": {
+          "accuracy": 1.0,
+          "correct": 189,
+          "count": 189,
+          "name": "50"
+        },
+        "54": {
+          "accuracy": 1.0,
+          "correct": 187,
+          "count": 187,
+          "name": "54"
+        },
+        "6": {
+          "accuracy": 1.0,
+          "correct": 188,
+          "count": 188,
+          "name": "6"
+        },
+        "61": {
+          "accuracy": 0.9848484848484849,
+          "correct": 195,
+          "count": 198,
+          "name": "61"
+        },
+        "62": {
+          "accuracy": 1.0,
+          "correct": 194,
+          "count": 194,
+          "name": "62"
+        },
+        "64": {
+          "accuracy": 0.9947916666666666,
+          "correct": 191,
+          "count": 192,
+          "name": "64"
+        },
+        "73": {
+          "accuracy": 1.0,
+          "correct": 184,
+          "count": 184,
+          "name": "73"
+        },
+        "75": {
+          "accuracy": 1.0,
+          "correct": 215,
+          "count": 215,
+          "name": "75"
+        },
+        "81": {
+          "accuracy": 0.9947916666666666,
+          "correct": 191,
+          "count": 192,
+          "name": "81"
+        },
+        "88": {
+          "accuracy": 0.9951690821256038,
+          "correct": 206,
+          "count": 207,
+          "name": "88"
+        },
+        "9": {
+          "accuracy": 0.9947643979057592,
+          "correct": 190,
+          "count": 191,
+          "name": "9"
+        },
+        "91": {
+          "accuracy": 1.0,
+          "correct": 194,
+          "count": 194,
+          "name": "91"
+        },
+        "93": {
+          "accuracy": 1.0,
+          "correct": 199,
+          "count": 199,
+          "name": "93"
+        },
+        "96": {
+          "accuracy": 1.0,
+          "correct": 170,
+          "count": 170,
+          "name": "96"
+        }
+      },
+      "correct": 4689,
+      "exact": 4689,
+      "example_count": 4704,
+      "example_loss": 0.011399997098821979,
+      "examples": 4704,
+      "loss": 0.011399997098821979,
+      "sequence_accuracy": 0.9968112244897959,
+      "target_count": 4704,
+      "targets": 4704,
+      "token_accuracy": 0.9968112244897959,
+      "transition_accuracy": null,
+      "transition_count": 0
+    },
+    "validation": {
+      "balanced_accuracy": 0.9152622492519856,
+      "classes": {
+        "0": {
+          "accuracy": 0.9777777777777777,
+          "correct": 44,
+          "count": 45,
+          "name": "0"
+        },
+        "1": {
+          "accuracy": 0.9378238341968912,
+          "correct": 181,
+          "count": 193,
+          "name": "1"
+        },
+        "16": {
+          "accuracy": 0.8988095238095238,
+          "correct": 151,
+          "count": 168,
+          "name": "16"
+        },
+        "22": {
+          "accuracy": 0.96045197740113,
+          "correct": 170,
+          "count": 177,
+          "name": "22"
+        },
+        "24": {
+          "accuracy": 0.9162011173184358,
+          "correct": 164,
+          "count": 179,
+          "name": "24"
+        },
+        "33": {
+          "accuracy": 0.678391959798995,
+          "correct": 135,
+          "count": 199,
+          "name": "33"
+        },
+        "35": {
+          "accuracy": 0.9490740740740741,
+          "correct": 205,
+          "count": 216,
+          "name": "35"
+        },
+        "36": {
+          "accuracy": 0.9595959595959596,
+          "correct": 190,
+          "count": 198,
+          "name": "36"
+        },
+        "4": {
+          "accuracy": 0.8883248730964467,
+          "correct": 175,
+          "count": 197,
+          "name": "4"
+        },
+        "43": {
+          "accuracy": 0.9554455445544554,
+          "correct": 193,
+          "count": 202,
+          "name": "43"
+        },
+        "47": {
+          "accuracy": 0.9447236180904522,
+          "correct": 188,
+          "count": 199,
+          "name": "47"
+        },
+        "50": {
+          "accuracy": 0.9447236180904522,
+          "correct": 188,
+          "count": 199,
+          "name": "50"
+        },
+        "54": {
+          "accuracy": 0.9502487562189055,
+          "correct": 191,
+          "count": 201,
+          "name": "54"
+        },
+        "6": {
+          "accuracy": 0.945,
+          "correct": 189,
+          "count": 200,
+          "name": "6"
+        },
+        "61": {
+          "accuracy": 0.9526315789473684,
+          "correct": 181,
+          "count": 190,
+          "name": "61"
+        },
+        "62": {
+          "accuracy": 0.9381443298969072,
+          "correct": 182,
+          "count": 194,
+          "name": "62"
+        },
+        "64": {
+          "accuracy": 0.8979591836734694,
+          "correct": 176,
+          "count": 196,
+          "name": "64"
+        },
+        "73": {
+          "accuracy": 0.946078431372549,
+          "correct": 193,
+          "count": 204,
+          "name": "73"
+        },
+        "75": {
+          "accuracy": 0.8901734104046243,
+          "correct": 154,
+          "count": 173,
+          "name": "75"
+        },
+        "81": {
+          "accuracy": 0.7908163265306123,
+          "correct": 155,
+          "count": 196,
+          "name": "81"
+        },
+        "88": {
+          "accuracy": 0.8287292817679558,
+          "correct": 150,
+          "count": 181,
+          "name": "88"
+        },
+        "9": {
+          "accuracy": 0.934010152284264,
+          "correct": 184,
+          "count": 197,
+          "name": "9"
+        },
+        "91": {
+          "accuracy": 0.9072164948453608,
+          "correct": 176,
+          "count": 194,
+          "name": "91"
+        },
+        "93": {
+          "accuracy": 0.9947089947089947,
+          "correct": 188,
+          "count": 189,
+          "name": "93"
+        },
+        "96": {
+          "accuracy": 0.8944954128440367,
+          "correct": 195,
+          "count": 218,
+          "name": "96"
+        }
+      },
+      "correct": 4298,
+      "exact": 4298,
+      "example_count": 4705,
+      "example_loss": 0.315735225782263,
+      "examples": 4705,
+      "loss": 0.315735225782263,
+      "sequence_accuracy": 0.9134962805526036,
+      "target_count": 4705,
+      "targets": 4705,
+      "token_accuracy": 0.9134962805526036,
+      "transition_accuracy": null,
+      "transition_count": 0
+    }
+  },
+  "state_file": "keep_lr1.bin",
+  "state_layout": "parameters, first moment, second moment; f32 little endian",
+  "state_sha256": "0276267cfe49e87214ff53b637cf7736cf000fa3cacd6d676a0cf0bb3830dc63"
+}

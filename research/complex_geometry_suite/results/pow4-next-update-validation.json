@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "expanded_parameters": 209280,
+  "branches": 8,
+  "state_sha256_and_size_checks": true,
+  "lr_only_m_and_v_byte_identical": true,
+  "first_moment_reset_preserves_v_bytes": true,
+  "norm_matching_preserves_m_and_v_bytes": true,
+  "identical_preupdate_parameters_and_batch_gradient": true,
+  "scalar_adamw_coordinates": 886784,
+  "scalar_adamw_parameter_m_v_comparisons": 2660352,
+  "scalar_adamw_checks": true,
+  "maximum_fraction_of_predeclared_error_bound": 0.26728101468286314,
+  "maximum_norm_match_relative_error": 0.00000515551311042195,
+  "input_artifacts_unchanged": true,
+  "release_cpu_tests": {
+    "passed": 12,
+    "failed": 0,
+    "ignored_cuda": 1
+  },
+  "clippy_all_targets_deny_warnings": true,
+  "rustfmt_check": true,
+  "diagnostic_optimizer_updates": 8,
+  "continuation_training_updates": 0,
+  "python_invoked": false,
+  "limits": "one historical state and one next batch; neither sustained training nor universal convergence is established"
+}

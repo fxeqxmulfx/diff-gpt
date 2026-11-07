@@ -1,0 +1,20 @@
+   Compiling complex-weight-diagnostic v0.1.0 (/home/misha/python_projects/gpt/research/complex_geometry_suite/diagnostic)
+error: in `coefficients::<16>`: a label takes no predicate: control arrives there whatever it holds
+   --> src/centered_attention.rs:159:13
+    |
+159 |             label(delta_sum);
+    |             ^^^^^
+
+error: in `coefficients::<32>`: a label takes no predicate: control arrives there whatever it holds
+   --> src/centered_attention.rs:159:13
+    |
+159 |             label(delta_sum);
+    |             ^^^^^
+
+error: in `coefficients::<128>`: a label takes no predicate: control arrives there whatever it holds
+   --> src/centered_attention.rs:159:13
+    |
+159 |             label(delta_sum);
+    |             ^^^^^
+
+error: could not compile `complex-weight-diagnostic` (bin "complex-weight-diagnostic" test) due to 3 previous errors

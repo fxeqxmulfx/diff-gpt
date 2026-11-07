@@ -1,0 +1,46 @@
+Plain complex-product FFN ablation, declared before training
+
+User authorized the proposed next architectural test: remove only the radial
+sigmoid gate. Replace sigma(sqrt(|g|^2+eps))*g*u/sqrt(2) with g*u/sqrt(2).
+Keep complex-linear projections and their parameter ownership, initialization,
+Peri/embedding RMS, Hermitian XSA, corrected loss and XSA adjoint, QK RMS,
+SSMax 1/d, RoPE, post-RMS residual scaling and tied embedding/readout unchanged.
+Keep the variance factor1/sqrt(2); no affine parameters, biases or new weights.
+Frozen native sources and the original results are never edited.
+
+First validate the new forward/backward Kernite kernels against independent
+FP64 scalar differentiation. Primitive cases cover zero/tiny/ordinary/large
+and mixed-scale inputs, multiple rows, awkward widths and guarded launch tails.
+Full-model stress reuses all compatible complex synthetic cases (width64--256,
+depth1--4, sequence lengths1--128, masks, repeated prefixes, clipped/tiny/large
+branches) and every retained corrected radial checkpoint, using three fixed
+examples for each saved-state derivative probe. Include radial regression cases.
+Bounds remain: full-model logits5e-5 of scale, loss5e-5 relative, directional
+error5e-4 of independent-coordinate block-gradient norm plus1e-12; primitive
+forward/backward relative errors at most5e-6. Preserve all failed attempts.
+No training until the complete predeclared stress suite passes. Archive the
+stress source/PTX fingerprint and require training to use that exact source.
+
+Training: existing (a+b)^4 mod97, seed1, width128, heads4, depth1. Start from
+the exact original initial parameters with zero moments. The audited corrected
+radial run, runs/complex-pow4-fixed-grad-seed1-01, supplies the matched control.
+Use the same complete100000-update sampler, LR.002, betas(.9,.98), eps1e-8,
+decay.1, warmup50 including its zero-LR first update, and batch256/tail96.
+The training split has4704 examples and held-out4705. Stop at first observed
+held-out exact>=99%,100000updates, or explicit STOP. Observe complete splits
+every19 updates, plus initialization/final tail; record diagonal/non-diagonal
+scores. Save buffered history and p/m/v at initialization, every500 epochs,
+first99, and completion/clean stop. Refuse overwrite and silent replay.
+
+Audit initial/sampler/source/PTX hashes, first zero-rate parameter invariance
+and moment insertion, checkpoint cadence, full history/exposure, subgroup
+accounting, complex constraints and full-split retained-state replays. Preserve
+all original and corrected-control files byte-for-byte. Report all outcomes,
+first99, peak/final metrics and full paired curves; if stopping times differ,
+compare only matched exposure and identify censoring.
+
+This is one targeted mechanism diagnostic on an already observed long-task
+miss, not universal-model selection. No LR/depth/width search or additional
+seeds. A later universal candidate still needs the frozen short-suite selection
+and prescribed long regression. No convergence theorem is inferred from the
+conditional Rotate90 bridge. No Python. The capacity queue remains stopped.

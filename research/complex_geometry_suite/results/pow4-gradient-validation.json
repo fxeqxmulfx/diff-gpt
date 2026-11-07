@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "training_updates": 0,
+  "python_invoked": false,
+  "frozen_native_sources_unchanged": true,
+  "corrected_checkpoint_audit": {
+    "checkpoints": 18,
+    "complete_splits": 36,
+    "lost_target_gradients": 0,
+    "false_zero_losses": 0,
+    "maximum_logit_relative_error": 3.505111177672327E-7,
+    "maximum_parameter_relative_error": 0.0000011127508537252886
+  },
+  "gradient_stress": {
+    "cases": 42,
+    "parameter_block_instances": 378,
+    "directional_checks": 1477,
+    "primitive_rows": 28,
+    "rms_coordinates": 3136,
+    "product_coordinates": 476,
+    "local_adjoints": 5,
+    "original_failed_directions": 2,
+    "original_tolerances_preserved": true
+  },
+  "tests": {
+    "cpu_passed": 11,
+    "cpu_failed": 0,
+    "cuda_loss_rows": 312,
+    "cuda_loss_gradient_entries": 17784,
+    "clippy": "passed",
+    "format": "passed"
+  },
+  "corrected_loss_ptx_sha256": "8c951b53bd58e1db803dddfac65a8ce2b309c0fa49a55383085920b586dccdc4",
+  "corrected_attention_ptx_sha256": "28382d334e8b38319b0a47d0ba6ae1e6a2976f2f2739b13bb45f76ee216a7ce5",
+  "original_ptx_sha256": "0a471ddc99eebcd21595916e7f9c7dddc2dc6418eb4fcc9ba50b13110046bf46",
+  "source_sha256": "85ea22fc79a02aa0aef0f5ee856f94f2934e5eefe396aa6eeac699c769905e1e",
+  "artifacts": [
+    "pow4-fixed-loss-02/fixed-loss.json",
+    "gradient-path-stress-02/summary.json",
+    "gradient-path-stress-02/head128-local-adjoints.json",
+    "gradient-path-stress-01/summary.json"
+  ],
+  "limitations": "Finite coordinate/direction coverage; clipping boundaries and all possible tensors are not proved; no corrected training or convergence result"
+}

@@ -1,0 +1,180 @@
+Raw-weight diagnosis: fourth-power arithmetic, Hermitian seed 1
+2026-11-08
+
+Findings
+
+The saved weights do not show an explosion or corruption. At a weak saved
+checkpoint the optimizer's historical direction is locally uphill across all
+eight parameter blocks, and the largest relative step scales are in the FFN.
+A separate, concrete loss/gradient precision defect appears after the lower-LR
+run becomes highly confident. These findings must not be conflated: the
+precision defect is large at the low-LR endpoint and negligible at the saved
+weak checkpoint. Its role in the original accuracy crashes remains unproven.
+
+What was read and tested
+
+Directly decoded little-endian FP32 parameters and both AdamW moment arrays
+from all six continuation checkpoints: both LRs at additional epochs 0, 500,
+1000. Each file has 209280 expanded weights and two equally sized moment arrays;
+the complex model has 110848 independent real parameters. Both initial states
+are bit-identical to the original exhausted checkpoint. Also read the successful
+Hermitian seed 0 and seed 2 endpoints as descriptive references, not age-matched
+controls or coordinates suitable for transplanting into seed 1.
+
+Hashes, finite values and complex ties pass. Six native full-split replays
+reproduce saved exact counts and losses, with parameters and moments unchanged.
+Then evaluated 26 in-memory block substitutions and 32 local perturbations.
+All copies were discarded; no training update or input checkpoint write occurred.
+An additional 12 split comparisons checked native loss/gradients against a
+FP64 reference applied to the exact same native FP32 logits.
+
+1. What the raw weights and moments show
+
+At +500 epochs, original LR has 91.47715% held-out accuracy and lower LR has
+98.02338%. Original-LR block statistics are:
+
+  Block                 Weight RMS    Historical step / weight norm
+  embedding/readout     0.135521      0.17312%
+  Q                     0.074169      0.32124%
+  K                     0.074387      0.33727%
+  V                     0.075284      0.33560%
+  attention output      0.077994      0.34035%
+  FFN gate              0.062806      0.41386%
+  FFN value             0.062918      0.40395%
+  FFN output            0.066362      0.37560%
+
+Historical step means LR*(m/(sqrt(v)+1e-8)+decay*w), evaluated using stored
+moments. Bias corrections are effectively one at these global steps. This is
+not the next actual minibatch update, which would first change both moments.
+
+All eight historical directions have more than 99.97% of their squared norm
+perpendicular to the block weight vector: substantial directional motion, not
+just radial shrinkage. At the weak checkpoint the largest absolute independent
+weight is embedding[flat 2927] = -0.80385667. Q/K maxima are about 0.33; FFN maxima
+about 0.34--0.36. Across all six snapshots the maximum absolute weight is
+1.04615462 in the lower-LR embedding. Exact coordinates and raw values for the
+largest weights and momentum steps are retained in raw_blocks in weights.json.
+
+The weak checkpoint's projection norms are smaller than the parent, not larger.
+Its Q/K singular-energy participation is 23.65/23.87 and FFN gate/value about
+75.61/74.59. These are continuous spectral concentration statistics, not literal
+matrix ranks. No abrupt spectral collapse is visible at this saved weak state.
+
+2. Direct local checks of the optimizer direction
+
+For each block separately, move a temporary copy by 0.1% of that block's weight
+norm along the stored optimizer descent direction, preserving complex ties.
+At the weak +500 checkpoint, every one of the eight moves increases complete
+training cross entropy; all eight reverse moves decrease it. Example:
+
+  Baseline training CE                  0.00406217149
+  Embedding move in stored direction    0.00418235443
+  Embedding reverse move                0.00395236311
+  Attention-output stored direction     0.00410544943
+  Attention-output reverse direction    0.00402053076
+
+This strengthens the diagnosis of stale/misaligned momentum at that checkpoint.
+It does not prove that the actual next optimizer step will be uphill, nor
+identify the historical crash trigger between sparse saved weight states.
+The local changes alter held-out accuracy by at most two of 4705 examples.
+
+Transplanting only Q+K from the steadier +500 model changes the weak model from
+91.47715% to 91.51966%: two examples. No individual block transplant repairs it.
+Several hybrids degrade strongly in both directions (embedding or attention
+output especially), consistent with co-adapted representations. Their failure
+is not evidence that the transplanted block is inherently defective. Copying
+all eight blocks reproduces the donor's exact complete-split scores in both
+directions, validating the transplant mechanism.
+
+3. Concrete numerical defect at high training confidence
+
+The native loss kernel in native/src/sequence_ops.rs accumulates softmax mass
+in FP32, computes the target derivative as p_target-1 (line 363), and evaluates
+loss as log(total)+max-target_logit (lines 372--375). Near probability one,
+these operations lose the small corrective signal through rounding and
+cancellation. The defect is not limited to the displayed loss value.
+
+The diagnostic computes softmax on identical FP32 logits promoted to FP64,
+sets the target derivative to -sum(non-target probabilities), and casts those
+derivatives to FP32 before using the unchanged model backward kernels.
+Both backwards leave weights and moments untouched.
+
+  Lower LR at +1000 epochs:
+    Native mean training loss              0
+    Reference mean training loss           9.64340502e-8
+    Native zero loss / positive reference  4704/4704 examples
+    Lost nonzero target-logit derivatives  3628/4704 examples
+    Logit-gradient relative L2 error       61.87594%
+
+Concrete training input (51,60), target 4: native target derivative is 0;
+the reference is -1.03164458e-7. Native other-class derivatives still sum to
++1.03164475e-7. Cross-entropy logit gradients should sum to zero because adding
+a common constant to all logits leaves the loss unchanged. The reference
+preserves that identity; the native computation loses the negative term here.
+These are unaveraged per-example derivatives; batch scaling is undone for
+this comparison.
+
+The error propagates into parameter-gradient direction. At the low-LR endpoint,
+cosines between native and corrected full-training gradients are:
+
+  embedding/readout  +0.050
+  Q                  -0.086
+  K                  -0.132
+  V                  +0.331
+  attention output   +0.021
+  FFN gate           -0.137
+  FFN value          -0.071
+  FFN output         -0.239
+
+These are tiny gradients in absolute terms, but their direction matters once
+AdamW's second moments are also tiny. At low-LR +500, every Q/K coordinate has
+sqrt(v) below AdamW epsilon 1e-8; the median is about 3.4--3.7e-10. At the weak
+original-LR checkpoint the median is about 3.5e-4 and the gradient reference
+disagrees by only roughly 2e-6 in relative parameter-gradient norm. Thus the
+precision defect is confirmed in the saturated low-LR regime, not established
+as the cause of the original weak state or previous accuracy crashes.
+
+Held-out exact classification counts are unchanged by this gradient-only
+diagnostic. Existing accuracy misses are real, not a loss-reporting artifact.
+
+4. Why the steadier run still misses 99%
+
+The lower-LR endpoint classifies every training example correctly with median
+target-versus-competitor logit margin 18.36, but still misses 105 held-out inputs.
+Only 7 of 42 held-out repeated-token inputs are correct, versus 55/55 training
+repeated-token inputs. These 35 failures are one third of the held-out errors;
+70 other errors remain. Mean margin on wrong held-out examples is -5.81.
+This is incomplete generalization with confident errors, not just jitter around
+the classification threshold.
+
+Embedding/readout Frobenius norm grows from 15.60 to 21.30 in the lower-LR
+continuation while Q/K norms shrink to about 68.38% of their starting values.
+Readout concentration changes, but the available evidence does not justify
+removing tied embeddings. Residual cancellation increases, yet saved final
+residual RMS stays at least 0.2554; no near-zero final normalization divisor
+is present on these held-out examples. Peri-RMS and embedding RMS are not
+disproved by these measurements.
+
+Action suggested by the diagnosis
+
+Before changing the architecture, make a separate corrected loss-kernel
+candidate that retains the small target gradient and avoids cancellation in
+cross entropy. Test the high-confidence regime explicitly, then compare matched
+training runs if authorized. Changing only reported loss is insufficient.
+Keep the frozen native backend, checkpoints and 29/30 benchmark outcome intact.
+The correction is not yet a proven convergence fix; no corrected-loss training
+was run in this investigation. Do not infer that a bigger model or another
+normalizer is required from the current evidence.
+
+Reproducibility and artifacts
+
+  pow4-raw-weights-01/: initial CPU tensor inspection and source archive.
+  pow4-raw-probe-01/: raw matrices, moments, spectra, complete-split probes,
+    error TSVs, all transplants and equal-norm sensitivity checks.
+  pow4-raw-precision-01/: native/reference losses and derivatives, complete
+    backward comparisons, raw examples of lost gradients and source archive.
+  Each directory has protocol.json and a passing audit.json. Canonical PTX
+    matches the frozen model. Original model source files remain unchanged.
+  Ten CPU tests pass, including binary layout, complex constraints and a
+    shift-invariant high-confidence softmax reference test; Clippy and fmt pass.
+  All work used Rust/Kernite and shell reporting. No Python was executed.

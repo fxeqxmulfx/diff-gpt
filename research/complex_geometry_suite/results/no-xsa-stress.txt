@@ -1,0 +1,73 @@
+Ordinary causal attention preflight, 2026-11-08
+
+The final preflight passes all42 ordinary-attention model cases,4 plain-XSA
+regression cases,1652 parameter-direction checks,30 primitive cases and2
+restored-path checks. Primitive coverage includes23232 input-gradient
+coordinates and144 block/directional checks. No training updates occur here.
+
+Implementation
+ordinary_attention.rs reuses the original causal SSMax probability calculation
+and overwrites its unused XSA output with the ordinary weighted value sum. Its
+anchored evaluation v_first + sum_j p_j*(v_j-v_first) preserves equal values.
+The original probability arithmetic, QK RMS, RoPE and masking are unchanged;
+probabilities naturally change when model states/weights change during training.
+The ordinary Q/score adjoint uses FP64 dot products and avoids an intermediate
+FP32 dP cast. The existing deterministic K/V accumulation is retained with
+unprojected upstream gradients and zero exclusion correction. There are no
+atomic reductions or new trainable parameters.
+
+Engine::enable_ordinary_attention initializes zero prefix flags. The forward
+does not replace those flags with XSA's guard. The attention residual includes
+first/repeated positions, and its backward uses ordinary scaling without the
+XSA-only mask. Zero flags make FFN/output sharing the identity. The default XSA
+mode is unchanged. Checkpoint replay selects attention explicitly and validates
+the ordinary PTX hash. The isolated oracle sums ordinary values directly in
+FP64, while its complete model retains every token path without XSA shortcuts.
+
+Coverage and unchanged bounds
+Primitive head widths16/32/128; lengths1/2/7/17/128; batches1/3; unequal and
+repeated values; zero,1e-13,ordinary and1e8 value scales. Every Q/K/V input
+coordinate is checked at lengths<=7. Longer cases use two dense directions,
+the largest-gradient coordinate and gradient direction per Q/K/V block.
+Input buffers, probabilities and guarded output/gradient tails stay unchanged.
+First and equal values are preserved exactly as numbers. Bounds:5e-6 of the
+relevant reference/block norm plus1e-12. The worst derivative check consumes
+only.030481 of its bound; all forward checks also pass.
+
+Full-model cases include widths64/128/256, depths1/2/4, all supported head
+widths, labels/masks/tails, repeated and128-token sequences, first-only labels,
+zero/tiny/large values and Q/K, tiny/large FFNs, zero projections, confident
+readouts and all12 retained plain-XSA states. Saved-state probes substitute
+ordinary attention only for differentiation; they do not assert preservation
+of the XSA model's predictions. Every independent parameter block is probed
+with two dense directions, its largest-gradient coordinate and its gradient
+direction when nonzero. Logit bound5e-5 of scale; relative loss bound5e-5;
+direction bound5e-4 of native independent block norm plus1e-12. The largest
+direction error consumes.012648 of that bound.
+
+The explicit repeated-two-token model case has value-projection gradient norm
+4.320649435 and attention-output gradient norm4.650483787 with ordinary
+attention. Both are exactly0 with XSA at the identical weights/examples.
+Both models' independent AD checks pass. This verifies restoration of the
+computational path; it does not establish a generalization improvement.
+
+Preserved first attempt
+no-xsa-stress-01 passes every forward/gradient error bound, every full-model
+case and both restored-path checks. Three zero-value primitive cases fail an
+overstrict first-value BIT comparison: an anchored sum canonicalizes-0 to+0,
+with exactly zero forward error. The check was corrected to exact numerical
+equality. Finite nonzero equality remains exact. No kernel, tested case or
+numerical tolerance changed. The entire suite was rerun as no-xsa-stress-02;
+both attempts retain results and full source archives. There was no training
+before the corrected complete preflight passed.
+
+Final source SHA256:
+8e8acb3416c89811df709357d8d7b0e81c8d60900e1335c5ec4d2f8403b5dce3
+Ordinary attention PTX SHA256:
+6145ad5aea58ea7c7a7b211008cd216a12450a8a3ab39fca6b67258985663150
+
+Fifteen CPU tests pass, one CUDA-only test is ignored by that CPU invocation;
+the actual GPU preflight runs separately. Strict Clippy and formatting pass.
+No Python, frozen-source changes or control-state mutations. Training is
+permitted only with the exact passed source/kernel fingerprints. Coverage is
+finite; these checks prove neither universal accuracy nor optimizer convergence.

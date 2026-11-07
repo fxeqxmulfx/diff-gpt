@@ -1,0 +1,46 @@
+Actual next-update diagnosis at sum-pow4 seed1 epoch4000
+
+User authorized the proposed next-minibatch update and smaller-step/moment-reset
+comparison. Use the retained corrected-gradient checkpoint at completed76000
+updates, epoch4000, SHA256
+ec4acff217e8b267a4947aa45a2bd409455ec9bb2c67b5264de8bdb4e7cda3d5.
+Restore its exact parameters and moments independently for every branch.
+Use the next256 training examples in its original seed10001 sample stream.
+Verify the complete100000-update sample fingerprint and archive actual indices.
+
+Retain model, Peri-RMS, embedding RMS, tied weights, corrected loss and XSA
+adjoint, AdamW betas(.9,.98), epsilon1e-8, and decay.1. No model change.
+The original current LR is0.002; warmup50 is complete.
+
+Eight one-update branches, fixed before observing counterfactual scores:
+1-4. Keep moments and Adam counter: LR scales1,0.5,0.25,0.1.
+5. Zero only the first moment; keep second moment and Adam counter; same LR.
+6. Zero both moments and use fresh Adam bias-correction counter (first update),
+   while retaining the current LR. Do not restart LR warmup.
+7-8. Repeat branches5-6 at an LR chosen ONLY to match the original branch's
+   independent-parameter displacement L2 norm. Scale LR by norm(original delta)
+   /norm(same-LR reset delta). This is magnitude matching, not loss selection.
+   Require matched norm within0.1%; retain the measured discrepancy.
+Also evaluate an unchanged-state control with no optimizer update.
+
+Primary measurements: change in complete training CE and in the selected
+minibatch CE. Secondary: held-out CE/exact accuracy, full-training gradient
+dot actual parameter displacement, per-block direction alignment and relative
+step size. Use independent complex parameter coordinates for all geometry.
+Save complete parameter/moment states of all branches in a NEW diagnostic
+directory, and scalar-reference optimizer checks and gradient fingerprints.
+Every branch must have bit-identical pre-update parameters and batch gradient.
+Unreset moment buffers must be identical where the protocols imply equality.
+
+Check every independent coordinate of the actual Kernite update against an
+independent FP64 AdamW formula with predeclared FP32 forward-error bounds:
+parameter error <=1e-6*(abs(old_parameter)+abs(expected_delta))+1e-30;
+first-moment error <=2e-6*(abs(old_m)+abs(gradient))+1e-30;
+second-moment error <=2e-6*(old_v+gradient^2)+1e-38.
+Check full model complex constraints and finite state after each update.
+
+Read-only audits protect all original run artifacts, including all retained
+checkpoints. Eight explicit disposable diagnostic updates are not a new
+training trajectory or a modification of the100000-update benchmark. Report
+all branches and failures. One batch at a weak checkpoint does not establish
+a universal optimizer choice or prove the cause of the earlier crash.

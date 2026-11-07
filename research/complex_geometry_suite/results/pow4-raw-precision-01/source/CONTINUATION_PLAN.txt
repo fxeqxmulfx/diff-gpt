@@ -1,0 +1,44 @@
+Fourth-power seed1, matched continuation test -- fixed before new training
+
+User authorized the next check after the read-only weight diagnosis.
+Start only from complex-hermitian/arithmetic-sum-pow4/seed1's exhausted final
+checkpoint in runs/complex-geometry-suite. Preserve parameters and both moments,
+the global AdamW update counter100000, and the next unseen sampler position.
+No repeated training updates. Regenerate the original sample stream with
+Random(seed+10000), verify its complete prefix fingerprint and example count,
+then use the same next batches in both continuation arms.
+
+Two arms:
+  unchanged: LR0.002, AdamW betas(.9,.98), epsilon1e-8, decay coefficient.1.
+  lower_lr: LR0.0002; every other configuration and starting state identical.
+The original warmup is already complete. Do not restart warmup or reset moments.
+Standard AdamW decay scales with LR, so this tests reducing the whole optimizer
+step. It does not isolate adaptive-step effects from reduced per-step shrinkage.
+
+Each arm receives19000 additional updates: exactly1000 additional epochs and
+4704000 examples, including original tail batches. Evaluate the complete4704
+training and4705 held-out examples at initialization and every19 new updates.
+Continue for the entire fixed budget even after a99% crossing, to measure
+whether accuracy remains high. Primary comparison is held-out accuracy at the
+fixed endpoint. Secondary: final200 observations mean/min/max/stddev, fraction
+above99%, largest one-observation accuracy drop, and first99 exposure bracket.
+Do not choose more hyperparameters or extend budgets from these results.
+
+Original architecture is unchanged: Peri-RMS, embedding RMS, complex-linear
+projections, complex-product FFN, Hermitian XSA, QK RMS, SSMax, RoPE, post-RMS
+residual scaling, tied readout and ordinary coordinate AdamW.
+
+Rust/Kernite only. Buffer observations; save at initialization, every500
+additional epochs, first99 and completion/explicit stop. Retain each saved
+weight state with both moments instead of overwriting earlier snapshots.
+Persist a possible-work intent before each500-epoch window; refuse existing
+output directories, and never silently replay interrupted continuation work.
+Both arms must reproduce the saved initial complete-split counts and loss.
+Their first-step gradients and moment arrays must be identical; actual parameter
+displacements must differ only by the prescribed LR factor up to FP32 rounding.
+The final reports independently verify history, exposure, checkpoint hashes,
+parameter/moment constraints, equal sample hashes and parent immutability.
+
+This is an explicitly post-budget, one-seed diagnostic. Keep the original
+benchmark miss and the completed420-cell comparison unchanged. Improvement
+here is neither a fresh-seed result nor a new frozen-suite pass.

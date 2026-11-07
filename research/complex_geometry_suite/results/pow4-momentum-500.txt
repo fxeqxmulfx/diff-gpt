@@ -1,0 +1,108 @@
+Matched 500-epoch first-moment reset: (a+b)^4 mod 97, seed 1
+2026-11-08
+
+Resetting AdamW's first moment once does not fix convergence in this window.
+Neither branch reaches 99%. The unchanged branch has higher best, final and
+final-200 mean held-out accuracy. Its entire trajectory reproduces the original
+run, including a byte-identical epoch-4500 parameter/moment state.
+
+Protocol
+Both branches restore the corrected-gradient epoch-4000 checkpoint, completed
+76000 updates. Each then performs exactly 9500 updates / 500 epochs, ending at
+global step 85500. Total actual training work: 19000 updates. Both use the same
+2352000 next training examples, LR .002, betas (.9,.98), epsilon 1e-8, decay .1,
+Adam clock, numerical kernels and model. The reset branch zeroes only m ONCE.
+It retains v and does not restart warmup or adjust LR. Peri/embedding RMS,
+residual connections/scaling, complex radial product FFN and tied weights stay.
+The two branches are fixed before observing results; no additional arms run.
+
+All 501 observations include complete train and held-out scores, separately
+counting diagonal a=b and non-diagonal examples. First99 is recorded, but the
+fixed diagnostic window would continue after a crossing to measure persistence.
+There were no crossings or stops. History is buffered; full p/m/v snapshots
+are saved only at the initial state and after 500 epochs. No per-epoch writes.
+
+Results                                  Keep moments      Reset m once
+Best held-out, correct / 4705             4621              4616
+Best held-out, %                         98.214665         98.108395
+Epoch of earliest best                   4493              4178
+Final held-out, correct / 4705            4619              4254
+Final held-out, %                        98.172157         90.414453
+Final train, correct / 4704               4704              4698
+Final train CE                           1.38719e-6        .00822971
+Final held-out CE                        .0943889          .3556121
+Final 200 held-out mean, %               94.121785         91.677683
+Final 200 stddev, percentage points       3.316839          2.586124
+Final 200 minimum, %                     83.740701         86.142402
+Largest one-epoch drop, pct points       11.094580          9.819341
+Final 200 mean training CE                .00301507        .00539766
+First observed 99%                       null              null
+
+The reset branch's lower final-200 standard deviation accompanies lower mean
+accuracy and higher mean training loss. It is not an overall stability or
+generalization improvement. Endpoint difference is -7.757705 percentage points
+and final-200 mean difference is -2.444102 points for reset versus keep.
+Every observation is retained and plotted without smoothing or selection.
+
+The diagonal gap persists
+The unchanged endpoint fits all 55 training diagonals but only 10/42 held-out
+diagonals. Its non-diagonal held-out score is 4609/4663 = 98.841947%.
+Thus 32 of its 86 errors are diagonal. Correcting all 32 alone would still
+leave 54 errors, whereas 99% allows at most 47 errors out of 4705.
+The reset endpoint scores 55/55 training diagonals and 15/42 held-out diagonals,
+but its non-diagonal score falls to 4239/4663 = 90.907141%.
+At each branch's best observation, training is 4704/4704, while held-out
+diagonals are only 14/42 (keep) and 13/42 (reset). This is a generalization gap,
+not simply a failure to fit the observed examples.
+
+Interpretation
+The previous one-step experiment correctly established a locally harmful
+stored first-moment direction at epoch4000. The present first updates reproduce
+those exact saved p/m/v bytes. However, ordinary AdamW rebuilds momentum after
+the single reset, and the local improvement does not translate into a better
+500-epoch trajectory. Do not turn that local diagnosis into a universal cause
+of the 99% miss. This experiment neither demonstrates a normalization/residual
+defect nor establishes that the current FFN is optimal.
+
+During this experiment the user requested rereading the Lean flat-spectrum
+work. Its latest source bridge concerns a plain complex product, while this
+transformer retains a radial gate. Removing only that gate is a reasonable
+next FFN ablation, not a proven remedy. The related theorem has explicit
+feature-recovery/alignment/margin premises and does not prove AdamW convergence.
+The quartic task also admits a rank-four scalar label signal; availability
+does not guarantee its discovery or a sufficient learned classifier. See
+pow4-flat-spectrum-ffn-review.txt for the source comparison and native check.
+No additional FFN training or new architecture was run in this experiment.
+
+Validation
+All 501 control observations reproduce original integer correctness counts
+exactly and losses within 1e-10. The final control parameters AND both moments
+are byte-for-byte identical to the original epoch-4500 checkpoint. Both actual
+first updates match the preceding next-update diagnostic bytes. The initial
+parameter and v bytes match between branches, with only reset m zeroed.
+Actual consumed sample hashes match. Archived source, plan, initial/final
+checkpoints and history prefixes pass hash checks. All retained states satisfy
+finite-value and complex-tying constraints. Initial/final complete-split and
+subgroup reloads pass and leave state unchanged. Group counts and weighted
+losses reconcile at all 1002 observations. Original, corrected and one-step
+diagnostic input artifacts remain unchanged. Thirteen CPU tests, Clippy with
+warnings denied, formatting and the actual GPU run/audit pass. One CUDA-only
+test is excluded from the CPU suite. No Python was invoked.
+
+Reproduction from repository root
+research/complex_geometry_suite/diagnostic/target/release/complex-weight-diagnostic momentum-continue runs/complex-geometry-suite runs/complex-pow4-fixed-grad-seed1-01 research/complex_geometry_suite/results/pow4-next-update-01 NEW_OUTPUT_ROOT
+Replace momentum-continue with momentum-audit to inspect an existing output.
+Current output: runs/complex-pow4-momentum-500-01 (repository root).
+Frozen plan: ../diagnostic/MOMENTUM_CONTINUATION_PLAN.txt.
+Implementation: ../diagnostic/src/momentum_continuation.rs.
+The JSON, validation JSON, both TSVs, GNUplot source and SVG/PNG beside this
+report retain the complete numerical comparison. Each arm's full state and
+the compiled-source archive are under the run output above.
+
+Limits
+One historical checkpoint and one selected task/seed, without additional
+hyperparameter search. This tests a one-time reset, not lower beta1, periodic
+resets, all alternative optimizers or a changed FFN. Wall times of about 64.5s
+per branch are descriptive; another user's GPU process was active, and this
+is not a throughput benchmark. The original 100000-update benchmark and its
+miss remain unchanged. The broader goal is unfinished; capacity queue stopped.

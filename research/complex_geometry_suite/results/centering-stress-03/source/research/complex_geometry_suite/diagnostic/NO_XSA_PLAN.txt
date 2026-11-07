@@ -1,0 +1,66 @@
+Ordinary attention versus Hermitian XSA, declared before training
+
+User authorized the proposed no-XSA ablation. The matched control is the audited
+plain-product seed1 run, runs/complex-pow4-plain-ffn-seed1-01. Replace only the
+Hermitian XSA output with the ordinary causal weighted sum of values. Retain
+plain g*u/sqrt(2), complex-linear projection ownership, Peri/embedding RMS,
+QK RMS, SSMax log(N)/head_width, RoPE, residual scaling after RMS and tied
+embedding/readout. No new weights or changed initializer/optimizer.
+
+Reuse the frozen attention probability calculation without changing its score,
+normalization or masking arithmetic. The ordinary value kernel overwrites its
+unused XSA output with v_first + sum_j p_j*(v_j-v_first), mathematically the
+ordinary weighted sum. This anchored evaluation preserves equal values.
+Use the ordinary softmax adjoint, including V gradients at first/repeated
+positions. Disable XSA-only first/shared attention suppression and shared-
+prefix backward masks. Keep frozen native sources and all past results intact.
+
+Numerical preflight: isolated ordinary attention against independent scalar
+FP64 differentiation, including head widths16/32/128, lengths1/2/7/17/128,
+multiple batches, unequal and repeated values, zero/tiny/large values and
+causal boundaries. Check untouched inputs/tails. Check all compatible complex
+synthetic full-model cases and every retained plain-XSA checkpoint with the
+new operator, plus explicit repeated/first-token masks and wide heads. Include
+plain-XSA regression cases. The independent oracle must compute the ordinary
+sum directly and retain every token's residual/FFN path; no prefix shortcuts.
+
+Bounds stay5e-5 of full-model logit scale,5e-5 relative loss and5e-4 times each
+independent-coordinate block gradient norm plus1e-12 for directional checks.
+Primitive forward/gradient errors must be at most5e-6 of their reference norms
+(a1e-12 absolute allowance for mathematically zero derivatives). Add a whole-
+model check that the equal-token V/output gradient is nonzero where the old
+XSA branch is zero. Preserve failures; no training until the preflight passes.
+Archive source/PTX and require the exact passing source for training.
+For lengths up to7 check every primitive input-gradient coordinate, grouped by
+Q/K/V. For lengths17/128 use two dense directions, the largest gradient
+coordinate and the gradient direction in each Q/K/V block, with bound5e-6 of
+its native block norm plus1e-12. Full-model stress probes parameter directions
+as in previous preflights. These choices are fixed before the first execution.
+
+Training: existing(a+b)^4 mod97,seed1,width128,heads4,depth1. Exact original
+initial parameters,zero moments,full100000-update sampler,4704 train/4705 heldout,
+batch256/tail96,19updates per epoch. AdamW LR.002,betas(.9,.98),epsilon1e-8,
+decay.1,warmup50 including the zero-LR moment insertion. Stop at first observed
+held-out>=99%,100000updates,or explicit STOP. Observe full splits each epoch
+plus initialization/final tail; include diagonal/non-diagonal scores. Buffer
+history and save p/m/v at0,every500epochs,first99,completion/clean stop.
+
+Audit initialization/sampler/source/PTX/history/state hashes, observation exposure,
+first zero-rate invariance/moment insertion, checkpoint cadence, complex
+constraints, subgroup accounting and all retained full-split replays. Control
+and original files must remain byte-for-byte unchanged. Report all outcomes,
+peak/final/first99 and full matched curves. If the candidate stops at99%, its
+later trajectory is unobserved; compare control at matched exposure and do not
+claim sustained stability. No extra seed,LR,width,depth or FFN search. This is
+a known-miss mechanism diagnostic, not universal-model selection. No Python;
+capacity queue stays stopped. A later candidate needs frozen short/long tests.
+
+Preflight bookkeeping correction before training
+The first attempt passes all42 full-model cases,4 XSA regressions,1652 parameter
+directions, all primitive derivative/numerical bounds and restored V/output
+paths. Three zero-value primitive cases fail only an overstrict first-value
+bit comparison: the anchored sum changes-0 to+0, with exactly zero forward
+error. Use exact numerical equality for first/repeated values, accepting the
+two signs of zero; every finite nonzero equality remains exact. No kernel,
+error tolerance or tested case changes. Preserve no-xsa-stress-01 and rerun
+the complete preflight in a fresh directory before training.

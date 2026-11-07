@@ -1,0 +1,101 @@
+Corrected-gradient sum-pow4 seed1 rerun and epoch weight audit, 2026-11-08
+
+The user clarified that the requested task is the existing (a+b)^4 mod97,
+not (a/b)^4. Reran complex-hermitian seed1 from the exact original initial
+parameters and zero moments, enabling the corrected loss and FP64 XSA adjoint.
+Model, complete100000-update sample order, data split, LR0.002, AdamW settings,
+warmup50 and first99 stopping rule match the original. Peri-RMS, embedding
+RMS and tied weights remain. No hyperparameter or extra-seed search was run.
+
+Neither trajectory reaches99% within100000 updates /5263.163265 epochs.
+                              Original          Corrected
+Final held-out                4263/4705          4420/4705
+Final held-out percent        90.605739          93.942614
+Best observed held-out        4623/4705          4624/4705
+Best observed percent         98.257173          98.278427
+Epoch of best observation     3793               4599
+Final train percent           99.851190          100
+Final train CE                .00893744         .000811174
+Final held-out CE             .350746           .219800
+Final200 mean, percent        91.858448          93.885866
+Final200 stddev, pct points    3.089915           3.951234
+Final200 minimum, percent     84.399575          82.189160
+Largest one-epoch drop, pp     20.127524          24.080765
+
+The endpoint improves3.336876 percentage points, but the best observation
+improves by only one example and fluctuations remain. Do not call this a
+grokking or stability fix. Both first99 fields remain null. The two numerical
+corrections were applied together, so this run does not isolate their effects.
+All5265 observation steps are paired; both full curves are preserved without
+smoothing in pow4-fixed-grad-seed1.svg/.png and the original/corrected TSVs.
+
+All12 retained states were inspected after training
+Epochs0,500,1000,1500,2000,2500,3000,3500,4000,4500,5000 and5263.163265
+are retained with parameters and both AdamW moments. Every state reproduces
+complete train/held-out scores using the corrected kernels. State hashes,
+finite values and complex matrix constraints pass; original files are unchanged.
+No optimizer updates occur in the epoch inspection. Raw reports, all input-pair
+errors and source archives are in pow4-fixed-grad-epochs-01/.
+
+The sharpest retained contrast is:
+Epoch          Held-out %     Train CE          Momentum/gradient alignment
+3500           97.874601      9.82768e-6        positive in all8 blocks
+4000           91.732200      .00893657         negative in all8 blocks
+4500           98.172157      1.38719e-6        positive in all8 blocks
+
+At4000 epochs, saved-momentum-plus-decay direction cosines against the current
+full-training gradient range from-0.07895 to-0.21825. Subtracting those frozen
+directions would therefore be locally uphill to first order. The relative
+historical step magnitudes at3500 versus4000 are:
+Block                 Epoch3500, % of norm    Epoch4000, % of norm
+embedding/readout     .0274                  .3144
+Q                     .0375                  .6034
+K                     .0379                  .6327
+V                     .0422                  .6718
+attention output      .0409                  .6831
+FFN gate              .0624                  .8067
+FFN value             .0611                  .8093
+FFN output            .0653                  .7495
+
+These are historical moment directions evaluated at current weights, with
+bias correction, decay and LR included. They are NOT the actual next minibatch
+update, which will first change the moments using a new gradient. Alignment
+alone is not a causal intervention. The inspection found no exploding or
+corrupt saved weights; the largest absolute independent weight over all12
+states is0.875681. At4000, the block RMS values are.070--.086 for projections
+and.140 for the embedding, while normalization scales and Hermitian projection
+orthogonality remain numerically well-behaved. This supports investigating
+optimizer dynamics rather than blaming a failed normalization formula.
+
+A separate generalization gap remains visible even near a strong checkpoint.
+At4500 epochs, all55 training examples with a=b are correct, but only10/42
+held-out a=b examples are correct. Those32 mistakes account for32/86 held-out
+errors. At the final state the diagonal score is12/42, with285 total held-out
+errors. Stabilizing the oscillations may therefore still leave a structural
+generalization problem. The actual best4599-epoch weights were not saved;
+4500 is the strongest retained checkpoint, and all retained states are reported.
+
+Next diagnostic suggested by this evidence
+At a weak retained state (epoch4000), measure the actual next-minibatch gradient
+and AdamW update, then compare its full-training loss effect with a smaller
+step and a reset-moment counterfactual using the same state and examples.
+This would test whether the historical-momentum signal survives the next
+gradient. It has not been run. Keep Peri-normalization, embedding normalization
+and tied weights while isolating that optimizer question. A later generalization
+check should distinguish diagonal from non-diagonal input errors.
+
+Validation and limitations
+Training artifact: runs/complex-pow4-fixed-grad-seed1-01 (repository root).
+The run and final reload audits pass; zero-rate first-update parameter invariance
+and moment insertion were checked on the actual first update. Initial parameter
+and full-sampler hashes exactly match the original. Twelve checkpoints, all
+history/exposure records and archived sources are audited. Eleven CPU tests,
+Clippy and formatting pass. All computation uses Rust/Kernite; reports use
+jq and gnuplot. Frozen benchmark results and the stopped capacity queue remain.
+
+The500-epoch snapshot spacing cannot localize every one-epoch crash, and these
+descriptive correlations do not prove an optimizer-specific cause. This is one
+seed with two numerical corrections, not a universal model comparison. Trainer
+elapsed time was679.19s with the FP64 corrections; no controlled speed comparison
+was performed. See pow4-fixed-grad-seed1.json for exact paired statistics and
+pow4-fixed-grad-seed1-validation.json for the combined validation record.

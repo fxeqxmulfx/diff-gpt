@@ -1,0 +1,34 @@
+Corrected-gradient rerun of sum-pow4 seed1, declared before training
+
+User confirmed: rerun the existing (a+b)^4 mod97 task, seed1, with corrected
+kernels. This is the complex-hermitian architecture previously diagnosed.
+Start from the EXACT original initial parameters and zero optimizer moments,
+not from an exhausted checkpoint. Preserve the original data, split hashes,
+model shape, sampler seed/order, optimizer, observation schedule and budget.
+
+Width128, four heads, one layer, radial complex-product FFN, Hermitian XSA,
+Peri-RMS and embedding RMS, parameter-free norms, tied embedding/readout,
+QK RMS, SSMax log(N)/head_width, RoPE, post-RMS residual scale1/sqrt(2).
+AdamW LR0.002, betas(.9,.98), epsilon1e-8, decay.1, warmup50, including the
+original zero-rate first update and its moment insertion. No hyperparameter
+search, learning-rate continuation or additional seeds are part of this rerun.
+
+Enable only the tested stable loss and FP64 XSA query-adjoint corrections.
+Their exact PTX hashes and complete compiled sources accompany the run.
+Validate original initialization and full100000-update sampler hashes before
+training. Preserve all original checkpoint and benchmark files.
+
+Maximum100000 updates; batch256 with the original tail batch,4704 training
+and4705 held-out examples. Evaluate all training and held-out examples every19
+updates (one epoch), plus initialization and the final budget tail. Stop at
+the first observed held-out exact accuracy>=99%, as in the original run.
+Save buffered observations and retained weight/moment snapshots at initialization,
+each500 complete epochs, the first99 crossing or completion/explicit STOP.
+Write durable work intent once per500-epoch window. Never silently restart or
+overwrite an existing run directory. No interrupted work replay is implemented.
+
+Audit all retained hashes, history/exposure, complex constraints, original-file
+immutability, sampler and initialization matching. Reload the final state and
+reproduce full-split scores with corrected kernels. Keep misses and null first99
+visible. This is a one-seed corrected-arithmetic experiment, not a replacement
+for the frozen420-cell comparison or evidence of universal convergence.

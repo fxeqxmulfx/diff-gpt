@@ -1,0 +1,36 @@
+//! Compile-time source capture: archives describe this binary, even after edits.
+pub const FILES: &[(&str, &str)] = &[
+    ("native/src/main.rs", include_str!("main.rs")),
+    ("native/src/runner.rs", include_str!("runner.rs")),
+    ("native/src/sources.rs", include_str!("sources.rs")),
+    ("native/src/data.rs", include_str!("data.rs")),
+    ("native/src/engine.rs", include_str!("engine.rs")),
+    ("native/src/layout.rs", include_str!("layout.rs")),
+    ("native/src/attention.rs", include_str!("attention.rs")),
+    ("native/src/base_ops.rs", include_str!("base_ops.rs")),
+    (
+        "native/src/sequence_ops.rs",
+        include_str!("sequence_ops.rs"),
+    ),
+    ("native/src/metrics.rs", include_str!("metrics.rs")),
+    ("native/src/random.rs", include_str!("random.rs")),
+    ("native/src/pcg.rs", include_str!("pcg.rs")),
+    ("native/src/blake.rs", include_str!("blake.rs")),
+    ("native/src/tests.rs", include_str!("tests.rs")),
+    (
+        "native/src/geometry_tests.rs",
+        include_str!("geometry_tests.rs"),
+    ),
+    ("native/src/complex.rs", include_str!("complex.rs")),
+    ("native/src/gemm.rs", include_str!("gemm.rs")),
+    (
+        "native/src/arithmetic_data.rs",
+        include_str!("arithmetic_data.rs"),
+    ),
+    ("native/Cargo.toml", include_str!("../Cargo.toml")),
+    ("native/Cargo.lock", include_str!("../Cargo.lock")),
+    ("native/THIRD_PARTY.txt", include_str!("../THIRD_PARTY.txt")),
+    ("PLAN.txt", include_str!("../../PLAN.txt")),
+    ("suite.json", include_str!("../../suite.json")),
+    ("UPSTREAM.sha256", include_str!("../../UPSTREAM.sha256")),
+];

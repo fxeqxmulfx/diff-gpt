@@ -1,0 +1,1672 @@
+{
+  "baseline_model_reference": {
+    "files": {
+      "domain/model/__init__.py": "b8583ecc51bae8eb1cc2009627b9d3be4c8f26bbd11f34d32841410d133522f4",
+      "domain/model/attention_residual.py": "27016eaed58e5e41cb704f05c1ae14d3f2937c65c68e02d073782e30b053c599",
+      "domain/model/block.py": "d3f55fb85933240da2e30defcd7bf66a7e234108aba3a91b9ce891d92dcd7784",
+      "domain/model/centered_mini.py": "ba097bf1bb2e579239fb71bdd2490d7c0f850ecac118a5479a6b426baa92e041",
+      "domain/model/centered_xsa.py": "5a40e578608ec16c565966c03dc7a5f2cd9a0ad026af9bef493f4e0dd6e4ab4d",
+      "domain/model/conditioned_attention_residual.py": "06df098e6aebb2a59d554aecc5e501afa53370bea2b0cb6a8dd0c524fe74dc24",
+      "domain/model/engine.py": "de3a0a6f130e790959067a982bd4be69a2be3aabdc952f838639005f1fdec43a",
+      "domain/model/feed_forward.py": "5177da621997e1855adf4268839204c09870c586b96d2d8704ced3333847abbc",
+      "domain/model/gpt.py": "ab387352c26c94ce471f0325ff6d12b332f86f2042defb72f0dd6c04f8890089",
+      "domain/model/kv_cache.py": "7e60cda6058b6e2b3af460303ee5fb482d99362b82145f6feaf2affec193d895",
+      "domain/model/mha.py": "65045c01bc1819597b3d3f19ada6cf8277cbdcd2d1466bc1376b4e30ded0aa88",
+      "domain/model/mini_block.py": "5120c498ebe2c344608678a5d67acd14857295824f2cd83f836b2eab6d947c47",
+      "domain/model/normalized_gpt.py": "12cfbbaef692fb76c572125f397cacbabf775c7f148ff79e85a9d4749d16f7ff",
+      "domain/model/rms_norm.py": "9849661932ddbbc26e31c64389f012ea6d5db2b91887426125cb9d81a74c2aca",
+      "domain/model/rope.py": "23592356d7f268405938ad28585a1e34c1b17655ab73f59b0e59c4ea961128ba"
+    },
+    "model_commit": "01f18f86787511279fe52fe41883495fce0e3105"
+  },
+  "baseline_optimizer": "torch.optim.AdamW, betas(.9,.98), eps1e-8, weight_decay as recorded, 50-update completed-step warmup",
+  "data_seed": 1,
+  "epoch_definition": "Actual examples presented divided by the fixed training-set size; include short tail batches and the documented zero-rate first update. CUDA capture warmup consumes no updates or examples.",
+  "evaluation_schedule": "Every min(historical observation interval, one training epoch in updates); fixed across seeds and candidates. Report previous/first-success observation bracket.",
+  "limitations": "Selected on seed 1. Seeds 0/2 are not yet trained for this new benchmark. Finer evaluation changes stopping resolution; historical epochs are reference measurements, not a completed three-seed baseline. Primary held-out split is validation; final test where present is auxiliary.",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "selection_source": "research/current_grokking/results/historical_99_within_five_minutes_seed1.json",
+  "selection_source_sha256": "7166058f8b71fea0fedcb6988fa8e38882612621755780cd0f65d948e6bd3516",
+  "success_rule": "Any single exhaustive primary held-out observation >=99% exact sequences. No delay or final-retention requirement. Stop at first observed crossing.",
+  "target_sequence_accuracy": 0.99,
+  "task_count": 35,
+  "tasks": [
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 32,
+        "data": {
+          "label": "suite-boolean-and-shift"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "synthetic",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "suite-boolean-and-shift",
+        "observe": 4,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "04b8ed610171e560825bdb456f1502c1edc2e5261a165ff7273a675552898f86",
+        "test/length-32": "108f4036870070384348caec5022c5da4b535ddf67c01c91b4a9548f85703fb7",
+        "test/length-64": "66dabcd6b5c145bc4046d312f8bc1d2648519b94c74bc5b08c41dad13d4a8461",
+        "test/position-shift-length-32": "02aae52de36bcfb16daa468b09104751e2ab40f771bc3a2311e4e3758a0c8e63",
+        "test/position-shift-length-64": "4dd5cefe4a84dc32bfd85725e31b999839e3716e06ee830673480149b04d5fbc",
+        "test/position_shift": "06ac63576f1c43dd99fbfba0c53a4f9e556c7dedd67f09a4503f0bdb81e3ef0c",
+        "train": "1e7bf1a9f190bbbe3fa852952ddc7ac4998c31b5d333401eb7cfc06899104c81",
+        "train_clean": "1e7bf1a9f190bbbe3fa852952ddc7ac4998c31b5d333401eb7cfc06899104c81",
+        "validation": "aea5ea4fdeb70241da829299fa4d1793bd68dc673ec0941b06ee1d7380f736c7",
+        "validation/length-32": "2b61a316448e5d3d7852eb81118ec77a736d70f66d6ac0055e995118f1e6c467",
+        "validation/length-64": "06047fdd4a6acc8fd3b90a02f7365fa5dc8369352c8d4bdfd13da276be812627",
+        "validation/position-shift-length-32": "394eb2889ce1eed50a2d0115fea218aaab36dc83cbedde5bc5a1763d11a867c0",
+        "validation/position-shift-length-64": "01efdb8ad14834e252fecdf714333367ba0fa96095ea78358230813344ef0150",
+        "validation/position_shift": "ef610afb88127a4bbb45fe10abc71a38d395c1e5b6a18e0bf62cd4690505539d"
+      },
+      "heldout_examples": 7,
+      "historical_seed1": {
+        "batch": 32,
+        "complete_epochs": 62,
+        "epochs": 62.5,
+        "examples_seen": 8000,
+        "first99_accuracy": 1.0,
+        "first99_seconds_including_setup": 5.9919438310025726,
+        "first99_updates": 250,
+        "history_path": "runs/current-grokking/suite-boolean-and-shift/seed1/history.jsonl",
+        "train_examples": 128,
+        "updates": 250,
+        "updates_per_epoch": 4
+      },
+      "name": "suite-boolean-and-shift",
+      "selection": "validation/novel",
+      "tier": "short",
+      "train_examples": 128
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 32,
+        "data": {
+          "label": "suite-boolean-and-random"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "synthetic",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "suite-boolean-and-random",
+        "observe": 4,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "af8102b59714de3be6d2520902044c95ecd40ac4a9397d98c64afae87c3afbcf",
+        "test/length-32": "2eb2c671df52af94377207163102dcb432341888b6f4239a0f73f4f6bba5f33e",
+        "test/length-64": "876c678392e3d0ef417f30e7484b3c9c118732213d1bda9768b25c2c8b38082f",
+        "train": "434e3d7ccc62907079ec9353d709aa8efeffb9774fdf805086acf02b5b754dfe",
+        "train_clean": "434e3d7ccc62907079ec9353d709aa8efeffb9774fdf805086acf02b5b754dfe",
+        "validation": "7a7471b0d2e76a3a594c30e411e3f842e051310c9dcfed422ea4c56411bbccce",
+        "validation/length-32": "da9d0429ab3a83edf356c62e6b15df8ecaef18c5ed0fd782dc67920fdd9d5ba2",
+        "validation/length-64": "01c7c05ecdb5ff4b2874c84a1d9a08e9eaa8acc2f0e3e1be4aa0333164825544"
+      },
+      "heldout_examples": 8,
+      "historical_seed1": {
+        "batch": 32,
+        "complete_epochs": 62,
+        "epochs": 62.5,
+        "examples_seen": 8000,
+        "first99_accuracy": 1.0,
+        "first99_seconds_including_setup": 6.027854268992087,
+        "first99_updates": 250,
+        "history_path": "runs/current-grokking/suite-boolean-and-random/seed1/history.jsonl",
+        "train_examples": 128,
+        "updates": 250,
+        "updates_per_epoch": 4
+      },
+      "name": "suite-boolean-and-random",
+      "selection": "validation/novel",
+      "tier": "short",
+      "train_examples": 128
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "power-division",
+          "power": 3,
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "power-division-p97-k3",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "7028085bea9ec0dae01709a3d803f58987997d092b2f699e6641594421e61456",
+        "validation": "1ff7a7f36d5808ab06ddf9993b494e8cd14633cc215880b732141b3bb6c51cc6"
+      },
+      "heldout_examples": 4656,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 13,
+        "epochs": 13.164948453608247,
+        "examples_seen": 61296,
+        "first99_accuracy": 0.9914089347079038,
+        "first99_seconds_including_setup": 8.453394435004157,
+        "first99_updates": 250,
+        "history_path": "runs/current-grokking/power-division-p97-k3/seed1/history.jsonl",
+        "train_examples": 4656,
+        "updates": 250,
+        "updates_per_epoch": 19
+      },
+      "name": "power-division-p97-k3",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4656
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "cube-plus",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-cube-plus",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "5a39b7ba4aaddcf098f2050be549c97c86507e3054080a2a51f8851acfeb005d",
+        "validation": "bf4c7be49e80ff1f0cd63165f2280e4796b650409838cf921d06e8ee87ff6847"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 39,
+        "epochs": 39.48979591836735,
+        "examples_seen": 185760,
+        "first99_accuracy": 0.9914984059511158,
+        "first99_seconds_including_setup": 9.040916717000073,
+        "first99_updates": 750,
+        "history_path": "runs/current-grokking/arithmetic-cube-plus/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 750,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-cube-plus",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "power-division",
+          "power": 5,
+          "prime": 193
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "power-division-p193-k5",
+        "observe": 73,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "75b8e87c884c785804bff1fefe2de1b2d1c208dbb310c2068a4038dd0b8cc57c",
+        "validation": "62a76b96a666bde2c4e1501d6250cd96ca739413eddd5d8e1ea17153188a9b61"
+      },
+      "heldout_examples": 18528,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 13,
+        "epochs": 13.704663212435234,
+        "examples_seen": 253920,
+        "first99_accuracy": 0.9976791882556131,
+        "first99_seconds_including_setup": 9.842101170004753,
+        "first99_updates": 1000,
+        "history_path": "runs/current-grokking/power-division-p193-k5/seed1/history.jsonl",
+        "train_examples": 18528,
+        "updates": 1000,
+        "updates_per_epoch": 73
+      },
+      "name": "power-division-p193-k5",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 18528
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "power-division",
+          "power": 2,
+          "prime": 193
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "power-division-p193-k2",
+        "observe": 73,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "0b902d368d30dc0a9d63f9eb1bea2c1acb77be4b05c9a020e5800df12ac9413e",
+        "validation": "4ed6a490741c84d4292904ff1ac2ad0d76e8c2b0bdf1ab00ac9abde0899d4a2b"
+      },
+      "heldout_examples": 18528,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 27,
+        "epochs": 27.4006908462867,
+        "examples_seen": 507680,
+        "first99_accuracy": 0.9912025043177893,
+        "first99_seconds_including_setup": 12.135002026996517,
+        "first99_updates": 2000,
+        "history_path": "runs/current-grokking/power-division-p193-k2/seed1/history.jsonl",
+        "train_examples": 18528,
+        "updates": 2000,
+        "updates_per_epoch": 73
+      },
+      "name": "power-division-p193-k2",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 18528
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "power-division",
+          "power": 2,
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "power-division-p97-k2",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "6eee702d9abcc1a8e2d3989c47ef3b3e706e8b61cacd405ef33e73ded1000449",
+        "validation": "da7f4bc69d291f35c143690050330bc45b6bb6ad9e4de8c470019512cce5a581"
+      },
+      "heldout_examples": 4656,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 157,
+        "epochs": 157.93470790378007,
+        "examples_seen": 735344,
+        "first99_accuracy": 0.9959192439862543,
+        "first99_seconds_including_setup": 12.43585887899826,
+        "first99_updates": 3000,
+        "history_path": "runs/current-grokking/power-division-p97-k2/seed1/history.jsonl",
+        "train_examples": 4656,
+        "updates": 3000,
+        "updates_per_epoch": 19
+      },
+      "name": "power-division-p97-k2",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4656
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "square-times",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-square-times",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "f5a95e3ab21756628f0a5a542295d81e29fe502d7dd7c599371f2e7d96321f44",
+        "validation": "ecadf20498fab75afcc2e6e108cebf17ff510ac372197131124eef6867caf00c"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 276,
+        "epochs": 276.3265306122449,
+        "examples_seen": 1299840,
+        "first99_accuracy": 0.9900106269925611,
+        "first99_seconds_including_setup": 14.869877332996111,
+        "first99_updates": 5250,
+        "history_path": "runs/current-grokking/arithmetic-square-times/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 5250,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-square-times",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "sub",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-sub",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "40d5b08cdc50fb75cb5de92e736b0dbd0bba69a127ea2783edd7399dd6a05544",
+        "validation": "0c078f3f0aa6c5a5ca54d289f48845ba06b74508ec4a461ece5aca8438640877"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 263,
+        "epochs": 263.16326530612247,
+        "examples_seen": 1237920,
+        "first99_accuracy": 0.9940488841657811,
+        "first99_seconds_including_setup": 15.071243737998884,
+        "first99_updates": 5000,
+        "history_path": "runs/current-grokking/arithmetic-sub/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 5000,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-sub",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "mul",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-mul",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "1df54a2f5a425f9feba2efc6c544cb535b6b19e760eea7bf0a745073cc2ff3a9",
+        "validation": "60533903f3f25d2a9015d7538ac2d242cf2da427db274a157ac065458be38ccd"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 157,
+        "epochs": 157.9251700680272,
+        "examples_seen": 742880,
+        "first99_accuracy": 0.9900106269925611,
+        "first99_seconds_including_setup": 18.25163518399495,
+        "first99_updates": 3000,
+        "history_path": "runs/current-grokking/arithmetic-mul/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 3000,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-mul",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "add",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-add",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "282d0cf981fb1e002d8f2f422a383d96f526f2fb01231fa2ff4628d0677cb930",
+        "validation": "654c8f4f27a4ef6b12d283cc4f55a9e1a0a564db66e8153b9a0f78637093b1ff"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 171,
+        "epochs": 171.05442176870747,
+        "examples_seen": 804640,
+        "first99_accuracy": 0.9910733262486716,
+        "first99_seconds_including_setup": 18.373138091003057,
+        "first99_updates": 3250,
+        "history_path": "runs/current-grokking/arithmetic-add/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 3250,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-add",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 32,
+        "data": {
+          "task": "key-value-binding"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "sequence_accuracy",
+        "name": "gpt-probe-key-value-binding",
+        "observe": 64,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "0eb01c687f1d3c022e963aea4c61bb0ddd3cade3e59ec55d5c62ea44f2977240",
+        "train": "24a8459e9412acd4078e87faf4547d5e57c98668d2cb783879c25f822e6effce",
+        "validation": "c5c8e4ec3fb3e5a702d279c0e46a06768ee63b7a41f85eb7fbb31c275c4306e0",
+        "validation/novel": "ae1562d7e6a7699871d3b61c1a0991e43278b224c0474ecdeef286587c4b158c"
+      },
+      "heldout_examples": 512,
+      "historical_seed1": {
+        "batch": 32,
+        "complete_epochs": 7,
+        "epochs": 7.8125,
+        "examples_seen": 16000,
+        "first99_accuracy": 0.9921875,
+        "first99_seconds_including_setup": 19.300252646004083,
+        "first99_updates": 500,
+        "history_path": "runs/current-grokking/gpt-probe-key-value-binding/seed1/history.jsonl",
+        "train_examples": 2048,
+        "updates": 500,
+        "updates_per_epoch": 64
+      },
+      "name": "gpt-probe-key-value-binding",
+      "selection": "validation/novel",
+      "tier": "short",
+      "train_examples": 2048
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "power-division",
+          "power": 3,
+          "prime": 193
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "power-division-p193-k3",
+        "observe": 73,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "4a278c120e22c642a89fd74a3d586a655a82632f27b29d584d7454467e503176",
+        "validation": "f72319c1662fa21fa1ee53c64f83a2118a72c1007474c83eec4cebccf1f674f7"
+      },
+      "heldout_examples": 18528,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 37,
+        "epochs": 37.67702936096718,
+        "examples_seen": 698080,
+        "first99_accuracy": 0.9941709844559585,
+        "first99_seconds_including_setup": 20.47536007600138,
+        "first99_updates": 2750,
+        "history_path": "runs/current-grokking/power-division-p193-k3/seed1/history.jsonl",
+        "train_examples": 18528,
+        "updates": 2750,
+        "updates_per_epoch": 73
+      },
+      "name": "power-division-p193-k3",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 18528
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "div",
+          "prime": 193
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "division-p193",
+        "observe": 73,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "a118b7c539d7f9481a5e57f5f44a0be6ffb570d9760bfd56b9fd06a457198f9d",
+        "validation": "0d44809124de002ee3ab53898df9b9073546cb938242ad818755ae48f69bacc8"
+      },
+      "heldout_examples": 18528,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 10,
+        "epochs": 10.276338514680484,
+        "examples_seen": 190400,
+        "first99_accuracy": 0.9997841105354058,
+        "first99_seconds_including_setup": 27.208761203000904,
+        "first99_updates": 750,
+        "history_path": "runs/current-grokking/division-p193/seed1/history.jsonl",
+        "train_examples": 18528,
+        "updates": 750,
+        "updates_per_epoch": 73
+      },
+      "name": "division-p193",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 18528
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 16,
+        "data": {
+          "mode": "easy",
+          "task": "depth"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "basis",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 20000,
+        "metric": "sequence_accuracy",
+        "name": "basis-depth-easy",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "1a23afae22f1964509cbed215d4ceb5dc0226a1b434bba43e097533ecde66834",
+        "test/length-128": "26dc54f3994b68cbf791e10a065d864262c8a9e123a6bfa47b487f02626ea77a",
+        "train": "48f78e7d0480fa720b2ff7edea1c6bf9901883b8891b7dd85fb2f6c445b21da8",
+        "validation": "5a846b3df5d222be8d9f1d33f3d0635172341a8a285c215e999c21b9260cbfa1",
+        "validation/novel": "fe2bee6b575952c8d72bb621b5b91e13d0ca46eccc513fb6da9f932015f56b4f"
+      },
+      "heldout_examples": 512,
+      "historical_seed1": {
+        "batch": 16,
+        "complete_epochs": 0,
+        "epochs": 0.4,
+        "examples_seen": 8000,
+        "first99_accuracy": 1.0,
+        "first99_seconds_including_setup": 30.69117891100177,
+        "first99_updates": 500,
+        "history_path": "runs/current-grokking/basis-depth-easy/seed1/history.jsonl",
+        "train_examples": 20000,
+        "updates": 500,
+        "updates_per_epoch": 1250
+      },
+      "name": "basis-depth-easy",
+      "selection": "validation/novel",
+      "tier": "short",
+      "train_examples": 20000
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "square-sum",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-square-sum",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "77fb7895cd89d6366b0e3db51fbac183eafaae345be5f0ec5ccb215e6a2564d7",
+        "validation": "463fe4280b16baf1685fa8cebb47e5c1d076d9df2e07fb79606a8f62dab232b9"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 881,
+        "epochs": 881.5986394557823,
+        "examples_seen": 4147040,
+        "first99_accuracy": 0.9942614240170032,
+        "first99_seconds_including_setup": 30.970161556004314,
+        "first99_updates": 16750,
+        "history_path": "runs/current-grokking/arithmetic-square-sum/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 16750,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-square-sum",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 32,
+        "data": {
+          "task": "branch-amplitudes"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "sequence_accuracy",
+        "name": "gpt-probe-branch-amplitudes",
+        "observe": 32,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "4e8d1a667d9b6871a48f7ad3e5132837fd79c7c072af07cfd7b1e45ce6dd3336",
+        "train": "fd6adcefa9667c9c15bc0f70c560a8769916648ad4f6b103ee4c34d6acef75a7",
+        "validation": "826e422c3b383f8f7db6d3c3c7fb8a532c480112ece6841ea754fcd910ee02b8"
+      },
+      "heldout_examples": 256,
+      "historical_seed1": {
+        "batch": 32,
+        "complete_epochs": 23,
+        "epochs": 23.4375,
+        "examples_seen": 24000,
+        "first99_accuracy": 1.0,
+        "first99_seconds_including_setup": 31.103335702006007,
+        "first99_updates": 750,
+        "history_path": "runs/current-grokking/gpt-probe-branch-amplitudes/seed1/history.jsonl",
+        "train_examples": 1024,
+        "updates": 750,
+        "updates_per_epoch": 32
+      },
+      "name": "gpt-probe-branch-amplitudes",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 1024
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "power-division",
+          "power": 5,
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "power-division-p97-k5",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "1adcbe18bd4f13544f944034fdb0d27ab15cf67a11c15cf73a64b3de4575d85d",
+        "validation": "468182b67070f156094a7034783e13d205ec4ca755117b194b388533352cb8c2"
+      },
+      "heldout_examples": 4656,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 710,
+        "epochs": 710.5498281786942,
+        "examples_seen": 3308320,
+        "first99_accuracy": 0.9939862542955327,
+        "first99_seconds_including_setup": 31.213523525999335,
+        "first99_updates": 13500,
+        "history_path": "runs/current-grokking/power-division-p97-k5/seed1/history.jsonl",
+        "train_examples": 4656,
+        "updates": 13500,
+        "updates_per_epoch": 19
+      },
+      "name": "power-division-p97-k5",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4656
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "half-sum",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-half-sum",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "5f339d8508c401e1744c3aa036f245994f7c19868ebe5d28cef851467825d215",
+        "validation": "283ba1be5b9f0d7b7f5c7bc957d5fa8c65b3734999566b171b0851aebd96ec12"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 1013,
+        "epochs": 1013.1632653061224,
+        "examples_seen": 4765920,
+        "first99_accuracy": 0.9908607863974496,
+        "first99_seconds_including_setup": 34.761866510998516,
+        "first99_updates": 19250,
+        "history_path": "runs/current-grokking/arithmetic-half-sum/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 19250,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-half-sum",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "sum-square",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-sum-square",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "1462fa6e36edd10911b40b8d88475b23e120e21c6a7f01e187a43d34b1cdaa40",
+        "validation": "65ed4ddba356fb0822e9ad11cad1410b727f0203d98a0236207f3c7778e30922"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 868,
+        "epochs": 868.4353741496599,
+        "examples_seen": 4085120,
+        "first99_accuracy": 0.9910733262486716,
+        "first99_seconds_including_setup": 37.713588131002325,
+        "first99_updates": 16500,
+        "history_path": "runs/current-grokking/arithmetic-sum-square/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 16500,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-sum-square",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 16,
+        "data": {
+          "mode": "hard",
+          "task": "depth"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "basis",
+        "layers": 6,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "basis-depth-hard",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "test": "ad6fc146e5342e92541c43537bf1d8ec4b06b816332712f92c75e381b48f9e06",
+        "test/length-128": "3db3004703f8489fb4d737ada32a2128d8af93f4d79d0191652a47f536940da2",
+        "train": "47c4bd51f0d410f759eaca11de8a400b4bdfa5ad8e33a4aa78647b1523d3adcf",
+        "validation": "424efffb187b08b05717b522b7b3e572b293fa9ce928cec78b8e8b9486aca2b7",
+        "validation/length-128": "e397080d60f920d31d46f2466dc935133d986c40a90086a7a80599f9a133d6bb",
+        "validation/length-128/novel": "14fc2d41dd7bb8759c714f4dce1f98799622da71238769e3c5de5c62567f2374"
+      },
+      "heldout_examples": 512,
+      "historical_seed1": {
+        "batch": 16,
+        "complete_epochs": 0,
+        "epochs": 0.8,
+        "examples_seen": 16000,
+        "first99_accuracy": 1.0,
+        "first99_seconds_including_setup": 46.086656384024536,
+        "first99_updates": 1000,
+        "history_path": "runs/current-grokking/basis-depth-hard/seed1/history.jsonl",
+        "train_examples": 20000,
+        "updates": 1000,
+        "updates_per_epoch": 1250
+      },
+      "name": "basis-depth-hard",
+      "selection": "validation/length-128/novel",
+      "tier": "short",
+      "train_examples": 20000
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "affine-product",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-affine-product",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "776bb209788ba0b17c7c2caea7b8c3de691ac6bde6eb019805c28e40c3af65fd",
+        "validation": "ba8c8229e99f03bc74a8fd3ad168f79129176806cf001b4bd8e381cab133b07f"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 1289,
+        "epochs": 1289.4897959183672,
+        "examples_seen": 6065760,
+        "first99_accuracy": 0.9912858660998938,
+        "first99_seconds_including_setup": 47.27273915400292,
+        "first99_updates": 24500,
+        "history_path": "runs/current-grokking/arithmetic-affine-product/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 24500,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-affine-product",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "perm-add",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-perm-add",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "141bd56649270c29ecad10b73f75e9496c7bb4daa1063cdcbb70bf4c8ea8717d",
+        "validation": "611d347e5f00b42243effba86946f163bb047aac92ccb95eef44a601119e153f"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 1434,
+        "epochs": 1434.2176870748299,
+        "examples_seen": 6746560,
+        "first99_accuracy": 0.9904357066950054,
+        "first99_seconds_including_setup": 48.51097636399936,
+        "first99_updates": 27250,
+        "history_path": "runs/current-grokking/arithmetic-perm-add/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 27250,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-perm-add",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 32,
+        "data": {
+          "task": "linear-transport"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "probe",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 30000,
+        "metric": "sequence_accuracy",
+        "name": "gpt-probe-linear-transport",
+        "observe": 32,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "9f8b1731139b2a474b45bbfe58a7ecf380d5d22034aafa2dff481a528d4ec3d9",
+        "train": "aaf411325c2ef555d459dfb522c7e62a1fb1173c73d787c7c121d9e3d338de85",
+        "validation": "59e000b54321f26525c26dcd22acdbe53501810cee6ab0e98f1ce4f45db7d1a3"
+      },
+      "heldout_examples": 256,
+      "historical_seed1": {
+        "batch": 32,
+        "complete_epochs": 7,
+        "epochs": 7.8125,
+        "examples_seen": 8000,
+        "first99_accuracy": 1.0,
+        "first99_seconds_including_setup": 48.908554267,
+        "first99_updates": 250,
+        "history_path": "runs/current-grokking/gpt-probe-linear-transport/seed1/history.jsonl",
+        "train_examples": 1024,
+        "updates": 250,
+        "updates_per_epoch": 32
+      },
+      "name": "gpt-probe-linear-transport",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 1024
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "div",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-div",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "f263b7e88462ef3928a78553bbbe453f26633a09f6550e684ebe63635fa23c91",
+        "validation": "a811e0100acaf518754383d576ab115a719ec8e015ab765aa181ab22e7e730b2"
+      },
+      "heldout_examples": 4656,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 210,
+        "epochs": 210.54982817869416,
+        "examples_seen": 980320,
+        "first99_accuracy": 0.9944158075601375,
+        "first99_seconds_including_setup": 57.62611693399958,
+        "first99_updates": 4000,
+        "history_path": "runs/current-grokking/arithmetic-div/seed1/history.jsonl",
+        "train_examples": 4656,
+        "updates": 4000,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-div",
+      "selection": "validation",
+      "tier": "short",
+      "train_examples": 4656
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "abs-diff/blind",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-abs-diff-blind",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "f976a89dcacaa7740fd10e44c60afa6562341bfff46890a4876170db0629c33f",
+        "validation": "786911bf83cd54bfffc44f5f30d7bbef130d1fe24a42b37203ed2d482eb7a0e3"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 1763,
+        "epochs": 1763.1632653061224,
+        "examples_seen": 8293920,
+        "first99_accuracy": 0.9906482465462274,
+        "first99_seconds_including_setup": 63.880811773997266,
+        "first99_updates": 33500,
+        "history_path": "runs/current-grokking/arithmetic-abs-diff-blind/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 33500,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-abs-diff-blind",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "abs-diff",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-abs-diff",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "5f57b468443b6d2817b2b91d48eb244ac60fb3ae186aabaf67da3b227bce2e85",
+        "validation": "a0b0b25ad3a61c5e6c87c7e5a0c518caf3999288ee8df1a5e79e543467a1d9a5"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 552,
+        "epochs": 552.6530612244898,
+        "examples_seen": 2599680,
+        "first99_accuracy": 0.9921360255047822,
+        "first99_seconds_including_setup": 67.41603285600286,
+        "first99_updates": 10500,
+        "history_path": "runs/current-grokking/arithmetic-abs-diff/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 10500,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-abs-diff",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "sum-pow4",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-sum-pow4",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "aad23e811b91174e4f21c3493c9f40bf0b23763dd32bdc40be4e0f1cd545c44b",
+        "validation": "1962165249356b821a318d69032c7e99c13e0cb74bc3c0244c4675de38f6d394"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 2381,
+        "epochs": 2381.598639455782,
+        "examples_seen": 11203040,
+        "first99_accuracy": 0.9908607863974496,
+        "first99_seconds_including_setup": 70.15022042999772,
+        "first99_updates": 45250,
+        "history_path": "runs/current-grokking/arithmetic-sum-pow4/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 45250,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-sum-pow4",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 16,
+        "data": {
+          "bits": 20,
+          "task": "parity"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "basis",
+        "layers": 2,
+        "learning_rate": 0.0003,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "basis-parity20",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "d99c0107f1210c788802fe67970964c3261fa4449aa61c46cdf248c99169d0f0",
+        "train": "f477061d9aab9b97077726c8af9a77bebf6a667151551fd99b5a51c4d6a79f13",
+        "validation": "f11c032328527ed1687a872c18f92f0bf44214950c8ea080399f862614c30493",
+        "validation/novel": "97e46270831562bf794b5953916c9a8c1296d78f5ee0aff68d6e8631d69e3f1f"
+      },
+      "heldout_examples": 284,
+      "historical_seed1": {
+        "batch": 16,
+        "complete_epochs": 22,
+        "epochs": 22.2,
+        "examples_seen": 444000,
+        "first99_accuracy": 0.9929577464788732,
+        "first99_seconds_including_setup": 86.315706399997,
+        "first99_updates": 27750,
+        "history_path": "runs/current-grokking/basis-parity20/seed1/history.jsonl",
+        "train_examples": 20000,
+        "updates": 27750,
+        "updates_per_epoch": 1250
+      },
+      "name": "basis-parity20",
+      "selection": "validation/novel",
+      "tier": "long",
+      "train_examples": 20000
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 16,
+        "data": {
+          "bits": 16,
+          "task": "parity"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "basis",
+        "layers": 2,
+        "learning_rate": 0.0003,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "basis-parity16",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "43204e2c9858b7be7147e4158bba2b653d9a2ee138ff258f930cc41dbac98440",
+        "train": "82e6a4a6a3a4b45cae2ca85873ad6b42daa3b59eb0dcfd4c8e5946f9d5c4a76a",
+        "validation": "7cd9f8b3a10d5c76ed219442edc3bd02e0cced7c2ee45a4d79e85295b7d2c1e2",
+        "validation/novel": "fbc494aa8f9300ab26e9e0d3f35b7b8b1324e8a5b9db301c9b82a5c79bdc7559"
+      },
+      "heldout_examples": 157,
+      "historical_seed1": {
+        "batch": 16,
+        "complete_epochs": 7,
+        "epochs": 7.8,
+        "examples_seen": 156000,
+        "first99_accuracy": 0.9936305732484076,
+        "first99_seconds_including_setup": 96.36695510600111,
+        "first99_updates": 9750,
+        "history_path": "runs/current-grokking/basis-parity16/seed1/history.jsonl",
+        "train_examples": 20000,
+        "updates": 9750,
+        "updates_per_epoch": 1250
+      },
+      "name": "basis-parity16",
+      "selection": "validation/novel",
+      "tier": "long",
+      "train_examples": 20000
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "sum-cube",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-sum-cube",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "46c16e9ce5b4d78a14cff7f63aea5ade52ffed486ae0b8679eb1d340d5ce60f4",
+        "validation": "68756b674469bdb4549ec0967a5628067b937b599d52da0b4af69553920d922f"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 3552,
+        "epochs": 3552.6530612244896,
+        "examples_seen": 16711680,
+        "first99_accuracy": 0.9904357066950054,
+        "first99_seconds_including_setup": 100.90890625199972,
+        "first99_updates": 67500,
+        "history_path": "runs/current-grokking/arithmetic-sum-cube/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 67500,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-sum-cube",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 64,
+        "data": {
+          "mode": "easy",
+          "task": "recall"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "basis",
+        "layers": 2,
+        "learning_rate": 0.0003,
+        "max_updates": 20000,
+        "metric": "sequence_accuracy",
+        "name": "basis-recall-easy",
+        "observe": 50,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "14ef1399a95ce24abcf5a6b554f31e4671464c9f0bba9f6c8ef604d5f18ecdbb",
+        "train": "6d2333ba9f121b0599b4669f1c9772002f5777ef30d997d8a3ff70d5238ecdf5",
+        "validation": "db69fa145e467a08687d05889a85e615d4013d80e5ad35409a43ced3285418e9",
+        "validation/novel": "14c0b6806e37439de4b27ca1ef810c92ef783d8ddffb4eb3ba1867fa53bdcd05"
+      },
+      "heldout_examples": 512,
+      "historical_seed1": {
+        "batch": 64,
+        "complete_epochs": 13,
+        "epochs": 13.4192,
+        "examples_seen": 268384,
+        "first99_accuracy": 0.990234375,
+        "first99_seconds_including_setup": 146.62136051198468,
+        "first99_updates": 4200,
+        "history_path": "runs/current-grokking/basis-recall-easy/seed1/history.jsonl",
+        "train_examples": 20000,
+        "updates": 4200,
+        "updates_per_epoch": 313
+      },
+      "name": "basis-recall-easy",
+      "selection": "validation/novel",
+      "tier": "long",
+      "train_examples": 20000
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 512,
+        "data": {
+          "context": 2,
+          "order": 1,
+          "task": "fibonacci",
+          "tokenizer": "lgt"
+        },
+        "data_seed": 1,
+        "heads": 1,
+        "kind": "recurrence",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "recurrence-fibonacci-k1-c2-lgt",
+        "observe": 10,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "raw": "05a030d0ff4da8779a1d42fc45521082069201aa155ee4d07ba2407a02e71e27",
+        "train": "23b950ffe6c3cbbdd344fcb2727a2857e83c6e98879e7b6bc932ccdb82658c75",
+        "validation": "53f3db300603f9613afe013b87b8f2722d4a59ad2ead0a52db592ce5bf4916cb"
+      },
+      "heldout_examples": 4704,
+      "historical_seed1": {
+        "batch": 512,
+        "complete_epochs": 7500,
+        "epochs": 7500.0,
+        "examples_seen": 35280000,
+        "first99_accuracy": 0.9900085034013606,
+        "first99_seconds_including_setup": 149.57764732500073,
+        "first99_updates": 75000,
+        "history_path": "runs/current-grokking/recurrence-fibonacci-k1-c2-lgt/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 75000,
+        "updates_per_epoch": 10
+      },
+      "name": "recurrence-fibonacci-k1-c2-lgt",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4704
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "compute": 1,
+          "labels": "divisor",
+          "loads": 2,
+          "overwrites": 0
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "associative",
+        "layers": 2,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "associative-divisor-n2-l1-w0",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "8a4826ca03b026ec9f6f11f02683f4c3463d8b11dd6752ccd6a9480bc01b5b80",
+        "validation": "4c1849d9a5f6f0947a825b2b719c0e8e256dbcc25c742579ddcfb9a60f05c3f6"
+      },
+      "heldout_examples": 4656,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 1355,
+        "epochs": 1355.274914089347,
+        "examples_seen": 6310160,
+        "first99_accuracy": 0.9903350515463918,
+        "first99_seconds_including_setup": 168.0794218289957,
+        "first99_updates": 25750,
+        "history_path": "runs/current-grokking/associative-divisor-n2-l1-w0/seed1/history.jsonl",
+        "train_examples": 4656,
+        "updates": 25750,
+        "updates_per_epoch": 19
+      },
+      "name": "associative-divisor-n2-l1-w0",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4656
+    },
+    {
+      "case": {
+        "after_target": 0,
+        "batch": 16,
+        "data": {
+          "bits": 24,
+          "task": "parity"
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "basis",
+        "layers": 2,
+        "learning_rate": 0.0003,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "basis-parity24",
+        "observe": 250,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 64
+      },
+      "data_fingerprints": {
+        "test": "75be2fcf13475134a62b2d5074d79a10897fd307a32a533ca86b6f1760ef7d7b",
+        "train": "e5ab2d0e3d79e42e4c5fa18798051095df10ce39727609e119169b1d83c87fa7",
+        "validation": "ac1b40a8abe98c664a1a3548e7d643295a1df23ef256a29959a371929532bcb1",
+        "validation/novel": "202dcb7a8093643aff8449577fd1d757f6436b22ea332c2811147512344d29b9"
+      },
+      "heldout_examples": 306,
+      "historical_seed1": {
+        "batch": 16,
+        "complete_epochs": 60,
+        "epochs": 60.0,
+        "examples_seen": 1200000,
+        "first99_accuracy": 0.9967320261437909,
+        "first99_seconds_including_setup": 228.57445245599956,
+        "first99_updates": 75000,
+        "history_path": "runs/current-grokking/basis-parity24/seed1/history.jsonl",
+        "train_examples": 20000,
+        "updates": 75000,
+        "updates_per_epoch": 1250
+      },
+      "name": "basis-parity24",
+      "selection": "validation/novel",
+      "tier": "long",
+      "train_examples": 20000
+    }
+  ],
+  "tier_note": "Disjoint task membership frozen from historical seed-1 wall time including setup. These thresholds select tasks; they are not new per-run timeouts.",
+  "tiers": {
+    "long": {
+      "reference_seconds_lower_bound_exclusive": 60,
+      "reference_seconds_upper_bound": 300,
+      "runs": 30,
+      "tasks": 10
+    },
+    "short": {
+      "reference_seconds_upper_bound": 60,
+      "runs": 75,
+      "tasks": 25
+    }
+  },
+  "version": 1
+}

@@ -1,5 +1,11 @@
 # diff-gpt
 
+The current **research model** is **Complex Peri-RMS**: ordinary causal SSMax
+attention, a plain complex-product FFN, Q/K RMS normalization, RoPE, scaled
+residuals and tied embeddings. Its [architecture and validation](research/main_model/README.txt)
+and [machine-readable specification](research/main_model/model.json) define
+the model selected for ongoing transformer research.
+
 Autoregressive time-series forecasting with a decoder-only transformer trained on
 a derivative-based tokenization. The encoder rounds the signal onto a grid
 of step $\Delta$ and emits the grid index differenced by an integer operator

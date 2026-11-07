@@ -1,0 +1,67 @@
+{
+  "complete": true,
+  "passed": true,
+  "training_updates": 100000,
+  "status": "budget_exhausted",
+  "first99_epochs": null,
+  "epochs": 5263.163265306122,
+  "matched_observations": 2649,
+  "common_final_step": 50312,
+  "ordinary_unobserved_after_common_prefix": true,
+  "retained_state_replays": 12,
+  "input_artifacts_unchanged": true,
+  "subgroup_accounting": true,
+  "stress_source_matches_training": true,
+  "source_sha256": "0e427e77ec31b432cecd819558a060553d98ec1a5ebd3e3be01adc200de44764",
+  "initial_parameters_sha256": "64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1",
+  "sampler_sha256": "7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c",
+  "attention": "centered_causal",
+  "centered_attention_ptx_sha256": "eecacc2f61dc9d4b598c7b34d8792ffa904a3fb25c22e338f1eaadbd67b5d2d5",
+  "ordinary_attention_ptx_sha256": "6145ad5aea58ea7c7a7b211008cd216a12450a8a3ab39fca6b67258985663150",
+  "preflight": {
+    "passed": true,
+    "model_cases": 37,
+    "ordinary_regression_cases": 4,
+    "parameter_directions": 1480,
+    "primitive_cases": 36,
+    "primitive_gradient_coordinates": 30624,
+    "canceled_equal_token_paths": [
+      {
+        "centered_gradient_norm": 0.0,
+        "ordinary_gradient_norm": 4.3206494351139595,
+        "passed": true,
+        "path": "layer0.V"
+      },
+      {
+        "centered_gradient_norm": 0.0,
+        "ordinary_gradient_norm": 4.650483786643074,
+        "passed": true,
+        "path": "layer0.attention_output"
+      }
+    ]
+  },
+  "lean": {
+    "passed": true,
+    "lean_commit": "a215ad25ea2db37022bd20312c5d868a8e8906b2",
+    "lean_version": "Lean (version 4.35.0, x86_64-unknown-linux-gnu, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release)",
+    "existing_theorems_checked": 5,
+    "new_theorems_checked": 13,
+    "warnings": 0,
+    "extra_axioms": [],
+    "allowed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "checked_scope": "Exact causal-centering algebra, shared-parameter derivatives, and a restricted decoder impossibility result",
+    "full_model_impossibility_proved": false,
+    "training_convergence_proved": false,
+    "paper_random_matrix_theorems_formalized": false,
+    "rust_checks_run": false,
+    "training_run": false,
+    "python_used": false
+  },
+  "python_invoked": false,
+  "benchmark_modified": false,
+  "limitation": "Single known-miss seed; compare common observations only; first99 is not sustained convergence"
+}

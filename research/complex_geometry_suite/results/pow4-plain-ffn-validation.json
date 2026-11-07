@@ -1,0 +1,39 @@
+{
+  "complete": true,
+  "passed": true,
+  "training_updates": 100000,
+  "status": "budget_exhausted",
+  "first99_epochs": null,
+  "observations": 5265,
+  "retained_state_replays": 12,
+  "input_artifacts_unchanged": true,
+  "stress_source_matches_training": true,
+  "subgroup_accounting": true,
+  "source_sha256": "dca42109d55f85ff1daaddc3b1aa567ecb4cf34acccd7d62904662edee3cf9f9",
+  "initial_parameters_sha256": "64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1",
+  "sampler_sha256": "7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c",
+  "training_uses_wide_chain": false,
+  "preflight": {
+    "passed": true,
+    "plain_cases": 40,
+    "radial_regression_cases": 3,
+    "parameter_directions": 1534,
+    "primitive_rows": 32,
+    "primitive_gradient_coordinates": 11584,
+    "local_adjoints": 6,
+    "source": "plain-ffn-stress-02/summary.json",
+    "report": "plain-ffn-stress.txt"
+  },
+  "cpu_checks": {
+    "command": "cargo test --release --offline --locked",
+    "passed": 14,
+    "failed": 0,
+    "ignored": 1,
+    "ignored_reason": "CUDA-only check; GPU preflight run separately",
+    "clippy": "cargo clippy --offline --locked --all-targets -- -D warnings: passed",
+    "formatting": "cargo fmt --check: passed"
+  },
+  "python_invoked": false,
+  "benchmark_modified": false,
+  "limitation": "Single known-miss task and seed; no universal selection or convergence guarantee"
+}

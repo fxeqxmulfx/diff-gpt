@@ -1,0 +1,215 @@
+{
+  "reference": "FP64 softmax of unchanged native FP32 logits; target derivative = -sum(non-target probabilities); cast to FP32 for original backward",
+  "scope": "diagnostic gradients only; no optimizer updates or saved-model changes",
+  "snapshot": "unchanged-000000",
+  "splits": {
+    "train": {
+      "exact": 4697,
+      "examples": 4704,
+      "largest_row_errors": [
+        {
+          "a": 39,
+          "b": 50,
+          "native_gradient_sum": -1.284280754228327e-7,
+          "native_loss": 0.0,
+          "native_target_gradient": -7.152557373046875e-7,
+          "reference_loss": 5.868276458236417e-7,
+          "reference_target_gradient": -5.868274736403323e-7,
+          "relative_gradient_l2_error": 0.19220133953839086,
+          "target": 22
+        }
+      ],
+      "logit_gradient_cosine": 0.999999999998702,
+      "logit_gradient_relative_error": 1.61037930826184e-6,
+      "native_logit_gradient_constant_component_fraction": 2.6920407249584666e-14,
+      "native_mean_loss": 0.008937441268745733,
+      "native_row_gradient_sum": {
+        "count": 4704,
+        "finite": 4704,
+        "l2": 6.045663520337911e-6,
+        "max": 3.066820161022241e-7,
+        "mean": 7.78214137766507e-9,
+        "median": 8.56162925538112e-9,
+        "min": -2.937444462947081e-7,
+        "p01": -2.022736044562934e-7,
+        "p05": -1.3798833643427488e-7,
+        "p95": 1.5101612932388875e-7,
+        "p99": 2.0477802320506555e-7,
+        "rms": 8.814756417491758e-8
+      },
+      "parameter_gradients": [
+        {
+          "block": "embedding_readout",
+          "native_gradient_l2": 0.09780944399789385,
+          "native_reference_cosine": 0.9999999999995908,
+          "reference_gradient_l2": 0.09780944471873042,
+          "relative_gradient_error": 8.997627195230091e-7
+        },
+        {
+          "block": "Q",
+          "native_gradient_l2": 0.014161868966417858,
+          "native_reference_cosine": 0.9999999999998898,
+          "reference_gradient_l2": 0.014161867234898021,
+          "relative_gradient_error": 4.903259715043992e-7
+        },
+        {
+          "block": "K",
+          "native_gradient_l2": 0.010097212967816375,
+          "native_reference_cosine": 0.9999999999997663,
+          "reference_gradient_l2": 0.010097212781509669,
+          "relative_gradient_error": 6.841928572488089e-7
+        },
+        {
+          "block": "V",
+          "native_gradient_l2": 0.05973097505643641,
+          "native_reference_cosine": 0.999999999999561,
+          "reference_gradient_l2": 0.05973097444222803,
+          "relative_gradient_error": 9.381024154727414e-7
+        },
+        {
+          "block": "attention_output",
+          "native_gradient_l2": 0.05610630981917169,
+          "native_reference_cosine": 0.9999999999995218,
+          "reference_gradient_l2": 0.056106312412828395,
+          "relative_gradient_error": 9.853579111447118e-7
+        },
+        {
+          "block": "ffn_gate",
+          "native_gradient_l2": 0.037183627305253174,
+          "native_reference_cosine": 0.9999999999996442,
+          "reference_gradient_l2": 0.03718362851910339,
+          "relative_gradient_error": 8.464302264567841e-7
+        },
+        {
+          "block": "ffn_value",
+          "native_gradient_l2": 0.03604551539902537,
+          "native_reference_cosine": 0.9999999999995552,
+          "reference_gradient_l2": 0.03604551491213745,
+          "relative_gradient_error": 9.347939253741037e-7
+        },
+        {
+          "block": "ffn_output",
+          "native_gradient_l2": 0.018248782678652358,
+          "native_reference_cosine": 0.9999999999991988,
+          "reference_gradient_l2": 0.018248782076635685,
+          "relative_gradient_error": 1.270089616373379e-6
+        }
+      ],
+      "reference_mean_loss": 0.00893740612377581,
+      "row_gradient_relative_error": {
+        "count": 4704,
+        "finite": 4704,
+        "l2": 0.22015644652929495,
+        "max": 0.19220133953839086,
+        "mean": 0.00044536019301632824,
+        "median": 0.00006503695930604942,
+        "min": 1.361699265350455e-8,
+        "p01": 1.938347916964898e-7,
+        "p05": 1.4819790720262166e-6,
+        "p95": 0.0016720105452098007,
+        "p99": 0.005537523064154576,
+        "rms": 0.0032099461760779833
+      },
+      "zero_native_loss_but_positive_reference": 1,
+      "zero_native_target_gradient_but_nonzero_reference": 0
+    },
+    "validation": {
+      "exact": 4263,
+      "examples": 4705,
+      "largest_row_errors": [],
+      "logit_gradient_cosine": 0.9999999999999737,
+      "logit_gradient_relative_error": 2.1957943622190284e-7,
+      "native_logit_gradient_constant_component_fraction": 5.380432563890839e-16,
+      "native_mean_loss": 0.3507458578387432,
+      "native_row_gradient_sum": {
+        "count": 4705,
+        "finite": 4705,
+        "l2": 5.950645899710309e-6,
+        "max": 3.022349606141006e-7,
+        "mean": 1.513031551016685e-10,
+        "median": 1.9289290190084227e-9,
+        "min": -3.576331503996055e-7,
+        "p01": -2.075512235966137e-7,
+        "p05": -1.4604614761992707e-7,
+        "p95": 1.4264280534526108e-7,
+        "p99": 2.003822807267186e-7,
+        "rms": 8.675295843230046e-8
+      },
+      "parameter_gradients": [
+        {
+          "block": "embedding_readout",
+          "native_gradient_l2": 0.5721392630493466,
+          "native_reference_cosine": 0.9999999999999665,
+          "reference_gradient_l2": 0.5721392598903591,
+          "relative_gradient_error": 2.4717164913046113e-7
+        },
+        {
+          "block": "Q",
+          "native_gradient_l2": 0.060700847045038885,
+          "native_reference_cosine": 0.9999999999999808,
+          "reference_gradient_l2": 0.06070084708327511,
+          "relative_gradient_error": 2.1367052140132428e-7
+        },
+        {
+          "block": "K",
+          "native_gradient_l2": 0.053605662200851625,
+          "native_reference_cosine": 0.9999999999999644,
+          "reference_gradient_l2": 0.05360566248602217,
+          "relative_gradient_error": 2.548565501360767e-7
+        },
+        {
+          "block": "V",
+          "native_gradient_l2": 0.4221710424781434,
+          "native_reference_cosine": 0.9999999999999527,
+          "reference_gradient_l2": 0.422171041974675,
+          "relative_gradient_error": 3.0314969642978083e-7
+        },
+        {
+          "block": "attention_output",
+          "native_gradient_l2": 0.49697722566906916,
+          "native_reference_cosine": 0.999999999999984,
+          "reference_gradient_l2": 0.4969772260149436,
+          "relative_gradient_error": 1.9350286774190653e-7
+        },
+        {
+          "block": "ffn_gate",
+          "native_gradient_l2": 0.26185183798420214,
+          "native_reference_cosine": 0.9999999999999801,
+          "reference_gradient_l2": 0.2618518354682776,
+          "relative_gradient_error": 1.914582284210944e-7
+        },
+        {
+          "block": "ffn_value",
+          "native_gradient_l2": 0.27329115882419697,
+          "native_reference_cosine": 0.9999999999999851,
+          "reference_gradient_l2": 0.2732911561516641,
+          "relative_gradient_error": 1.9166557872214953e-7
+        },
+        {
+          "block": "ffn_output",
+          "native_gradient_l2": 0.1741057192505796,
+          "native_reference_cosine": 0.9999999999999902,
+          "reference_gradient_l2": 0.17410571900761335,
+          "relative_gradient_error": 1.7334668923674402e-7
+        }
+      ],
+      "reference_mean_loss": 0.3507458246911013,
+      "row_gradient_relative_error": {
+        "count": 4705,
+        "finite": 4705,
+        "l2": 0.02407379569683843,
+        "max": 0.007989826758071097,
+        "mean": 0.0000736346254467762,
+        "median": 2.724029739769054e-6,
+        "min": 3.6524464782472264e-9,
+        "p01": 1.4730378723145068e-8,
+        "p05": 3.129318924192883e-8,
+        "p95": 0.000292825003329585,
+        "p99": 0.0012421825596506005,
+        "rms": 0.0003509657661695497
+      },
+      "zero_native_loss_but_positive_reference": 0,
+      "zero_native_target_gradient_but_nonzero_reference": 0
+    }
+  }
+}

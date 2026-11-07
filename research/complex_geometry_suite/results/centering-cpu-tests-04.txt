@@ -1,0 +1,26 @@
+   Compiling complex-weight-diagnostic v0.1.0 (/home/misha/python_projects/gpt/research/complex_geometry_suite/diagnostic)
+    Finished `release` profile [optimized] target(s) in 7.70s
+     Running unittests src/main.rs (target/release/deps/complex_weight_diagnostic-b29d3fd009d0d7b2)
+
+running 18 tests
+test blake::empty_blake2b8 ... ok
+test continuation::continuation_preserves_partial_epoch_and_tail_batch ... ok
+test loss_precision::softmax_reference_keeps_high_confidence_target_gradient ... ok
+test gradient_oracle::dual_oracle_rules_and_confident_cross_entropy ... ok
+test continuation::summary_audit_accepts_roundoff_and_rejects_meaningful_changes ... ok
+test metrics::generation_reads_its_own_errors_and_respects_eos_and_limits ... ok
+test metrics::field_readout_pools_aliases_and_numeric_eos_is_penalized ... ok
+test next_update::reset_clock_and_first_moment_have_distinct_effects ... ok
+test momentum_continuation::subgroup_weighting_and_first99_are_count_based ... ok
+test pcg::upstream_seed_and_pcg_vectors ... ok
+test plain_ffn::plain_complex_product_has_cross_terms_and_zero_gate_derivatives ... ok
+test stable_loss::tests::gpu_confidence_masks_tails_and_shift_invariance ... ignored, requires CUDA
+test raw::raw_decode_and_radial_geometry ... ok
+test stats::matrix_spectrum_distinguishes_rank_one_and_full_rank ... ok
+test centering::centered_oracle_removes_uniform_rows_with_unequal_values ... ok
+test centering::centered_oracle_cancels_shared_values_but_not_independent_perturbations ... ok
+test no_xsa::ordinary_oracle_keeps_first_and_repeated_values_and_their_derivatives ... ok
+test raw::block_transplants_preserve_all_complex_constraints ... ok
+
+test result: ok. 17 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

@@ -1,0 +1,55 @@
+{
+  "complete": true,
+  "passed": true,
+  "training_updates": 50312,
+  "status": "passed",
+  "first99_epochs": 2648.0,
+  "epochs": 2648.0,
+  "paired_observations": 2649,
+  "retained_state_replays": 7,
+  "input_artifacts_unchanged": true,
+  "subgroup_accounting": true,
+  "stress_source_matches_training": true,
+  "source_sha256": "8e8acb3416c89811df709357d8d7b0e81c8d60900e1335c5ec4d2f8403b5dce3",
+  "initial_parameters_sha256": "64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1",
+  "sampler_sha256": "7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c",
+  "attention": "ordinary_causal",
+  "ordinary_attention_ptx_sha256": "6145ad5aea58ea7c7a7b211008cd216a12450a8a3ab39fca6b67258985663150",
+  "preflight": {
+    "passed": true,
+    "model_cases": 42,
+    "xsa_regression_cases": 4,
+    "parameter_directions": 1652,
+    "primitive_cases": 30,
+    "primitive_gradient_coordinates": 23232,
+    "restored_equal_token_paths": [
+      {
+        "ordinary_gradient_norm": 4.3206494351139595,
+        "passed": true,
+        "path": "layer0.V",
+        "xsa_gradient_norm": 0.0
+      },
+      {
+        "ordinary_gradient_norm": 4.650483786643074,
+        "passed": true,
+        "path": "layer0.attention_output",
+        "xsa_gradient_norm": 0.0
+      }
+    ],
+    "report": "no-xsa-stress.txt"
+  },
+  "cpu_checks": {
+    "passed": 15,
+    "failed": 0,
+    "ignored_cuda_test": 1,
+    "commands": [
+      "cargo test --release --offline --locked",
+      "cargo clippy --offline --locked --all-targets -- -D warnings",
+      "cargo fmt --check"
+    ],
+    "all_passed": true
+  },
+  "python_invoked": false,
+  "benchmark_modified": false,
+  "limitation": "Single known-miss seed; first99 stopping does not establish sustained stability"
+}

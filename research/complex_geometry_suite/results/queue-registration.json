@@ -1,0 +1,41 @@
+{
+  "registered_at_utc": "2026-11-07T13:32:48Z",
+  "queue": {
+    "phase": "waiting_for_ffn",
+    "updated_at_utc": "2026-11-07T13:32:48Z",
+    "queue_pid": 261074,
+    "predecessor_pid": 243679,
+    "predecessor_start_ticks": "7318560",
+    "expected_cells": 420,
+    "checkpoint_epochs": 500,
+    "python_invoked": false
+  },
+  "protocol": {
+    "arms": [
+      "real-product",
+      "complex-linear",
+      "complex-hermitian",
+      "complex-hermitian-phase"
+    ],
+    "expected_cells": 420,
+    "plan_sha256": "0e415a87176fc64abe065f6eba03bfa3d18301727e75cdfecb0c137edd187642",
+    "ptx_sha256": "0a471ddc99eebcd21595916e7f9c7dddc2dc6418eb4fcc9ba50b13110046bf46",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "source_sha256": "8216337b598e7106fef41291f03bb4ad50de86ab15bae82e27065d40af98ea6e",
+    "suite_sha256": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436"
+  },
+  "candidate_commit": "910f206a1e9650c20d47a0c16c94270a692804d5",
+  "run_root": "/home/misha/python_projects/gpt/runs/complex-geometry-suite",
+  "validation": {
+    "native_cpu_tests_passed": 8,
+    "audit_cpu_tests_passed": 2,
+    "all_frozen_dataset_fingerprints_match": true,
+    "committed_cuda_tests_passed": 5,
+    "repeat_cuda_validation": "queued after predecessor",
+    "clippy": "passed"
+  }
+}

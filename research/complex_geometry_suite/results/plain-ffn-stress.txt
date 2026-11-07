@@ -1,0 +1,85 @@
+Plain complex-product FFN preflight, 2026-11-08
+
+The final preflight passes 40 plain-model cases, three radial regression cases,
+32 product rows and six local adjoint checks. There are 1438 plain-model and
+96 radial-model parameter-direction checks. The isolated product checks cover
+11584 input-gradient coordinates. No optimizer updates occur in this audit.
+
+Candidate: replace the existing radial-gated complex product with g*u/sqrt(2).
+The new Kernite kernels keep the half-split complex layout and use explicit
+real cross terms. The independent reference uses scalar FP64 forward-mode AD.
+Every supported complex projection, normalizer, residual and tied readout is
+included in full-model probes. Frozen native kernels are not edited.
+
+Coverage
+Primitive complex widths 1/3/17/341, eight rows each, include zero gate with
+nonzero value, scales1e-10 through1e8, and mixed1e20/1e-20 inputs. Guarded
+overlaunch tails and unchanged inputs are checked. Maximum forward relative
+error is1.119e-7 and gradient relative error8.476e-8, below the5e-6 bounds.
+
+Full-model cases include widths64/128/256, depths1/2/4, lengths1--128,
+masked labels, repeated prefixes, tiny/large embeddings and Q/K, zero/clipped/
+small values, tiny/large products, zero projection outputs and confident logits.
+Every one of the12 retained corrected radial checkpoints is probed with the
+plain FFN on three fixed examples. These are saved-weight derivative probes,
+not claims that plain inference preserves radial predictions.
+
+Each independent parameter block receives two dense directions, its largest
+gradient coordinate, and its gradient direction when nonzero. The unchanged
+full-model bounds are5e-5 of logit scale,5e-5 relative loss, and5e-4 times the
+native block-gradient norm plus1e-12 for each directional derivative. The
+largest final directional error consumes only.017271 of its allowed bound.
+Finite stress coverage does not prove accuracy for every possible tensor.
+
+Preserved failure and correction
+plain-ffn-stress-01 passes all32 product rows and33/34 plain-model cases. Its
+single128-wide-head case fails Q/K gradient-aligned directions: errors4.916e-8
+and5.025e-8, roughly.24% of their small gradients, versus the.05% bound.
+The standalone plain product, Peri-RMS and XSA local adjoints all pass.
+The discrepancy arises in the composed, nearly scale-invariant path, where
+FP32 intermediate rounding contaminates an epsilon-scale radial derivative.
+
+Recomputing only output projection -> RMS is insufficient. That unsuccessful
+kernel and trace are retained as plain-ffn-chain-attempt-01.rs and
+plain-ffn-head128-trace-02.json. The final stable_chain.rs recomputes the entire
+XSA -> output projection -> RMS Q/K adjoint in FP64, including the clipped
+projection term, before storing Q/K-related score derivatives. It leaves
+the ordinary forward, V adjoint and projection-parameter adjoint unchanged.
+The composed source formula is unchanged. The precision dispatch applies
+when stable attention is enabled for a single128-wide head.
+
+The independent full-path Q direction discrepancy falls from.0023687 relative
+to1.5164e-7. Local Q/K comparisons must differentiate the new composed map
+against its normalized-branch upstream gradient: comparing it to the old XSA
+alone with the rounded intermediate adjoint is a different derivative. That
+obsolete comparison remains visible in trace-03; the final independently
+defined composed reference passes in plain-ffn-stress-02/wide-composed-adjoint.json.
+The other local checks remain the plain product, Peri-RMS, output projection
+and XSA V. All six pass. The successful suite adds six wide-head cases for
+depth, masks/tail, real XSA and zero/clipped/small values, plus a radial
+wide-head regression. No failing case was removed or bound relaxed.
+
+Effect on the training comparison
+Both seed1 training models have four32-wide heads. The new precision dispatch
+is inactive there; the only change from the corrected radial control is the
+FFN gate removal. The protocol explicitly records training_uses_wide_chain=false.
+The complete current source fingerprint is checked against the successful
+preflight before training can start. Original and corrected control files
+remain byte-for-byte unchanged. The existing corrected-radial endpoint replay
+also passes under the default mode.
+
+Artifacts
+plain-ffn-stress-01/: failed first attempt, all results and its source archive.
+plain-ffn-stress-02/: successful expanded suite, full source/PTX manifest,
+all rows, primitive results and composed local-reference checks.
+plain-ffn-head128-trace-01.json: original stage/local adjoint localization.
+plain-ffn-head128-trace-02.json: insufficient projection/RMS-only correction.
+plain-ffn-head128-trace-03.json: corrected full derivative, with obsolete local
+XSA-only comparisons retained; use the final suite's composed local checks.
+Implementation: ../diagnostic/src/plain_product.rs, plain_ffn.rs,
+stable_chain.rs and the independent gradient_oracle.rs / gradient_stress.rs.
+
+Fourteen CPU tests pass, one CUDA-only test is excluded from the CPU suite,
+Clippy with warnings denied and formatting pass. All GPU checks use Kernite;
+no Python was executed. This preflight validates implementation, not 99%
+generalization, optimality of the FFN, or the conditional Lean recovery premises.

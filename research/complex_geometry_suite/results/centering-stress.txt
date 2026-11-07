@@ -1,0 +1,52 @@
+Causal-centering native preflight, 2026-11-08
+
+PASS: centering-stress-03/summary.json.37 candidate models (30 synthetic and
+all7 retained ordinary-control parameter states),4 ordinary regressions,
+1480 parameter directions,36 primitives,30624 primitive gradient coordinates,
+162 grouped/directional primitive checks and2 cancellation checks.17 CPU tests
+pass;1 separate CUDA test is ignored by the CPU invocation. Strict Clippy,
+formatting and release build pass. See centering-cpu-tests-04.txt,
+centering-clippy-04.txt and centering-build-04.txt. Controls remain unchanged.
+
+The independent FP64 forward-mode oracle uses no Kernite backward formulas
+and no repeated-prefix shortcut for the centered model. Coverage includes
+multiple depths,widths,head widths,lengths/masks,retained trained weights,
+tiny/large QK and values,zero blocks,constant prefixes and uniform/near-uniform
+scores. Primitive inputs/probabilities and launch tails stay unchanged.
+
+No tolerance was relaxed. Parameter bound5e-4*independent-coordinate block
+gradient norm+1e-12; maximum error/bound0.3827956499. Primitive bound
+5e-6*reference/block norm+1e-12; maximum error/bound0.07628373135.
+Forward and loss checks also pass.
+
+Equal-token parameter-gradient norms match the Lean cancellation theorem:
+                          centered           ordinary control
+  layer0.V                0                  4.3206494351
+  layer0.attention_output 0                  4.6504837866
+Independent per-token V derivatives remain checked; zero is required only for
+tied whole-model parameter paths. This is not full-model impossibility.
+
+Preserved attempts:
+centering-stress-01 passes33 primitives,36/37 models,4 regressions and both
+cancellation checks. qk_tiny fails8 V/output directions: centering an already-
+rounded FP32 probability row loses its small nonuniform signal. The fix
+computes small centered coefficients from anchored scores, with a six-term
+expm1 polynomial only for maximum absolute anchored score<=1e-3.
+centering-stress-02 passes36 primitives and fixes qk_tiny, but two Q/K directions
+fail in the wide two-layer model. Remove the intermediate FP32 coefficient
+rounding; cache coefficients and temporary score differences in FP64.
+centering-stress-03 passes the complete expanded suite. No training used the
+failed sources. A compiler-only label/predicate error is separately preserved
+in centering-cpu-tests-02.txt; explicit loop branches resolved it.
+
+Passing source SHA256:
+0e427e77ec31b432cecd819558a060553d98ec1a5ebd3e3be01adc200de44764
+Centered PTX SHA256:
+eecacc2f61dc9d4b598c7b34d8792ffa904a3fb25c22e338f1eaadbd67b5d2d5
+Ordinary PTX SHA256 (unchanged):
+6145ad5aea58ea7c7a7b211008cd216a12450a8a3ab39fca6b67258985663150
+
+Reproduce from repository root using the diagnostic release binary:
+complex-weight-diagnostic centering-stress runs/complex-geometry-suite \
+  runs/complex-pow4-no-xsa-seed1-01 NEW_OUTPUT_DIRECTORY
+Existing outputs are immutable. No Python was used.

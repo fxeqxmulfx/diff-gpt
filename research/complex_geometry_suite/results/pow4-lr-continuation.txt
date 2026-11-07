@@ -1,0 +1,89 @@
+Fourth-power seed 1: matched learning-rate continuation
+
+Reducing LR from 0.002 to 0.0002 strongly reduced held-out accuracy oscillation
+in this run. It did not achieve 99% or materially improve the fixed endpoint:
+97.72582359% versus97.76833156%, a difference of two held-out examples.
+This supports optimizer-step sensitivity of the instability while leaving a
+generalization gap. It does not identify a single responsible parameter block.
+
+Design fixed before training
+  Parent: complex-hermitian/arithmetic-sum-pow4/seed1, 100000 completed updates.
+  Identical weights, both AdamW moments, global counter and next sample stream.
+  Each arm: 19000 more updates, 4704000 examples, 1000 additional epochs.
+  Full 4704 training and 4705 held-out examples scored every 19 updates.
+  No moment reset, warmup restart, architecture change or early stopping.
+  AdamW betas (.9, .98), epsilon 1e-8 and decay coefficient .1 are unchanged.
+  Since AdamW decay scales with LR, this changes both the adaptive displacement
+  and per-step shrinkage. It does not isolate their separate contributions.
+
+                                    LR 0.002            LR 0.0002
+  Final held-out correct            4598/4705            4600/4705
+  Final held-out accuracy           97.72582359%         97.76833156%
+  Final held-out cross entropy      0.1064767896         0.1449417416
+  Peak held-out accuracy            98.23591923%         98.34218916%
+  Peak additional epoch             104                  112
+  Final training accuracy           100%                 100%
+  Final 200 mean held-out           92.46854410%         97.80456961%
+  Final 200 minimum                 83.80446334%         97.64080765%
+  Final 200 maximum                 97.91710946%         97.93836344%
+  Final 200 standard deviation      3.23123763 pp        0.04722966 pp
+  Largest one-observation drop      10.32943677 pp       0.23379384 pp
+  Observations reaching 99%         0                    0
+
+Final 200 means observations at additional epochs 801 through 1000; all 1001
+observations, including initialization, are retained. Largest drop is measured
+over the complete continuation. Standard deviation is descriptive, not a
+confidence interval; consecutive observations are correlated. The lower LR
+reduces the final 200 standard deviation by 68.415x and largest adjacent drop
+by 44.182x. Its mean is 5.3360 percentage points higher, but endpoint loss is
+higher and neither arm reaches 99%. Do not summarize this as solving the task.
+The recorded final training loss is 4.8587922e-6 versus 0.0 in the native FP32
+evaluation; recorded zero does not imply exact mathematical zero loss.
+
+Relation to the weight diagnosis
+  The starting checkpoint had finite, structurally valid weights and moments,
+  with no collapsed Q/K heads or near-zero RMS denominator blow-up.
+  Its relative saved-moment-plus-decay step estimates were largest in Q/K and
+  the FFN projections, around 0.6% of weight norm per update (Q 0.6644%, K 0.6417%,
+  FFN gate 0.6483%, value 0.6508%, output 0.6171%). These describe historical moments,
+  not a fresh minibatch update. They do not prove which block causes a drop.
+  The LR intervention changes all parameter blocks together. The evidence
+  supports sensitivity to optimizer step size, without localizing the failure
+  or establishing that a particular normalizer or model block must be removed.
+
+Integrity and recovery
+  Both arms completed and passed artifact audits: 1001 observations each,
+  exact matched exposure, shared sample hash, unchanged parent checkpoint,
+  finite structurally valid parameter/moment states, and retained snapshots
+  at additional updates 0, 9500, 19000 (epochs 0, 500, 1000).
+  First-step gradients and updated moments match exactly. Actual displacement
+  norm ratio is 0.09999998204, matching the prescribed 0.1 within FP32 rounding.
+  First-step maximum scaling error is 6.55651093e-8.
+
+  The original control completed before a reporting audit rejected decimal
+  roundoff in derived summaries (maximum 1.11e-16). The corrected audit keeps
+  counters and hashes exact and permits 1e-12 relative/absolute float tolerance.
+  No completed control training was repeated. One reference update from the
+  identical parent and first continuation batch was regenerated and discarded
+  solely to check first-step equivalence with the lower-LR arm. This engineering
+  work is recorded in audit-recovery.json, outside the two scientific budgets.
+  Both runner versions are archived; numerical training code is text-identical
+  and the canonical PTX hash matches the original trained model.
+  Seven CPU tests, formatting and Clippy checks passed. No Python was executed.
+
+Scope
+  One selected failed seed, continued after its frozen training budget. This
+  is a diagnostic, not a fresh-seed result, a general convergence guarantee,
+  or a change to the original benchmark. The Hermitian suite remains 29/30 long
+  and 75/75 short. The fixed plan forbids further LR arms or budget expansion
+  based on these results. The earlier capacity queue remains stopped.
+
+Artifacts
+  runs/complex-pow4-lr-check-01/ contains protocol, original and corrected runner
+  snapshots, per-arm histories/checkpoints/results and the audited summary.
+  pow4-lr-continuation.json is a byte-for-byte copy of that summary.
+  pow4-lr-continuation.tsv retains every paired observation and exact-count
+  accuracy conversion; pow4-lr-continuation.svg/png plot both held-out curves.
+  The plot is reproducible with gnuplot pow4-lr-continuation.gnuplot from this
+  results directory. The earlier read-only diagnosis remains preserved in
+  pow4-diagnosis.txt and pow4-inspection-source/.

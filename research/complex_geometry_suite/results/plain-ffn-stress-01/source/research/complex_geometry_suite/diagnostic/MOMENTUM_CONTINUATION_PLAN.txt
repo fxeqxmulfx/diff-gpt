@@ -1,0 +1,45 @@
+Paired 500-epoch first-moment reset diagnostic
+Authorized by user "go" following the proposed matched continuation.
+
+Task: existing (a+b)^4 mod 97, seed 1, complex-hermitian corrected-gradient run.
+Start: epoch 4000, completed 76000 updates, checkpoint SHA256
+ec4acff217e8b267a4947aa45a2bd409455ec9bb2c67b5264de8bdb4e7cda3d5.
+End: epoch 4500, completed 85500 updates. Exactly 9500 new updates per branch,
+2352000 training examples per branch, two branches only (19000 actual updates).
+
+Keep model, corrected loss and XSA adjoint, LR .002, betas (.9,.98), epsilon
+1e-8, decay .1, original Adam counter, data and exact next batches unchanged.
+Peri-RMS, embedding RMS, residual connections/scaling and tied weights remain.
+Branches:
+1. keep: restore parameters and both moments exactly.
+2. reset_first: same parameters and second moment; zero only the first moment
+   ONCE at the start. Subsequent steps use ordinary AdamW with no further reset.
+No LR adjustment, displacement matching or warmup restart in either branch.
+
+Run the complete fixed diagnostic window even if 99% is crossed. Record the
+first observed 99% and preceding observation. This is a trajectory comparison,
+not a replacement benchmark or an extension of either original training run.
+An explicit STOP file stops the experiment; never silently resume/replay it.
+
+Observe complete train and held-out splits every 19 updates (one epoch), and
+record diagonal a=b versus non-diagonal loss and exact counts in each split.
+Primary: held-out accuracy/stability and full-training loss over all 500 epochs.
+Report endpoint, peak, first99, final-200 mean/stddev/range, maximum adjacent
+accuracy drop, and diagonal error counts. Preserve all observations and failures.
+Buffer metrics in memory and flush full state/history at start and end (500
+epochs), or explicit stop. Save parameters and both moments; no per-epoch I/O.
+
+Validation: independently audit input run/source/sampler hashes; exact initial
+parameter and second-moment equality; reset only m. Compare the first update's
+complete state byte-for-byte with the corresponding prior next-update artifact.
+Control must reproduce all 501 original observations (integer counts exactly,
+loss absolute tolerance 1e-10) and the original epoch-4500 p/m/v bytes exactly.
+Verify actual consumed sampler hashes, every checkpoint/history/source hash,
+finite states, complex tying, subgroup accounting, and full endpoint score
+reloads. Preserve original/corrected/one-step input artifacts byte-for-byte.
+
+This selected checkpoint/seed is a mechanism diagnostic. A better trajectory
+does not establish a universal optimizer or resolve all generalization errors.
+A one-time reset may have only a transient benefit. No additional hyperparameter
+arms or architecture changes are authorized by this experiment. Rust/Kernite
+only; Python is prohibited. The stopped capacity queue remains stopped.

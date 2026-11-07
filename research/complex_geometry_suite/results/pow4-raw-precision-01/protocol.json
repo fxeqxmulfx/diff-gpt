@@ -1,0 +1,108 @@
+{
+  "benchmark_modified": false,
+  "canonical_ptx_sha256": "0a471ddc99eebcd21595916e7f9c7dddc2dc6418eb4fcc9ba50b13110046bf46",
+  "continuation_root": "runs/complex-pow4-lr-check-01",
+  "expanded_entries_per_array": 209280,
+  "format": "little-endian f32 arrays: expanded parameters, first moment, second moment",
+  "gpu_probe": true,
+  "independent_parameters": 110848,
+  "local_sensitivity_relative_displacement": 0.001,
+  "local_sensitivity_signs": [
+    -1,
+    1
+  ],
+  "mode": "precision",
+  "parent_root": "runs/complex-geometry-suite",
+  "parent_state_sha256": "47a17bed46df1a02952f671a09f37d9609e0f31a57bfaf708e6d435b8eaa1599",
+  "purpose": "Raw binary weight and moment diagnosis; no training or benchmark selection",
+  "python_invoked": false,
+  "reference_limitation": "Success endpoints have different training ages and independent coordinate systems",
+  "reference_seeds": [
+    0,
+    2
+  ],
+  "snapshots": [
+    {
+      "name": "unchanged-000000",
+      "state_sha256": "47a17bed46df1a02952f671a09f37d9609e0f31a57bfaf708e6d435b8eaa1599"
+    },
+    {
+      "name": "unchanged-009500",
+      "state_sha256": "ebd887c77b0c94eb1998b52c0fa290ad53346a76a4bfb7706f024b27b3d8b667"
+    },
+    {
+      "name": "unchanged-019000",
+      "state_sha256": "db48019606dd091f4d7af76e9e82d3cce314bb1644dd5eb9f31d02816e86fd8b"
+    },
+    {
+      "name": "lower_lr-000000",
+      "state_sha256": "47a17bed46df1a02952f671a09f37d9609e0f31a57bfaf708e6d435b8eaa1599"
+    },
+    {
+      "name": "lower_lr-009500",
+      "state_sha256": "3b0152a2a5de8a12c733b37db59b1b84ac8ee826bc416febb665f4cfff25c30b"
+    },
+    {
+      "name": "lower_lr-019000",
+      "state_sha256": "cddbc971462612c9ca1422d0a2dd45abb8a3d64324398545917ef4fbcc016df5"
+    }
+  ],
+  "source_sha256": "562b54b58e05e1b5c9289207ebda49850feeff8ceb0814e75aa0a9a2e6d4e571",
+  "training_updates": 0,
+  "transplant_groups": [
+    [
+      "embedding_readout"
+    ],
+    [
+      "Q"
+    ],
+    [
+      "K"
+    ],
+    [
+      "V"
+    ],
+    [
+      "attention_output"
+    ],
+    [
+      "ffn_gate"
+    ],
+    [
+      "ffn_value"
+    ],
+    [
+      "ffn_output"
+    ],
+    [
+      "Q",
+      "K"
+    ],
+    [
+      "V",
+      "attention_output"
+    ],
+    [
+      "ffn_gate",
+      "ffn_value",
+      "ffn_output"
+    ],
+    [
+      "Q",
+      "K",
+      "V",
+      "attention_output"
+    ],
+    [
+      "embedding_readout",
+      "Q",
+      "K",
+      "V",
+      "attention_output",
+      "ffn_gate",
+      "ffn_value",
+      "ffn_output"
+    ]
+  ],
+  "transplant_pair_additional_epoch": 500
+}

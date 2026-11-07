@@ -1,0 +1,42 @@
+Authorized addition, 2026-11-07
+
+User: add the other complex-product model to the tests and read the last commit.
+Candidate commit: 910f206a1e9650c20d47a0c16c94270a692804d5.
+Run the four variants already specified by that commit, without changing its
+scientific source, frozen PLAN.txt, datasets, learning rates or budgets:
+  real-product: unrestricted real projection control, same radial product FFN;
+  complex-linear: complex projection constraints, real XSA;
+  complex-hermitian: complex projections plus Hermitian XSA;
+  complex-hermitian-phase: Hermitian model with shared complex-pair variance.
+This separates projection constraints, exclusion geometry and optimizer effects.
+Complex arms share initial parameters; all arms share the frozen sample order.
+Dimensions are matched; independent parameter counts differ and are reported.
+Do not attribute the whole architecture's outcome to its FFN alone.
+
+25 short and 10 long tasks, seeds0/1/2, four arms: 420 additional cells.
+All cells and budget misses remain visible. Long remains diagnostic, not tuning.
+The current 210-cell FFN-only suite finishes and passes its integrity audit first.
+Then the new native queue runs short, audits short, runs long and audits all.
+Do not run two training cohorts concurrently on the 4GiB GPU. The old explicitly
+stopped capacity study stays stopped. No existing scientific outputs are edited.
+
+Runtime root: /home/misha/python_projects/gpt/runs/complex-geometry-suite
+The root contains frozen executables and SHA256 hashes, a queue state/log,
+the model's source/PTX protocol, and all checkpoints. run-after-ffn.sh checks
+both the predecessor PID and its start ticks to avoid mistaking PID reuse for
+the old queue. It refuses to proceed unless all 210 predecessor cells are
+completed and independently audited. Any execution or audit failure stops it.
+New STOP marker requests a clean stop; there is no silent automatic replay.
+
+CPU validation repeated: eight native tests and all35 dataset fingerprints pass.
+The existing commit records five passing CUDA tests; the frozen GPU test binary
+runs again once the predecessor releases the GPU, before scientific training.
+audit/ is a separate CPU-only Rust verifier. It checks compiled-source identity,
+initialization, sample order, source/data provenance, exact exposure and metrics,
+checkpoint integrity, all complex weight/moment ties and paired variances.
+The results are written to results/audit.json and results/audit.tsv.
+
+All numerical execution is Rust/Kernite. No Python. Observations stay buffered;
+saves every500 epochs plus initialization, first99, budget completion or clean stop.
+The same commit's scalar and finite-difference checks remain the kernel evidence.
+No claim of convergence or generalization is inferred from engineering tests.

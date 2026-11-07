@@ -1,0 +1,160 @@
+{
+  "candidate": {
+    "expected": 0.000021137653793211827,
+    "local_adjoints": [
+      {
+        "absolute_error": 6.657164845000114e-8,
+        "passed": true,
+        "reference_norm": 2.4629089819416166,
+        "relative_error": 2.7029682760554092e-8,
+        "stage": "peri_rms"
+      },
+      {
+        "absolute_error": 1.0931293712487279e-7,
+        "passed": true,
+        "reference_norm": 0.5634921169411321,
+        "relative_error": 1.9399195452505804e-7,
+        "stage": "output_projection"
+      },
+      {
+        "absolute_error": 1.0737218375669383e-14,
+        "passed": true,
+        "reference_norm": 4.2090337397547387e-7,
+        "relative_error": 2.5509936578211045e-8,
+        "stage": "XSA.Q"
+      },
+      {
+        "absolute_error": 1.2375038094398537e-14,
+        "passed": true,
+        "reference_norm": 3.762543085361098e-7,
+        "relative_error": 3.289009006314377e-8,
+        "stage": "XSA.K"
+      },
+      {
+        "absolute_error": 1.4623560482363088e-8,
+        "passed": true,
+        "reference_norm": 0.2702150377921731,
+        "relative_error": 5.4118233396064037e-8,
+        "stage": "XSA.V"
+      }
+    ],
+    "norm": 0.000021146020346060188,
+    "radial": [
+      {
+        "radial_derivative": -9.021820122731561e-6,
+        "stage": "attention"
+      },
+      {
+        "radial_derivative": -9.055207450883729e-6,
+        "stage": "attention_projected"
+      }
+    ],
+    "rms_stable_radial": -9.052137200384211e-6,
+    "stable_attention": true,
+    "stages": [
+      {
+        "derivative": 0.00002114601925682516,
+        "expected": 0.000021137653793211827,
+        "relative_error": 0.00039576121811676007,
+        "stage": "qkv"
+      },
+      {
+        "derivative": 0.000021180815203922904,
+        "expected": 0.000021137653793211827,
+        "relative_error": 0.002041920599765794,
+        "stage": "attention"
+      },
+      {
+        "derivative": 0.000021221121156445315,
+        "expected": 0.000021137653793211827,
+        "relative_error": 0.003948752498741956,
+        "stage": "attention_projected"
+      },
+      {
+        "derivative": 0.000021137666665760723,
+        "expected": 0.000021137653793211827,
+        "relative_error": 6.089866463904684e-7,
+        "stage": "attention_normalized"
+      }
+    ]
+  },
+  "legacy": {
+    "expected": 0.000021137653793227948,
+    "local_adjoints": [
+      {
+        "absolute_error": 6.657164845000114e-8,
+        "passed": true,
+        "reference_norm": 2.4629089819416166,
+        "relative_error": 2.7029682760554092e-8,
+        "stage": "peri_rms"
+      },
+      {
+        "absolute_error": 1.0931293712487279e-7,
+        "passed": true,
+        "reference_norm": 0.5634921169411321,
+        "relative_error": 1.9399195452505804e-7,
+        "stage": "output_projection"
+      },
+      {
+        "absolute_error": 1.359411562498933e-9,
+        "passed": false,
+        "reference_norm": 4.2090337397547387e-7,
+        "relative_error": 0.0032297473637694007,
+        "stage": "XSA.Q"
+      },
+      {
+        "absolute_error": 1.2152076145432656e-9,
+        "passed": false,
+        "reference_norm": 3.762543085361098e-7,
+        "relative_error": 0.003229750695138259,
+        "stage": "XSA.K"
+      },
+      {
+        "absolute_error": 5.326958965823426e-8,
+        "passed": true,
+        "reference_norm": 0.2702150377921731,
+        "relative_error": 1.9713776884321585e-7,
+        "stage": "XSA.V"
+      }
+    ],
+    "norm": 0.000021077723842458582,
+    "radial": [
+      {
+        "radial_derivative": -9.021820122731561e-6,
+        "stage": "attention"
+      },
+      {
+        "radial_derivative": -9.055207450883729e-6,
+        "stage": "attention_projected"
+      }
+    ],
+    "rms_stable_radial": -9.052137200384211e-6,
+    "stable_attention": false,
+    "stages": [
+      {
+        "derivative": 0.00002107772273286217,
+        "expected": 0.000021137653793227948,
+        "relative_error": -0.0028352749530309554,
+        "stage": "qkv"
+      },
+      {
+        "derivative": 0.000021180815203957626,
+        "expected": 0.000021137653793227948,
+        "relative_error": 0.0020419206006442227,
+        "stage": "attention"
+      },
+      {
+        "derivative": 0.00002122112115640368,
+        "expected": 0.000021137653793227948,
+        "relative_error": 0.00394875249600666,
+        "stage": "attention_projected"
+      },
+      {
+        "derivative": 0.000021137666665776875,
+        "expected": 0.000021137653793227948,
+        "relative_error": 6.089866478326042e-7,
+        "stage": "attention_normalized"
+      }
+    ]
+  }
+}

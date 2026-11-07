@@ -1,0 +1,110 @@
+Ordinary attention versus Hermitian XSA, sum-pow4 mod97 seed1
+Completed and audited, 2026-11-08
+
+Removing XSA reaches the predeclared99% target:4658/4705 (99.001063%) at
+epoch2648,50312 updates,12456192 training examples processed. Training is
+4704/4704 correct. The immediately preceding observation,epoch2647,has
+4653/4705 correct. The run stops at its first qualifying observation exactly
+as planned. The plain-product XSA control never reaches99% in100000 updates.
+
+Matched exposure: both models observed through50312 updates/epoch2648
+                                                Plain + XSA       Plain + ordinary
+Best held-out /4705                              4636 (98.533475%) 4658 (99.001063%)
+Earliest epoch at that best                      2359              2648
+Held-out diagonal at that best /42               10                32
+Held-out non-diagonal at that best /4663          4626              4626
+Held-out at epoch2648 /4705                      4252 (90.371945%) 4658 (99.001063%)
+Held-out diagonal at epoch2648 /42               9                 32
+Training at epoch2648 /4704                      4699              4704
+Training CE at epoch2648                         .0084372952       .0000027754
+Held-out CE at epoch2648                         .3358603729       .0345190038
+Last200 observations' mean accuracy              94.996812%        94.328587%
+Last200 standard deviation (percentage points)   4.635057          3.101791
+Largest one-observation drop (points)            22.465462         22.061637
+First99                                         null              2648
+
+All2649 observation exposures match. The same-epoch endpoint comparison is
+at the candidate's selected first99 crossing, not an unbiased typical score.
+The best-observation comparison within the same exposure window has equal
+off-diagonal counts and22 more correct diagonals for ordinary attention. Those
+peaks occur at different epochs; aggregate counts do not identify individual
+prediction flips. This supports the diagonal-path hypothesis without proving
+that cancellation alone explains every aspect of training.
+
+The full100000-update XSA control peaks later at4649/4705 (98.809777%),epoch4233,
+with16/42 diagonals and4633/4663 non-diagonals. Against that longer-budget peak,
+the ordinary model gains16 diagonal predictions in aggregate and loses7
+non-diagonal predictions, for9 more correct overall. Its endpoint still has
+47 errors:10 diagonal and37 non-diagonal. Diagonal accuracy is32/42 (76.190476%),
+off-diagonal4626/4663 (99.206519%); all55 training diagonals are correct.
+
+What improved and what remains open
+The unchanged first99 criterion is now met on this previously failing seed.
+The plain FFN, Peri/embedding norms, residual scale and tied weights are retained.
+The controlled operator change and restored gradient paths support investigating
+XSA as a limitation on this task. They do not establish optimality of ordinary
+attention or the exact learned arithmetic representation.
+
+Oscillations remain before the crossing. The ordinary last200 mean is slightly
+LOWER than the matched control mean, despite a higher best observation and
+lower standard deviation. Its worst single drop still exceeds22 points. Its
+trajectory after epoch2648 is unobserved: do not extrapolate sustained99% or
+late-run stability from the stopped run. The threshold is crossed by the
+minimum integer count4658; no accuracy margin or new held-out split is claimed.
+This is one known-miss task/seed diagnostic, not universal-model promotion.
+The frozen short-selection/long-regression checks are still needed before
+choosing this as the universal replacement. The capacity queue stays stopped.
+
+Matched protocol
+The control is runs/complex-pow4-plain-ffn-seed1-01 at repository root. Both
+models start with exactly the original seed1 weights and zero optimizer state,
+use the same complete100000-update sampler,4704/4705 split,batch256/tail96,
+width128,heads4,depth1,hidden342,and110848 independent/209280 expanded parameters.
+AdamW LR.002,betas(.9,.98),epsilon1e-8,decay.1,warmup50 are unchanged, including
+the first zero-LR update's moment insertion. No parameter,initializer,FFN,
+learning-rate,depth,width or seed search was added.
+
+Attention keeps QK RMS,RoPE and the original SSMax log(N)/head_width probability
+calculation. The ordinary value sum replaces the Hermitian projection output;
+XSA-only first/repeated attention suppression and its adjoint masks are disabled.
+The unused frozen XSA result is overwritten after reusing its probability
+calculation. This preserves score arithmetic, at the cost of some redundant
+work; runtime optimization was not part of this experiment. The plain complex
+product,parameter-free Peri/embedding RMS,tied readout and post-RMS residual
+scaling1/sqrt(2L) remain. Both variant tags and kernel hashes govern replay.
+
+Validation and provenance
+The preflight passes42 ordinary cases,4 XSA regressions,1652 parameter-direction
+checks,30 primitive cases/23232 coordinate checks and two restored-path checks.
+The first attempt's signed-zero bit-check issue is preserved and explained in
+no-xsa-stress.txt; no kernel or numerical bound was changed to resolve it.
+Fifteen CPU tests, strict Clippy and formatting pass. No Python was executed.
+
+All7 retained states (updates0,9500,19000,28500,38000,47500,50312) replay full
+train/held-out/subgroup scores. Source/PTX/state/history/sampler hashes, original
+initialization,zero-rate moment insertion,complex constraints,checkpoint cadence
+and subgroup accounting pass. Original and XSA-control files stay byte-identical.
+Training uses the exact source fingerprint that passed preflight. Saves are
+buffered at500-epoch intervals and at the first99 stop. Reported training time
+is263.678 seconds including observations/checkpoints; this was not a controlled
+throughput comparison. There are no further ordinary-attention training updates.
+
+Source SHA256:
+8e8acb3416c89811df709357d8d7b0e81c8d60900e1335c5ec4d2f8403b5dce3
+Ordinary-attention PTX SHA256:
+6145ad5aea58ea7c7a7b211008cd216a12450a8a3ab39fca6b67258985663150
+Initial-parameter SHA256:
+64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1
+Complete-sampler SHA256:
+7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c
+
+Artifacts
+Run: repository-root runs/complex-pow4-no-xsa-seed1-01, with all states,history,
+protocol,result,audit and full archived source. Plan: ../diagnostic/NO_XSA_PLAN.txt.
+Numerical preflight: no-xsa-stress-01 and no-xsa-stress-02, both preserved.
+Exact paired statistics: pow4-no-xsa.json; checks: pow4-no-xsa-validation.json.
+Full unsmoothed curves: pow4-no-xsa-{xsa,ordinary}.tsv and SVG/PNG. Regenerate
+with bash pow4-no-xsa-report.sh. That script first requires a completed passing
+run audit. The figure separates all observed exposure from the matched window.
+The earlier operator proof/review remains in pow4-diagonal-lean-review.txt and
+pow4-diagonal-check.lean; this experiment does not modify the Lean project.

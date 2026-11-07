@@ -1,0 +1,105 @@
+{
+  "case": "arithmetic-sum-pow4",
+  "formula": "(a+b)^4 mod97",
+  "seed": 1,
+  "original": {
+    "observations": 5265,
+    "final": {
+      "epochs": 5263.163265306122,
+      "step": 100000,
+      "train_accuracy": 0.9985119047619048,
+      "heldout_accuracy": 0.90605738575983,
+      "heldout_exact": 4263,
+      "train_loss": 0.008937441268745733,
+      "heldout_loss": 0.3507458578387432
+    },
+    "best": {
+      "epochs": 3793.0,
+      "step": 72067,
+      "accuracy": 0.9825717321997874,
+      "exact": 4623
+    },
+    "first99": null,
+    "final200": {
+      "mean_percent": 91.85844845908606,
+      "min_percent": 84.39957492029755,
+      "max_percent": 98.04463336875664,
+      "stddev_percentage_points": 3.0899154679485377
+    },
+    "largest_adjacent_drop_percentage_points": 20.12752391073326
+  },
+  "corrected": {
+    "observations": 5265,
+    "final": {
+      "epochs": 5263.163265306122,
+      "step": 100000,
+      "train_accuracy": 1.0,
+      "heldout_accuracy": 0.9394261424017003,
+      "heldout_exact": 4420,
+      "train_loss": 0.0008111740760313939,
+      "heldout_loss": 0.2198002228942547
+    },
+    "best": {
+      "epochs": 4599.0,
+      "step": 87381,
+      "accuracy": 0.9827842720510096,
+      "exact": 4624
+    },
+    "first99": null,
+    "final200": {
+      "mean_percent": 93.88586609989373,
+      "min_percent": 82.18916046758767,
+      "max_percent": 98.08714133900106,
+      "stddev_percentage_points": 3.9512342270889893
+    },
+    "largest_adjacent_drop_percentage_points": 24.0807651434644
+  },
+  "audit": {
+    "baseline": {
+      "final_accuracy": 0.90605738575983,
+      "first99_epochs": null,
+      "status": "budget_exhausted",
+      "updates": 100000
+    },
+    "benchmark_replaced": false,
+    "best_observed_epochs": 4599.0,
+    "best_observed_heldout": 0.9827842720510096,
+    "case": "arithmetic-sum-pow4",
+    "complex_constraints": "passed",
+    "epochs": 5263.163265306122,
+    "first99_epochs": null,
+    "full_split_replay": "passed",
+    "heldout_accuracy": 0.9394261424017003,
+    "heldout_exact": 4420,
+    "heldout_examples": 4705,
+    "initialization_paired": true,
+    "limitation": "one-seed corrected-gradient rerun; no universal convergence claim",
+    "observations": 5265,
+    "original_files_unchanged": true,
+    "passed": true,
+    "python_invoked": false,
+    "retained_checkpoint_steps": [
+      0,
+      9500,
+      19000,
+      28500,
+      38000,
+      47500,
+      57000,
+      66500,
+      76000,
+      85500,
+      95000,
+      100000
+    ],
+    "sampler_paired": true,
+    "seed": 1,
+    "source_hashes": "passed",
+    "status": "budget_exhausted",
+    "train_accuracy": 1.0,
+    "updates": 100000
+  },
+  "paired_observation_steps": true,
+  "final_accuracy_difference_percentage_points": 3.3368756641870334,
+  "interpretation": "One-seed rerun with both numerical fixes; neither run reaches99%; original benchmark retained"
+}

@@ -1,0 +1,130 @@
+Diagonal failure, complex product and XSA: Lean review, 2026-11-08
+
+The next controlled architecture test should retain the plain complex-product
+FFN and replace Hermitian XSA with ordinary causal attention, keeping SSMax,
+QK normalization, Peri/embedding RMS, residual scaling and tied weights. The
+specific reason is equal-value cancellation in the attention projection. No
+no-XSA training has been performed in this review, and no99% fix is claimed.
+
+Observed evidence
+The finished plain-FFN run peaks at4649/4705 (98.809777%), epoch4233. Training
+is100%; held-out diagonals are16/42 and non-diagonals4633/4663 (99.356637%).
+Thus26 of56 errors are in just42 held-out diagonal examples. Nine corrected
+predictions would reach99% at that observation if other predictions stayed
+fixed. At completion, however,438 of468 held-out errors are off-diagonal.
+Diagonal generalization and unstable training trajectories are separate issues.
+The full comparison is pow4-plain-ffn.txt; no bad observations are excluded.
+
+Exact attention mechanism
+For tokens [a,a], the embedding and every pre-attention token-wise operation
+produce equal states. RoPE rotates Q/K; it does not rotate the values. Hence
+v_1=v_2=v. Whatever QK normalization, SSMax and RoPE do to the probabilities,
+their normalized weighted sum is y=(p_1+p_2)v=v. Ordinary attention retains v.
+
+Hermitian XSA subtracts the complex projection onto the current value:
+  z = y - v * (<v,y>/||v||^2).
+When y=v and v is nonzero, z=0. In real coordinates the implementation removes
+the projections onto both v and Jv; the latter has zero coefficient here.
+The same cancellation already occurs with the real XSA projection. Merely
+replacing Hermitian XSA with real XSA would retain this diagonal mechanism.
+
+Native denominator clipping matters: this exact argument applies when the
+value norm exceeds1e-12. The implementation's prefix/guard code records that
+condition. For shared prefixes it explicitly skips the attention residual,
+zeros that branch's backward signal and shares the token-wise FFN/output path.
+This stabilizes an exact cancellation; it is not evidence of a new gradient
+implementation bug. First-position attention is also explicitly suppressed.
+Changing only the XSA projector while retaining those shortcuts would NOT
+implement ordinary causal attention. Both first/shared attention suppression
+and their adjoint masks must be handled in the ablation.
+
+Source locations, current GPT diagnostic/frozen native:
+  diagnostic/src/gradient_oracle.rs: exclusion, attention_qkv, model_with_product
+  native/src/attention.rs: forward, Q/K RoPE, value projection and norm guard
+  native/src/sequence_ops.rs: prefix, guard, residual<ATT>, attention_grad, share
+  diagnostic/src/engine.rs: forward, residual and backward dispatch
+The arithmetic task supplies exactly two operand tokens and supervises the
+second position; there is no separating operand-role token in this input.
+
+What this does and does not imply
+The diagonal still reaches the residual and FFN, so the complete model can
+represent a unary rule a -> (2a)^4. Cancellation does not prove that XSA causes
+the99% miss, or that the FFN cannot learn it. It identifies a concrete path
+used by unequal operands that disappears for equal operands, motivating a
+matched ablation. Extra FFN width/depth would not restore that attention path.
+Ordinary attention with identical values also remains insensitive to their
+count, so removing XSA alone does not solve every repeated-token/counting task.
+No optimality or universal convergence guarantee follows.
+
+Complex-product and answer-class theory
+Reviewed /home/misha/lean_projects/transformer at commit
+c4b85817b2b6e9f5e0824c0e05020f2996e6f3a0, including the newly added quantitative
+recovery and answer-equivalence sections of review/flat_spectrum.md.
+During review the separate repository advanced to9328bc83d47adf0df04f08731469bdb5a991aee7,
+adding experiments/flat_approx. None of the reviewed proof/source files changed.
+That new README reports zero positive full-character spectral budgets across24
+frozen cubic checkpoints, despite high classifier accuracy. I read its report
+summary, without rerunning that separate cubic diagnostic. It reinforces the
+need to distinguish failure of a proposed certificate from failure of the FFN.
+
+The CP1 bridge uses x=N(E[a]+iE[b]) and an attention-free normalized residual
+block. At a=b this input is proportional to(1+i)E[a], not zero. Plain
+multiplication gives g*g/sqrt(2), nonzero for nonzero scalar g. This does not
+guarantee a nonzero learned output projection or correct target features; it
+does rule out an intrinsic equal-factor cancellation in the product itself.
+The theorem's actual residual formula differs from our XSA transformer.
+
+The new FiberCodes results prove that the classifier need only preserve
+answer-class score contrasts. Recovering every Fourier feature is unnecessary:
+errors can cancel inside an answer class. The committed explicit arithmetic
+example is CUBIC modulo97, not this quartic task. The generic theorem applies
+to any answer map, including s->s^4, once its isometry/alignment premises hold.
+For quartic answers the equivalence is s=r*t for r in{1,22,75,96}, including
+zero. The local checked file proves this factorization/equivalence and applies
+the generic fiber theorem to the normalized Fourier basis at sums1 and22.
+Distinct features have identical complete quartic class-score vectors.
+
+These readout constructions do not supply trained tied-embedding weights.
+Source alignment, a separating margin, recovery/objective conditions and
+execution bounds remain premises. The new approximate-recovery bound tracks
+alignment error plus conditioned fitting/objective error plus numerical error;
+it does not show AdamW makes those errors small. A failed full-character probe
+would therefore be insufficient evidence for replacing complex multiplication.
+No such feature-recovery probe was run on the new plain checkpoint here.
+
+Native Lean validation
+The first axiom invocation loaded stale compiled modules and reported unknown
+new declarations. LAKE_ARTIFACT_CACHE=false lake build Transformer rebuilt the
+current library successfully. It replayed existing, unrelated sorry warnings;
+the whole repository is not claimed sorry-free. The subsequent native axiom
+script passes for all23 targeted recovery/answer-class declarations, each using
+only propext, Classical.choice and Quot.sound.
+
+pow4-diagonal-check.lean is a standalone review artifact in this GPT repository,
+not a modification of the Lean project's source. It checks normalized equal-
+value attention, Hermitian cancellation, nonzero equal-factor multiplication,
+the modulus97 quartic equivalence and its Fourier answer-class witness. Its
+seven declarations have only the same standard axioms; no sorry, new axiom,
+native_decide or linter suppression is used. This is exact-algebra validation,
+not a formal proof of the entire compiled GPU model or its convergence.
+
+Reproduce from /home/misha/lean_projects/transformer:
+  LAKE_ARTIFACT_CACHE=false lake build Transformer
+  LAKE_ARTIFACT_CACHE=false lake env lean scripts/FlatApproxAxioms.lean
+  LAKE_ARTIFACT_CACHE=false lake env lean /home/misha/python_projects/gpt/research/complex_geometry_suite/results/pow4-diagonal-check.lean
+Saved outputs: pow4-diagonal-lean-axioms.txt and pow4-diagonal-check-axioms.txt.
+Their declaration counts and axiom allowlist pass pow4-diagonal-lean-validation.json.
+The discrtree skill was used for indexed declaration/lemma lookup; new source
+statements were also read directly. No Python or additional model training.
+
+Recommended next test, not executed
+Use the plain run as the matched control. Change only the attention output
+from projected XSA to its ordinary weighted value sum, including at first and
+repeated-token positions. Keep attention probabilities and all other model/
+optimizer/data settings. Require independent gradient checks for first tokens,
+repeated prefixes, zero/tiny values and ordinary non-diagonal cases; in equal-
+value cases Q/K derivatives may vanish while the V/output path must remain.
+Then use the same initialization, zero moments, complete sampler and100000-
+update/first99 rule with500-epoch buffered checkpoints. Record all diagonal and
+non-diagonal curves and preserve the original frozen benchmark. A single known-
+miss success would still require the frozen short/long suite before promotion.

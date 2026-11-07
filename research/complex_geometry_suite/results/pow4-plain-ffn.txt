@@ -1,0 +1,87 @@
+Plain complex-product FFN, sum-pow4 mod97 seed1, completed 2026-11-08
+
+Removing only the radial sigmoid gate does not reach99%. It raises peak
+held-out accuracy but retains large oscillations and ends below the corrected
+radial control. Both runs complete the same100000 updates,5263.163265 epochs;
+all5265 observations have matching exposure. Neither first99 is observed.
+
+                                         Corrected radial       Plain product
+Best held-out /4705                       4624 (98.278427%)       4649 (98.809777%)
+Earliest epoch attaining that best        4597                    4233
+Final held-out /4705                      4420 (93.942614%)       4237 (90.053135%)
+Final train /4704                        4704 (100%)            4689 (99.681122%)
+Final training CE                         .0008111741            .0163350719
+Final held-out CE                         .2198002229            .3639063650
+Final200 mean held-out                    93.885866%              92.997131%
+Final200 stddev (percentage points)       3.951234                2.716515
+Largest one-observation drop (points)     24.080765               26.865037
+First99                                  null                    null
+
+The earlier radial auditor reported epoch4599 because its maximum selects the
+last tied observation. The paired analysis consistently reports the earliest
+maximum,4597. The maximum count/accuracy is identical; no result was changed.
+There is no early-stop censoring in this comparison. The lower plain tail
+standard deviation accompanies a lower mean and a larger worst single drop.
+
+Diagonal generalization
+At the plain peak, all4704 training examples are correct. Held-out diagonals
+a=b are16/42 (38.095238%); off-diagonal examples are4633/4663 (99.356637%).
+Of the56 held-out errors,26 are diagonal and30 are not. Nine more correct
+examples would cross99% (4658/4705). Thus improving the diagonal is sufficient
+to clear that threshold at this particular peak, provided the other predictions
+are retained. This is an arithmetic counterfactual, not an achieved result or
+proof of stable convergence. At the endpoint, diagonal train is55/55 and
+held-out12/42; the468 total held-out errors include438 off-diagonal failures.
+Diagonals are42/4705=.892667% of held-out examples and cannot account for the
+large later accuracy crashes by themselves.
+
+Controlled change
+The old FFN computes sigmoid(sqrt(|g|^2+eps))*g*u/sqrt(2); the candidate computes
+g*u/sqrt(2). The same complex-linear matrices,110848 independent parameters
+(209280 expanded), width128, heads4, depth1 and hidden342 are retained. Both
+use Peri/embedding parameter-free RMS, tied embeddings, Hermitian XSA, QK RMS,
+SSMax inverse-width gain, RoPE and post-RMS residual scaling1/sqrt(2L).
+Initialization, complete sampler,4704/4705 split, batch256/tail96, AdamW LR.002,
+betas(.9,.98), epsilon1e-8, decay.1 and50-update warmup are matched. The first
+zero-LR update inserts moments without changing weights. No extra seed, width,
+depth, LR, initializer or optimizer was tried. The separate capacity queue stays
+stopped. This known-miss diagnostic does not replace frozen benchmark selection.
+
+Numerical and provenance checks
+The expanded preflight passes40 plain-model cases,3 radial controls,1534
+directional checks,32 isolated product rows/11584 gradient coordinates and6
+local adjoints. The first wide-head precision failure and unsuccessful narrower
+fix are preserved; see plain-ffn-stress.txt. The corrected composed FP64 adjoint
+is inactive for both four-head32 training models. Training requires precisely
+the source and product-kernel fingerprint that passed the preflight.
+
+All12 retained checkpoints replay full train/held-out and subgroup metrics.
+Source/PTX/state/history hashes, parameter constraints, exposure, initial state,
+sampler, subgroup accounting and original/control immutability pass. Fourteen
+CPU tests pass, one CUDA-only test is ignored in that CPU invocation; the actual
+GPU preflight was run separately. Clippy and formatting pass. No Python.
+History is buffered and state saves occur at0,500-epoch intervals and completion.
+Training elapsed674.588 seconds, including observation/checkpoint work; this is
+not a controlled throughput comparison because another GPU process was present.
+
+Source SHA256:
+dca42109d55f85ff1daaddc3b1aa567ecb4cf34acccd7d62904662edee3cf9f9
+Initial-parameter SHA256:
+64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1
+Complete-sampler SHA256:
+7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c
+
+Artifacts and reproduction
+Candidate: repository-root runs/complex-pow4-plain-ffn-seed1-01, including
+protocol.json, result.json, audit.json, all checkpoints and archived sources.
+Control: runs/complex-pow4-fixed-grad-seed1-01, preserved byte-for-byte.
+Exact metrics: pow4-plain-ffn.json; checks: pow4-plain-ffn-validation.json.
+Full unsmoothed curves: pow4-plain-ffn-{radial,plain}.tsv and SVG/PNG.
+Regenerate those files with bash pow4-plain-ffn-report.sh in this directory.
+That script requires the completed passing run audit before producing output.
+Frozen protocol: ../diagnostic/PLAIN_FFN_PLAN.txt.
+
+The subsequent user-requested Lean/diagonal review is separate from this
+finished ablation. It examines answer-equivalence and XSA's equal-value
+cancellation. This run itself identifies neither an optimal FFN nor a defect
+in Peri/embedding norms, residual scaling or tied weights.

@@ -6,6 +6,17 @@ epochs before the first observed 99% exact held-out accuracy on the SHORT suite.
 A single historical crossing counts. Do not require a delayed learning plateau,
 continued retention, or a favorable final checkpoint.
 
+Main research model selected by the user,2026-11-08
+Use research/main_model/README.txt and model.json as the current architecture:
+Peri-RMS,ordinary causal SSMax,plain complex-product FFN,Q/K RMS,standard RoPE,
+residual scaling after RMS,tied embedding/readout and parameter-free RMSNorm
+including embeddings. This selects the successful ordinary-attention model,
+with no XSA or causal mean subtraction. Its seed1 quartic reference reaches99%
+at2648epochs; its exact full75/30-suite coverage remains pending. This user
+selection establishes the main research model without rewriting frozen control
+results or claiming universal convergence. Future experiments start from this
+model unless an explicitly declared comparison requires a historical variant.
+
 Shared-model objective: latest user clarification
 Build one architecture for both small and large tasks, rather than switching
 normalization or other mechanisms by task size. Keep Q/K normalization in the
@@ -50,7 +61,7 @@ rates/weight decay, and a 50-update completed-step warmup. CUDA uses native fuse
 AdamW and verified capture-neutral graphs. FP32 matmul precision is highest;
 the repaired RMS backward uses its existing FP64 calculation.
 
-The current GPT includes SwiGLU, repaired RMS backward, Q/K RMS, fixed attention
+The frozen baseline GPT includes SwiGLU, repaired RMS backward, Q/K RMS, fixed attention
 temperature, centered XSA and guarded prefix stabilization.
 
 Run the baseline before claiming improvements
@@ -1465,3 +1476,462 @@ accounting. The recovery snapshot is
 runs/early99-recovery/kernite-user-stop-20261107. See
 research/kernite_training/results/user-stop.json for its full file hashes.
 The wider research goal remains unfinished; this is an explicit stop.
+
+Latest user request: complex-product FFN in the shared transformer
+Port the complex-product feed-forward operation from research/complex_transformer
+into our transformer, replacing SwiGLU, and check the fixed short and long suites.
+Keep the other declared shared-model components. This authorizes this new study;
+it does not restart the stopped capacity queue. Preserve all earlier results.
+
+Execution constraint, now and in future: do not use Python. Use Rust and Kernite
+for preparation, training, tests, scoring and reporting. Reading archived source
+to port and verify the equations and frozen data is allowed; executing Python is
+not. Buffer writes and checkpoint every 500 epochs, plus completion or clean stop.
+Native ports must verify dataset fingerprints and preserve exact held-out scoring.
+Unsupported cases remain explicitly pending until their native ports are ready.
+
+Native FFN-only suite port completed
+research/complex_ffn_suite now contains the real shared transformer with the
+complex-product FFN and its matched native SwiGLU control. The 22 arithmetic
+tasks use native/; the other13 use sequence_native/. All35 task datasets match
+the frozen fingerprints without executing Python. Seven CPU tests and eight
+GPU tests across the two backends pass, including complete-model scalar FP64
+oracles, parameter gradients, long attention, free-generation scoring, field
+probability pooling and bit-identical clean checkpoint continuation.
+The full native arithmetic short block passes54/54 in both arms. This is
+partial fixed-75 coverage, not a declared winner. Long arithmetic is running;
+the remaining42 short and36 long sequence cells are queued behind it. Keep
+all failures and null first99 values. audit/ independently verifies sources,
+initialization, sample order, complete splits, budgets, crossing intervals and
+checkpoint integrity. It writes results/audit.json and audit.tsv after the queue.
+Checkpoint writes are verified at epochs0,500,1000,... plus success, budget end
+and clean stop. Evaluations retain each task's frozen cadence and stay buffered.
+The stopped earlier capacity cohort remains stopped.
+
+Native FFN suite progress, 2026-11-07 13:17 UTC
+Both fixed short suites are complete and audited: complex-product75/75 and
+matched native SwiGLU75/75. Geometric-mean first99 epochs are13.8782087039 and
+14.5756136726 respectively: the FFN-only candidate uses4.784738292% fewer
+epochs, with39 faster,14 equal and22 slower paired seeds. This is a comparison
+against the matched native control, not a replay of historical Torch results.
+See research/complex_ffn_suite/results/short-comparison.json.
+The audit snapshot contains189 completed cells and no integrity failures.
+Long so far: candidate15 passes/4 budget misses/11 unfinished; control14 passes/
+6 budget misses/10 unfinished. The two recovered arithmetic cells are seed2
+of sum-pow4 and sum-cube. The queue is continuing the remaining long tasks;
+do not declare full long coverage or promote a universal winner yet.
+results/audit.json is refreshed after the complete native queue finishes.
+
+Additional complex geometry comparison authorized, 2026-11-07
+The user requested adding the other complex-product model from the last commit.
+Commit910f206 adds complex-linear projections, Hermitian XSA and a shared-variance
+AdamW alternative. Preserve its four declared arms and fixed35-task manifest:
+real-product, complex-linear, complex-hermitian, complex-hermitian-phase.
+Queue all420 cells (25 short then10 long, three seeds, four arms) after the
+current210-cell FFN study and its integrity audit finish. Preserve existing
+results; no simultaneous GPU training, no LR/model tuning from long outcomes.
+See research/complex_geometry_suite/QUEUED_STUDY.txt and run-after-ffn.sh.
+The new CPU-only audit also validates complex parameter/moment constraints.
+Rust/Kernite only; saves every500 epochs plus initialization and endpoints.
+
+Complex comparison complete and fourth-power weight inspection, 2026-11-07
+All420 declared cells completed; the independent audit has zero integrity
+failures. Short:75/75 for every arm. Long: real-product23/30, complex-linear29/30,
+complex-hermitian29/30, complex-hermitian-phase25/30. Both ordinary-AdamW complex
+arms miss only sum-pow4 seed1. No universal winner or convergence theorem follows.
+
+The user requested checking the failed Hermitian seed1 weights. The separate
+Rust/Kernite diagnostic reads all12 pow4 checkpoints, verifies hashes/constraints,
+and reproduces complete train and held-out scores without changing parameters,
+moments or checkpoints. See research/complex_geometry_suite/results/pow4-diagnosis.txt.
+The seed reached98.26% held-out, but shows abrupt late train/held-out regressions
+and ends90.61%. Endpoint weights, QK signals, RMS denominators and Hermitian
+orthogonality are numerically healthy. Stored relative momentum scales are larger
+and locally misaligned with full-training gradients; this supports a late
+optimization instability hypothesis, not a proof of an LR-specific cause.
+All four variants missed99% on seed1. Architecture remains fixed. A matched
+lower-LR continuation is a proposed diagnostic, not yet run or a benchmark result.
+
+Matched continuation authorized: user requested "go next check".
+Use the identical complex-hermitian sum-pow4 seed1 final weights, moments,
+global step100000 and exact next batches. Compare fixed LR0.002 and0.0002 for
+1000 additional epochs each, continuing after99% to measure stability. Full
+evaluation each epoch; buffered snapshots every500 epochs plus first99/end.
+See diagnostic/CONTINUATION_PLAN.txt under research/complex_geometry_suite.
+Outputs: runs/complex-pow4-lr-check-01. This is a post-budget diagnostic;
+do not replace the frozen miss or retune the completed420-cell comparison.
+
+Matched LR continuation complete and audited
+Both arms finished the declared19000 additional updates/1000 epochs on the
+identical next4704000 examples. Initial weights, moments and global step were
+preserved. Final held-out: LR 0.002: 4598/4705 (97.7258%); LR 0.0002: 4600/4705
+(97.7683%). Neither reached99%; both ended100% train. In the final200 epochs,
+original LR ranges83.8045--97.9171%, mean92.4685%, stddev3.23124 percentage
+points; lower LR ranges97.6408--97.9384%, mean97.8046%, stddev0.04723 points.
+The latter is68.415x smaller. Largest adjacent accuracy drop falls from10.3294
+to0.23379 points. This supports optimizer-step sensitivity of the observed
+oscillation but leaves the generalization gap and original benchmark miss.
+The lower-LR endpoint has higher held-out loss (.14494 versus.10648); do not
+claim a complete convergence fix or a universally better setting.
+
+Both artifact audits pass, with retained states at additional epochs0,500,1000.
+An audit-only decimal-roundoff fix was recorded after the control completed;
+no control training was replayed. One discarded reference update was regenerated
+for first-step equivalence, explicitly outside both budgets. Numerical training
+code and canonical PTX match; first-step gradients/moments are identical and
+parameter displacement norm scales0.099999982 as expected. Seven CPU tests pass.
+See research/complex_geometry_suite/results/pow4-lr-continuation.txt and the
+audited JSON, paired TSV and full learning curves. The frozen plan allows no
+additional LR arms or budget expansion from these results. Broader research
+remains unfinished and the previously stopped capacity queue remains stopped.
+
+Raw tensor diagnosis requested and completed, 2026-11-08
+Read all six retained LR-continuation parameter/moment binaries and the two
+successful Hermitian pow4 reference endpoints. Checks and complete-split replays
+pass. At the weak +500 checkpoint there is no weight explosion: FFN historical
+relative steps are about0.38--0.41%, Q/K about0.32--0.34%, with more than99.97%
+of step energy perpendicular to each block's weights. Inference-only perturbation
+along stored optimizer directions raises full-training loss in all eight blocks;
+reversing each direction lowers it. This tests historical momentum, not the next
+minibatch update. Q/K transplant changes the weak score by only two examples;
+no individual block replacement repairs it. Preserve all26 substitutions and
+32 local tests, including failures and both whole-model positive controls.
+
+New verified numerical issue: native sequence_ops.rs loss uses FP32 p_target-1
+and log(total)+max-target. At the lower-LR final checkpoint, reported training
+CE is0 but a stable FP64 reference on the SAME FP32 logits gives9.643405e-8.
+The native target derivative is zero on3628/4704 examples despite a nonzero
+reference. Logit-gradient relative error is61.88%; corrected full-training
+gradient directions differ strongly, with several Q/K/FFN cosines negative.
+AdamW second moments are also extremely small here. The original weak +500
+checkpoint agrees with the gradient reference to roughly2e-6 relative error,
+so the numerical defect is not yet proven to cause the original oscillations.
+Classification counts remain valid and the original29/30 miss remains recorded.
+
+Priority for a separately authorized follow-up: a cancellation-resistant loss
+AND target-gradient kernel, retaining Peri-RMS, embedding RMS and tied weights;
+validate confident cases before matched training. Do not patch frozen native
+sources or claim a successful convergence fix without the experiment. No new
+training was performed in this diagnosis. See results/pow4-raw-diagnosis.txt
+under research/complex_geometry_suite and its raw/precision artifact directories.
+Ten native CPU tests, Clippy and formatting pass. Python remains prohibited.
+
+Gradient fix and full backward-path stress audit completed, 2026-11-08
+User requested fixing gradients, rechecking checkpoints and stress-testing all
+gradient paths. Implemented two opt-in Rust/Kernite corrections in the separate
+complex_geometry_suite/diagnostic candidate. Frozen native kernels are unchanged.
+The stable loss separately accumulates non-target mass and avoids p_target-1
+cancellation. All18 original/continuation pow4 checkpoints pass36 complete-split
+rechecks; logits/predictions are bitwise identical and saved weights/moments
+are unchanged. Lower-LR final lost target derivatives fall3628/4704 to0;
+relative logit-gradient error falls61.88% to2.8286e-7. True training CE is
+9.6434e-8, previously rounded to0. This does not change held-out accuracy.
+
+The independent scalar FP64 forward-mode AD stress suite initially passed41/42
+cases and1475/1477 directional checks. A single128-wide attention head exposed
+Q/K cancellation. Local checks at actual native inputs isolate XSA adjoint
+relative error0.00322975; Peri-RMS's own adjoint passes. Accumulating XSA geometry
+and query-adjoint reductions in FP64 lowers local Q/K errors to2.55e-8/3.29e-8.
+The final suite passes42/42 cases,1477/1477 directions across378 parameter-block
+instances,28 primitive rows and five targeted local adjoints. Original bounds
+were preserved; the failed initial artifacts remain visible. Stressors include
+zero/tiny/large inputs, masks, constant prefixes, clipped values, confident
+readout, widths64--256, depths1--4 and sequences up to128. Eighteen saved-model
+AD cases use three fixed examples each; the separate loss audit uses full splits.
+
+Keep Peri-normalization, embedding normalization and tied weights. Finite stress
+coverage does not prove all possible inputs or clipping boundaries, and some
+FP32 boundary roundoff remains. No corrected training has run: the frozen
+29/30 complex-arm result and earlier optimizer-instability diagnosis remain.
+Broader research is unfinished; the stopped capacity queue remains stopped.
+Reports: research/complex_geometry_suite/results/pow4-fixed-loss.txt and
+gradient-path-stress.txt; final raw artifacts are pow4-fixed-loss-02 and
+gradient-path-stress-02. Eleven CPU tests, isolated CUDA loss stress, Clippy and
+formatting pass. No Python was executed.
+
+Corrected-gradient seed1 rerun authorized, 2026-11-08
+User clarified that "(a/b)^4" meant the existing (a+b)^4 mod97 seed1 task.
+Rerun complex-hermitian from its exact original initialization with zero moments
+and the same full sampler, model, LR0.002, warmup50 and100000-update budget.
+Enable only stable loss and the FP64 XSA adjoint. Preserve complete-split
+evaluation each19 updates, first99 stopping and buffered500-epoch checkpoints.
+Retain original benchmark files. Plan: diagnostic/RETRAIN_PLAN.txt under
+research/complex_geometry_suite. New output: runs/complex-pow4-fixed-grad-seed1-01.
+No extra seeds, hyperparameters or capacity-queue resumption are requested.
+
+Corrected-gradient rerun and all-epoch inspection complete
+The seed1 sum-pow4 run used the exact original initialization and100000-update
+sampler. It exhausted the same budget without99%: best4624/4705=98.278427%
+at epoch4599, final4420/4705=93.942614%, train100%. The original best is4623/4705
+and final4263/4705=90.605739%. Endpoint improves3.336876 points, but last200
+accuracy stddev increases3.0899 to3.9512 points and large oscillations remain.
+Keep both null first99 outcomes and the original benchmark miss.
+
+User asked about inspecting raw weights at different epochs. All12 retained
+states (0,every500 epochs,final5263.163265) were inspected with corrected full-
+split gradients. Hashes, constraints, score replays and original immutability
+pass; no training occurs during inspection. No exploding/corrupt raw weights.
+At weak epoch4000 (91.7322%), historical momentum directions oppose the full-
+training gradient in all8 blocks; FFN steps are0.75--0.81% of weight norm versus
+0.061--0.065% at stronger epoch3500 (97.8746%). These saved directions do not
+include the next minibatch gradient. At epoch4500 (98.1722%), diagonal a=b
+accuracy is55/55 train but10/42 held-out; generalization remains a separate gap.
+
+Next suggested check: actual next-minibatch AdamW update from the weak saved
+state, compared with step-size and moment-reset counterfactuals on identical
+examples. Not run or added to the training budget. Retain Peri/embedding norms
+and tied weights. Source, audit, all errors, raw block data and full learning
+curves are linked from research/complex_geometry_suite/results/pow4-fixed-grad-
+seed1.txt. Raw inspection: results/pow4-fixed-grad-epochs-01. Eleven CPU tests,
+Clippy and formatting pass. Broader goal remains unfinished; capacity queue
+remains stopped. No Python or additional training arms were used.
+
+Actual next-update diagnostic authorized by user "go"
+Use corrected seed1 epoch4000/checkpoint076000, the exact next256-example batch,
+and fresh in-memory copies for eight disposable one-update branches. Compare
+retained-moment LR scales1,.5,.25,.1, resetting only m, resetting m/v with a
+fresh Adam counter but current LR, and both reset directions at the original
+update's displacement norm. Include an unchanged-state control, complete train
+and held-out scores, full-training gradient dot displacement, and independent
+scalar AdamW checks. NEXT_UPDATE_PLAN.txt in the diagnostic crate fixes details.
+No sustained continuation or changes to saved training states are authorized
+by this diagnostic. Report all outcomes and preserve the frozen benchmark.
+
+Actual next-update diagnostic completed, 2026-11-08
+All eight predeclared branches ran once from corrected seed1 epoch4000 with
+the exact next 256-example batch. Normal AdamW lowers batch CE 31.471% but
+raises full-training CE 27.5657%. Half/quarter/tenth LR still raise full-training
+CE 12.0669%/5.6117%/2.1431%. Resetting only the first moment lowers training CE
+2.6166% at the same LR and 10.0749% at the original displacement norm. Resetting
+both moments with a fresh Adam counter lowers CE 14.0816% at equal norm.
+All eight block gradient/displacement products are positive for the ordinary
+update and negative for the matched first-moment reset. Held-out correctness
+changes from 4316/4705 to 4298 for ordinary AdamW and 4321 for matched reset-m.
+This supports a harmful stored momentum direction at this state and batch.
+
+The user asked whether normalization or residual connections are responsible.
+Neither was changed in this experiment; no defect in either is identified.
+Existing gradient stress and epoch-state checks pass. Norms/residuals can affect
+conditioning, and optimality has not been established. Retain Peri/embedding
+normalization and tied weights while investigating the optimizer evidence.
+
+Independent FP64 scalar checks pass all 886784 coordinate updates across the
+eight branches (2660352 p/m/v comparisons). Byte-level moment equality, all
+state hashes, norm matching and input preservation pass. Twelve CPU tests,
+Clippy and formatting pass; no Python. Report and all branches are retained at
+research/complex_geometry_suite/results/pow4-next-update.txt and -01/.
+Eight disposable diagnostic updates, zero sustained continuation updates.
+One historical state and batch cannot establish a universal optimizer or a
+long-run convergence fix. Preserve both null first99 results and the frozen
+benchmark. Broader research remains unfinished; capacity queue remains stopped.
+
+Matched 500-epoch momentum continuation authorized by user "go"
+Use corrected seed1 epoch4000, and compare retaining AdamW moments with zeroing
+only its first moment once. Retain LR .002, second moment, Adam clock, model and
+exact next batches. Run 9500 updates per arm to epoch4500, observe full splits
+and diagonal/non-diagonal errors each epoch, and buffer saves for 500 epochs.
+Record first99 but complete the fixed window to measure persistence. Require
+the control to reproduce the saved original interval and endpoint state.
+Frozen plan: complex_geometry_suite/diagnostic/MOMENTUM_CONTINUATION_PLAN.txt.
+This diagnostic supersedes the previous prohibition on sustained continuation
+only for these two prescribed 500-epoch branches. No architecture or LR search.
+
+Flat-spectrum / FFN reread requested during the matched continuation
+Read the latest Complex-product Rotate90 bridge, its Lean definitions and
+explicit recovery hypotheses, and the native two-seed cubic experiment.
+Our transformer uses a RADIAL-gated complex product. The new CP source uses
+a PLAIN complex product inside a different, attention-free model. Removing
+only the radial gate is a justified next ablation, not an established fix.
+The proof retains norms and tied weights; it assumes feature recovery/alignment
+and margins and does not prove AdamW convergence. It does not identify a norm
+or residual defect. The current 500-epoch experiment keeps its frozen FFN.
+
+A native FP64 arithmetic check confirms that the quartic fixed-character
+kernel is not flat and exhibits a rank-four label readout from the four roots
+{1,22,75,96} of unity. This is feature availability, not a learned-model or
+multiclass-decoding guarantee. Source comparison, exact hypotheses, numerical
+check and future ablation scope are recorded in complex_geometry_suite/results/
+pow4-flat-spectrum-ffn-review.txt and pow4-spectrum-review.rs/.json. No new Lean
+proof or plain-product transformer training is claimed. No Python was used.
+
+Matched momentum continuation completed, 2026-11-08
+Both prescribed branches completed9500 updates from epoch4000 to4500,19000
+actual updates total. Neither reaches99%. Keep/reset-m best held-out:
+98.214665%/98.108395%; final98.172157%/90.414453%; final200 mean
+94.121785%/91.677683%. The reset's lower stddev accompanies worse mean accuracy.
+The control reproduces all501 original observations and its final parameters
+AND moments byte-for-byte. Both first updates exactly reproduce prior one-step
+artifacts. All retained states, sources, sampler hashes, subgroup accounting,
+reloads and original/corrected/one-step input preservation pass. Thirteen CPU
+tests, Clippy and formatting pass. Metrics remained buffered; saves at0/500.
+
+A one-time first-moment reset is not a sustained convergence fix. The earlier
+local direction diagnosis remains valid, but it is insufficient to explain the
+entire99% miss. At the best observations, both branches fit4704/4704 training
+examples while held-out diagonals score14/42 and13/42. Architecture and optimizer
+discovery remain open. Report: complex_geometry_suite/results/pow4-momentum-
+500.txt, paired TSVs, SVG/PNG, exact JSON and validation JSON. Full state/source:
+runs/complex-pow4-momentum-500-01 at repository root. The plain-product FFN is
+a documented next candidate only; norms/residuals/tied weights remain. Frozen
+benchmark unchanged, broader goal unfinished, capacity queue still stopped.
+
+Plain complex-product FFN ablation authorized by user "go"
+Remove only the radial sigmoid gate, retaining g*u/sqrt(2), complex projections,
+norms, residual scaling, attention and tied weights. Validate isolated kernels
+and all compatible full-gradient stress cases before training. Then rerun the
+existing sum-pow4 seed1 from the exact original initialization and sampler,
+against the audited corrected radial control, with the same100000-update limit
+and first99 stopping. Retain500-epoch buffered checkpoints and subgroup scores.
+Frozen plan: complex_geometry_suite/diagnostic/PLAIN_FFN_PLAN.txt. This is one
+known-miss diagnostic, not universal-model selection or a hyperparameter search.
+
+Plain FFN numerical preflight completed
+The first attempt passes32 primitive rows and33/34 full-model cases; one
+single128-wide-head Q/K path fails the unchanged.05% norm-scaled bound.
+Local product/RMS/XSA adjoints pass, isolating FP32 boundary amplification in
+the composed near-radial derivative. A projection/RMS-only correction fails;
+the complete composed XSA/output-projection/RMS Q/K adjoint in FP64 fixes it.
+This dispatch is inactive for the four-head32 training models, preserving the
+single-gate comparison. Original failures/traces and the unsuccessful code
+remain recorded. The expanded preflight passes40 plain cases,3 radial controls,
+1534 directional checks,32 product rows/11584 coordinates and6 local adjoints.
+No tolerance was relaxed. Fourteen CPU tests, Clippy and formatting pass.
+Report: complex_geometry_suite/results/plain-ffn-stress.txt; final artifacts
+plain-ffn-stress-02. The original seed1 plain-FFN training run is launched at
+runs/complex-pow4-plain-ffn-seed1-01 with the identical stress-tested sources.
+
+Plain complex-product FFN ablation completed, 2026-11-08
+The candidate completes100000 updates/5263.163265 epochs and misses99%.
+Best98.809777% (4649/4705), first attained epoch4233; final90.053135%.
+Corrected radial best98.278427% and final93.942614%. All5265 observation
+exposures match, with no early-stop censoring. The plain final200 mean92.997131%
+is below radial93.885866%; large drops remain. Removing the gate is not a
+convergence fix, despite the higher peak. At the plain peak train is100%,
+held-out diagonals16/42 and off-diagonal4633/4663 (99.356637%). Nine additional
+correct predictions would reach99% at that state; this counterfactual is not
+an achieved result. Final diagonal train55/55 and held-out12/42.
+
+All12 retained p/m/v states replay exact full-split and subgroup metrics;
+source/PTX/state/history/sampler/initialization checks and control preservation
+pass. Training used exactly the passing preflight sources. Buffered saves
+occurred every500 epochs and at completion. Fourteen CPU tests, Clippy and
+formatting pass; no Python. Report and full curves: complex_geometry_suite/
+results/pow4-plain-ffn.txt. Frozen benchmark unchanged, broader goal unfinished,
+capacity queue still stopped. No additional architecture arm was trained.
+
+User-requested Lean review of diagonal generalization and complex product
+Read the new answer-equivalence and approximate-recovery results and the actual
+CP/XSA definitions. The CP bridge is attention-free with input E[a]+iE[b]; it
+does not prove our transformer learns the requisite features. Generic answer-
+fiber readouts permit large feature errors that cancel within an answer class.
+The explicit new source example is cubic; a standalone Lean check beside the
+experiment extends the equivalence witness to quartic roots{1,22,75,96}.
+
+The more direct diagonal mechanism is XSA: for equal operands, unchanged values
+give weighted attention y=v, and its Hermitian projection exclusion gives0
+above the native clipping threshold. Q/K-only RoPE cannot change that identity.
+The native prefix guard explicitly suppresses first/shared attention branches
+and their adjoints. The residual and FFN still carry a unary computation; this
+does not prove the model cannot solve the task or establish the cause of every
+accuracy drop. Complex multiplication itself does not cancel equal nonzero
+scalar factors. The Lean library builds;23 targeted source declarations and7
+standalone review declarations use only the three standard allowed axioms.
+Unrelated existing sorry warnings remain in the full library build.
+
+Recommended next ablation: ordinary causal weighted-value attention in place of
+Hermitian XSA, retaining plain complex product and all other model/training
+settings. Also remove XSA-only first/repeated attention zeroing and backward
+masks; test those paths explicitly. No no-XSA training has run. Do not infer a
+convergence guarantee or replace the frozen benchmark. Evidence and reproduction:
+complex_geometry_suite/results/pow4-diagonal-lean-review.txt and the checked
+pow4-diagonal-check.lean with saved axiom outputs. No Python; Lean sources were
+read and built, not edited by this GPT experiment.
+
+Ordinary-attention ablation authorized by user "go"
+Use the completed plain-product seed1 run as control. Remove Hermitian XSA's
+value projection, retain the SSMax probability calculation, restore attention
+at first/repeated positions and disable their XSA-only backward masks. Keep
+plain product, norms, QK/RoPE, residual scaling, tied weights and all training
+settings. NO_XSA_PLAN.txt freezes preflight coverage and the matched100000-
+update/first99 protocol. Independent FP64 AD must pass before training; retain
+500-epoch buffered states and all failed attempts. No extra hyperparameter,
+seed or FFN arms. This is a known-miss diagnostic, not a universal promotion.
+
+Ordinary-attention preflight completed
+All42 candidate model cases,4 XSA regressions,1652 parameter-direction checks,
+30 primitives/23232 coordinate checks and2 restored-path checks pass. At equal
+tokens the V/output parameter-gradient norms are4.320649/4.650484 versus0/0
+for XSA with the same weights/examples. All forward/backward numeric checks
+passed on the first attempt too; three strict bit comparisons confused-0/+0.
+Exact numerical equality fixes that bookkeeping issue; kernels and tolerances
+are unchanged. Both attempts remain saved. Fifteen CPU tests, Clippy and fmt
+pass. Report: complex_geometry_suite/results/no-xsa-stress.txt. The matched
+seed1 run is launched at runs/complex-pow4-no-xsa-seed1-01 with the exact
+stress-tested source. Saves remain buffered at500-epoch intervals.
+
+Ordinary-attention seed1 experiment completed, 2026-11-08
+The candidate reaches99.001063% (4658/4705) at epoch2648/50312 updates and
+stops at the first99 observation. Training4704/4704; held-out diagonal32/42,
+non-diagonal4626/4663. The plain-XSA control never reaches99 within100000
+updates. Within the matched50312-update window, its best is4636/4705 at
+epoch2359, with10/42 diagonals and the same4626/4663 non-diagonal count.
+Its later full-budget best remains4649/4705 (98.809777%). This supports the
+diagonal-path hypothesis and meets this seed's threshold with unchanged norms,
+residual scaling, tied weights and plain complex product.
+
+Do not infer stable convergence: ordinary attention still has a22.0616-point
+single-observation drop before crossing, and its last200 mean94.3286% is below
+the matched control94.9968%. No trajectory after the first99 stop is observed.
+All2649 paired observation exposures,7 retained p/m/v full-split replays,
+subgroup accounting,source/PTX/state/history hashes,initialization,sampler and
+control/original preservation checks pass. Fifteen CPU tests, Clippy and fmt
+pass; preflight remains fully passing. Saves at0,every500 epochs andfirst99;
+no Python. Full evidence: complex_geometry_suite/results/pow4-no-xsa.txt,
+JSON/validation JSON and paired TSV/SVG/PNG curves. Frozen benchmark unchanged;
+universal promotion still needs its prescribed short/long regression checks.
+Broader goal unfinished, capacity queue stopped, no additional runs launched.
+
+User-requested causal-centering review, 2026-11-08
+For arXiv:2410.07799v3,13 new and5 existing Lean declarations check the causal
+adaptation with no holes/warnings or nonstandard axioms. Constant values and
+their shared-parameter attention gradients cancel; the residual survives.
+A decoder seeing only the canceled signal cannot solve every quartic diagonal,
+but no full-transformer impossibility or convergence theorem is claimed.
+The causal correction also differs from the paper's global rank-one matrix.
+Evidence: complex_geometry_suite/results/pow4-centering/. The user then
+explicitly authorized "go rust"; CENTERING_PLAN.txt freezes native preflight
+and one matched seed1 run against the successful ordinary-attention control.
+Compare only their common observed prefix because that control stopped at
+epoch2648/50312updates. Keep all existing controls/results and the capacity stop.
+
+Causal-centering numerical preflight completed
+The first attempt exposes loss of near-uniform probability differences after
+FP32 rounding. A stable small-score coefficient calculation fixes qk_tiny;
+the second attempt exposes extra coefficient-rounding error in one wide/deep
+Q/K path. Keeping centered coefficients in FP64 resolves it. Both full failed
+preflights and their sources remain archived; no tolerance was relaxed.
+The final suite passes37 candidate models,4 ordinary regressions,1480 parameter
+directions,36 primitives/30624 gradient coordinates and both diagonal-path
+cancellation checks.17 CPU tests,strict Clippy,format and release build pass.
+Report: complex_geometry_suite/results/centering-stress.txt. The matched
+seed1 run is launched at runs/complex-pow4-centered-seed1-01 using the exact
+passing sources,with500-epoch buffered checkpoints. No Python.
+
+Causal-centering experiment completed and rejected, 2026-11-08
+The candidate exhausts100000updates/5263.163265epochs without99%. Peak4.187035%
+(197/4705) at epoch1937,final2.996812% (141/4705). At the control's50312-update
+first99 crossing,ordinary scores4658/4705 (99.001063%),centered152/4705
+(3.230606%);held-out diagonals32/42 versus1/42 and non-diagonals4626/4663
+versus151/4663. This is broad generalization failure,not solely diagonal loss.
+The centered peak fits all training examples; final training4692/4704 and
+diagonals55/55. The mathematical cancellation proof does not imply full-model
+impossibility or establish the sole cause of this observed training outcome.
+
+All12 retained p/m/v states pass full-split/subgroup replays and provenance
+checks. All5265 candidate observations remain;2649 pair with the stopped
+ordinary control,whose trajectory after50312updates is explicitly unobserved.
+Source matches the passing preflight;control/original files are unchanged.
+Reports and complete curves: complex_geometry_suite/results/pow4-centering.txt,
+JSON/validation JSON,TSV,SVG/PNG. Keep ordinary attention for this comparison;
+no universal promotion or short/long regression is claimed. No Python,extra
+training arm,or capacity-queue restart. Broader research goal remains unfinished.

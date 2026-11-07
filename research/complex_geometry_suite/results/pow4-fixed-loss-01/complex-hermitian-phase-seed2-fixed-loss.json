@@ -1,0 +1,192 @@
+{
+  "checkpoint_sha256": "4584c912858547b88a87ec35812243023d1836480dad65f6924d1fc467d0e8ac",
+  "snapshot": "complex-hermitian-phase-seed2",
+  "splits": {
+    "train": {
+      "accuracy": 1.0,
+      "checks": "passed",
+      "corrected_false_zero_losses": 0,
+      "corrected_logit_gradient_relative_error": 2.4960053173487713e-7,
+      "corrected_lost_target_gradients": 0,
+      "corrected_max_relative_gradient_sum": 4.329960359277133e-8,
+      "corrected_max_row_gradient_relative_error": 1.437049501648035e-6,
+      "corrected_mean_loss": 7.57620482354217e-7,
+      "exact": 4704,
+      "examples": 4704,
+      "legacy_false_zero_losses": 3849,
+      "legacy_logit_gradient_relative_error": 0.015673276140456046,
+      "legacy_lost_target_gradients": 150,
+      "legacy_mean_loss": 4.83324738586841e-7,
+      "logits_and_predictions_bitwise_unchanged": true,
+      "parameter_gradients": [
+        {
+          "block": "embedding_readout",
+          "corrected_reference_cosine": 0.9999999999998239,
+          "corrected_relative_error": 6.174281876253416e-7,
+          "legacy_reference_cosine": 0.9928336524767972,
+          "legacy_relative_error": 0.12570942567722204,
+          "reference_gradient_l2": 1.2991460610740793e-6,
+          "saved_momentum_corrected_gradient_cosine": 0.41954357214850013
+        },
+        {
+          "block": "Q",
+          "corrected_reference_cosine": 0.9999999999996959,
+          "corrected_relative_error": 7.874385562705475e-7,
+          "legacy_reference_cosine": 0.9940746889324003,
+          "legacy_relative_error": 0.11186174386307131,
+          "reference_gradient_l2": 5.755622381521575e-8,
+          "saved_momentum_corrected_gradient_cosine": 0.4615140226656974
+        },
+        {
+          "block": "K",
+          "corrected_reference_cosine": 0.9999999999995947,
+          "corrected_relative_error": 9.000723438671115e-7,
+          "legacy_reference_cosine": 0.9933419695688708,
+          "legacy_relative_error": 0.11661089790159718,
+          "reference_gradient_l2": 5.399684057521437e-8,
+          "saved_momentum_corrected_gradient_cosine": 0.3949752494531362
+        },
+        {
+          "block": "V",
+          "corrected_reference_cosine": 0.9999999999993817,
+          "corrected_relative_error": 1.1167162902510348e-6,
+          "legacy_reference_cosine": 0.9893462179355051,
+          "legacy_relative_error": 0.1487265137977267,
+          "reference_gradient_l2": 5.586044439045835e-7,
+          "saved_momentum_corrected_gradient_cosine": 0.3173106566801555
+        },
+        {
+          "block": "attention_output",
+          "corrected_reference_cosine": 0.9999999999995594,
+          "corrected_relative_error": 9.550401739596906e-7,
+          "legacy_reference_cosine": 0.9722962992885896,
+          "legacy_relative_error": 0.23623037472319067,
+          "reference_gradient_l2": 5.265960587211864e-7,
+          "saved_momentum_corrected_gradient_cosine": 0.1286983812546209
+        },
+        {
+          "block": "ffn_gate",
+          "corrected_reference_cosine": 0.9999999999998647,
+          "corrected_relative_error": 5.555229621354133e-7,
+          "legacy_reference_cosine": 0.9910443275664058,
+          "legacy_relative_error": 0.1335353510017731,
+          "reference_gradient_l2": 7.573171993125438e-7,
+          "saved_momentum_corrected_gradient_cosine": 0.02089612550849466
+        },
+        {
+          "block": "ffn_value",
+          "corrected_reference_cosine": 0.9999999999999175,
+          "corrected_relative_error": 4.1688289576489683e-7,
+          "legacy_reference_cosine": 0.9959038434312859,
+          "legacy_relative_error": 0.0904688254010682,
+          "reference_gradient_l2": 1.1463247389895233e-6,
+          "saved_momentum_corrected_gradient_cosine": -0.08571192184659653
+        },
+        {
+          "block": "ffn_output",
+          "corrected_reference_cosine": 0.9999999999998394,
+          "corrected_relative_error": 6.041036649448943e-7,
+          "legacy_reference_cosine": 0.9118715143598706,
+          "legacy_relative_error": 0.4108012287061106,
+          "reference_gradient_l2": 5.259121482817772e-7,
+          "saved_momentum_corrected_gradient_cosine": 0.0028630586935755593
+        }
+      ],
+      "reference_mean_loss": 7.576203639536352e-7
+    },
+    "validation": {
+      "accuracy": 0.9887353878852285,
+      "checks": "passed",
+      "corrected_false_zero_losses": 0,
+      "corrected_logit_gradient_relative_error": 2.5606603778996116e-8,
+      "corrected_lost_target_gradients": 0,
+      "corrected_max_relative_gradient_sum": 4.838445953968378e-8,
+      "corrected_max_row_gradient_relative_error": 1.1367084998429817e-6,
+      "corrected_mean_loss": 0.07894862203713199,
+      "exact": 4652,
+      "examples": 4705,
+      "legacy_false_zero_losses": 282,
+      "legacy_logit_gradient_relative_error": 6.281681233974454e-7,
+      "legacy_lost_target_gradients": 18,
+      "legacy_mean_loss": 0.07894863519861138,
+      "logits_and_predictions_bitwise_unchanged": true,
+      "parameter_gradients": [
+        {
+          "block": "embedding_readout",
+          "corrected_reference_cosine": 0.9999999999999734,
+          "corrected_relative_error": 2.026295450669691e-7,
+          "legacy_reference_cosine": 0.9999999999997575,
+          "legacy_relative_error": 7.015382007085435e-7,
+          "reference_gradient_l2": 0.284197569403512,
+          "saved_momentum_corrected_gradient_cosine": -0.01565221342201233
+        },
+        {
+          "block": "Q",
+          "corrected_reference_cosine": 0.9999999999999695,
+          "corrected_relative_error": 2.2780608124548857e-7,
+          "legacy_reference_cosine": 0.9999999999995621,
+          "legacy_relative_error": 9.378025563769625e-7,
+          "reference_gradient_l2": 0.011989434562847975,
+          "saved_momentum_corrected_gradient_cosine": 0.0503910256453891
+        },
+        {
+          "block": "K",
+          "corrected_reference_cosine": 0.9999999999999738,
+          "corrected_relative_error": 2.241229498688489e-7,
+          "legacy_reference_cosine": 0.999999999999546,
+          "legacy_relative_error": 9.560410806167177e-7,
+          "reference_gradient_l2": 0.011858147776719168,
+          "saved_momentum_corrected_gradient_cosine": -0.02118751347318122
+        },
+        {
+          "block": "V",
+          "corrected_reference_cosine": 0.9999999999999571,
+          "corrected_relative_error": 2.8935048543464214e-7,
+          "legacy_reference_cosine": 0.9999999999995074,
+          "legacy_relative_error": 9.890734778343105e-7,
+          "reference_gradient_l2": 0.15927096907171673,
+          "saved_momentum_corrected_gradient_cosine": 0.015310773950280679
+        },
+        {
+          "block": "attention_output",
+          "corrected_reference_cosine": 0.9999999999999745,
+          "corrected_relative_error": 1.99482095149638e-7,
+          "legacy_reference_cosine": 0.9999999999993481,
+          "legacy_relative_error": 1.1446280271352158e-6,
+          "reference_gradient_l2": 0.13694857274862982,
+          "saved_momentum_corrected_gradient_cosine": 0.07040770367679139
+        },
+        {
+          "block": "ffn_gate",
+          "corrected_reference_cosine": 0.9999999999999969,
+          "corrected_relative_error": 8.755723311963629e-8,
+          "legacy_reference_cosine": 0.9999999999998268,
+          "legacy_relative_error": 5.981738777759226e-7,
+          "reference_gradient_l2": 0.17573636716174318,
+          "saved_momentum_corrected_gradient_cosine": -0.02175570707827785
+        },
+        {
+          "block": "ffn_value",
+          "corrected_reference_cosine": 0.9999999999999977,
+          "corrected_relative_error": 8.978692787118347e-8,
+          "legacy_reference_cosine": 0.9999999999998141,
+          "legacy_relative_error": 6.118259137574212e-7,
+          "reference_gradient_l2": 0.17969702583927794,
+          "saved_momentum_corrected_gradient_cosine": 0.005827899492757537
+        },
+        {
+          "block": "ffn_output",
+          "corrected_reference_cosine": 1.0000000000000087,
+          "corrected_relative_error": 5.2525935565674396e-8,
+          "legacy_reference_cosine": 0.9999999999992548,
+          "legacy_relative_error": 1.2305230591154957e-6,
+          "reference_gradient_l2": 0.1320149475109929,
+          "saved_momentum_corrected_gradient_cosine": -0.025144615384880956
+        }
+      ],
+      "reference_mean_loss": 0.07894862179718412
+    }
+  },
+  "training_updates": 0,
+  "weights_and_optimizer_unchanged": true
+}

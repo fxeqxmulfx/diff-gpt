@@ -1,0 +1,97 @@
+Flat-spectrum reread and the current FFN, 2026-11-08
+
+The latest complex-product bridge motivates a plain-product FFN ablation.
+It does not establish that our normalization, residual connection or FFN is
+incorrect, or that replacing the FFN will solve the seed-1 quartic task.
+The already authorized matched momentum continuation retains its frozen model.
+
+Sources reread
+/home/misha/lean_projects/transformer/review/flat_spectrum.md:
+  original Setting / Theorems A and B;
+  Experimental corrections to learning implications, starting line 5184;
+  Classification without unique recovery, starting line 5257;
+  Complex-product Rotate90 bridge, starting line 5312.
+Latest change to the note: de62c3ab, Bridge nonunique spectral recovery to
+complex-product Rotate90. Lean working tree was clean when inspected.
+Read the actual definitions and theorem hypotheses in
+src/Transformer/Rotate90/ComplexProduct/{Defs,Readout,Recovery}.lean.
+No Lean sources were changed and no new Lean proof is claimed here.
+
+The current transformer differs from the new source theorem
+Our Kernite complex.rs computes
+    sigmoid(sqrt(|g_j|^2 + eps)) * g_j * u_j / sqrt(2),
+with complex-linear gate/value/output maps. engine.rs invokes product<true>.
+The new CP1 source theorem instead has the plain product g_j*u_j/sqrt(2),
+inside an attention-free Rotate90 model. That source also uses a residual
+coefficient of one; it is not our complete XSA/RoPE transformer.
+Removing the radial gate would align the FFN operation, not automatically
+transfer the entire source theorem to this transformer.
+
+The radial factor is positive, so it preserves each product coordinate's phase.
+It changes relative channel amplitudes and gradients. A common scalar would
+largely cancel under output RMS, but this factor varies across channels and
+RMS has nonzero epsilon. It cannot simply be discarded as an exact identity.
+There is currently no measurement showing that this factor causes our miss.
+
+What the theorem supplies
+CP1 proves equality of independently defined real and complex source formulas.
+CP2 preserves strict class comparisons under FINAL RMSNorm with positive
+epsilon: all logits share one positive denominator. This is not a theorem
+that removing other normalizers preserves training or generalization.
+CP3 certifies classification if raw class margin exceeds the two-score error
+budget, retaining the actual normalization denominator.
+CP4 requires an ideal nuclear-norm minimum, fitting, a recovery certificate,
+score-contrast alignment to the actual source model, a class margin and bounded
+execution error. These are separate hypotheses. AdamW convergence or discovery
+of those features is not proved. Plain product optimality is not asserted.
+
+Related native experiment, not our quartic benchmark
+/home/misha/rust_projects/grokking/experiments/rotate90_complex/README.md
+records an attention-free (a+b)^3 mod 97 experiment. At seeds 7/11, plain
+product first reaches 99% at epochs 80/100 versus radial product at 90/110.
+That is one evaluation interval earlier in each seed. Both variants later
+dip below 99%; the plain final accuracies are 99.66%/99.68%, radial
+99.68%/98.79%. These different seeds, task, optimizer settings and architecture
+provide a hypothesis, not a predicted quartic outcome or universal ranking.
+
+Why the original flat-task explanation cannot simply be transplanted
+The original exact flat example is a^3+a*b, with a particular additive-character
+readout. Our task is (a+b)^4. Its scalar fixed-character kernel is not flat.
+A standalone Rust FP64 check gives singular values ranging from 3.48917639 to
+19.48993472 and effective rank 77.21859778, instead of 97 equal singular values.
+
+There is also a low-rank label readout for the quartic task. Let
+H={1,22,75,96}, the four roots of unity modulo 97, and psi(s)=exp(2*pi*i*s/97).
+Define phi(s^4)=sum_{r in H} psi(r*s). This is well-defined: every nonzero
+fourth-power fiber is one H-orbit; the zero fiber has s=0. Then
+    phi((a+b)^4) = sum_{r in H} psi(r*a) psi(r*b).
+Each summand is rank one, and the four distinct characters are orthogonal,
+giving rank four. This is an algebraic construction, not a new Lean theorem.
+The native check verifies all 97 residues, all label fibers and DFT coefficients:
+25 reachable labels, maximum fiber discrepancy 4.48e-16, maximum spectral
+discrepancy 5.69e-14, effective rank 4.000000000000003. No such features or
+intermediate targets were supplied to a trained model.
+
+Existence of this scalar low-rank signal does not prove that the trained FFN
+discovers it, that this one signal gives a sufficient linear multiclass decoder,
+or that observed samples satisfy the required recovery certificate. The
+note's learning-corrections section explicitly separates spectral availability,
+representability, optimizer dynamics and floating-point fidelity.
+
+Next candidate, after the paired optimizer diagnostic
+Compare the existing radial complex product with a plain complex product,
+changing only the radial gate. Keep projection constraints, independent
+parameter count, initialization, product calibration, normalization, residual
+scaling, tied weights, attention, optimizer and samples fixed. Validate the
+plain product's forward/backward paths before any training comparison.
+Record the fourth-power diagonal errors and margins as mechanism diagnostics.
+Universal-model selection still requires the frozen short-suite procedure and
+its prescribed long regression; improvement on this known miss alone is not
+a new universal winner. No plain-product transformer training was launched
+as part of this reread.
+
+Reproduction of the independent arithmetic check, from repository root:
+rustc --edition=2024 -D warnings -O research/complex_geometry_suite/results/pow4-spectrum-review.rs -o /tmp/pow4-spectrum-review
+/tmp/pow4-spectrum-review
+Source and full numerical output: pow4-spectrum-review.rs / .json beside this note.
+All work uses Rust/native tools; no Python was executed.

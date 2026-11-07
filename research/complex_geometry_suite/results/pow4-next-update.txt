@@ -1,0 +1,107 @@
+Actual next-update diagnosis: (a+b)^4 mod 97, seed 1
+2026-11-08
+
+At the corrected run's epoch-4000 checkpoint, the actual next AdamW update
+reduces its minibatch loss but raises complete training loss by 27.5657%.
+Reducing the step to one tenth still raises training loss by 2.1431%.
+Resetting only the first moment, with the second moment and Adam clock kept,
+lowers training loss by 2.6166% at the same LR, or 10.0749% when rescaled to
+the original update's displacement norm. This supports a harmful stored
+momentum direction at this checkpoint and batch. It is not a convergence fix.
+
+Protocol
+Input: runs/complex-pow4-fixed-grad-seed1-01, completed 76000 updates.
+Checkpoint SHA256:
+ec4acff217e8b267a4947aa45a2bd409455ec9bb2c67b5264de8bdb4e7cda3d5
+The exact next 256 examples come from the original verified seed-10001 stream.
+All eight branches start from identical parameters and batch gradients,
+checked by exact FP32 equality. Keep the corrected loss/XSA adjoint, model,
+betas (.9,.98), epsilon
+1e-8 and decay .1. The original LR is .002. Reset-first retains v and the
+76000-update Adam clock. Reset-both restarts the Adam clock with zero m/v,
+but retains the current LR without restarting warmup. Each branch is one
+disposable update; there is no sustained training continuation.
+
+The two norm-matched branches scale their reset LR by the ratio of the original
+update norm to their same-LR reset norm. Matching uses independent complex
+parameter coordinates and includes the entire AdamW step, including decay.
+No loss or held-out metric is used to select the matching LR. The protocol
+and all branches were fixed before observing counterfactual scores.
+
+Complete results
+Before: batch CE .0036125663, train CE .0089365667, held-out CE .3033275322.
+Train accuracy: 4693/4704; held-out: 4316/4705 = 91.732200%.
+All changes below are relative loss changes, not accuracy percentage points.
+
+Branch                      LR         Delta L2   Batch CE %   Train CE %   Held-out
+keep_lr1                    .002       .167435      -31.471      +27.566    4298/4705
+keep_lr_half                .001       .083717      -23.568      +12.067    4306/4705
+keep_lr_quarter             .0005      .041859      -14.479       +5.612    4310/4705
+keep_lr_tenth               .0002      .016743       -6.562       +2.143    4312/4705
+reset_first_lr1             .002       .028752      -41.520       -2.617    4317/4705
+reset_both_lr1              .002       .665089      -86.338      -37.968    4340/4705
+reset_first_norm_matched    .01164672  .167436      -62.776      -10.075    4321/4705
+reset_both_norm_matched     .00050350  .167435      -68.176      -14.082    4330/4705
+
+The same-LR reset-both step is almost four times larger than the original;
+its larger loss reduction alone does not establish a better direction.
+The equal-norm comparisons address that magnitude confound. Relative norm
+mismatch is 5.1555e-6 for reset-first and 8.8543e-8 for reset-both, both below
+the predeclared .001 tolerance. Held-out loss increases for every kept-moment
+arm and decreases for every reset arm. All raw scores and branches are retained.
+
+Direction diagnosis
+For the ordinary next update, full-training gradient dot actual displacement
+is +.0018543917. All eight parameter blocks contribute a positive term. Its
+negative-displacement/full-gradient cosine is -.0822408, so the direction is
+locally uphill even before considering finite-step curvature. This explains
+why merely reducing the LR does not turn this particular step into descent.
+The same batch's gradient has positive cosine .135783 with the full gradient.
+Reset-first at equal norm changes the dot product to -.0018233535 and the
+descent-alignment cosine to +.0808639; all eight block contributions become
+negative. This is an actual updated-moment intervention, extending the earlier
+diagnosis based only on historical saved moments.
+
+Interpretation for normalization and residual connections
+Peri-RMS, embedding RMS, residual scaling/connections and tied embedding/readout
+weights are identical in all branches. No defect in these blocks is identified
+by this experiment. The existing corrected gradient stress suite passes, and
+the previous epoch inspection found no exploding saved weights or failed norm
+checks. These facts support retaining the architecture while investigating
+optimizer dynamics. Norms and residual scaling can still influence conditioning;
+no alternative normalizer or residual construction was compared here, and
+this study does not establish that the present architecture is optimal.
+
+Validation
+All eight actual Rust/Kernite updates pass an independent scalar FP64 AdamW
+reference at 110848 independent coordinates each: 886784 coordinate checks,
+or 2660352 parameter/m/v comparisons. Maximum error is .267282 of the fixed
+FP32 error envelope. State finiteness and complex tying constraints pass.
+The unchanged-state control reproduces scores exactly without mutating p/m/v.
+Independent byte checks confirm m/v equality across all LR-only branches,
+v equality when resetting only m, and m/v equality between each same-LR reset
+and its norm-matched counterpart. All eight state hashes and file sizes pass.
+Pre-update FP32 value comparisons treat positive and negative zero as equal;
+their sign bits are not separately compared.
+Every protected input file remains unchanged. Twelve CPU tests, Clippy with
+warnings denied, formatting and the actual GPU experiment pass. One CUDA-only
+unit test is excluded from the CPU suite. No Python was executed.
+
+Artifacts relative to this report
+pow4-next-update.tsv: compact machine-readable score/geometry comparison.
+pow4-next-update-blocks.tsv: all eight blocks for every branch.
+pow4-next-update-validation.json: combined validation record.
+pow4-next-update-01/: frozen plan/source archive, input and sampler fingerprints,
+batch indices, full/batch gradients, no-update control, complete scores,
+reference checks, and parameters/moments for every branch.
+Implementation: ../diagnostic/src/next_update.rs.
+Protocol: ../diagnostic/NEXT_UPDATE_PLAN.txt.
+
+Limits
+One selected historical checkpoint and its exact next batch do not establish
+why every earlier crash happened, a universally better optimizer, or sustained
+generalization. Reset-first at equal norm improves held-out correctness by only
+five examples. The separate diagonal generalization gap remains unresolved.
+Eight diagnostic updates do not alter the original 100000-update trajectory,
+its failure to reach 99%, or any frozen benchmark result. The broader research
+goal remains unfinished, and the stopped capacity queue remains stopped.

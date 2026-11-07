@@ -1,0 +1,75 @@
+Fourth-power arithmetic, complex-hermitian seed1 -- 2026-11-07
+
+Conclusion: verified late optimization instability and incomplete generalization.
+No checkpoint corruption or endpoint numerical failure was found. The current
+constant learning rate/AdamW dynamics are a plausible cause, not yet a proven
+causal explanation. Do not claim that removing Peri-RMS, embedding RMS, tied
+embeddings, or Hermitian XSA is justified by this evidence.
+
+The fixed case is (a+b)^4 modulo97, width128, one block, four heads, 110848
+independent real parameters in the complex arms, LR0.002, betas(.9,.98), decay.1,
+warmup50 and no subsequent LR schedule. The frozen budget is100000 updates,
+5263.163265306122 epochs. All models use the same data split; model seed changes
+initialization and sample order. All four variants missed99% on seed1.
+
+Observed failure
+  Peak held-out accuracy:98.25717322% at epoch3793.
+  End:99.85119048% train (7/4704 wrong),90.60573858% held-out (442/4705 wrong).
+  Epoch4749:100% train,98.21466525% held-out, train CE3.2081e-6.
+  Epoch4753:98.19302721% train,87.37513284% held-out, train CE0.054514.
+  Epoch4754:98.76700680% train,82.80552604% held-out.
+This is a measurable regression of learned training and held-out behavior.
+The final1000 observations range from82.81% to98.21% held-out. It never reaches
+the fixed99% crossing, so the budget miss remains valid despite transient peaks.
+
+Weight and numerical checks
+  All12 pow4 checkpoints pass hashes, RNG initialization, finite-state and
+  complex weight/first-moment/second-moment constraint checks.
+  All12 Rust/Kernite replays reproduce complete saved train/held-out scores.
+  No input checkpoint, model parameter or optimizer moment was changed.
+  Seed1 block weight RMS: embedding.1400; Q/K.0814/.0816; V.0833;
+  attention output.0859; gate/value.0689/.0688; FFN output.0729.
+  Singular-energy participation is not collapsed: Q23.22, K24.19,
+  V49.11, attention output36.35, gate76.03, value76.53, output49.65.
+  Every attention head has nonzero Q/K/V signals; previous-token probabilities
+  span approximately.205 to.734. The radial sigmoid's median is.6995.
+  Nonconstant attention branch RMS inverse scale is at most3.747;
+  FFN RMS inverse scale is at most1.266. No near-zero normalization blow-up here.
+  Relative complex orthogonality error is at most2.76e-7 over held-out heads.
+
+Optimization evidence at the final checkpoint
+  Stored-moment relative step scales are about6--17x those at the two successful
+  Hermitian endpoints. Q:0.6644% of parameter norm, versus0.0389%/0.0537%.
+  The saved preconditioned momentum-plus-decay direction has negative cosine
+  with the current full-training gradient in all eight parameter blocks
+  (-.053 to-.143); successful endpoints have positive train cosines.
+  This is a local snapshot of historical moments, not a proof that the next
+  minibatch update will be uphill. It supports the observed oscillation.
+
+Learned function
+  Swapping a,b changes the failed seed's answer on7.418% of all97^2 inputs,
+  versus.531%/.383% for successful Hermitian seeds0/2. The correct rule is
+  symmetric. Constant-sum modal consistency is95.228%, versus99.500%/99.522%.
+  Class33:114/199 correct (57.286%); class81:143/196 (72.959%).
+  Repeated-token inputs:55/55 train correct,11/42 held-out correct.
+  Those31 diagonal misses account for only31 of442 held-out misses;
+  all seven training mistakes have unequal input tokens.
+  The failure is therefore broader than the repeated-prefix guard alone.
+
+Limits and next discriminating test
+  Only initialization and the final weight state remain; periodic checkpoint
+  writes overwrite the previous weights. The peak and crash have histories,
+  not weight snapshots, so their exact parameter trigger cannot be recovered.
+  Successful endpoints stop earlier than failed endpoints; sizes and momentum
+  comparisons are not matched in training time. There is no causal LR ablation
+  in this inspection and no claim that a schedule will guarantee99%.
+  Next controlled diagnostic: fork the identical checkpoint/moments/sampler
+  into unchanged-LR and lower-LR continuations, with architecture fixed. Keep
+  this explicitly separate from the completed frozen benchmark and retain
+  the original miss. Do not tune on the held-out labels or promote a winner
+  from this one diagnostic task.
+
+Artifacts: pow4-weights.json, pow4-probes.json, pow4-errors-*-seed*.tsv.
+The entire420-cell cohort is now complete and audited with zero integrity
+failures. Long passes: real-product23/30; complex-linear29/30;
+complex-hermitian29/30; complex-hermitian-phase25/30. All four pass75/75 short.

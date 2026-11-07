@@ -1,0 +1,77 @@
+Causal centering after the successful ordinary-attention ablation
+
+User requested arXiv:2410.07799v3, then a Lean proof, then explicitly authorized
+"go rust". The checked exact algebra is in results/pow4-centering/. Thirteen
+new and five existing declarations pass with only the standard three axioms.
+Pure centering cancels equal values and their shared-parameter attention path;
+this does not prove the full residual transformer cannot solve the task.
+
+Implement only causal prefix centering: sum_j (p_j - 1/N)*V_j on visible j.
+This is a causal adaptation of equations (7)-(9),(15)-(18), not the paper's
+global rank-one subtraction or a claim of its random-matrix guarantees.
+Use the successful ordinary model as immutable control:
+runs/complex-pow4-no-xsa-seed1-01. Retain plain complex product, Peri/embedding
+RMS, QK RMS, SSMax log(N)/head_width, Q/K-only RoPE, residual scale after RMS,
+tied weights, initialization, data, optimizer and every training setting.
+No XSA projection is added. Frozen native kernels and all controls stay intact.
+
+Keep frozen probability arithmetic. For numerical centering, subtract the
+FP64 mean of the stored probability row; with a normalized row this is1/N.
+Evaluate centered weights on V_j-V_first in FP64. This preserves constant
+values and uniform stored rows exactly despite rounding of probabilities.
+Reuse the ordinary Q/score adjoint; use the centered V adjoint, accumulating
+in FP64. Prefix sharing/zero attention gradients apply only to mathematically
+constant token prefixes; the independent model oracle uses all token paths
+without this shortcut. Independent V coordinates must still be differentiated.
+
+Preflight: same30 synthetic complex full-model cases as no-XSA, all7 retained
+ordinary-control states, four ordinary regression cases, plus centered versus
+ordinary equal-token V/output-gradient checks. The prior30 primitive rows: widths
+16/32/128; lengths1/2/7/17/128; multi-batch, zero/tiny/large/repeated values.
+Add3 uniform-score, unequal-value length7 rows, one per head width, for33total.
+Check all coordinates for length<=7; four directions per Q/K/V for17/128.
+Explicit CPU oracle checks cover first/repeated values, uniform centering,
+independent versus shared V perturbations and future-token exclusion.
+Inputs, probability buffers and launch tails must be preserved.
+
+Bounds unchanged: full logits5e-5 of scale, loss5e-5 relative, parameter
+directions5e-4 times independent block norm plus1e-12; primitives5e-6 times
+reference/block norm plus1e-12. Keep all failures. No training before passing
+CPU/fmt/Clippy and complete GPU preflight; archive and require identical sources.
+
+Train only(a+b)^4 mod97,seed1,width128,heads4,depth1 from the exact original
+initial parameters and zero moments with the original100000-update sampler.
+Same4704train/4705heldout,batch256/tail96,19updates/epoch,AdamW LR.002,
+betas(.9,.98),epsilon1e-8,decay.1,warmup50 including the zero-LR first step.
+Stop at first observed>=99%,100000updates,or explicit STOP. Observe full splits
+and diagonal/non-diagonal counts each epoch and final tail. Buffer history and
+save p/m/v at0,every500epochs,first99 or completion. No minute-by-minute polling.
+
+The ordinary control stopped at50312updates/epoch2648 on first99. Compare only
+the common observed prefix; if the candidate runs farther, retain that entire
+trajectory but mark the control as unobserved afterward. Never extrapolate it
+or require a nonexistent paired observation. Report first99,peak/final,diagonal
+counts and common-window stability; neither first99 nor a peak proves sustained
+convergence. Audit all states,source/PTX/initialization/sampler/history hashes,
+subgroups,cadence and control preservation. One known-miss diagnostic, not
+universal selection. No Python, extra seeds/arms, or capacity-queue restart.
+
+Numerical correction after the first preflight, before any training
+centering-stress-01 passes33 primitives,36/37 candidate models,4 ordinary
+regressions and both cancellation checks. The qk_tiny model fails8 V/output
+directions: centering an already-rounded FP32 probability row loses its tiny
+nonuniform component. Preserve that complete failure and its sources.
+
+Retain the frozen probabilities for the Q/score adjoint. Compute centered
+coefficients separately. When max_j|score_j-score_first|<=1e-3, compute anchored
+Q/K dot products in FP64, then e_j=expm1(score_j-score_first) via its six-term
+Taylor polynomial. Center before dividing: c_j=(e_j-mean(e))/(N+sum(e)).
+Only the small centered coefficient is rounded to FP32, retaining relative
+precision. Otherwise use the previous centered stored probabilities. Forward
+values and V adjoints consume the same coefficients. The mathematical model
+and SSMax scale are unchanged; this is a recorded floating-point correction,
+not a new parameter/hyperparameter arm. No floating-point theorem is claimed.
+
+Add3 near-uniform primitive rows (length7,Q/K scale1e-3,one per width), making
+36 primitives in the second full preflight. Keep every original case and bound.
+No training until the expanded numerical check passes on identical sources.

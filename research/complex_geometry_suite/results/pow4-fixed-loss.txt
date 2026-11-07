@@ -1,0 +1,55 @@
+Corrected-gradient checkpoint recheck, 2026-11-08
+
+All18 saved fourth-power checkpoints pass complete training and held-out
+rechecks with the corrected loss and XSA adjoint:36 full-split checks.
+Logits and predictions are bitwise identical to the original engine; model
+weights, optimizer moments and input checkpoint files are unchanged.
+Results: pow4-fixed-loss-02/fixed-loss.json, protocol.json and audit.json.
+The earlier loss-only audit is retained in pow4-fixed-loss-01.
+
+At the lower-LR final checkpoint, lost target derivatives fall from3628/4704
+to0. Reported training cross-entropy changes from0 to9.6434070e-8, matching
+the independent FP64 loss reference9.6434050e-8 on identical FP32 logits.
+Relative logit-gradient error falls from0.61875937 (61.88%) to2.8285748e-7
+(0.0000283%). Classification accuracy is unchanged:4704/4704 training and
+4600/4705 held-out. This is a numerical correction, not a new training result.
+
+Across all36 splits, there are zero lost representable target derivatives
+and zero false zero losses. Maximum aggregate logit-gradient relative error
+is3.50511e-7; maximum individual-row relative error is1.60091e-6.
+Maximum full-split parameter-block gradient relative error is1.11275e-6,
+and the minimum reference cosine is0.99999999999939. These parameter checks
+propagate the corrected GPU loss gradient and stable FP64 reference loss
+gradient through the same corrected model backward, isolating the loss fix.
+Independent validation of model backward formulas is in gradient-path-stress.txt.
+
+The new native loss accumulates non-target mass separately in FP64. It computes
+the target derivative as -other_mass/total instead of subtracting1 from an
+FP32 probability that may already have rounded to1. A cancellation-resistant
+FP64 log1p/log evaluation preserves the corresponding small loss. Exponentials
+and stored gradients remain FP32. The isolated CUDA test covers24 launches,
+312 rows and17784 gradient entries, vocabulary sizes1--257, masked labels,
+non-warp-aligned sizes, logit gaps up to80 and very wrong labels, normalizers
+1/96/256 and additive shifts. Values below FP32 representability are excluded
+from the no-lost-gradient claim. The fixed-loss and primitive tolerances were
+declared before the checks.
+
+The full-model stress suite exposed another cancellation issue in the XSA
+Q/K adjoint. Its FP64 accumulation fix is enabled for this final checkpoint
+audit and independently validated in gradient-path-stress-02. The original
+failed run and exact sources remain archived. This changes backward arithmetic
+only and preserves Peri-RMS, embedding RMS, tied weights and all model settings.
+
+The earlier optimization diagnosis remains relevant. At the weak original-LR
++500 checkpoint, saved-momentum versus corrected full-training gradient cosine
+remains negative for every one of the eight parameter blocks (-0.092 to-0.210).
+The corrected gradients do not by themselves establish the cause of the earlier
+held-out crashes or close the generalization gap. No optimizer updates, matched
+continuations or benchmark replacements were performed in this follow-up.
+
+Implementation: ../diagnostic/src/stable_loss.rs, stable_attention.rs,
+loss_recheck.rs, gradient_oracle.rs and gradient_stress.rs. The two candidate
+kernels are explicitly opt-in; the frozen native/ sources and original PTX
+remain available for exact legacy replay. Each audit archives diagnostic source
+and records both corrected PTX hashes alongside the original canonical PTX hash.
+The original420-cell outcomes and stopped capacity queue are unchanged.

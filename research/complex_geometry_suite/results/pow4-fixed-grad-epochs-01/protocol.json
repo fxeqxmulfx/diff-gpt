@@ -1,0 +1,493 @@
+{
+  "historical_step_limitation": "saved moments evaluated at current weights, including bias correction and decay; not the next minibatch update",
+  "purpose": "read-only raw weights, moments and complete-split corrected gradients at every retained epoch",
+  "python_invoked": false,
+  "selection": "all retained snapshots, including initialization and final state",
+  "source": {
+    "files": [
+      {
+        "path": "native/src/main.rs",
+        "sha256": "2b2070b38adec1f11f935cce3bbab89f8c1f8dade6ed1fdb959f45e11ff0ca82"
+      },
+      {
+        "path": "native/src/runner.rs",
+        "sha256": "2ac0c845323a2b6a615a77aec9dd457306271c88a4381d427845ad89eb6ea339"
+      },
+      {
+        "path": "native/src/sources.rs",
+        "sha256": "f4988a98ac590bf4ee08f6ba59e7244ee8dd71df3e318fd422640b1800bc20fd"
+      },
+      {
+        "path": "native/src/data.rs",
+        "sha256": "86f52b540010ad67b75100081cc29339c98ed74a89d64c6cfda06bcdb9d243ce"
+      },
+      {
+        "path": "native/src/engine.rs",
+        "sha256": "9b38dac5df7f1e111f5c7edb16dacc217b9dd95a9b147262d1d2c3d47a035587"
+      },
+      {
+        "path": "native/src/layout.rs",
+        "sha256": "d57aaa0cbf1e8e5c7e5f9ed4c78631ec479d920e7814e70249baddbd1cc2cd36"
+      },
+      {
+        "path": "native/src/attention.rs",
+        "sha256": "604c6790666cebc625f1bd186fc18f9768e4ea4f7ea90cfb20e068be18e46449"
+      },
+      {
+        "path": "native/src/base_ops.rs",
+        "sha256": "81436ff6600175c5180fb3689655cf8c0c1a17b251727cbd32873900a6a81cf6"
+      },
+      {
+        "path": "native/src/sequence_ops.rs",
+        "sha256": "8f86bc28c2be595793a2e7cf6e79509d4bc57ae6c3a41b91dd8eb22468edcb7a"
+      },
+      {
+        "path": "native/src/metrics.rs",
+        "sha256": "8a64672a3274c7cf56fad2fe6630d264331083a217c05d1de668c1204f59985b"
+      },
+      {
+        "path": "native/src/random.rs",
+        "sha256": "a084d406c410a61775cdf98df1c9be3d3c52251505f69b7b42aa8310031949d5"
+      },
+      {
+        "path": "native/src/pcg.rs",
+        "sha256": "6c27b7080b0ec20bea1262e9b20af5cab74ea8cbdf4a4323e51cb83dd9008c02"
+      },
+      {
+        "path": "native/src/blake.rs",
+        "sha256": "f7639f076f537e106a915decfb2b90ab1e5723c7dc8bacd5ac83be211cf4974b"
+      },
+      {
+        "path": "native/src/tests.rs",
+        "sha256": "b1eac872921a04d37b33f8cd6fc7e0d42b7b691659e0ed4673f2d583de23e782"
+      },
+      {
+        "path": "native/src/geometry_tests.rs",
+        "sha256": "79e86292efadaa20b8f9c5610b48dcf2c3a53422dc188f863163379d24b8dd07"
+      },
+      {
+        "path": "native/src/complex.rs",
+        "sha256": "72c103f838d154874d2b52240184ff8018cdf65c565093592067f83de783bdcd"
+      },
+      {
+        "path": "native/src/gemm.rs",
+        "sha256": "6c3f4260223df0316b2403d5545a7f8f0ee05c59d09c8bff4bcf59def737540b"
+      },
+      {
+        "path": "native/src/arithmetic_data.rs",
+        "sha256": "ff035ebaf103c68270c653487e39b444a5a79e56d26ebc0501dc67e04423098f"
+      },
+      {
+        "path": "native/Cargo.toml",
+        "sha256": "66e3f491722358c4fb3054af43c632e594c8db188af764001ca3f606e15af819"
+      },
+      {
+        "path": "native/Cargo.lock",
+        "sha256": "a77e6ad7fab8afa3896e2ffb8acf7f7cef5a1031b89211aa7dae968c60fa8146"
+      },
+      {
+        "path": "native/THIRD_PARTY.txt",
+        "sha256": "c8c4fa7fc1f4c59131e65c3c70a5192eec0ff75b76c660aefd6f0952fc0b7178"
+      },
+      {
+        "path": "PLAN.txt",
+        "sha256": "0e415a87176fc64abe065f6eba03bfa3d18301727e75cdfecb0c137edd187642"
+      },
+      {
+        "path": "suite.json",
+        "sha256": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436"
+      },
+      {
+        "path": "UPSTREAM.sha256",
+        "sha256": "35e2ade12de799c2da7ffacdd7c53876397cfc02e70aa48d149ca1f6e5e9196b"
+      },
+      {
+        "path": "diagnostic/src/main.rs",
+        "sha256": "e5d1d1689661163235e399adb5eac208030005cf9cf29d1ce0521f9ee2074bbe"
+      },
+      {
+        "path": "diagnostic/src/retrain.rs",
+        "sha256": "eea03f16a1e5d8170d6f1da90fdac9be5b9a7df9540f0a8ee4fb1112a9626b85"
+      },
+      {
+        "path": "diagnostic/RETRAIN_PLAN.txt",
+        "sha256": "87ca2f44aa6da3cfde4656bf981c4c0fb43f9bc6d2635687bee5b56a7256bd82"
+      },
+      {
+        "path": "diagnostic/src/raw.rs",
+        "sha256": "94cc1a84c96a46018222ca9d72f44306b6161bd0835b23a9c0c0ee83fddf5813"
+      },
+      {
+        "path": "diagnostic/src/loss_precision.rs",
+        "sha256": "98e515a78add20dfeed21cf50fd6fe931341683361fd7531b5a43f58c71a4f3e"
+      },
+      {
+        "path": "diagnostic/src/loss_recheck.rs",
+        "sha256": "39fd953650b5ef25b5bf9599af10d56f5ea11ac831049742222e09197690507a"
+      },
+      {
+        "path": "diagnostic/src/stable_loss.rs",
+        "sha256": "41955b8b51a5b9ef60200464551ebe1e3e8e73e1b26cfd041574559832f6fbd5"
+      },
+      {
+        "path": "diagnostic/src/stable_attention.rs",
+        "sha256": "98017a5e2de0e5a815567e9cf2f2de512aaec7bffda02911c5abc530fc16737a"
+      },
+      {
+        "path": "diagnostic/src/gradient_oracle.rs",
+        "sha256": "cf0a63963bd8c5647026394f13af8925cfb83bb30c18f4af4630c7f55b28a72f"
+      },
+      {
+        "path": "diagnostic/src/gradient_stress.rs",
+        "sha256": "26509c0642ef5fcf3c92d70a2584ea61a2a0eafea795e2fee1c32bdf34a2bbba"
+      },
+      {
+        "path": "diagnostic/src/engine.rs",
+        "sha256": "8590ad4e33807e93eb14aaf59a75982e76267dbd6bceb2dea2234d3db01a25a8"
+      },
+      {
+        "path": "diagnostic/src/probe.rs",
+        "sha256": "99f1aaebddb39574b4f2ccdd0e8a4897edcca5da11756fd1d8d48951521b2ab9"
+      },
+      {
+        "path": "diagnostic/src/stats.rs",
+        "sha256": "4de67ba1904def6540c819ac69229085baaa4ea40be4e5cf09e1c1aaaf3b1697"
+      },
+      {
+        "path": "diagnostic/src/continuation.rs",
+        "sha256": "4808b666dcb78617de4bb7af1a8beaa1708cad734a0416460ecacde46295176b"
+      },
+      {
+        "path": "diagnostic/Cargo.toml",
+        "sha256": "640a91fd765b6324d7111f00c2421cd6fc8dae1cb2b8037ca8784c8b4ad71338"
+      },
+      {
+        "path": "diagnostic/Cargo.lock",
+        "sha256": "6dbdfd362f3b4b886034302a809b469ce5bc15876dfdda60dadba625dc484052"
+      },
+      {
+        "path": "diagnostic/CONTINUATION_PLAN.txt",
+        "sha256": "4074b9b40202aa77d1ad4366c4fbf9ac78292f24c0090aa596b8fef11ff26eb7"
+      }
+    ],
+    "sha256": "870dde78788ddd3d6161d536b595aa8cfcd5bf43602a150ca643f639cc858842"
+  },
+  "training_protocol": {
+    "arm": "complex-hermitian",
+    "baseline_protocol": {
+      "arm": "complex-hermitian",
+      "backend": "Rust/Kernite complex geometry",
+      "betas": [
+        0.9,
+        0.98
+      ],
+      "case": {
+        "case": {
+          "after_target": 0,
+          "batch": 256,
+          "data": {
+            "operation": "sum-pow4",
+            "prime": 97
+          },
+          "data_seed": 1,
+          "heads": 4,
+          "kind": "arithmetic",
+          "layers": 1,
+          "learning_rate": 0.001,
+          "max_updates": 100000,
+          "metric": "sequence_accuracy",
+          "name": "arithmetic-sum-pow4",
+          "observe": 19,
+          "target": 0.99,
+          "warmup": 50,
+          "weight_decay": 0.1,
+          "width": 128
+        },
+        "data_fingerprints": {
+          "train": "aad23e811b91174e4f21c3493c9f40bf0b23763dd32bdc40be4e0f1cd545c44b",
+          "validation": "1962165249356b821a318d69032c7e99c13e0cb74bc3c0244c4675de38f6d394"
+        },
+        "heldout_examples": 4705,
+        "historical_seed1": {
+          "batch": 256,
+          "complete_epochs": 2381,
+          "epochs": 2381.598639455782,
+          "examples_seen": 11203040,
+          "first99_accuracy": 0.9908607863974496,
+          "first99_seconds_including_setup": 70.15022042999772,
+          "first99_updates": 45250,
+          "history_path": "runs/current-grokking/arithmetic-sum-pow4/seed1/history.jsonl",
+          "train_examples": 4704,
+          "updates": 45250,
+          "updates_per_epoch": 19
+        },
+        "name": "arithmetic-sum-pow4",
+        "selection": "validation",
+        "tier": "long",
+        "train_examples": 4704
+      },
+      "checkpoint_epochs": 500,
+      "dtype": "FP32 with repaired FP64 RMS backward",
+      "epsilon": 1e-8,
+      "expanded_parameters": 209280,
+      "gain": 0.03125,
+      "generation": "greedy autoregression from prompts; own mistakes retained; EOS/limit stopping",
+      "hermitian_xsa": true,
+      "hidden": 342,
+      "independent_parameters": 110848,
+      "initial_parameters_sha256": "64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1",
+      "learning_rate": 0.002,
+      "matrix_constraints": "complex-linear: [[A,-B],[B,A]]",
+      "max_batch": 256,
+      "max_length": 2,
+      "native_rng": "Kernite Random",
+      "optimizer": "AdamW separate real/imaginary variances",
+      "primary": "validation",
+      "ptx_sha256": "0a471ddc99eebcd21595916e7f9c7dddc2dc6418eb4fcc9ba50b13110046bf46",
+      "recurrence_readout": "known-field residue probability pooling; observed prefix only",
+      "sampler_sha256": "7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c",
+      "seed": 1,
+      "source_sha256": "8216337b598e7106fef41291f03bb4ad50de86ab15bae82e27065d40af98ea6e",
+      "warmup": 50,
+      "weight_decay": 0.10000000149011612
+    },
+    "budget": 100000,
+    "case": {
+      "case": {
+        "after_target": 0,
+        "batch": 256,
+        "data": {
+          "operation": "sum-pow4",
+          "prime": 97
+        },
+        "data_seed": 1,
+        "heads": 4,
+        "kind": "arithmetic",
+        "layers": 1,
+        "learning_rate": 0.001,
+        "max_updates": 100000,
+        "metric": "sequence_accuracy",
+        "name": "arithmetic-sum-pow4",
+        "observe": 19,
+        "target": 0.99,
+        "warmup": 50,
+        "weight_decay": 0.1,
+        "width": 128
+      },
+      "data_fingerprints": {
+        "train": "aad23e811b91174e4f21c3493c9f40bf0b23763dd32bdc40be4e0f1cd545c44b",
+        "validation": "1962165249356b821a318d69032c7e99c13e0cb74bc3c0244c4675de38f6d394"
+      },
+      "heldout_examples": 4705,
+      "historical_seed1": {
+        "batch": 256,
+        "complete_epochs": 2381,
+        "epochs": 2381.598639455782,
+        "examples_seen": 11203040,
+        "first99_accuracy": 0.9908607863974496,
+        "first99_seconds_including_setup": 70.15022042999772,
+        "first99_updates": 45250,
+        "history_path": "runs/current-grokking/arithmetic-sum-pow4/seed1/history.jsonl",
+        "train_examples": 4704,
+        "updates": 45250,
+        "updates_per_epoch": 19
+      },
+      "name": "arithmetic-sum-pow4",
+      "selection": "validation",
+      "tier": "long",
+      "train_examples": 4704
+    },
+    "checkpoint_epochs": 500,
+    "corrected_attention_ptx_sha256": "28382d334e8b38319b0a47d0ba6ae1e6a2976f2f2739b13bb45f76ee216a7ce5",
+    "corrected_loss_ptx_sha256": "8c951b53bd58e1db803dddfac65a8ce2b309c0fa49a55383085920b586dccdc4",
+    "initial_parameters_sha256": "64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1",
+    "observe": 19,
+    "optimizer_moments": "zero at original initialization",
+    "original_files": {
+      "checkpoint.bin": "47a17bed46df1a02952f671a09f37d9609e0f31a57bfaf708e6d435b8eaa1599",
+      "checkpoint.json": "516fd22fe280c981ad26ee9936f288424ee709ff1500cd46ee7f0befba052e84",
+      "execution.json": "e83ee19e9f204456a311a62640473d73daefe0eca7f2d13d2332276e2d6ebff7",
+      "history.jsonl": "529a29c16bae30f49486feb5260ecc1106ac1be436fedd19b06ca7a86237ba6f",
+      "initial.f32": "64eaf6fefaeb18df8ab77f6357529fe9a135fde0ad2b4dd9a7be4fed8bed4fd1",
+      "protocol.json": "cab04bd3b10d2094945836c936dbfcadd0200986a69520747aa38779e06d13e8",
+      "result.json": "a3b0aedbf8a13c21bd89fc5c75be4af8c2110792cb8f0ede7373a4fd99aff034"
+    },
+    "original_ptx_sha256": "0a471ddc99eebcd21595916e7f9c7dddc2dc6418eb4fcc9ba50b13110046bf46",
+    "plan_sha256": "87ca2f44aa6da3cfde4656bf981c4c0fb43f9bc6d2635687bee5b56a7256bd82",
+    "purpose": "fresh corrected-gradient rerun of the existing sum-pow4 seed1; original benchmark preserved",
+    "python_invoked": false,
+    "sampler_sha256": "7ac7c93010742ed9765c250acc9a717abfb832dc4ed5a6740d94a262db3c654c",
+    "seed": 1,
+    "source": {
+      "files": [
+        {
+          "path": "native/src/main.rs",
+          "sha256": "2b2070b38adec1f11f935cce3bbab89f8c1f8dade6ed1fdb959f45e11ff0ca82"
+        },
+        {
+          "path": "native/src/runner.rs",
+          "sha256": "2ac0c845323a2b6a615a77aec9dd457306271c88a4381d427845ad89eb6ea339"
+        },
+        {
+          "path": "native/src/sources.rs",
+          "sha256": "f4988a98ac590bf4ee08f6ba59e7244ee8dd71df3e318fd422640b1800bc20fd"
+        },
+        {
+          "path": "native/src/data.rs",
+          "sha256": "86f52b540010ad67b75100081cc29339c98ed74a89d64c6cfda06bcdb9d243ce"
+        },
+        {
+          "path": "native/src/engine.rs",
+          "sha256": "9b38dac5df7f1e111f5c7edb16dacc217b9dd95a9b147262d1d2c3d47a035587"
+        },
+        {
+          "path": "native/src/layout.rs",
+          "sha256": "d57aaa0cbf1e8e5c7e5f9ed4c78631ec479d920e7814e70249baddbd1cc2cd36"
+        },
+        {
+          "path": "native/src/attention.rs",
+          "sha256": "604c6790666cebc625f1bd186fc18f9768e4ea4f7ea90cfb20e068be18e46449"
+        },
+        {
+          "path": "native/src/base_ops.rs",
+          "sha256": "81436ff6600175c5180fb3689655cf8c0c1a17b251727cbd32873900a6a81cf6"
+        },
+        {
+          "path": "native/src/sequence_ops.rs",
+          "sha256": "8f86bc28c2be595793a2e7cf6e79509d4bc57ae6c3a41b91dd8eb22468edcb7a"
+        },
+        {
+          "path": "native/src/metrics.rs",
+          "sha256": "8a64672a3274c7cf56fad2fe6630d264331083a217c05d1de668c1204f59985b"
+        },
+        {
+          "path": "native/src/random.rs",
+          "sha256": "a084d406c410a61775cdf98df1c9be3d3c52251505f69b7b42aa8310031949d5"
+        },
+        {
+          "path": "native/src/pcg.rs",
+          "sha256": "6c27b7080b0ec20bea1262e9b20af5cab74ea8cbdf4a4323e51cb83dd9008c02"
+        },
+        {
+          "path": "native/src/blake.rs",
+          "sha256": "f7639f076f537e106a915decfb2b90ab1e5723c7dc8bacd5ac83be211cf4974b"
+        },
+        {
+          "path": "native/src/tests.rs",
+          "sha256": "b1eac872921a04d37b33f8cd6fc7e0d42b7b691659e0ed4673f2d583de23e782"
+        },
+        {
+          "path": "native/src/geometry_tests.rs",
+          "sha256": "79e86292efadaa20b8f9c5610b48dcf2c3a53422dc188f863163379d24b8dd07"
+        },
+        {
+          "path": "native/src/complex.rs",
+          "sha256": "72c103f838d154874d2b52240184ff8018cdf65c565093592067f83de783bdcd"
+        },
+        {
+          "path": "native/src/gemm.rs",
+          "sha256": "6c3f4260223df0316b2403d5545a7f8f0ee05c59d09c8bff4bcf59def737540b"
+        },
+        {
+          "path": "native/src/arithmetic_data.rs",
+          "sha256": "ff035ebaf103c68270c653487e39b444a5a79e56d26ebc0501dc67e04423098f"
+        },
+        {
+          "path": "native/Cargo.toml",
+          "sha256": "66e3f491722358c4fb3054af43c632e594c8db188af764001ca3f606e15af819"
+        },
+        {
+          "path": "native/Cargo.lock",
+          "sha256": "a77e6ad7fab8afa3896e2ffb8acf7f7cef5a1031b89211aa7dae968c60fa8146"
+        },
+        {
+          "path": "native/THIRD_PARTY.txt",
+          "sha256": "c8c4fa7fc1f4c59131e65c3c70a5192eec0ff75b76c660aefd6f0952fc0b7178"
+        },
+        {
+          "path": "PLAN.txt",
+          "sha256": "0e415a87176fc64abe065f6eba03bfa3d18301727e75cdfecb0c137edd187642"
+        },
+        {
+          "path": "suite.json",
+          "sha256": "6d2735e987026959c3cde995fbe866281e4f0b2308cc71be4b9d2edd13840436"
+        },
+        {
+          "path": "UPSTREAM.sha256",
+          "sha256": "35e2ade12de799c2da7ffacdd7c53876397cfc02e70aa48d149ca1f6e5e9196b"
+        },
+        {
+          "path": "diagnostic/src/main.rs",
+          "sha256": "98a69d73cb37230db1b08e841d37c354647cfab34bedb5dad62dbf89a1882689"
+        },
+        {
+          "path": "diagnostic/src/retrain.rs",
+          "sha256": "cc7facb854e58e3b25a9cb62924284337420ed2666b583e19ed6cee2c781f2f1"
+        },
+        {
+          "path": "diagnostic/RETRAIN_PLAN.txt",
+          "sha256": "87ca2f44aa6da3cfde4656bf981c4c0fb43f9bc6d2635687bee5b56a7256bd82"
+        },
+        {
+          "path": "diagnostic/src/raw.rs",
+          "sha256": "6f0f5384f758d128dedaf98c7ff5f56198157a76e6b8eb9a66ef567c3119fab2"
+        },
+        {
+          "path": "diagnostic/src/loss_precision.rs",
+          "sha256": "98e515a78add20dfeed21cf50fd6fe931341683361fd7531b5a43f58c71a4f3e"
+        },
+        {
+          "path": "diagnostic/src/loss_recheck.rs",
+          "sha256": "39fd953650b5ef25b5bf9599af10d56f5ea11ac831049742222e09197690507a"
+        },
+        {
+          "path": "diagnostic/src/stable_loss.rs",
+          "sha256": "41955b8b51a5b9ef60200464551ebe1e3e8e73e1b26cfd041574559832f6fbd5"
+        },
+        {
+          "path": "diagnostic/src/stable_attention.rs",
+          "sha256": "98017a5e2de0e5a815567e9cf2f2de512aaec7bffda02911c5abc530fc16737a"
+        },
+        {
+          "path": "diagnostic/src/gradient_oracle.rs",
+          "sha256": "cf0a63963bd8c5647026394f13af8925cfb83bb30c18f4af4630c7f55b28a72f"
+        },
+        {
+          "path": "diagnostic/src/gradient_stress.rs",
+          "sha256": "26509c0642ef5fcf3c92d70a2584ea61a2a0eafea795e2fee1c32bdf34a2bbba"
+        },
+        {
+          "path": "diagnostic/src/engine.rs",
+          "sha256": "8590ad4e33807e93eb14aaf59a75982e76267dbd6bceb2dea2234d3db01a25a8"
+        },
+        {
+          "path": "diagnostic/src/probe.rs",
+          "sha256": "b9b069bf63170160a271afe0152c027aa4b0a33289f181ba2d8ed777a42bca52"
+        },
+        {
+          "path": "diagnostic/src/stats.rs",
+          "sha256": "4de67ba1904def6540c819ac69229085baaa4ea40be4e5cf09e1c1aaaf3b1697"
+        },
+        {
+          "path": "diagnostic/src/continuation.rs",
+          "sha256": "4808b666dcb78617de4bb7af1a8beaa1708cad734a0416460ecacde46295176b"
+        },
+        {
+          "path": "diagnostic/Cargo.toml",
+          "sha256": "640a91fd765b6324d7111f00c2421cd6fc8dae1cb2b8037ca8784c8b4ad71338"
+        },
+        {
+          "path": "diagnostic/Cargo.lock",
+          "sha256": "6dbdfd362f3b4b886034302a809b469ce5bc15876dfdda60dadba625dc484052"
+        },
+        {
+          "path": "diagnostic/CONTINUATION_PLAN.txt",
+          "sha256": "4074b9b40202aa77d1ad4366c4fbf9ac78292f24c0090aa596b8fef11ff26eb7"
+        }
+      ],
+      "sha256": "ba89037667b90ca129fdbb8cf2371909609d37dee503e232e6ec4e0d71ce19fe"
+    },
+    "stopping_rule": "first observed heldout exact >=99%,100000updates,or explicit STOP"
+  },
+  "training_updates": 0
+}
