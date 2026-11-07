@@ -1291,3 +1291,19 @@ Seven of 27 new cells are complete, with normalized depth seed 1 running.
 Preserve all 20 remaining cells, then audit and commit the full study before
 the usual-gain CUDA check and three-seed run. Keep Peri-normalization, embedding
 normalization and tied weights. No initializer or fixed-75 winner is selected.
+
+Eighth capacity outcome: normalized depth seed 1 misses its budget
+The second normalized depth seed exhausts 100000 updates without 99% held-out.
+Peak held-out accuracy is .9804463337, final held-out .8852284803 and final train
+.9993622449. Its one-layer control also misses, with peak .9876726886, final
+held-out .9861849097 and final train 1. Each consumes 5263.163265 epochs. Keep
+both first-99 values and their ratio null; equal consumed budgets are not a tie.
+The deeper run uses 2032.836117 trainer seconds. Both native checkpoints, full
+observations, optimizer states, source archives, initialized tensors and actual
+execution exposure pass the unchanged paired audit, with no resumption or replay.
+Historical runtime ratios remain omitted because journal overhead differs.
+Depth has not recovered either of the first two normalized seeds within budget.
+Seed 2 remains required before the complete three-seed contrast and its curves.
+Eight of 27 new cells are complete, with normalized depth seed 2 running.
+Preserve all 19 remaining cells and the subsequent usual-gain test in their
+declared order. No initializer, normalizer or fixed-75 winner is selected here.
