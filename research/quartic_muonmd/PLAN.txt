@@ -1,0 +1,58 @@
+Quartic complex-linear optimizer diagnostic, frozen before training
+
+Question: can the MuonMD recipe improve final held-out classification and
+reduce the late fluctuations seen on (a+b)^4 mod97 with complex-linear weights?
+This is a diagnostic on an already observed task, not a new generalization test.
+
+Use exactly the complex-linear model from GPT commit910f206: width128 (64
+complex coordinates), four heads, one attention+FFN block, real XSA, radial
+complex-product FFN of real hidden width342, Peri RMS, RoPE, SSMax and tied E.
+Keep its physical initialization and frozen arithmetic split: 4704 train,
+4705 held-out, data seed1. Model/sampler seeds0,1,2; shuffle seed+10000;
+batch256 with genuine short tails. Same initial parameters and batches in both arms.
+Do not change the existing complex-geometry suite or run two training cohorts
+concurrently. Small correctness tests may share the GPU before the queue is free.
+
+Two arms, six runs; 100000 updates each, including after first99. Record first
+crossing AND final/best/late-range metrics; convergence is not inferred from one
+crossing. Observe complete train and held-out splits every19 updates. Save only
+at initialization, every500 epochs, first99, budget end and explicit clean stop.
+All misses and execution errors remain visible. No adaptive LR changes or retries.
+
+Shared settings: zero warmup, global physical-gradient norm clip1, ordinary
+coordinate Adam with betas(.9,.99), epsilon1e-8 wherever Adam is used, linear
+decay from the peak at update0 to1e-8 at update99999. These new controls differ
+from the historical constant-rate (.9,.98), warmup50, unclipped runs.
+
+adamw-linear: peak LR0.002 for all independent coordinates; weight decay0.1.
+muonmd-linear: direction momentum0.95, Nesterov, five Newton-Schulz iterations
+with polynomial3.4445*x-4.775*x^3+2.0315*x^5. Gain Adam peak LR0.01; direction
+peak LR0.01; tied-embedding Adam peak LR0.002; no weight decay. This is one
+predeclared MuonMD setting, not a tuned optimum or an equal-budget LR sweep.
+
+MD factorization W=diag(r) D diag(c), positive softplus row/column gains
+initialized to1. Fix rho=the actual initial complex Frobenius norm of each
+matrix. Normalize Muon's initial Nesterov matrix by its complex Frobenius norm
+(zero maps to zero). The fixed output multiplier is rho/sqrt(min(m,n)), using
+complex dimensions: nominal full-rank polar norm matching for our0.02
+initialization. Do not renormalize each Muon update. Reproject the updated D
+onto radius rho, then fuse with the updated gains. All factor gradients use
+the old physical weights/gains and the same clipped physical gradient.
+
+Complex adaptation: first contract gradients of [[A,-B],[B,A]] into A+iB;
+use Hermitian Gram matrices, sum|z|^2 norms and real Hermitian gain derivatives.
+One positive gain per complex row/column, shared across real and imaginary parts.
+The four real blocks are reconstructed exactly after each physical update.
+Keep the tied embedding/readout as one unconstrained Adam group. Paper2606.25971
+uses untied groups and row-normalized embeddings/head; that change is not copied.
+Direction/gain operations are a complex extension, not a proved Lean theorem.
+
+Source: local papers/arXiv-2606.25971v2/main.tex, Section3, Section4.1 and
+Appendices A/B/D; local Muon scalar polynomial and Nesterov convention in
+optimizers/src/lean_optim/matrix.py. Lean MD factorization, storage and scale
+identities do not provide optimizer convergence on this task. AdamMDW's extra
+physical decay is deliberately not part of MuonMD here.
+
+All training, tests, data, checkpoints and reports use native Rust/Kernite.
+Checkpoint optimizer-specific momentum, gains, Adam moments and step/sampler
+position; reject unclean windows or changed sources instead of silent replay.
