@@ -135,40 +135,84 @@ The earlier paired [seed-0](results/partial-cell-cubic-depth-normalized-lr2-seed
 and [seed-1](results/partial-cell-cubic-depth-normalized-lr2-seed1.json) audits
 remain preserved.
 
-The first two completed width pairs, **original model, LR 0.001, seeds 0 and 1**,
-pass at both sizes. The paired
-[seed-0](results/partial-cell-cubic-width-original-lr1-seed0.json) and
-[seed-1](results/partial-cell-cubic-width-original-lr1-seed1.json) audits verify
-all four native checkpoints, complete histories, first crossings, optimizer
-states, initialized tensors, source archives and execution exposure, with no
+The fourth completed contrast, **original model at LR 0.001, width 128 versus
+256**, passes **3/3 at both widths**. Every wider seed takes more epochs. The
+geometric mean rises from 3,652.080860 to 4,562.458438 epochs, **24.93% more**.
+The [complete six-cell audit](results/partial-group-cubic-width-original-lr1.json)
+verifies all native checkpoints, full histories and oracles, first crossings,
+optimizer states, initialization, sources and execution exposure, with no
 resumption or replay.
 
 | Seed | Width 128: first-99 epochs | Width 256: first-99 epochs | Epoch increase |
 | --- | ---: | ---: | ---: |
 | 0 | 3,531 | 4,421 | 25.21% |
 | 1 | 3,197 | 4,858 | 51.95% |
+| 2 | 4,315 | 4,422 | 2.48% |
 
-The wider seeds first record at least 99% held-out accuracy at 83,999 and 92,302
-updates, both with 4,659/4,705 exact examples. Their immediately preceding
-observations, at 4,420 and 4,857
-epochs respectively, remain below 99%. Both sizes retain one layer and head
-width 32; widening changes four heads to eight and increases parameters from
-208,896 to 811,520 (**288.48% more**). The wider runs use 1,745.197272 and
-1,928.294626 trainer seconds. Historical runtime ratios are omitted because
-journal overhead differs. Seed 2 is still required for the complete width
-contrast; no first-99 average is computed from these two passes. The normalized
-width models remain pending.
+Seed 2 first records 4,658/4,705 exact held-out examples at 84,018 updates,
+following a below-99% observation at 4,421 epochs. Its 1,834.299626 trainer
+seconds and both earlier wider-seed timings remain recorded. These comparisons
+retain one layer and head width 32; widening changes four heads
+to eight and increases parameters from 208,896 to 811,520 (**288.48% more**).
+Historical runtime ratios remain omitted because journal overhead differs.
+The [learning curves](results/partial-group-cubic-width-original-lr1.png),
+[SVG](results/partial-group-cubic-width-original-lr1.svg) and
+[paired CSV](results/partial-group-cubic-width-original-lr1.csv) retain every
+seed. The earlier paired [seed-0](results/partial-cell-cubic-width-original-lr1-seed0.json)
+and [seed-1](results/partial-cell-cubic-width-original-lr1-seed1.json) audits
+remain preserved.
 
-**11/27 new cells** are complete: all nine depth runs and the first two width
-runs are audited. The width-256 original model at LR 0.001 is running seed 2.
-All 16 remaining width and combined depth/width cells, and the subsequent usual-gain
-test, keep their declared order. The full study remains open; no initializer
-or fixed-75 winner is selected by these one-task contrasts.
+The fifth completed contrast, **original model at LR 0.002**, drops from **1/3
+passes at width 128 to 0/3 at width 256**. All wider seeds exhaust 100,000 updates.
+Seed 0 becomes a budget miss; seeds 1 and 2 miss at both widths. The
+[complete six-cell audit](results/partial-group-cubic-width-original-lr2.json)
+preserves all failures, with no resumption or replay. First-99 averages and epoch
+ratios remain undefined for the censored groups.
+
+| Seed | Width-128 first-99 epochs | Width-256 peak held-out | Width-256 final held-out | Width-256 final train |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 3,574 | 7.25% | 7.25% | 100.00% |
+| 1 | Budget miss | 6.44% | 5.31% | 99.74% |
+| 2 | Budget miss | 8.08% | 7.97% | 100.00% |
+
+The [learning curves](results/partial-group-cubic-width-original-lr2.png),
+[SVG](results/partial-group-cubic-width-original-lr2.svg) and
+[paired CSV](results/partial-group-cubic-width-original-lr2.csv) show all six
+complete histories and stopping points. Each width-256 LR1/LR2 seed pair has
+identical initialized tensors. Under these settings, changing LR from 0.001 to
+0.002 changes wider-original coverage from 3/3 to 0/3. This is evidence about
+this task and recipe, not a universal learning-rate rule.
+
+For the **normalized width-256 model at LR 0.002**, the first two completed
+seeds give **one pass and one budget miss**. Seed 0 first records 4,658/4,705
+exact held-out examples at 65,797 updates, or 3,463 epochs; its immediately
+preceding observation at 3,462 epochs is below 99%. Its width-128 control
+exhausts the budget. Widening therefore recovers this observed seed while
+retaining Peri-RMS, embedding RMSNorm, Q/K normalization and tied weights.
+
+| Seed | Width 128: first-99 epochs | Width 256: first-99 epochs | Width 128: final held-out | Width 256: final held-out |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | Budget miss | 3,463 | 96.49% | 99.00% |
+| 1 | Budget miss | Budget miss | 98.62% | 87.59% |
+
+Seed 1 peaks at 98.04% held-out and ends at 99.89% train after all 100,000 updates.
+The paired [seed-0](results/partial-cell-cubic-width-normalized-lr2-seed0.json)
+and [seed-1](results/partial-cell-cubic-width-normalized-lr2-seed1.json) audits
+verify all four complete histories, native states, sources and initialization,
+with no resumption or replay. The wider runs use 1,446.083539 and 2,176.479502
+trainer seconds. Preserve null ratios against the censored controls; no group
+mean or three-seed coverage conclusion is assigned before seed 2 completes.
+
+**17/27 new cells** are complete and audited. Normalized width-256 seed 2 is
+running. All ten remaining cells, including the nine combined depth/width runs,
+and the subsequent usual-gain test keep their declared order. The full study
+remains open; no initializer, normalizer or fixed-75 winner is selected by
+these one-task contrasts.
 
 The partial reporter requires all three seeds and writes separate artifacts
 that cannot close the full study. Its incomplete-group guard rejected the
 two-seed subset before the first group's third result existed. Reproduce all
-three completed six-cell audits and figures without retraining:
+five completed six-cell audits and figures without retraining:
 
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-original-lr1
@@ -177,6 +221,10 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cu
 MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-original-lr2
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-depth-normalized-lr2
 MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-depth-normalized-lr2
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-width-original-lr1
+MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-width-original-lr1
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_group --name cubic-width-original-lr2
+MPLCONFIGDIR=/tmp/cubic-partial-mpl /usr/bin/python3 -m research.cubic_capacity_reporting.plot_partial --name cubic-width-original-lr2
 ```
 
 Reproduce the earlier single-seed pairs without retraining:
@@ -188,6 +236,8 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cu
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-normalized-lr2 --seed 1
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-original-lr1 --seed 0
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-original-lr1 --seed 1
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-normalized-lr2 --seed 0
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-normalized-lr2 --seed 1
 ```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:

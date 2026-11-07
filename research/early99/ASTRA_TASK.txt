@@ -1368,3 +1368,51 @@ these two passes. Eleven of 27 new cells are complete, with width-256 original
 LR1 seed 2 running. Keep all 16 remaining cells and the subsequent usual-gain
 CUDA check and three-seed run in the declared order. No initializer, normalizer
 or fixed-75 winner is selected by this partial width contrast.
+
+Fourth complete capacity contrast: original width LR1 passes 3/3, later
+Width-256 original LR1 seed 2 first records 4658/4705 exact held-out examples
+at 84018 updates, or 4422 epochs, after a below-99% observation at 4421 epochs.
+It uses 1834.299626 trainer seconds. The matching width-128 seed passes at 4315
+epochs, so widening takes 2.479722% more epochs for this seed. Both complete
+groups pass 3/3, with all three wider seeds later: 4421,4858,4422 epochs versus
+3531,3197,4315. Geometric means are 4562.458438 versus 3652.080860 epochs,
+24.927640% more with 288.480392% more parameters. Full native-state, oracle,
+source, initialization and execution audits pass for all six cells, with no
+resumption or replay. Preserve all curves, CSV, PNG/SVG and earlier partial
+audits. Historical runtime ratios remain omitted because journal overhead differs.
+
+Fifth complete capacity contrast: original width LR2 passes 0/3
+All three width-256 original LR2 seeds exhaust 100000 updates. Peak held-out
+accuracies are .0724760893,.0643995749,.0807651435; final held-out accuracies are
+.0724760893,.0531349628,.0797024442 and final train is 1,.9974489796,1. The paired
+width-128 group passes 1/3: one new miss and two pairs missing at both widths.
+Retain every miss, null first-99 value and null ratio; no filtered group mean.
+All six native checkpoints and full histories, sources, initialized tensors,
+optimizer states and execution exposure pass audit with no resumption or replay.
+The PNG/SVG and CSV retain all curves and stopping points. Same-seed width-256
+LR1/LR2 initialization hashes match exactly; coverage changes from 3/3 to 0/3
+under this learning-rate change and task, not a universal rate conclusion.
+
+Normalized width results: seed 0 recovered, seed 1 still misses
+Width-256 normalized LR2 seed 0 first records 4658/4705 exact held-out at 65797
+updates, or 3463 epochs, after a below-99% observation at 3462 epochs. It uses
+1446.083539 trainer seconds and ends with train 1. Its width-128 control misses
+the full budget. This is a recovered observed seed while retaining Peri-RMS,
+embedding RMSNorm, Q/K normalization, inverse-width gain and tied weights.
+Width-256 seed 1 exhausts 100000 updates: peak held-out .9804463337, final held-out
+.8758767269, final train .9989370748 and 2176.479502 trainer seconds. Its paired
+width-128 control also misses, with peak .9876726886 and final held-out .9861849097.
+Both paired audits verify all native states, oracles, histories, initialization,
+sources and execution exposure, with no resumption or replay. Preserve both
+outcomes and null epoch ratios against censored controls. Seed 2 remains required
+before a completed three-seed contrast; no partial-group mean is assigned.
+Seventeen of 27 new cells are complete and audited. Normalized width seed 2 is
+running. Preserve all ten remaining cells, including the nine combined depth
+and width runs, then fully audit and commit before usual-gain CUDA validation
+and three-seed training. No initializer, normalizer or fixed-75 winner is selected.
+
+Monitoring preference updated
+The user requested no minute-by-minute checks: let the declared queue run, wait
+at longer intervals and report completed groups or meaningful failures. Inspect
+the live process before giving status; distinguish completed runs from audited
+and committed results when the queue advances between observations.
