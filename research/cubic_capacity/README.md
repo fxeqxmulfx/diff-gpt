@@ -103,8 +103,28 @@ changing LR from 0.001 to 0.002 changes observed coverage from 0/3 to 2/3;
 the one-layer LR 0.001 control still has 3/3 coverage on this task. These outcomes
 do not establish a universal benefit from added depth or choose an initializer.
 
-**6/27 new cells** are complete. The two-layer normalized inverse-width model
-at LR 0.002 is running seed 0. All 21 remaining cells, including the width and
+The first completed seed for the **two-layer normalized inverse-width model**
+also exhausts 100,000 updates without reaching 99%. Its
+[paired seed-0 audit](results/partial-cell-cubic-depth-normalized-lr2-seed0.json)
+verifies both native checkpoints, complete observations, source archives,
+initialized tensors, optimizer states and execution exposure, with no resumption
+or replay. Both models consume 5,263.163265 epochs; neither has a first-99 value,
+so their epoch ratio remains undefined.
+
+| Normalized seed 0 | Peak held-out | Final held-out | Final train | First-99 epochs |
+| --- | ---: | ---: | ---: | --- |
+| One layer | 98.66% | 96.49% | 100.00% | Budget miss |
+| Two layers | 98.94% | 90.80% | 99.94% | Budget miss |
+
+The deeper run takes 2,009.374183 trainer seconds. Historical runtime ratios
+remain omitted because journal overhead differs. The depth intervention adds
+94.06% more parameters and changes the declared residual coefficient from
+`1/sqrt(2)` to `1/2`. It does not recover this seed within the declared budget;
+one seed does not settle the normalized three-seed contrast, initializer choice
+or the remaining capacity comparisons.
+
+**7/27 new cells** are complete. The two-layer normalized inverse-width model
+at LR 0.002 is running seed 1. All 20 remaining cells, including the width and
 combined depth/width comparisons, and the subsequent usual-gain test keep
 their declared order. The full study remains open.
 
@@ -125,6 +145,7 @@ Reproduce the earlier single-seed pairs without retraining:
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 0
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 1
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-normalized-lr2 --seed 0
 ```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:

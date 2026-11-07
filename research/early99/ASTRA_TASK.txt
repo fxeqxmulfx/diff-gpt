@@ -1273,3 +1273,21 @@ match exactly. Theone-layer LR1control retains3/3coverage onthisoneobservedtask.
 Sixof27newcells arecomplete; two-layer normalizedinversewidthLR2seed0 isrunning.
 Preserve all21remainingcells andthelaterusualgain test. Thisdoesnotsettle width,
 thenormalizedmodel,universalcapacitybenefit,initializerchoice orfixed75selection.
+
+Seventh capacity outcome: normalized depth seed 0 misses its budget
+The normalized inverse-width model at depth 2, width 128 and LR 0.002 exhausts
+100000 updates without a 99% crossing. Peak held-out accuracy is .9893730074,
+final held-out .9079702444 and final train .9993622449. Its paired one-layer
+control also misses, with peak .9866099894, final held-out .9649309245 and final
+train 1. Both consume 5263.163265 epochs; preserve null first-99 values and a
+null epoch ratio. The deeper run uses 2009.374183 trainer seconds. Native
+checkpoints, full observations, moments, sources, initialization and execution
+exposure pass the unchanged paired audit, with no resumption or replay.
+Historical runtime ratios remain omitted. Depth adds 94.05637% more parameters
+and changes the declared normalized residual coefficient from 1/sqrt(2) to 1/2.
+Added depth does not recover this seed within budget; this single pair does not
+settle the other normalized seeds, width, initialization or normalizer choice.
+Seven of 27 new cells are complete, with normalized depth seed 1 running.
+Preserve all 20 remaining cells, then audit and commit the full study before
+the usual-gain CUDA check and three-seed run. Keep Peri-normalization, embedding
+normalization and tied weights. No initializer or fixed-75 winner is selected.
