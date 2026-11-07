@@ -1244,3 +1244,16 @@ Four of27 newcells arecomplete; originaldepthLR2seed1 isrunning. All23 remaining
 cells andthelaterusualgain CUDAvalidation/three-seed test retainthedeclaredorder.
 The partialcell reporter writescomplete_group=false,complete_study=false; it
 cannotreplace thefull36-cell audit orselect anewfixed75 winner.
+
+Fifth capacity outcome: originaldepthLR2 seed1 misses its budget
+Depth2,width128,originalLR0.002,seed1 exhausts100000updates without99heldout.
+Peakheldout is.3683315622,finalheldout.3551540914 andfinaltrain.9955357143;
+the pairedone-layer control also misses, peaking at.9819341126 andending at
+.9640807651heldout. Bothcompletecells pass the unchangeddeepaudit, including
+nativecheckpoints,moments,sources,initialization,oracles and5263.163265epochs
+each withnoresumption orreplay. The deepercell uses2039.074340trainerseconds;
+historicalruntime ratiosremainomitted. Preserve bothnullfirst99 values and
+nullratio: sameconsumedbudget isnot afirst99tie. Fiveof27 newcells arecomplete,
+withoriginaldepthLR2seed2 running. Onepass andonemiss do notclose thethree-seed
+group. Preserve all22remainingcells, thenfullaudit/commit beforetheusualgain
+CUDAcheck andthree-seed run. No modelorinitializerselection ismadehere.

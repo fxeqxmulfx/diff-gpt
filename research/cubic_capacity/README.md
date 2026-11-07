@@ -87,9 +87,20 @@ initialized tensors, with no resumption or replay. The crossing bracket is
 
 The same two-layer seed exhausted its budget at LR 0.001, using the exact same
 initialized parameter tensors. This is a single-seed learning-rate observation;
-the other two seeds must finish before interpreting the LR 0.002 group's coverage.
-**4/27 new cells** are complete. Seed 1 at depth two and LR 0.002 is running;
-the remaining 23 cells and the subsequent usual-gain test keep their declared order.
+all three seeds must finish before interpreting the LR 0.002 group's coverage.
+
+The fifth completed cell, **seed 1 at two layers and LR 0.002**, exhausts all
+100,000 updates without 99%. Its peak held-out accuracy is **36.83%**, final
+held-out accuracy 35.52% and final training accuracy 99.55%. The one-layer
+control also exhausts its budget, peaking at 98.19% and ending at 96.41%
+held-out accuracy. The [seed-1 pair audit](results/partial-cell-cubic-depth-original-lr2-seed1.json)
+verifies both complete trajectories and native states, including 5,263.163265
+epochs each and no resumption or replay. Both first-99 values and their ratio
+remain undefined; equal consumed budgets do not make them first-99 ties.
+
+**5/27 new cells** are complete. Seed 2 at depth two and LR 0.002 is running.
+This group's one pass and one miss are incomplete three-seed evidence. The
+remaining 22 cells and the subsequent usual-gain test keep their declared order.
 
 The partial reporter requires all three seeds and writes separate artifacts
 that cannot close the full study. Its incomplete-group guard rejected the
@@ -105,6 +116,7 @@ Reproduce the later single-seed pair without retraining:
 
 ```sh
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 0
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 1
 ```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:
