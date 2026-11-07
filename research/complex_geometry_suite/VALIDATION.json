@@ -1,0 +1,92 @@
+{
+  "validated_at_utc": "2026-11-07 13:23:28 UTC",
+  "base_gpt_commit": "786696bbbba7b81be840d9157f67ff914bd0a4d4",
+  "kernite_commit": "a1b6bc2c956e1a5f35960e26b209e1b6c213096c",
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU, 4 GiB",
+  "source_sha256": "8216337b598e7106fef41291f03bb4ad50de86ab15bae82e27065d40af98ea6e",
+  "ptx_sha256": "0a471ddc99eebcd21595916e7f9c7dddc2dc6418eb4fcc9ba50b13110046bf46",
+  "checks": [
+    {
+      "command": "cargo fmt --check",
+      "status": "passed"
+    },
+    {
+      "command": "cargo clippy --offline --locked --all-targets -- -D warnings",
+      "status": "passed"
+    },
+    {
+      "command": "cargo build --release --offline --locked",
+      "status": "passed"
+    },
+    {
+      "command": "cargo test --offline --locked --release -- --include-ignored --test-threads=1",
+      "status": "passed",
+      "cpu_tests": 8,
+      "cuda_tests": 5,
+      "total": 13
+    },
+    {
+      "command": "complex-geometry preflight",
+      "status": "passed",
+      "frozen_tasks": 35,
+      "all_fingerprints_match": true
+    },
+    {
+      "command": "diff -qr native/src /tmp/complex-geometry-smoke/source/research/complex_geometry_suite/native/src",
+      "status": "passed",
+      "meaning": "smoke binary embedded the exact committed Rust sources"
+    }
+  ],
+  "test_output": "    Finished `release` profile [optimized] target(s) in 0.02s\n     Running unittests src/main.rs (/tmp/complex-geometry-target/release/deps/complex_geometry-2021992600ce0e9e)\n\nrunning 13 tests\ntest blake::empty_blake2b8 ... ok\ntest metrics::field_readout_pools_aliases_and_numeric_eos_is_penalized ... ok\ntest metrics::generation_reads_its_own_errors_and_respects_eos_and_limits ... ok\ntest pcg::upstream_seed_and_pcg_vectors ... ok\ntest runner::archives_compiled_sources_and_rejects_stop_before_mutating_a_cell ... ok\ntest runner::checkpoint_resumes_identical_updates_and_rejects_unclean_windows ... ok\ntest tests::every_sequence_dataset_matches_frozen_fingerprints ... ok\ntest tests::full_sequence_model_matches_scalar_logits_loss_and_parameter_gradients ... ok\ntest tests::geometry_tests::adamw_contracts_gradients_before_moments_and_preserves_complex_constraints ... ok\ntest tests::geometry_tests::complex_layout_covers_parameters_once_and_matches_complex_multiplication ... ok\ntest tests::geometry_tests::hermitian_geometry_and_magnitude_norm_have_expected_invariances ... ok\ntest tests::geometry_tests::paired_variance_adamw_commutes_with_complex_coordinate_rotations ... ok\ntest tests::sequence_attention_matches_reference_and_gradients ... ok\n\ntest result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.31s\n\n",
+  "smoke": {
+    "purpose": "engineering_smoke_only",
+    "case": "arithmetic-sum-cube",
+    "updates_per_arm": 8,
+    "rows": [
+      {
+        "arm": "real-product",
+        "independent_parameters": 209280,
+        "expanded_parameters": 209280,
+        "weights_changed": true,
+        "train_loss_before": 4.624442222268403,
+        "train_loss_after": 4.579978027615417,
+        "heldout_exact_accuracy": 0.00977683315621679
+      },
+      {
+        "arm": "complex-linear",
+        "independent_parameters": 110848,
+        "expanded_parameters": 209280,
+        "weights_changed": true,
+        "train_loss_before": 4.628785168080508,
+        "train_loss_after": 4.600325950402386,
+        "heldout_exact_accuracy": 0.00977683315621679
+      },
+      {
+        "arm": "complex-hermitian",
+        "independent_parameters": 110848,
+        "expanded_parameters": 209280,
+        "weights_changed": true,
+        "train_loss_before": 4.62867184368526,
+        "train_loss_after": 4.600253875614429,
+        "heldout_exact_accuracy": 0.00977683315621679
+      },
+      {
+        "arm": "complex-hermitian-phase",
+        "independent_parameters": 110848,
+        "expanded_parameters": 209280,
+        "weights_changed": true,
+        "train_loss_before": 4.62867184368526,
+        "train_loss_after": 4.599403790470694,
+        "heldout_exact_accuracy": 0.00977683315621679
+      }
+    ],
+    "limitation": "Eight updates test execution only; no 99% or generalization claim."
+  },
+  "isolation": {
+    "original_suite_running_after_validation": true,
+    "observed_process_id": 257792,
+    "new_long_running_cohort_started": false,
+    "python_invoked": false
+  },
+  "checkpoint_epochs": 500
+}
