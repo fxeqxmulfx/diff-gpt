@@ -62,6 +62,20 @@ PID and start time, requires its completed420-cell audit, verifies frozen binary
 hashes and reruns the native tests before starting. It never rebuilds or retries
 failed scientific cells. It publishes all six cells, including misses and errors.
 
-Results: pending; the existing GPU cohort must finish first. Scientific outputs
-will be under /home/misha/python_projects/gpt/runs/quartic-muonmd. Final compact
-reports will be copied into this directory's results/ by the queue.
+Results: all six cells completed 100000 updates on 2026-11-07. All ended at 100%
+training accuracy; none reached 99% held-out accuracy at any observation.
+
+Arm              Seed 0 final  Seed 1 final  Seed 2 final  Mean final
+adamw-linear      98.363443%     98.214665%     96.301807%    97.626638%
+muonmd-linear     95.812965%     95.494155%     95.345377%    95.550832%
+
+At these fixed rates, MuonMD had lower final held-out accuracy on each paired
+seed. This does not compare tuned optima. Final mean held-out cross-entropy was
+0.133954620 for AdamW and 0.386356941 for MuonMD.
+
+results/ contains the native audit, exact metrics, protocol and artifact hashes,
+the original seven-test GPU validation log and the completed queue state. A
+fresh CPU audit before the results commit found zero integrity failures.
+Full histories and checkpoints remain in
+/home/misha/python_projects/gpt/runs/quartic-muonmd. These six unchanged cells
+are reused in the stopped research/quartic_md_schedules comparison.

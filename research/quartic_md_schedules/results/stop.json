@@ -1,0 +1,82 @@
+{
+  "reason": "explicit user request: stop benchmark",
+  "status": "stopped_by_user",
+  "stopped_at_utc": "2026-11-07T22:11:31Z",
+  "expected_cells": 54,
+  "completed_cells": 46,
+  "stopped_cells": [
+    {
+      "arm": "adamw-wsd-sqrt20-warmup1000",
+      "seed": 2,
+      "endpoint": {
+        "epochs": 1003.0,
+        "examples": 4718112,
+        "next_embedding_lr": 0.0020000000949949026,
+        "next_matrix_lr": 0.0020000000949949026,
+        "seconds": 40.466001078,
+        "step": 19057,
+        "train": {
+          "accuracy": 1.0,
+          "exact": 4704,
+          "loss": 0.00011365571800543336,
+          "total": 4704
+        },
+        "validation": {
+          "accuracy": 0.9774707757704568,
+          "exact": 4599,
+          "loss": 0.10251379915048922,
+          "total": 4705
+        }
+      }
+    }
+  ],
+  "not_started": [
+    {
+      "arm": "adammd-linear",
+      "seed": 2
+    },
+    {
+      "arm": "adammdw-linear",
+      "seed": 2
+    },
+    {
+      "arm": "muonmd-wsd-sqrt20-warmup1000",
+      "seed": 2
+    },
+    {
+      "arm": "adammd-wsd-sqrt20-warmup1000",
+      "seed": 2
+    },
+    {
+      "arm": "adammdw-wsd-sqrt20-warmup1000",
+      "seed": 2
+    },
+    {
+      "arm": "muonmd-wsd-cuberoot20",
+      "seed": 2
+    },
+    {
+      "arm": "muonmd-wsd-fourthroot20",
+      "seed": 2
+    }
+  ],
+  "not_started_directories_verified_absent": true,
+  "checkpoint": {
+    "arm": "adamw-wsd-sqrt20-warmup1000",
+    "completed": 19057,
+    "examples": 4718112,
+    "history_sha256": "11b4a1e81c84b768bd2bb98e95201db3dac010c4e196d19cbc402104881c1268",
+    "layout": "parameters,m,v; per matrix: complex direction m,v,raw gains,positive gains,gain m,gain v; f32 LE",
+    "ptx_sha256": "1c9931255a2c45f792522175f7cff62befc32aae7f88dafc4600f2d5684ec773",
+    "source_sha256": "552a87204295c871d659a8d25a36b8a084c7b915f3a26a8d2dc7fe09d6f11565",
+    "state_sha256": "e7348ab7e2350544d7e80d0d20440fd5edc8d6a7c873c4010d855654ccd1421e"
+  },
+  "execution": {
+    "clean": true,
+    "durable_completed": 19057,
+    "possible_completed": 19057
+  },
+  "automatic_resume": false,
+  "training_restarted_for_reporting": false,
+  "python_invoked": false
+}
