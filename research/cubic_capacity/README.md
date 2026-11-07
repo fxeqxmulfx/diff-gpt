@@ -135,28 +135,33 @@ The earlier paired [seed-0](results/partial-cell-cubic-depth-normalized-lr2-seed
 and [seed-1](results/partial-cell-cubic-depth-normalized-lr2-seed1.json) audits
 remain preserved.
 
-The first completed width pair, **original model, LR 0.001, seed 0**, passes at
-both sizes. Width 256 reaches 4,659/4,705 exact held-out examples after 83,999
-updates, first observed at 4,421 epochs, with the previous 4,420-epoch observation
-below 99%. The [paired audit](results/partial-cell-cubic-width-original-lr1-seed0.json)
-verifies both native checkpoints, complete histories, first crossings, optimizer
+The first two completed width pairs, **original model, LR 0.001, seeds 0 and 1**,
+pass at both sizes. The paired
+[seed-0](results/partial-cell-cubic-width-original-lr1-seed0.json) and
+[seed-1](results/partial-cell-cubic-width-original-lr1-seed1.json) audits verify
+all four native checkpoints, complete histories, first crossings, optimizer
 states, initialized tensors, source archives and execution exposure, with no
 resumption or replay.
 
-| Original LR 0.001, seed 0 | Parameters | Heads | First-99 epochs |
+| Seed | Width 128: first-99 epochs | Width 256: first-99 epochs | Epoch increase |
 | --- | ---: | ---: | ---: |
-| Width 128 | 208,896 | 4 | 3,531 |
-| Width 256 | 811,520 | 8 | 4,421 |
+| 0 | 3,531 | 4,421 | 25.21% |
+| 1 | 3,197 | 4,858 | 51.95% |
 
-Both retain one layer and head width 32. The wider model uses **25.21% more
-epochs** and **288.48% more parameters** for this seed. Its 1,745.197272 trainer
-seconds remain recorded; the historical runtime ratio is omitted because
-journal overhead differs. The other width seeds and normalized models remain
-pending, so this pair does not establish a group or universal capacity result.
+The wider seeds first record at least 99% held-out accuracy at 83,999 and 92,302
+updates, both with 4,659/4,705 exact examples. Their immediately preceding
+observations, at 4,420 and 4,857
+epochs respectively, remain below 99%. Both sizes retain one layer and head
+width 32; widening changes four heads to eight and increases parameters from
+208,896 to 811,520 (**288.48% more**). The wider runs use 1,745.197272 and
+1,928.294626 trainer seconds. Historical runtime ratios are omitted because
+journal overhead differs. Seed 2 is still required for the complete width
+contrast; no first-99 average is computed from these two passes. The normalized
+width models remain pending.
 
-**10/27 new cells** are complete: all nine depth runs and the first width run are
-audited. The width-256 original model at LR 0.001 is running seed 1. All 17
-remaining width and combined depth/width cells, and the subsequent usual-gain
+**11/27 new cells** are complete: all nine depth runs and the first two width
+runs are audited. The width-256 original model at LR 0.001 is running seed 2.
+All 16 remaining width and combined depth/width cells, and the subsequent usual-gain
 test, keep their declared order. The full study remains open; no initializer
 or fixed-75 winner is selected by these one-task contrasts.
 
@@ -182,6 +187,7 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cu
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-normalized-lr2 --seed 0
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-normalized-lr2 --seed 1
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-original-lr1 --seed 0
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-original-lr1 --seed 1
 ```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:

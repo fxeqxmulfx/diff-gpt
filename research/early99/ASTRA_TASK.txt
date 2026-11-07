@@ -1352,3 +1352,19 @@ about the pending normalized width models. Ten of 27 new cells are complete;
 width-256 original LR1 seed 1 is running. Preserve all 17 remaining cells, then
 fully audit and commit before the usual-gain CUDA check and three-seed run.
 No initializer, normalizer or fixed-75 winner is selected by this result.
+
+Eleventh capacity outcome: original width LR1 seed 1 passes later
+The second width-256 original LR1 seed reaches 4659/4705 exact held-out examples
+at 92302 updates, first observed 4858 epochs with the previous 4857-epoch
+observation below 99%. Its width-128 control passes at 3197 epochs: widening
+takes 51.954958% more epochs with the same 288.480392% parameter increase as
+seed 0. Both native checkpoints, full histories, first crossings, moments,
+initialized tensors, source archives and execution exposure pass the unchanged
+paired audit, with no resumption or replay. The wider run uses 1928.294626
+trainer seconds; historical runtime ratios remain omitted.
+Both completed wider seeds pass later than their paired controls. Preserve
+seed 2 before a complete three-seed comparison; do not compute a mean from
+these two passes. Eleven of 27 new cells are complete, with width-256 original
+LR1 seed 2 running. Keep all 16 remaining cells and the subsequent usual-gain
+CUDA check and three-seed run in the declared order. No initializer, normalizer
+or fixed-75 winner is selected by this partial width contrast.
