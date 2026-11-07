@@ -1336,3 +1336,19 @@ output hashes. All three completed depth figures were regenerated: PNG bytes
 remain identical, and parsed SVG geometry and styles match the earlier exports.
 Their source/output manifests are updated. This changes presentation formatting
 only; the audited measurements, group reports and training sources are intact.
+
+Tenth capacity outcome: original width LR1 seed 0 passes later
+The one-layer, width-256 original model at LR 0.001 reaches 4659/4705 exact
+held-out examples at 83999 updates, first observed 4421 epochs with the previous
+4420-epoch observation below 99%. Its width-128 control passes at 3531 epochs:
+the wider seed takes 25.205324% more epochs with 288.480392% more parameters,
+811520 versus 208896. Both retain head width 32, with eight versus four heads.
+Native checkpoints, full histories, first crossings, moments, initialized
+tensors, source archives and execution exposure pass the unchanged paired audit,
+with no resumption or replay. The wider run uses 1745.197272 trainer seconds;
+historical runtime ratios remain omitted because journal overhead differs.
+This is one paired seed, not a completed three-seed width contrast or a claim
+about the pending normalized width models. Ten of 27 new cells are complete;
+width-256 original LR1 seed 1 is running. Preserve all 17 remaining cells, then
+fully audit and commit before the usual-gain CUDA check and three-seed run.
+No initializer, normalizer or fixed-75 winner is selected by this result.

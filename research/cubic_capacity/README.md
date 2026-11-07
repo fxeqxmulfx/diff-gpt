@@ -135,11 +135,30 @@ The earlier paired [seed-0](results/partial-cell-cubic-depth-normalized-lr2-seed
 and [seed-1](results/partial-cell-cubic-depth-normalized-lr2-seed1.json) audits
 remain preserved.
 
-**9/27 new cells** are complete: all nine depth runs are audited. The one-layer,
-width-256 original model at LR 0.001 is running seed 0. All 18 remaining width
-and combined depth/width cells, and the subsequent usual-gain test, keep their
-declared order. The full study remains open; no initializer or fixed-75 winner
-is selected by these one-task contrasts.
+The first completed width pair, **original model, LR 0.001, seed 0**, passes at
+both sizes. Width 256 reaches 4,659/4,705 exact held-out examples after 83,999
+updates, first observed at 4,421 epochs, with the previous 4,420-epoch observation
+below 99%. The [paired audit](results/partial-cell-cubic-width-original-lr1-seed0.json)
+verifies both native checkpoints, complete histories, first crossings, optimizer
+states, initialized tensors, source archives and execution exposure, with no
+resumption or replay.
+
+| Original LR 0.001, seed 0 | Parameters | Heads | First-99 epochs |
+| --- | ---: | ---: | ---: |
+| Width 128 | 208,896 | 4 | 3,531 |
+| Width 256 | 811,520 | 8 | 4,421 |
+
+Both retain one layer and head width 32. The wider model uses **25.21% more
+epochs** and **288.48% more parameters** for this seed. Its 1,745.197272 trainer
+seconds remain recorded; the historical runtime ratio is omitted because
+journal overhead differs. The other width seeds and normalized models remain
+pending, so this pair does not establish a group or universal capacity result.
+
+**10/27 new cells** are complete: all nine depth runs and the first width run are
+audited. The width-256 original model at LR 0.001 is running seed 1. All 17
+remaining width and combined depth/width cells, and the subsequent usual-gain
+test, keep their declared order. The full study remains open; no initializer
+or fixed-75 winner is selected by these one-task contrasts.
 
 The partial reporter requires all three seeds and writes separate artifacts
 that cannot close the full study. Its incomplete-group guard rejected the
@@ -162,6 +181,7 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cu
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-original-lr2 --seed 1
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-normalized-lr2 --seed 0
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-depth-normalized-lr2 --seed 1
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. .venv/bin/python -m research.cubic_capacity_reporting.partial_cell --name cubic-width-original-lr1 --seed 0
 ```
 
 After the dispatcher finishes, run the separate auditor, reporter and plotter:
