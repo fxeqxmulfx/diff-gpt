@@ -1,0 +1,86 @@
+Quartic complex-linear MD optimizers and schedule ablation, frozen before training
+
+User request: test the paper's schedules and include AdamMD and AdamMDW.
+Paper2606.25971v2 §4.1 (Learning-Rate Schedules on the Sphere; Warmup-Free and
+Continual Training), Appendix A Algorithm2 and Appendix B.1 are the sources.
+The paper compares full linear decay with WSD whose final20% is1-sqrt, finds
+gradual annealing beneficial, and leaves the optimal sphere schedule open.
+Removing warmup helps its MuonMD runs. Its AdamW baseline uses1000 warmup steps.
+
+Design: four optimizer families x two decay shapes x warmup0/1000 x seeds0,1,2.
+48 core cells. The schedule-sweep figure also shows WSD1-u^(1/3) and1-u^(1/4).
+Add these for MuonMD, without warmup, seeds0,1,2:54 combined cells total.
+Reuse the six existing AdamW/MuonMD linear/no-warmup cells from
+research/quartic_muonmd at31d0a10. Run the other48 cells in a separate immutable
+cohort, after that queue finishes and passes its audit. Never overlap GPU cohorts.
+Keep every miss and execution failure. No adaptive LR choices or retries.
+
+Task and model: exactly the original complex-linear (a+b)^4 mod97 study:
+4704/4705 train/held-out, data seed1, width128 real/64 complex, heads4, depth1,
+real XSA, radial gated complex-product FFN with real hidden width342, Peri RMS,
+RoPE, SSMax, tied embedding/head; frozen physical initialization std0.02.
+Batch256 with actual96-row tails. Model/sampler seeds0,1,2, sampler seed+10000.
+Each run continues for100000 updates even after99%. Evaluate all examples every
+19 updates and at the final boundary; retain first99, best, final and last1000
+epochs' accuracy range. Buffer observations; save every500 epochs, at first99,
+initialization, completion and explicit clean stop.
+
+                         Matrix direction/gain peak LR   Tied embedding LR   WD
+AdamW                    0.002 / none                    0.002               0.1
+AdamMD                   0.002 / 0.002                   0.002               0
+AdamMDW                  0.002 / 0.002                   0.002               0.1
+MuonMD                   0.01 / 0.01                     0.002               0
+
+All Adam coordinates use beta(.9,.99), epsilon1e-8 after the bias-corrected
+variance square root. Global clipping at1 applies to independent physical
+gradients before factor differentiation. Adam acts on real/imaginary coordinates
+separately; phase-equivariant adaptive histories are not assumed. Every MD family
+has softplus row/column gains initialized to1 and fixed direction radius equal
+to the actual initial complex Frobenius norm. The tied embedding remains a single
+unconstrained auxiliary group. This deviates from the paper's separately
+normalized embedding/head groups and its initialization; all cells share it.
+
+AdamMD: Appendix A Algorithm2 with ordinary bias-corrected Adam on the direction
+and both raw gain vectors. Project the candidate direction to its fixed radius;
+fuse using updated gains. No extra direction scaling and no weight decay.
+
+AdamMDW: the local Lean composition Transformer.MDW.adamMDWProposal, not a named
+optimizer in the paper. Compute the same AdamMD proposal, subtract
+eta_direction*0.1*OLD physical W, then repair only storage. If Wnew is nonzero,
+s=||Wnew/(new_row*new_col)||_F/radius; multiply every row gain by s and update
+its raw inverse-softplus value. Keep physical Wnew, columns, and all optimizer
+moments unchanged by repair. A zero corrected matrix keeps finite gains and
+zero direction. Auxiliary embedding AdamW uses its own scheduled LR and decay0.1.
+Complex Hermitian gain derivatives and complex norms extend the real Lean rule;
+the experiment is not a Lean convergence theorem for complex training.
+
+MuonMD: unchanged raw Nesterov momentum0.95, five NS iterations, complex adjoint
+products, fixed multiplier radius/sqrt(min(complex_rows,complex_cols)); same
+projection and raw-gain Adam as before. No per-update rescaling of the Muon step.
+
+Schedules, zero-based update t=0..99999 and absolute per-group final LR1e-8:
+- Warmup h=1000: rate=peak*t/1000 for t<1000; t=1000 uses peak. h=0 has no warmup.
+  At rate0, update moment histories but preserve physical weights and gains.
+- Linear after warmup: rate=peak+(1e-8-peak)*(t-h)/(99999-h).
+- WSD: retain peak after warmup until t=80000. In the final20000 updates use
+  u=(t-80000)/19999 and rate=peak+(1e-8-peak)*sqrt(u), i.e. a1-sqrt cooldown.
+  At t=80000 the rate is peak; at t=99999 it is1e-8. All groups share the shape
+  and warmup but have their own absolute peak and floor.
+- The two extra MuonMD arms replace sqrt(u) by cbrt(u) or sqrt(sqrt(u)); the
+  cooldown remains20% and warmup remains0. These are targeted figure controls,
+  not additional levels of the complete four-optimizer/warmup factorial.
+The1000-step warmup is the paper's absolute count; its dense budget was50000,
+so this study's warmup fraction is1%, not its2%. Discrete endpoints are explicit
+local choices. Existing linear/no-warmup rates must match bit for bit.
+
+This is a fixed-peak schedule diagnostic. The paper sweeps matrix peak rates
+with equal tuning budgets; this experiment does not establish the best-tuned
+schedule or optimizer. New AdamMD/MDW settings are fixed before seeing outcomes.
+Do not infer the paper's large-model conclusions or causal mechanism from one
+modular-arithmetic task. Primary comparisons are paired by seed and optimizer.
+
+Only native Rust/Kernite, including data, tests, checkpoints and reports.
+Every persistent factor buffer and sampler position must restore exactly.
+Reject changed sources, corrupt states or unclean windows rather than replaying.
+Capture source, PTX, data, initialization and sampler hashes. Reused cells must
+pass the frozen predecessor audit and keep their original source identities.

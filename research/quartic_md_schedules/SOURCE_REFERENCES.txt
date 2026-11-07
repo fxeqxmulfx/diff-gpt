@@ -1,0 +1,23 @@
+Local sources read; no Python execution and no web retrieval.
+
+Paper: /home/misha/lean_projects/transformer/papers/arXiv-2606.25971v2/main.tex
+Sections3.1,4.1 schedule/warmup ablations, Appendix A Algorithm2, Appendix B.1.
+SHA256 f10376fd6e96a50fb5dd4275f3110e2aedd966cec95237234ed4b9634a2f348c
+Figure: papers/arXiv-2606.25971v2/figures/sweep_exp7_lr_decay.pdf
+Figure: papers/arXiv-2606.25971v2/figures/sweep_exp10_warmup_combined.pdf
+
+Lean repository snapshot22e6bbe2812efbdfc803f5fb333248f0922b932f.
+src/Transformer/MDW/Defs.lean:
+  Transformer.MDW.adamVectorCallback, adamMDProposal, adamMDWProposal, correctWeight.
+  SHA256 dfdfcd16e625f55f7144909f6d1ce70d72da34291533f2666927f1d0e74257ab
+src/Transformer/MagnitudeDirection/SectionA_TrainingStorage.lean:
+  Transformer.MagnitudeDirection.rebalanceStorage and its exact-real invariants.
+  SHA256 9b1ed3257faedc708379e973ecd9087b3c04ba676b17af7330fccb036dd0f58d
+
+Read-only implementation cross-checks: optimizers/src/lean_optim/mdw.py,
+_mdw_decay.py, _md_adam.py and magnitude.py. Their recurrences agree with the
+Lean definitions; their PyTorch code was never imported or executed.
+
+Native model commit910f206a1e9650c20d47a0c16c94270a692804d5.
+Original quartic optimizer/protocol commit31d0a1003f266ab90150ae448b2f1642ea8a3f96.
+Kernite commit a1b6bc2c956e1a5f35960e26b209e1b6c213096c.
