@@ -162,3 +162,48 @@ all observation steps, first99 crossings, paired initializations and sample
 orders, and the unchanged pilot-history prefix. All misses and errors remain
 in the summary. More epochs test delayed generalization; they do not turn a
 finite accuracy observation into a recovery or uniqueness theorem.
+
+All18 long cells completed: **10 reached99% and8 exhausted100000 updates**.
+No run hit its time cap or failed. Every final state reproduces its exact train
+and validation correctness counts and loss; continuation lineage and all
+first-crossing observations also pass the independent replay audit.
+The [complete results](long_results.json), [frozen protocol](long_protocol.json)
+and [validation record](long_validation.json) retain every seed and miss.
+
+| Model | Optimizer | Seed0 first99 epoch | Seed1 | Seed2 | Passes |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Original GPT, SwiGLU, LR.001 | AdamW | 3855 | 3716 | 3655 | 3/3 |
+| Normalized real GPT, SwiGLU, LR.002 | AdamW | Miss | Miss | 2928 | 1/3 |
+| Complex diagonal, LR.002 | AdamW | Miss | Miss | Miss | 0/3 |
+| Complex product, LR.002 | AdamW | 534 | 472 | 273 | 3/3 |
+| Complex diagonal, LR.002 | Phase-coupled | Miss | Miss | Miss | 0/3 |
+| Complex product, LR.002 | Phase-coupled | 1048 | 446 | 285 | 3/3 |
+
+Every miss consumes5263.163265 epochs. A first crossing is checked each epoch
+and bracketed by the immediately preceding epoch; the endpoint is approximately
+99%, not perfect recovery. The mean first99 epoch is426.33 for product/AdamW,
+593 for product/phase, and3742 for the fresh original GPT. These means include
+all three declared seeds; misses in other arms receive no invented crossing.
+
+The product change improves the paired diagonal comparison on every seed with
+both optimizers. These pairs share projections, radial gate, initialization,
+hidden width and batches; their multiplication rule and declared sqrt(2)
+variance calibration differ. The real-model contrasts additionally change
+projection constraints and hidden width, and the original control also changes
+normalization, attention scaling and learning rate. They do not isolate an
+activation-only effect. ReLU has not been tested.
+
+Ordinary AdamW reaches99% sooner on two of three product seeds; phase-coupled
+AdamW is slightly earlier on seed1. Both succeed3/3, so the longer study
+does not establish that sharing the complex second moment is uniformly better
+or worse. The strong250-epoch ranking did not determine all later crossings.
+
+The new training/evaluation/checkpoint segments total2266.31 seconds, plus
+26.71 seconds of input setup. Including the preserved pilot segments gives
+2433.11 seconds of learning/evaluation/checkpoint time. CPU-only Lean proof
+checks overlapped part of the final seed; timing is descriptive rather than a
+controlled throughput benchmark. All11 native tests pass again after training,
+Clippy denies warnings, and all18 endpoints pass a second replay audit.
+The exact executable and source archive are retained with the raw states in
+`runs/complex-transformer-long/`. Checkpoints remain every500 epochs plus the
+initial/resumed state and completion. Implementation/protocol commit: `e52509e`.

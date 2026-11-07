@@ -1,0 +1,55 @@
+{
+  "all_failures_retained": true,
+  "approximate_epochs": 5263.163265306122,
+  "arms": [
+    [
+      "original",
+      "adamw"
+    ],
+    [
+      "complex-product",
+      "adamw"
+    ],
+    [
+      "real",
+      "adamw"
+    ],
+    [
+      "complex-diagonal",
+      "adamw"
+    ],
+    [
+      "complex-product",
+      "phase"
+    ],
+    [
+      "complex-diagonal",
+      "phase"
+    ]
+  ],
+  "cells": 18,
+  "cohort_seconds": 5400,
+  "continued_cells": 15,
+  "flush_epochs": 500,
+  "fresh_original_controls": 3,
+  "historical_runtime_comparison": false,
+  "old_torch_reference_epochs": [
+    3531,
+    3197,
+    4315
+  ],
+  "old_torch_reference_lr": 0.001,
+  "parent_root": "/home/misha/python_projects/gpt/runs/complex-transformer",
+  "parent_source_sha256": "ba65c51de909bb54cc7544317717c4bb57dadc66fb4c448a1c64355a28f9e29b",
+  "retune": false,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "setup_seconds_cap": 300,
+  "source_sha256": "6a0ad54a6f88934aacf0191c7b01efa5cb820f512ebdb40207cf0737b7fe53be",
+  "stop": "first >=4658/4705 validation correct, absolute update cap, or time cap",
+  "total_seconds_per_cell": 300.0,
+  "updates": 100000
+}

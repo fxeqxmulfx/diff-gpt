@@ -1,0 +1,38 @@
+{
+  "protocol_commit": "e52509ea3aeec25358d8d5fb0f7fc577fa29aac1",
+  "source_sha256": "6a0ad54a6f88934aacf0191c7b01efa5cb820f512ebdb40207cf0737b7fe53be",
+  "parent_source_sha256": "ba65c51de909bb54cc7544317717c4bb57dadc66fb4c448a1c64355a28f9e29b",
+  "ptx_sha256": "6015dddc9ba08752de33a954e052e78ddef0750e594b5720fee75a513438ef6b",
+  "runtime": "Rust 1.99.1; Kernite PTX; NVIDIA GeForce RTX 3050 Laptop GPU",
+  "before_learning": {
+    "passed": 11,
+    "cpu": 3,
+    "cuda": 8,
+    "command": "cargo test --offline --release --manifest-path research/complex_transformer/native/Cargo.toml -- --include-ignored --test-threads=1",
+    "clippy_warnings_denied": true,
+    "extension_checks": [
+      "Host model, initialization and sampler bytes match the pinned pilot; compiled GPU arithmetic hash is unchanged",
+      "Modified learning rate and issued sample-prefix changes are rejected",
+      "Old checkpoint parameters, moments and counter transfer byte-identically without modifying the parent",
+      "Both optimizers match uninterrupted execution past the old horizon, full/tail batches and warmup completion",
+      "Original-GPT full-model logits, loss and all parameter-group directional derivatives match the independent FP64 reference"
+    ]
+  },
+  "after_learning": {
+    "native_tests_passed": 11,
+    "clippy_warnings_denied": true,
+    "endpoint_replays_passed": 18,
+    "first99_passes": 10,
+    "update_cap_misses": 8,
+    "errors": 0,
+    "time_caps": 0,
+    "new_segment_seconds": 2266.311506788,
+    "total_seconds_including_pilot": 2433.1149245770002,
+    "setup_seconds": 26.711326821000007,
+    "executable_sha256": "4a3d0d4b329fcf91c6131788eadacb0239e5fc3429c9abe129044d87d36c5e01",
+    "source_archive_sha256": "38eef2318f87a8e599feb830efea00f4a2fee89e3d99acb493dbc33e527a7953",
+    "audit_command": "complex-transformer-kernite audit-long runs/complex-transformer-long",
+    "timing_note": "CPU-only Lean proof checks overlapped part of seed2. No concurrent GPU workload was launched; wall times are descriptive, not controlled throughput comparisons."
+  },
+  "scope": "Continuation is exact within native arithmetic. Fresh original-GPT controls use native RNG, not historical Torch states. Finite tests and finite accuracy observations are not convergence theorems."
+}
