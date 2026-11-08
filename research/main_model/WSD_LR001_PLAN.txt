@@ -1,0 +1,47 @@
+User-requested LR0.001 quartic AdamW/WSD comparison,2026-11-08
+
+Finish the existing LR0.01 three-seed experiment, then test LR0.001 on the
+same current main model and (a+b)^4 mod97 only, seeds0,1,2. Compare against
+the completed LR0.002 cohort and the completed LR0.01 cohort. This is the
+third explicitly requested peak LR, not permission for a further LR sweep.
+
+Keep complex-peri-rms-ordinary-v1: D128,H4,L1,V97,hidden342,ordinary causal
+inverse-width SSMax,Q/K RMS,plain complex-product FFN,standard RoPE,tied
+embedding/readout,parameter-free Peri/embedding/final RMS and residual scale
+1/sqrt(2L) after branch output RMS. No XSA,centering or mHC in this diagnostic.
+Identical model kernels,data,initializations and sampling to LR0.002/LR0.01.
+
+Coordinate AdamW: peak LR0.001,betas(.9,.95),epsilon1e-8,weight decay.1.
+Contract complex matrix gradients before independent-coordinate global L2
+clipping at1. Keep2% linear warmup,78% constant LR,20% cosine decay to1e-8.
+For zero-based update t<2000: rate=.001*t/2000. Until t80000: rate=.001.
+For t>=80000 let u=(t-80000)/19999, rate=1e-8+(.001-1e-8)*(1+cos(pi*u))/2.
+The first zero-rate update advances moments without moving weights.
+
+Frozen data seed1,4704train/4705validation,batch256 including96-row tails;
+sampler seed+10000. Observe held-out exact accuracy every19updates. Stop at
+first observed99% or100000updates; retain all three seeds and all failures.
+Epochs count actual training examples/4704. No sustained99% claim.
+Buffered history and durable saves at initialization,every500epochs,first99,
+budget end or explicit clean STOP. No uncertain replay or budget extension.
+
+Before training: verify identical data/init/sampler and raw PTX against the
+LR0.002 control; independent FP64 schedule/AdamW boundary checks; corrected
+main checkpoint replay; exact save/restore across the short tail; strict
+archive audit; all100000 JSON rate round trips with float_roundtrip enabled.
+Keep the original compiled crate and Kernite workspace namespace. Freeze both
+the training executable and native GPU-test executable before queueing them.
+GPU validation and training start only after the existing LR0.01 launcher
+releases its process lock and all three LR0.01 results pass their audit.
+
+Use Rust/Kernite/native tools only; never execute Python. The native audit
+checks provenance,samples,metrics,histories,moments,complex ties and stopping.
+For selecting the recipe for the requested fresh main/mHC comparison, prefer
+recipes passing all three seeds; among those compare geometric-mean first99
+epochs. Keep LR0.002 on an exact tie. Do not promote a model from this study.
+
+After all LR studies, RESTART BOTH main and mHC from fresh initializations on
+all75short/30long cells per arm using the same selected recipe. Do not resume
+the old partial cohort; its STOP records the user's superseding instruction.
+Promotion requires verified fewer epochs without lost incumbent passes, then
+continue queued research. See RESTART_AFTER_LR.txt and RESEARCH_RULES.txt.

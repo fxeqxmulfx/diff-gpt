@@ -1,0 +1,16 @@
+[package]
+name = "diffgpt-mash-native"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+num-bigint = "=0.4.8"
+num-rational = "=0.4.2"
+num-traits = "=0.2.19"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

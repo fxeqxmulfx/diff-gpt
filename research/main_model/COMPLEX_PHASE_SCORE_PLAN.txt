@@ -1,0 +1,126 @@
+Squared-imaginary attention score on the selected phase-mHC main,2026-11-08
+
+This is the next queued phase-sensitive real attention-score experiment.
+Control: complex-peri-rms-ordinary-phase-mhc4-lerope-fp16tf32-v1,
+runs/main-model-phase-mhc-01/phase-mhc-lerope,independently audited105/105.
+Control audit: results/phase-mhc-suite-01/final-audit.json,SHA256
+b7ea0db8590bb404d65aaaa2e5559824ce0f46dff4a0807d193fd63b5eff0bd2.
+Control binary: results/phase-mhc-validation-final/candidate,SHA256
+4088fd26191b0efadb162cdb8489e52258b249e135dd8546909f4d723c0bcb2f.
+Control source:17ee077d141d167d0e9f689f12389f83feedf3f9b23c46cd9f7c5a0a216a7022.
+Control PTX:7a1b23506e0edd5649c05772bdb8daa8a78f677a4eab8e5505c00f897bd1a32e.
+All completed and explicitly stopped cohorts stay closed. No new training yet.
+
+Exact candidate declared before implementation or scientific training:
+For each layer/head,after existing per-head Q/K RMS and LeRoPE,write q,k as
+d/2complex coordinates with the existing within-head real-half/imaginary-half
+layout. d is the REAL head width. Define
+  Z(q,k) = sum_c conjugate(q_c)*k_c = R + i*I,
+  R = sum_c(q_r*k_r + q_i*k_i),
+  I = sum_c(q_r*k_i - q_i*k_r).
+The current ordinary real dot is exactly R. Replacing it with Re(Z) alone
+would change no model. A constant learned complex phase only adds another
+bilinear score parameterization that complex Q/K projections can absorb.
+This candidate instead introduces a bounded nonlinear term:
+  beta_l,h = a_l,h / sqrt(1+a_l,h^2),
+  score_i,j = ln(N_i)/d * (R_i,j + beta_l,h * I_i,j^2/d), j<=i.
+N_i=i+1 is the visible causal prefix,unchanged. Use the same causal softmax,
+anchored ordinary value sum and output projection. No XSA,centering,output
+gate,learned temperature or other attention/FFN/optimizer change. This is a
+score experiment,not a new complex-valued softmax. Name: squared-imaginary
+attention score; scientific arm phase-score-lerope; isolated phase_score_native.
+
+There is one real a per layer/head,L*H additional expanded and independent
+parameters,all positive zero at initialization with no random draws. Insert
+them after the existing6Lresidual phase coordinates and before frequencies.
+Keep every existing parameter,including the shifted frequency tail,bit-identical
+to control initialization. Initial score coefficients are zero: logits,existing
+parameter gradients and embedding-input gradients must match control exactly
+on all declared initial integration cases. The new a gradients are not zero
+in general. Match complete common initialization and sampler fingerprints.
+AtD128,H4,L1,V97:233936expanded/135504independent parameters,including4new
+score coordinates. Existing residual-phase and rotary-frequency counts stay6/16.
+
+Keep phase-conjugated mHC,plain complex-product FFN,complex-linear maps,
+parameter-free Peri/embedding/final/QK RMS,post-RMS residual scaling,tied
+embedding/readout and ordinary LeRoPE without log-position scaling. Keep
+AdamW(.9,.95),LR.001,epsilon1e-8,wd.1,base independent-coordinate clip1,
+2%warmup and20%cosine-to1e-8 on original budgets. New real a joins base
+clipping/decay with an independent second moment. Frequencies retain separate
+clip1/wd0,same schedule. Do not reuse rejected complex-pair AdamW.
+
+Precision stays static:FP16forward GEMMs,TF32backward GEMMs,FP32accumulation,
+weights,moments,norms,rotary,routing and score math. No GPUFP64 or dtype fallback.
+Range-safe beta evaluation is m=max(1,abs(a)),r=1/m,t=a/m,
+u=r/sqrt(r*r+t*t),beta=t/sqrt(r*r+t*t); d beta/d a=u^3.
+Compute R in the original reduction order. Compute I separately,then
+correction=beta*(I/d)*I and add it before the original gain multiplication.
+Keep original softmax/value arithmetic order. New terms use fixed FP32.
+
+Exact derivatives before softmax,with g=ln(N)/d and c=2*beta*I/d:
+  d score/d q_r = g*(k_r+c*k_i)
+  d score/d q_i = g*(k_i-c*k_r)
+  d score/d k_r = g*(q_r-c*q_i)
+  d score/d k_i = g*(q_i+c*q_r)
+  d score/d a   = g*(I/d)*I*u^3.
+After the ordinary softmax adjoint,multiply by each dL/dscore and sum over
+every query/key/example owning that head/layer. Do not lose the existing
+value,normalizer,Q/K RMS,LeRoPE frequency,tied-weight or residual-router paths.
+Use deterministic per-row contributions plus an ordered reduction for a;
+no racing cross-block writes or discarded gradient tails.
+
+Exact-real properties to prove locally in Lean before training:
+- Re(Z) equals the existing real dot; Im(Z) is the stated cross term.
+- abs(beta)<1,zero initialization restores the baseline score.
+- Cauchy-Schwarz plus Q/K squared norms<=d gives |Z/d|<=1.
+- For z=Z/d in that unit disk,abs(Re(z)+beta*Im(z)^2)<=5/4.
+  Hence abs(score)<=5/4*ln(N) for N>=1. This is a bound on a new score,
+  not a stronger bound than the parent's ln(N) or a convergence guarantee.
+- Common complex phase rotations preserve the score; simultaneous conjugation
+  preserves it. Relative phase can change it. An explicit key/negative-key
+  witness proves a nonzero correction is not just a bilinear dot/phase change.
+- Prove the polynomial differential/remainder identity for the score core;
+  native scalar AD and finite differences independently check all actual
+  implementation derivatives,including beta(a). Do not call an algebraic
+  identity a formal full-model derivative theorem.
+Exact-real unit rotations and norm hypotheses do not certify finite FP32 or
+the complete input-dependent transformer Jacobian. State all assumptions and
+report proof axioms; keep concrete witnesses for conditional claims.
+
+Native validation before freezing a scientific candidate:
+1. Independent CPUFP64/dual-number reference for the changed score,causal
+   softmax and value output. Check all Q/K/V,a and output-adjoint paths at
+   head widths16/32/128,heads1/2/4,non-warp-aligned row tails and varied causal
+   lengths including1. Check identical tokens,zero,real,imaginary,opposite,
+   cancelling and random normalized Q/K,phase-rotated and conjugate inputs.
+   Include a=0,+/-1e-8,+/-.001,+/-1,+/-16,+/-1e10,+/-1e30 and finite extremes.
+   Hold declared ordinary FP32 bounds2e-6+2e-5*max(abs(reference),abs(actual));
+   for summed a gradients use3e-6+2e-5*sum(abs(independent reference terms)).
+   Retain every miss. Verify finite extreme handling,tail guards and N=1
+   exactly uniform one-value attention with zero score/score-coordinate gradient.
+2. Independent CPUFP64 full-model directional finite differences and native AD
+   comparisons for all new coordinates and every changed Q/K path,plus existing
+   frequency,residual phase,router,tied embedding/readout and FFN paths. Use
+   zero and nonzero score coordinates. Retain inherited strict AD thresholds;
+   a fixed all-affine-FP32 diagnostic may isolate tensor rounding but never train.
+3. Match zero-score initial logits/existing gradients exactly; show nonzero
+   score effects and nondegenerate new gradients. Check complete independent
+   optimizer ownership,base clipping,new real moments and shifted frequency
+   group against an independent CPU reference over schedule boundaries.
+4. Check every frozen maximum shape,changed-batch/length checkpoint continuation,
+   unclean checkpoint rejection,backward reset,causality,memcheck,synccheck and
+   all-module no-GPUFP64. Replay unchanged main from a trained checkpoint.
+Keep all inherited numerical misses from phase-mhc-validation-final visible.
+Earlier failed checks remain evidence; do not erase them or redefine tolerances.
+
+Only then freeze plan,source,PTX,binary,independent phase-score auditor and all
+35dataset fingerprints. Register75short then30long,seeds0/1/2,original budgets,
+samplers,held-out first99 metrics and observation cadence. Buffer scientific
+saves every500epochs plus init/first99/budget/STOP. No competing GPU experiment,
+minute metrics,silent retries,budget extensions or pooling. Reject the first
+verified lost current-main task/seed pass and retain remaining cells as unrun.
+Execution errors are distinct from budget misses. Otherwise finish105cells.
+Promotion needs all105main passes and fewer geometric-mean short epochs;
+report all paired epochs,regressions and30long rows. Runtime cannot qualify.
+After this experiment continue the queued token-local regularized2x2
+real/imaginary covariance-normalization candidate against then-selected main.

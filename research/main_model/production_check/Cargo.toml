@@ -1,0 +1,16 @@
+[package]
+name = "main-model-production-check"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+diff-gpt-kernite = { path = "../../../src/native_transformer" }
+serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+sha2 = "=0.11.1"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

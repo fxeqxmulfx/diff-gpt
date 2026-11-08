@@ -1,0 +1,43 @@
+LeRoPE and image-style 2D formulation,2026-11-08
+
+User requested a fresh reread of https://arxiv.org/html/2607.10134v1,
+then asked how image2D RoPE works and to reformulate with LeRoPE+YaRN.
+The present interpretation retains the separate image-style axial2D candidate
+for DiffGPT,time x feature. This is not a claim that the language LeRoPE paper
+already evaluated such a model. No new positional experiment has run yet.
+
+Source facts: LeRoPE section3 uses zero-initialized log multipliers shared
+across all heads/layers,without frequency weight decay and with separate
+clipping. AppendixD.2 interpolates each model's learned frequencies and applies
+YaRN's logit temperature at inference. No extension gives the identity.
+Our selected main matches that LeRoPE parameterization; Log-Scaled LeRoPE's
+previously tested p*ln(p+1) angle is a separate,rejected experiment.
+
+Image source:https://arxiv.org/html/2403.13298v1,section3. Axial RoPE allocates
+channel pairs separately to row/column coordinates; mixed RoPE combines both
+coordinates within a pair. We propose the axial version for this queue item.
+
+Proposed DiffGPT adaptation,not yet a frozen scientific plan:
+Split each head's complex pairs equally into time and feature groups.
+Time-group angle=t*omega_j;feature-group angle=f*nu_j. Learn positive omega
+and nu with exp(log_multiplier),shared across layers/heads. Normalization
+precedes rotations. Keep the causal order explicit for row-major tokens.
+For extended time context,use the learned time frequencies in YaRN's ramp;
+feature count/order stays fixed. Apply one temperature to the COMPLETE real
+attention score after SSMax. Scaling Q/K amplitudes instead would multiply
+the squared-imaginary correction by a fourth power and is not equivalent.
+
+Time has a natural distance; feature indices impose a modeling convention.
+The experiment must include multiple features and cannot demonstrate a
+feature-axis benefit using only a single-column Fibonacci case. Test MASH,
+LGT and MASH-half separately with matched data,seeds,budgets and decoded
+metrics. Preserve the original105-cell regression evidence separately.
+
+Before registration: freeze axes/band allocation,reference/target extents,
+training versus inference behavior and all evaluation lengths. Do not invent
+a smaller training context to force nonidentity YaRN on a short task or claim
+an in-context epoch gain from an identity map. Analyze original-range identity
+and actual extrapolation separately. Reproduce the paper rule where claimed;
+label any fixed-target adaptation explicitly. All proof/gradient/state tests
+and the no-lost-main-pass rule remain. Finish the running covariance cohort
+before choosing the exact control or running another scientific candidate.

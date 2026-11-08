@@ -1,0 +1,85 @@
+Regularized complex second-moment normalization, 2026-11-08
+
+This specifies the queued covariance-normalization candidate before native
+implementation or scientific training. Precisely, this experiment uses an
+UNCENTERED second moment, not mean-subtracted covariance. Retain the mean and
+keep the RMS-like behavior on isotropic moments; do not combine centering,
+learned affine parameters or another architecture change with this test.
+
+Control: complex-peri-rms-squared-imaginary-phase-mhc4-lerope-fp16tf32-v1,
+runs/main-model-phase-score-01/phase-score-lerope, audited75short/30long.
+Audit SHA256:a9d297f7bea99ab9e294ab80e7a3c022a8476432278553b744a260954aba26e7.
+Frozen binary:results/phase-score-validation-final/candidate,
+SHA256:07753ab3a788ec03bade28ef4d1bba54018ff84c7fd067af7f3cb56a85b116e9.
+Control source:7968240c10a78200255a400bb280186bd66647a121817720173e814eee40dced.
+Control PTX/config:17c689bd6f9923534f8eed69dc047780274a28c3e45fbb25a597fccbddfb597f.
+All completed cohorts remain closed. No scientific covariance training yet.
+
+Exact map for n complex pairs x_j=(real_j,imag_j)^T:
+  C = (1/n) sum_j x_j x_j^T
+  rho = 1/16, epsilon = 2^-23
+  M = (1-rho) C + rho*trace(C)/2 I + epsilon I
+  y_j = M^(-1/2) x_j, using the positive symmetric inverse square root.
+No mean subtraction, learnable gain/bias, running statistic or batch reduction.
+The paper Deep Complex Networks, https://arxiv.org/abs/1705.09792, motivates
+joint real/imaginary matrix normalization; its centered batch normalization
+is not this token-local uncentered shrinkage map. This is a separate variant.
+
+Replace the existing embedding, Peri branch input/output, final and per-head
+Q/K scalar RMS calls. Full-width row reductions use all W/2 complex pairs
+in the existing head-local half-split layout: pair k maps to
+real=(k/(d/2))*d+k%(d/2), imaginary=real+d/2, d=W/H.
+Q/K reduce only the d/2 pairs within that token/head; V remains unchanged.
+The real mHC controller's RMS across four residual streams remains unchanged:
+it normalizes a real controller input, not a complex-valued model branch.
+No statistic crosses tokens or examples. Tied readout uses the raw embedding.
+
+Scientific arm:covariance-lerope, architecture:complex-covariance-lerope.
+No additional parameters or RNG draws: every initial parameter, optimizer
+coordinate and sampler must exactly match the selected score control.
+Retain squared-imaginary scores, phase-conjugated mHC, post-normalization
+residual scale, plain complex-product FFN, ordinary LeRoPE and all optimizer
+settings/precision. AdamW(.9,.95),LR.001,wd.1,clip1,2%warmup/20%cosine;
+frequencies have separate clip1/wd0. FP16 forward affines, TF32 backward
+affines; FP32 normalization, reductions, weights and moments. No GPU FP64,
+dynamic precision dispatch or fallback. Saves remain buffered500epochs.
+
+Range-safe FP32 evaluation, with no change to the exact-real map:
+  m=max(sqrt(epsilon),max_j(abs(real_j),abs(imag_j)))
+  u=x/m; C'=mean(u u^T); e=(sqrt(epsilon)/m)^2
+  a=(31*C'00+C'11)/32+e, c=(C'00+31*C'11)/32+e,
+  b=15*C'01/16; s=sqrt(a*c-b*b); t=sqrt(a+c+2*s)
+  y= [[c+s,-b],[-b,a+s]] u /(s*t).
+Use rn FP32 division/square root, ordered warp reductions and no FP64.
+The scale is a computational reparameterization: differentiate the complete
+matrix expression at fixed m, then divide the input adjoint by m. Dependence
+on m cancels in exact arithmetic, including the scaled absolute epsilon.
+Backward must include all three moment derivatives, not only the direct map.
+
+Exact-real properties to check locally in Lean before training: positive
+regularized eigenvalues; eigenvalue condition ratio<=31; normalized total
+energy<=2*n; isotropic moments reduce to scalar RMS; rotation covariance of
+the second moment and regularizer; inverse-square-root algebra with explicit
+positive-root hypotheses. These are local real-algebra claims, not a proof
+of FP32 equivalence, the complete model, learning or convergence. Finite tests
+must measure phase equivariance and derivatives as well as forward values.
+
+Native validation before registration: CPU FP64 independent automatic
+differentiation and finite differences; singular/nearly singular moments,
+zero/tiny/large inputs, imbalance, isotropic and rotated pairs; finite forward
+and complete backward, head layouts, V passthrough, bounds and guard regions.
+Full-model directions must include embedding/readout, Q/K/V, attention output,
+both FFN maps, routing/phase/score/frequency coordinates. Verify causality,
+optimizer ownership, checkpoint continuation, maximum suite shapes and CUDA
+sanitizers. Preserve inherited and newly measured strict numerical misses.
+An all-FP32 affine build is diagnostic only, not a substitute scientific arm.
+
+Register a separate immutable cohort only after implementation validation,
+independent auditor checks and freezing source/binary/PTX. Fixed75short then
+30long, same35datasets,seeds0/1/2,splits,samplers,budgets and first99 cadence.
+Reject on any verified lost selected-main task/seed pass; report remaining
+cells as unrun. Otherwise finish all105. Promotion requires fewer paired
+short epochs and all selected-main short/long passes. Retain every epoch
+regression and report long epochs. No retries, budget extensions or pooling.
+Then continue LeRoPE+YaRN, 2DLeRoPE+YaRN/DiffGPT all three encoders, integrate
+selected code into src, verify, commit authored changes and stop.

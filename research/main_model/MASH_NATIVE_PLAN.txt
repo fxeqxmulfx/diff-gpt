@@ -1,0 +1,41 @@
+Native DiffGPT MASH preparation for the final requested experiment
+
+The user first confirmed that "diff gpt mesh" means DiffGPT with MASH,then
+explicitly requested the other two encoders too:LGT and MASH-half.
+This CPU-only adapter is preparation shared by the eventual selected model;
+it does not start a second scientific candidate or change the fixed105cells.
+Keep the current score benchmark running to its registered audit boundaries.
+
+Port the existing encoder version4 semantics from
+src/diff_gpt/domain/encoder_decoder.py without executing Python. Inputs are
+finite binary64 series,an explicit vocabulary,per-column difference operators
+and symmetric/asymmetric domains. Support seasonal factors,mixed column orders,
+prefix alignment,exact level rounding,modular prefix anchors,clipping counts,
+checked inverse differences and decode. Include MASH,LGT and MASH-half in both
+codec checks and the later model experiment,with separately reported results.
+No environment-dependent tokenizer selection. CPU exact rational arithmetic
+may select scales and levels; it is not a GPU precision fallback.
+
+For c(B)=product(1-B^lag),preserve scale headroom sum(abs(c)),the exact grid-fit
+test and zero point,round-down binary64 scale selection,and constant scale2^20.
+MASH anchors the p prefix values,continues c(B)A=0 modulo2^G,G=min(53,64-m),
+and computes floor(s*x-F+1/2) from the exact product of binary64 inputs. Keep
+the rounded scaled-prefix fractional seeds used by the reference. Do not
+replace this with rounded differences or an arbitrary continuous embedding.
+
+Verification is entirely native: exact rational/dyadic oracle checks,explicit
+known rounding-tie regressions from the source tests,token-range and reconstruction
+bounds,common-prefix causal extension,constant streams,seasonal/mixed-column
+alignment,forecast re-anchoring,overflow/invalid-input rejection. Compare the
+modular anchor to a separate unbounded integer recurrence. Do not claim a full
+Python/Rust differential run; Python is never executed. Record which guarantees
+are exact identities and which are finite tests with binary64 decode slack.
+
+Implement initially in research/main_model/mash_native. Move/reuse the validated
+adapter during the requested production src integration after the experiment
+queue closes. The root Rust port is currently a scaffold; do not overwrite its
+frozen Python reference or unrelated user work. Freeze the later DiffGPT/MASH
+dataset,splits,2Dcoordinate interpretation and model comparisons separately
+before scientific training. Use matched data,seeds and budgets across the three
+encoders and retain each encoder's regressions separately. Keep that evidence
+separate from75short/30long.

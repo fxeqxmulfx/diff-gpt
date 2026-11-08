@@ -1,0 +1,102 @@
+Research goal and latest user steering, 2026-11-08
+
+CURRENT QUEUE ORDER supersedes the historical order below: usual real attention
+gate; complex-linear predictor with real sigmoid; complex multiplicative gate;
+LeRoPE; Log-Scaled LeRoPE; complex-pair AdamW; complex constrained residual
+routing; phase-sensitive attention scores; regularized real/imaginary covariance
+normalization. The user requested all four additional complex candidates.
+Freeze each change separately and compare with the exact then-selected audited
+main under the same75short/30long protocol. Keep all required normalization
+positions and tied weights. No loss of a verified task/seed pass is allowed.
+Exact complex maps and any mathematical guarantees must be established before
+training; being complex-valued alone is not evidence of improvement.
+
+LATEST SELECTION: complex-peri-rms-ordinary-mhc4-lerope-fp16tf32-v1 is selected
+after the LeRoPE105/105 independent audit,zero failures,no lost main passes.
+Short epochs decrease0.5339%; long increase1.5099%. All17regressions remain;
+this meets the registered short-epoch/coverage rule without a significance
+or uniform-improvement claim. Exact next control: runs/main-model-lerope-01/lerope,
+audit results/lerope-suite-01/final-audit.json. Promotion/previous manifests:
+results/lerope-suite-01/promotion/. Log-Scaled LeRoPE subsequently passed105/105
+but increased short epochs6.2493% and long14.1047%, so it is rejected.
+Complex-pair AdamW also finished105/105 but increased short epochs2.4349% and
+long11.7655%,so it is rejected. Continue complex constrained routing,scores
+and covariance normalization from the unchanged selected LeRoPE main and
+ordinary AdamW/WSD. Do not combine a new candidate with the rejected optimizer.
+
+PRIOR PRECISION SELECTION: complex-peri-rms-ordinary-mhc4-fp16tf32-v1 was selected after
+the full gpu-suite-01 audit:105/105,zero audit failures,no lost main passes,
+1.7953% fewer short epochs and11.5413% fewer long epochs (geometric means).
+This applies the user's standing authorization to promote an improving model.
+Use runs/main-model-gpu-suite-01/mhc as the next control, preserving its fixed
+precision, recipe and scientific protocol. Retain all14per-cell epoch
+regressions and the strict numerical misses. Decision and previous manifests:
+results/gpu-suite-01/promotion/. Continue the current queue above; the broader
+research goal remains active.
+
+PRIOR SELECTION: the user explicitly promotes mHC to main after its audited105/105 and
+10.996%/19.680% fewer short/long epochs than ordinary main at the same LR0.001.
+The objective is epochs to99%, not runtime. Use complex-peri-rms-ordinary-mhc4-v1
+as the architecture parent; the subsequent precision selection above now
+provides the exact current control for subsequent experiments.
+The original historical cross-recipe gate/output remain archived; this explicit
+user decision supersedes that extra restriction for selection. See
+results/mhc-wsd/user-promotion.json. Profile current mHC PTX first as requested,
+then continue LeRoPE, Log-Scaled LeRoPE and gated attention at LR0.001.
+
+Finish the LR experiment, then restart BOTH main and mHC from scratch with the
+same selected optimizer recipe and independently verify both arms:75short and
+30long runs each. Report actual first99 epochs for every long task/seed. This
+explicit restart supersedes completing the old partial cohort; preserve its
+checkpoints and results separately. See RESTART_AFTER_LR.txt. This retest is
+complete: both arms pass105/105 under LR0.001 WSD with zero audit failures.
+
+Then continue searching for fewer epochs to the first observed 99% exact
+held-out accuracy. Use Rust/Kernite and native tooling only; no Python.
+Optimize using the unchanged short suite; use long as a regression check.
+Preserve Peri-normalization, embedding normalization, tied embedding/readout,
+and Q/K normalization. The current main's exact default is still model.json;
+all mathematical/optimizer changes must be explicit and preregistered.
+
+Next requested experiments, 2026-11-08: retest LeRoPE and then Log-Scaled
+LeRoPE on the current main architecture after the mHC comparison. Preserve the
+historical mechanism definitions but port and validate them in Rust/Kernite.
+The current main retains ordinary attention and the plain complex-product FFN;
+old XSA/SwiGLU results do not substitute for these new tests. See queue.json.
+Each candidate receives the fixed 75-short/30-long protocol, with early rejection
+allowed after a verified lost main-model pass. Do not infer success from mHC's
+result or combine passes between different rotary variants.
+
+The user additionally queued gated attention after the rotary retests: apply a
+learned, head-specific element-wise sigmoid gate directly to the attention
+output, before the output projection. Keep current inverse-width SSMax and
+Q/K RMS, with standard RoPE for this separate comparison. Freeze the gate
+predictor and initialization in its native experiment plan before training.
+The same full-suite protocol and strict lost-pass rule apply.
+
+Strict coverage rule (user instruction): if a candidate cannot solve any task
+that the current main model solves, reject it as a regression and proceed to
+the next experiment. Apply this at the task/seed level, using identical fixed
+budgets and first99 criteria. A single lost main-model pass blocks promotion,
+even if geometric-mean epochs improve or the candidate solves another case.
+Do not silently increase the budget, discard a seed, merge different models'
+passes, or select a favorable checkpoint outside the frozen protocol.
+
+A legitimate budget miss is different from an execution/kernel error: retain
+both, diagnose numerical errors with independent stress checks, and never
+silently replay uncertain training windows. Keep all negative results.
+The fresh210-cell main/mHC comparison must be completed as declared. The prior
+partial cohort remains historical evidence and must not be pooled into it.
+Later candidates can be rejected once a verified coverage regression makes
+them ineligible; report the unrun cells as unrun, not passes or budget misses.
+
+Primary improvement: earlier first99 epochs on paired short-suite cells,
+subject to zero losses of verified main-model coverage across short and long.
+Report long-suite epochs as well as coverage. Wall-clock time is secondary.
+No claim of sustained 99% or universal convergence follows from first99.
+Latest user steering,2026-11-08: after the LR comparison finishes, restart both
+main and mHC on all75short/30long cells using the same selected optimizer recipe.
+This supersedes the requirement to resume and finish the old partial cohort.
+Preserve it as separate evidence. The user authorizes updating current only
+after verified improvement with no lost incumbent passes, then continuing
+research. Full restart/promotion/continuation instructions: RESTART_AFTER_LR.txt.

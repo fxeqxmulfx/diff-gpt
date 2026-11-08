@@ -1,0 +1,37 @@
+Static tensor-precision hard screen,2026-11-08,declared before training
+
+Select fp16-tf32 from results/tensor-model-02 for this screen. Three alternating
+whole-update repeats give approximately2.700x quartic/3.259x recall speedup
+against selected main; about1.288x/1.241x against the FP32 candidate.
+BF16/TF32 is within0.04% runtime but has larger observed forward and gradient
+errors. FP16/FP32 improves quartic less and slightly slows recall. This selection
+uses throughput and numerical evidence only; no tensor candidate has trained.
+
+Keep all strict misses: FP16/TF32 passes922/1308 full-model scalar-AD directions
+and misses386; all29 primitive checks pass. Maximum observed scalar-reference
+logit discrepancy is0.0004856961. Tensor arithmetic passes every declared
+rounded-input oracle case and both native memory/synchronization sanitizers.
+No assertion of universal gradient equivalence or convergence is made. The
+user explicitly permits numerical drift for a difficult-task learning trial.
+
+Run the frozen main architecture, original seeds, initialization, data, sampler,
+LR0.001 AdamW(.9,.95),wd.1,clip1,WSD2%warmup/20%cosine and original update budgets.
+Keep Peri/embedding/QK norms,tied weights,RoPE and four-stream mHC unchanged.
+Forward affine GEMMs use FP16 operands, backward affine GEMMs use TF32 operands.
+Accumulators, outputs, remaining operations, master weights and moments are FP32.
+All format choices are compile-time; K partitioning depends only on geometry.
+No dynamic dtype guards, fallback, retries or FP64 GPU model/optimizer arithmetic.
+
+Run these four cells in order, each from original initialization:
+  basis-depth-hard seed0 short
+  arithmetic-sum-pow4 seed1 long
+  arithmetic-sum-pow4 seed0 long
+  basis-parity24 seed0 long
+Each has its original100000update budget. First99 observation cadence is frozen;
+buffered persistence remains500epochs,first99,budget,STOP. Do not poll each minute.
+If any original-main pass is lost, preserve it, mark the remaining cells unrun
+and reject this candidate. Do not tune precision using these long outcomes.
+Independently audit all completed cells and report paired epochs, including any
+regressions. Four passes do not establish105/105 or authorize promotion by speed.
+The main-model goal and other queued research remain active; current.sh remains
+the selected packed implementation until the complete promotion gate is met.

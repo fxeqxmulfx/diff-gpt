@@ -1,0 +1,50 @@
+Warp/tile tensor-core optimization,2026-11-08
+
+Latest user requests: tile+warp optimization, explore5x/10x or greater total
+speedup; FP16 or BF16 forward, FP32 or TF32 backward. These are targets and
+candidate configurations, not measured achievements. FP32 candidate02 already
+measures about2.07x quartic/2.62x recall versus the selected packed implementation.
+
+Build fixed tensor-core GEMM specializations for FP16,BF16,TF32 inputs and
+FP32 accumulation/output, retaining FP32 master weights and optimizer states.
+Initial design:64x64 output tiles,32-wide K tiles,128threads (four warps), each
+warp owns32x32outputs,shared operand tiles with padding and register fragments.
+FP16/BF16 use m16n8k16,TF32 uses m16n8k8. All formats are compile-time constants.
+Tail checks and ordinary control flow do not select a numerical precision.
+Norms,softmax,gates and reductions remain FP32. No FP64 model/optimizer GPU path.
+
+Native checks compare against an independent CPU oracle for each input format,
+including rounding,nonmultiple tile edges,tiny matrices and real model shapes.
+Record conversion errors separately from accumulation errors, benchmark complete
+GEMM including in-kernel conversion,and use memcheck/synccheck before integration.
+Measure whole-model forward/backward/update speed after each integration, then
+evaluate difficult-task learning under FP32_PLAN's frozen scope and strict
+no-lost-pass rule. Keep the FP32 hard screen isolated and do not contend for its
+GPU while measuring candidates. Do not tune formats using long-task outcomes.
+
+Initial model combinations to freeze after numerical validation:
+forward FP16/backward FP32; forward BF16/backward FP32;
+forward FP16/backward TF32; forward BF16/backward TF32.
+Exact shapes may select a validated fixed specialization offline. No runtime
+precision checks,fallback or retries. Select from complete-update performance
+and retained learning evidence; a fast isolated GEMM is insufficient.
+
+Instruction layout/rounding source: NVIDIA PTX ISA,sections9.7.16.5.7/5.8 and
+9.7.10.24, https://docs.nvidia.com/cuda/parallel-thread-execution/ .
+Rust/Kernite only. No Python. Preserve every failed candidate and raw evidence.
+
+Iteration02, before its timing: iteration01 is numerically valid but slower on
+several real shapes. Adapt the pinned Kernite matmul/tensor.rs pipeline for
+FP16/BF16,64x64 tiles,four warps,three asynchronous copy stages and ldmatrix.
+Separate packing pads both operands to multiples of8 and is included in timing.
+For K>=512, request min(16,ceil(32/output_tiles)) K partitions; each chunk is
+rounded to32. Otherwise one partition. Reduce partials in fixed FP32 order and
+remove output padding. This geometry-only partition policy never chooses dtype.
+TF32 initially retains iteration01's direct conversion kernel. Preserve both
+iteration reports; benchmark the full pack/multiply/reduce path.
+
+Iteration03, before its timing: apply the same geometry-only split-K policy to
+TF32 backward, retaining FP32 partials and a deterministic FP32 final reduction.
+Iteration02's whole-model TF32 backward was slower than FP32; no training was
+started. Keep the unchanged FP16/BF16 forward pipeline and rerun the oracle and
+sanitizers for the new TF32 partitions before whole-model selection.

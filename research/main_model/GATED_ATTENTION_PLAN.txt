@@ -1,0 +1,97 @@
+Gated attention before rotary retests, 2026-11-08
+
+The user explicitly moved this experiment ahead of LeRoPE. Rotary preparation
+is retained separately; no rotary training has started. Begin from selected
+complex-peri-rms-ordinary-mhc4-fp16tf32-v1, whose exact105/105 coverage and
+epochs are pinned by results/gpu-suite-01/final-audit.json and promotion/.
+
+FOLLOW-UP ORDER: the user subsequently requested BOTH complex gate variants
+after the usual real gate: first a complex-linear predictor with the same real
+elementwise sigmoid, then a complex-valued multiplicative gate. Register each
+exact mechanism/initialization/optimizer treatment separately after the usual
+gate results, before its training. Both precede the queued rotary retests;
+do not combine their passes or silently substitute one for the other.
+
+Gate definition, fixed before training:
+  z = existing normalized mHC attention read input
+  a_h = existing ordinary causal SSMax attention-weighted value sum
+  g_h = sigmoid(W_gate,h * z)
+  gated_a_h = g_h elementwise_multiply a_h
+  branch = RMS(W_O * concatenate_heads(gated_a_h))
+The learned real, bias-free W_gate has D output coordinates and D input
+coordinates per layer. Each head owns d consecutive output rows, with a
+separate sigmoid gate for every real output component, including separate
+real/imaginary components. It reads the full existing normalized input z.
+This is the requested head-specific elementwise attention output gate; the
+predictor/init choices here are an explicit experimental adaptation.
+
+Initialize every W_gate entry to zero, with no RNG draws. The initial gate
+is sigmoid(0)=0.5, exactly the declared sigmoid; do not multiply it by2.
+The existing branch RMS nearly cancels uniform scaling but its finite epsilon
+means initial gated outputs need not match the control bit-for-bit. Measure
+that difference. Preserve every original embedding/projection/router bit.
+Append L*D*D independent real weights after all existing mHC parameters.
+The candidate adds capacity; do not describe it as parameter-count matched.
+No learned gate bias. Each layer has its own gate matrix.
+
+Optimizer: include all new real coordinates once in the existing global
+independent-coordinate gradient L2 clip1 and AdamW(.9,.95),wd.1,epsilon1e-8,
+peakLR.001,2%warmup/20%cosine-to1e-8 over original fixed update budgets.
+No other optimizer group, extra LR, gate regularizer or parameter constraint.
+Checkpoint every new weight/moment and audit its state and initialization.
+
+Keep standard RoPE, ordinary causal inverse-width SSMax, Q/K RMS, parameter-free
+Peri/embedding/final RMS, tied embedding/readout, complex-linear original
+projections, plain complex product, four-stream mHC and post-RMS residual scale.
+Use selected FP16 forward affine operands, TF32 backward affine operands and
+FP32 accumulation/remaining math/weights/moments. Gate predictor GEMMs initially
+follow those same types. The pre-training numerical screen also tests a separate
+compile-time fp32-gate specialization to diagnose13strict large-weight gate
+gradient misses; freeze the validated fixed gate precision before training.
+The existing model's tensor precision remains unchanged in both builds.
+PRE-TRAINING TYPE SELECTION: use the fp32-gate build for the new gate projection
+and its matrix adjoints, statically on every input. The corrected tensor gate
+passes124implementation checks but misses13/189strict full-model AD directions;
+FP32 gate reduces this to9/189, all at large gate weights. Both pass every new
+matrix/input-adjoint, causal/prefix and gradient-reset check. The diagnostic
+with ALL affine operations in FP32 passes189/189, which supports classifying
+the remaining differences as tensor-rounding effects rather than an omitted
+gate derivative. The9misses remain failures; no tolerance is changed. Preserve
+the selected main's other FP16/TF32 choices and require full scientific coverage
+before promotion. Evidence: results/gated-validation-01 through04-reference.
+A separate fp32-affine-reference build may replace ALL affine operations with
+FP32 only to classify precision-related gradient differences. Its CLI forbids
+scientific cell/suite/resume training; it is not a gate candidate or control.
+Stable sigmoid and its adjoint use FP32; no GPU FP64 or
+dynamic precision fallback. Preserve small positive sigmoid derivatives by
+computing exp(-abs(logit))/(1+exp(-abs(logit)))^2, not from rounded1-gate alone.
+The first screen exposed amplified subnormal sigmoid rounding at logit-100.
+Use exp(-abs(logit)/2) factors directly in gated products/adjoints, preserving
+the same real equation and fixed FP32 arithmetic. Retain the original failed
+screen and unchanged tolerances; do not round the tiny probability before
+multiplying it by a large attention value or incoming gradient.
+
+Before training: independent FP64 scalar sigmoid/output/input/logit adjoints;
+saturation, zeros, small values, varied lengths/head widths and launch tails;
+every gate-matrix gradient path, summation into the shared normalized input,
+multiple layers, tied weights and optimizer ownership; original native control
+replay, checkpoint restore, causal-prefix behavior and maximum suite shapes.
+Preserve inherited numerical misses and report any new miss separately. Check
+sanitizers and generated PTX types. No training while implementation errors
+remain unresolved. Save validation provenance before the scientific run.
+
+Freeze a separate gated experiment/source/PTX/executable registration, then
+run all75short task/seed cells in the unchanged suite order, seeds0/1/2. Audit
+short before running30long, then audit the complete suite. Control is
+runs/main-model-gpu-suite-01/mhc. Keep original data/sampler/init, exact held-out
+metrics, budgets and observation cadence. Use buffered500-epoch saves plus
+initialization/first99/budget/STOP. No concurrent GPU job or minute polling.
+Reject at the first verified lost main pass; retain it and mark later cells
+unrun. An execution error is not a budget miss and cannot be silently retried.
+
+Report every task/seed, including epoch regressions and failures. No solved-
+subset geometric mean. Promotion requires105/105 verified passes and a full
+short-suite geometric-mean epoch ratio below1 against selected main. Report
+long epochs too. Throughput alone never qualifies; first99 is not sustained99.
+After this experiment, test both requested complex gate variants, then resume
+native LeRoPE and Log-Scaled LeRoPE in order.

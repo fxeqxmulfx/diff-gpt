@@ -1,0 +1,85 @@
+Follow-up runtime work after the static tensor hard-screen result,2026-11-08
+
+Do not modify the running candidate or promote it by speed alone.
+Native Nsight capture results/tensor-model-02/recall-kernels.json shows:
+  attention forward13.15%,mHC gate_grad10.64%,key_backward8.60%,
+  TF32 GEMM7.77%,transpose7.48%,ordinary query_backward7.59%,
+  ordinary values5.99%,embedding backward5.25% of GPU kernel time.
+The traced final full optimizer state matches the unprofiled candidate exactly.
+
+Read-only code inspection found two concrete next optimization opportunities:
+1. Engine::attention_forward invokes the legacy attention::forward,which
+   computes probability AND an XSA value/projection output; ordinary::values
+   immediately overwrites the output. The ordinary backward path does not use
+   the XSA delta/head flags. Implement a dedicated ordinary forward kernel,
+   preserving score/softmax/value operation order,then verify bit-exact
+   probabilities,outputs,gradients and complete checkpoint-state replay.
+   This removes redundant computation,not a currently active model feature.
+2. base_ops::transpose reads contiguous rows and writes strided columns.
+   Test a32x32 shared tile with padding,coalesced loads/stores and unchanged
+   bit patterns,including every tail. Test memory/synchronization safety,
+   full-state replay and whole-update timing before selecting it.
+
+These are separate from precision selection. Start implementation/testing after
+the current four-cell hard screen finishes. A learning failure rejects that
+numerical candidate; preserve the main model and all failure evidence. Keep
+the general epoch-research goal and rotary/gating queue active. No Python.
+
+Iteration02 after iteration01 results: attention fusion + tiled transpose is
+bit-exact across178primitive cases,complete trained-state replay and all20model
+gradient reports. Three-run medians improve parent updates by1.087x quartic
+and1.128x recall. Next pack two D16 attention heads per warp (even head count),
+preserving the original four within-half butterfly additions plus the explicit
+fifth addition of positive zero. Group four independent32-lane routing-gradient
+warps in each128-thread block; preserve every dot/reduction instruction and
+its ordering. Validate raw equality,tail safety and complete states again.
+
+Iteration03 after iteration02 results: iteration02 passes324bit-exact cases,
+both sanitizers,identical complete-state replay and identical model gradient
+diagnostics. Recall is about12.02ms/update versus13.79ms previous/50.7ms selected.
+Next pair D16 heads and group four warps in Q/K normalization and K/V backward,
+guarding only whole inactive warps on tail blocks. Preserve every arithmetic
+instruction/reduction,including the norm's explicit fifth positive-zero add.
+For tied embedding gradients,use a warp ballot over32 token rows,visit set bits
+in increasing row order,and perform exactly the original per-coordinate
+addition subsequence. No floating atomics,reassociation or dtype change.
+Compare all raw bits,including cancellation and repeated/sparse token cases.
+
+Iteration04 after iteration03: 937 exact primitive comparisons, unchanged
+complete replay states/gradient reports and clean primitive/full-model
+sanitizers. Three alternating medians: quartic1.127855ms, recall10.056933ms,
+3.290x/5.010x versus selected main. Native Nsight shows ordinary forward and
+query backward together23.88% of recall kernel time, still one warp per block.
+Pack four independent warps per block in these kernels, retaining paired D16
+heads and whole-warp tail guards. Also pack four rows per block in mHC router
+RMS and read RMS, without changing any operation/reduction or dtype. These
+normalizers account for roughly6% of recall kernel time (plus read RMS).
+Extend primitive tests to query backward and both normalizers, including
+nonmultiple-of-four rows, huge finite router values, tiny values and
+cancellation; retain exact full-state and gradient-report comparisons.
+The observed GPU busy fractions are97.997% recall/89.666% quartic under tracing.
+Those describe the captured update loop, excluding CPU packing/evaluation.
+
+Iteration05 after iteration04: all1644primitive comparisons, complete-state
+replay, gradient-report equality and sanitizer checks pass. Median recall
+9.041918ms (5.600x selected/1.117x previous),quartic1.136019ms (no improvement
+versus previous). The unchanged finishing kernel occupied7.05% recall/8.09%
+quartic GPU time in iteration03's profile. For single-partition TF32 GEMM,
+store directly to the output, retaining the exact finish's +0 addition.
+Do the same for FP16/BF16 when the output width needs no padding. Split-K
+reduction and padded half outputs keep the existing path. This geometry-only
+choice does not inspect values or change precision; kernel specializations
+compile the final +0 addition in or out. Validate parent/new raw output bits
+for all formats, small/large shapes,tails,signed zero,cancellation and multiple
+K partitions, then full states/gradients and alternating update timings.
+
+Iteration05 completed: 1869 exact primitive comparisons and unchanged complete
+state/gradient reports, with clean sanitizers. Median quartic1.086046ms and
+recall8.428058ms: 3.462x/6.062x versus matched selected main. Final native
+Nsight shows25 fewer launches per recall update and97.83% GPU busy. Remaining
+recall shares: TF32 GEMM15.07%,router gate gradient7.68%,query backward7.53%,
+ordinary forward6.76%,router parameter gradient5.20%. TF32 uses168 registers
+per thread; router parameter gradient uses161. The next profiling question
+is whether register pressure or memory access limits these kernels. No new
+arithmetic or register-limit candidate has been tested. Preserve this exact
+runtime and all existing numerical/learning misses; no full105 promotion.

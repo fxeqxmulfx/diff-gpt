@@ -1,0 +1,39 @@
+Further static mHC optimization,2026-11-08
+
+The user explicitly requests more optimization before queued rotary research.
+They allow some numerical precision loss if difficult-task learning is unharmed.
+Any type is eligible in either direction. No runtime precision selection,
+fallback or retries. Preserve architecture,40normalization steps,optimizer/data,
+fixed budgets,normalization,tied weights and the no-lost-pass promotion rule.
+
+The selected packed implementation's existing validated Nsight trace shows
+Sinkhorn forward/backward takes26.98% of recall kernel time and23.01% of quartic.
+Recall query backward takes17.15%. Q/K raw-dot integer products have insufficient
+measured benefit; results/integer-model-01 retains the rejected candidate.
+
+Next numerical candidate: fixed mixed Sinkhorn. Retain FP64 log-space offsets
+for the initial two normalizations so large row/column offsets are not erased.
+Evaluate bounded exponentials/log-sums in FP32; use FP32 positive matrices,
+four-entry sums,division and the40matrix tape. Keep upstream gate adjoints and
+reverse accumulation FP64 initially. Keep sigmoid gates FP64. Other model
+operations remain identical to the selected implementation. No dynamic dtype.
+This is a separate numerical implementation, not expected to replay bitwise.
+
+Validation: retain original independent scalar AD tolerances (primitive2e-6,
+row-sum2e-7 and existing full-model budgets), all prior extremes and causal
+shapes. Record measured differences rather than requiring bit identity.
+Check cancellation, large row offsets and saturated logits before training.
+Measure warmed whole updates on identical read-only checkpoints/next minibatches.
+State clearly which numerical guarantees are conditional or empirical.
+
+If validation and speed support advancing, freeze the candidate and retrain
+the difficult quartic seed1 from original initialization,original LR0.001 WSD,
+original task budget and first99 metric. Include hardest long/depth stress as
+declared before launch. Compare epochs and passes against audited main; saves
+remain buffered every500epochs/first99/budget/STOP. A hard-task pass advances
+the candidate, but full promotion still needs all75short+30long main passes.
+Keep selected main unchanged while the candidate is being evaluated.
+
+Separate exact candidates may cache FP64 attention-gradient intermediates to
+avoid recomputing them; preserve order and validate independently. Report every
+candidate's failure and speed before combining optimizations. No Python.

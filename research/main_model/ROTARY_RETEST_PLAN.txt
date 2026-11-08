@@ -1,0 +1,82 @@
+Native rotary retests, registered before candidate training, 2026-11-08
+
+CURRENT ORDER: the user explicitly requested "next experiment" after the third
+gate's audited75short passes and13.1626% more epochs. All three gate cohorts
+are closed by explicit user stops, with their partial long outcomes retained.
+Proceed with LeRoPE, then Log-Scaled LeRoPE, then the complex optimizer,
+residual routing,attention score and covariance normalization queue.
+No rotary training or GPU validation has started. The initial deferred build
+found a kernel tuple declaration error; its log remains preserved under
+results/rotary-preparation-01/. Resume native validation before registration.
+
+Control: complex-peri-rms-ordinary-mhc4-fp16tf32-v1, as pinned by
+results/gpu-suite-01/promotion/model-selected.json and final-audit.json.
+Use a separate rotary_native crate; never edit the frozen selected executable,
+the completed cohorts, or their archived compiled sources.
+
+LeRoPE: angle(p,m)=base(p,m)*exp(alpha_m),
+base(p,m)=p/10000^(2m/d), with d the real per-head width. Log-Scaled LeRoPE:
+multiply base by ln(p+1), with zero-based absolute position p. Position0 has
+zero angle. One shared vector of d/2 learned real alpha values is used by Q
+and K in every head and layer. Initialize all alpha to zero, without an RNG
+draw, appended after the existing mHC parameters. Preserve every original
+parameter bit and router initialization. These candidates add parameters;
+they are not parameter-count matched to the control. Log scaling intentionally
+changes initial outputs; ordinary LeRoPE must reproduce standard RoPE at alpha0.
+
+Historical definitions: early99/experiments/learned_rope.py and the two
+early99/results/round2/ssmax-lerope{-log-angle}-plan.json files. Read only;
+do not execute Python. Preserve their mechanism and new-frequency optimizer
+treatment, not the obsolete XSA/SwiGLU parent or LRx2 training recipe.
+
+Optimizer: all existing independent coordinates keep their exact current
+global L2 clip1, AdamW(.9,.95),wd.1,peakLR.001,2%warmup/20%cosine-to1e-8.
+The new alpha vector is a separate group, L2 clip1,weight decay0,same LR,
+betas/epsilon/bias correction and original budget-based schedule. Include all
+new parameters/moments in checkpoints, capacity/initialization provenance
+and finite-state audits. Do not clip frequency values or change budgets.
+
+Keep ordinary causal inverse-width SSMax, Peri/embedding/final/QK parameter-free
+RMS, plain complex product, complex-linear projections, tied embedding/readout,
+four-stream mHC, residual scaling after RMS, and selected static tensor precision.
+No dynamic precision fallback or GPU FP64. Frequency tables and their adjoints
+use FP32, with independent FP64 CPU references permitted for validation.
+All-affine-FP32 is a separate diagnostic feature for classifying mixed-precision
+strict AD misses. It must reject scientific cell/resume/suite training.
+The legacy Engine.update path must reject learned rotary; only the declared
+WSD optimizer with its separate frequency group may update this candidate.
+
+Implementation contract: update the learned table on the GPU every forward,
+including evaluation and after checkpoint restore, without parameter readback.
+Cache only position-dependent base angles and their host-FP32 sine/cosine.
+Compose the baseline rotation with delta=base*expm1(alpha); this is the same
+real-angle equation and preserves the baseline table at alpha0. Use a fixed
+FP32 expm1 range-reduction/polynomial and FP32 reduced sine/cosine, with explicit
+numerical tests. No claim of arbitrary-frequency floating-point exactness.
+Accumulate theta*(q_re*dq_im-q_im*dq_re) for BOTH Q/K, all heads, examples,
+positions and layers, where theta=base*exp(alpha). Reset each backward and
+use deterministic reductions, with no floating-point atomics.
+
+Before training, validate both variants natively: frequency/base initialization
+and optimizer ownership; nonzero and tiny alpha tables against independent
+CPU math; zero-position/singleton and varied/tail shapes; every frequency
+adjoint and input adjoint; Q-only/K-only/value-only paths; multilayer/head sums;
+causality/prefix consistency; unchanged control output/gradient/update replay;
+new optimizer group clipping, bias correction, weight decay exclusion and
+checkpoint restore. Check native sanitizer results and absence of GPU FP64.
+Retain inherited strict numerical misses separately from any new failure.
+Do not hide a new numerical error behind a full-model training result.
+
+Freeze one source/PTX/executable/experiment registration per variant after
+validation, before training. Run short75 then audit, then long30 then audit,
+using suite.json order and seeds0/1/2, original data/sampler/init, exact held-out
+metrics, budgets and observations. Buffered saves remain every500epochs and
+at first99/budget/STOP. Do not poll each minute or run concurrent GPU jobs.
+Reject at the first verified lost main task/seed pass; preserve the failure and
+mark later cells unrun. Execution errors are distinct from budget misses.
+
+Report every pair and regression. No full-tier geometric mean for an incomplete
+tier. Promotion requires all105verified main passes and geometric-mean short
+epochs below the selected main; report long epochs too. Runtime alone does
+not qualify. Do not pool passes between variants. First99 is not sustained99.
+After both rotary experiments, continue the additional complex research queue.

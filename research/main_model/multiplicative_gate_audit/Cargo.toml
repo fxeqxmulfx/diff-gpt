@@ -1,0 +1,15 @@
+[package]
+name = "main-model-multiplicative-gate-audit"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+sha2 = "=0.11.1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,41 @@
+FP32 / TF32 optimization candidate,2026-11-08
+
+Latest user instruction: try avoiding FP64; use FP32 or, where possible,TF32.
+Some rounding loss is acceptable if difficult-task learning is unharmed. This
+supersedes the mixed-Sinkhorn candidate's choice to retain FP64 arithmetic.
+Build a separate fixed FP32 GPU implementation. Use FP64 only in independent
+CPU references/reporting and unchanged host schedule calculations, not in model
+or optimizer GPU kernels. Later test TF32 tensor-core GEMM with FP32 accumulation
+as a separate candidate. There is no runtime precision decision or fallback.
+
+Scope: convert the selected packed implementation's mHC gates/mixing/reductions,
+attention and normalization adjoints, stable loss and optimizer norm reduction
+to FP32. Keep model equations,40Sinkhorn steps,all normalization/complex ties,
+optimizer parameters,schedule,data,initialization,sampler and budgets unchanged.
+Preserve stable non-target loss-gradient calculation. Record changed arithmetic
+and numerical errors explicitly; do not claim bit-identical trajectories.
+TF32 is a matrix-multiplication candidate, not a storage/reduction type.
+
+Run unchanged scalar AD/model stress and retain every failure without loosening
+the old thresholds. Earlier strict error tests diagnose rounding-sensitive
+paths; user-authorized hard-task training may still assess a numerically finite
+candidate with small recorded misses. A nonfinite loss/state, broken model
+equation, broken ties, lost gradient path or memory error blocks training.
+The user's acceptance condition is measured learning, not exact reference bits.
+
+Hard-task screen is declared before launch:
+1. arithmetic-sum-pow4,seed1,long: historical sensitive run; current main1480epochs.
+2. arithmetic-sum-pow4,seed0,long: largest main long update count42674,2246epochs.
+3. basis-depth-hard,seed0,short: six-layer residual/gradient stress.
+4. basis-parity24,seed0,long: second-largest main long update count32750.
+Each starts from original initialization, uses original100000update budget and
+evaluation cadence, LR0.001 WSD,AdamW(.9,.95),wd.1,clip1. Buffer observations and
+save every500epochs/first99/budget/STOP. Report passes and paired epoch changes.
+Any verified lost main pass rejects the candidate; retain failure and label
+remaining cells unrun. Do not tune numerical choices on long outcomes.
+
+Measure warmed update time against the selected packed implementation on the
+same read-only checkpoint and next minibatches. Only advance a faster candidate
+with intact difficult-task results. Full selection still needs all75short and
+30long verified main passes. The current default remains selected until then.
+Run everything with Rust/Kernite/native tools. Never execute Python.

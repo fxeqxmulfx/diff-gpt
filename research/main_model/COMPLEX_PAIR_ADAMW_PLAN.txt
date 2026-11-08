@@ -1,0 +1,94 @@
+Complex-pair AdamW on the selected LeRoPE main, 2026-11-08
+
+Next requested candidate after both rotary retests. LeRoPE is current main,
+complex-peri-rms-ordinary-mhc4-lerope-fp16tf32-v1, with105/105audited passes.
+Control: runs/main-model-lerope-01/lerope, independent audit
+results/lerope-suite-01/final-audit.json, SHA256
+c6e33bb035d04d7d2e8e6c8ef8315c36f6453d675f0d06eafc4243a034ff541b.
+Frozen control binary: results/rotary-validation-final/candidate,
+SHA256 b6225c241fdd523acc0e96699ff0b8cfef851cd63d802449f7072a717b190889.
+Log-Scaled LeRoPE completed105/105 but increased short/long epochs6.2493%/
+14.1047%, so it is rejected and is not the control. No prior cohort restarts.
+
+New isolated implementation: pair_adamw_native. Scientific arm pair-lerope,
+same architecture as lerope, with phase_optimizer=true. Generic runner keeps
+the four prior arms and adds this fifth; separate registration restricts the
+scientific cohort to105cells of pair-lerope only. Freeze final source,PTX,
+binary,plan,auditor,control and all data before any scientific cell is trained.
+
+Exact change, frozen before validation/training:
+Contract expanded complex-matrix gradients to independent A/B coordinates:
+g_A=G_A+G_duplicate_A; g_B=G_B-G_negative_B. Embedding real/imaginary pairs
+are independent complex coordinates without duplicated writes. Keep the
+original base global L2 clip1 across all independent complex coordinates AND
+real router coordinates, excluding frequency alpha. Let the clipped pair be
+g=(g_re,g_im). Its first moment remains componentwise
+  m'=0.9*m+0.1*g.
+Use one shared real second moment
+  v'=0.95*v+0.05*((g_re^2+g_im^2)/2).
+This is the MEAN squared-magnitude convention, not the sum. It matches the
+historical complex_geometry_suite definition but keeps the current optimizer
+betas/schedule,architecture and corrected kernels. Duplicate the one shared v
+into both existing state slots, preserving the current checkpoint dimensions.
+Matrix weight/first-moment ties are repaired exactly; all corresponding
+second-moment duplicate slots hold the same nonnegative shared value.
+
+For t=completed+1,bc1=1-0.9^t,bc2sqrt=sqrt(1-0.95^t), apply each component:
+  p'=(1-lr*wd)*p - (lr/bc1)*m'/(sqrt(v')/bc2sqrt+1e-8).
+GPU arithmetic and accumulations are FP32, no runtime dtype fallback or GPU
+FP64. Original reduction,clipping order,parameter order,weight decay and
+bias-correction computation stay fixed. Host FP64 schedule/reference is allowed.
+Router projections,biases and scales are real coordinates: retain separate
+real variances and ordinary AdamW, even though the ownership map packs them
+in pairs for launch convenience. LeRoPE alpha is also real: unchanged separate
+L2clip1,wd0 group with independent real variances. No artificial pairing of
+router coordinates or frequencies. Keep peakLR.001,betas(.9,.95),epsilon1e-8,
+wd.1 for base,2%warmup and20%cosine-to1e-8 on the original task budgets.
+
+All required architecture choices stay unchanged: Peri/embedding/final/QK
+parameter-free RMS,tied embeddings,ordinary causal1/d SSMax,no XSA/centering
+or attention output gate,plain complex product,complex-linear projections,
+shared-frequency LeRoPE without log-position scaling,four-stream mHC with
+20Sinkhorn cycles and1/sqrt(2L) depth scaling after branch RMS. FP16 forward
+and TF32 backward GEMMs accumulate in FP32. All initial parameters,including
+zero alpha,and sampler bits must match current main. Same parameter count.
+
+Before training, validate independent-owner coverage and signs,embedding and
+matrix pairing,real/frequency exclusion,unequal initial real variances,
+shared complex variance checks,nonzero moments,zero/tiny/large clipped
+gradients,cancellation,all schedule boundaries,launch tails/canaries and
+repeated steps. Independently reconstruct CPU FP64 updates and report every
+miss. Initial reference bounds: parameter2e-8+4e-6*abs(expected);
+first moment1e-12+4*epsilon_f32*(abs(old_m)+0.1*abs(g))+4e-6*abs(expected);
+second moment1e-18+4e-6*abs(expected). Preserve these thresholds and failed
+attempts. Phase-rotation checks compare weights/first moments with
+8e-8+8e-6*max(abs(expected),abs(actual)),second moments with
+1e-18+8e-6*max(abs(expected),abs(actual)). These are empirical FP32 screens.
+
+Check exact-real per-pair phase equivariance,energy preservation,nonnegative
+second moments and positive denominator in local Lean statements with concrete
+hypothesis witnesses. This concerns the optimizer given consistently rotated
+weights,moments and gradients; it does not prove network phase symmetry,
+arbitrary channel-mixing invariance or convergence. Independently test the
+FP32 rotation property over both clipped and unclipped vectors. Original
+real-coordinate group updates must match control bit-for-bit for identical
+inputs. Validate identical pre-update model logits/gradients,exact checkpoint
+continuation including changed batch/length,maximum suite shapes,and rejection
+of incompatible variance states. Run native memory/synchronization sanitizers,
+no-FP64 PTX audit and unchanged-control replay before scientific registration.
+Do not repeat unrelated numerical tests unless code changes justify it.
+Retain inherited386strict scalar-AD misses,15337small optimizer-reference
+differences and five rotary frequency-AD misses; they are not new passes.
+
+Then run fresh75short,independent audit,30long,independent audit in suite.json
+order,seeds0/1/2. Preserve all35datasets,hashes,initial states,samplers,budgets,
+held-out first99 metrics and observation cadence. Buffered writes every500
+epochs plus init/first99/budget/STOP. No competing GPU experiments or minute
+metric polling. Stop at the first verified lost current-main task/seed pass,
+retain failure and unrun cells,and advance. Distinguish execution errors from
+budget misses; no silent retries,extended budgets or pooled passes.
+Promotion requires all105main passes AND fewer geometric-mean short epochs.
+Report every paired epoch,regression and all30long rows. Incomplete tiers have
+no full-tier geometric mean. Runtime cannot qualify; first99 is not sustained99.
+After this candidate continue complex residual routing,phase-sensitive scores
+and regularized real/imaginary covariance normalization, separately in order.

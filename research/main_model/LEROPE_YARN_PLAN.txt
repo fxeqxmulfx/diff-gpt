@@ -1,0 +1,81 @@
+LeRoPE + YaRN: inference extension and an axial DiffGPT candidate
+Preparation, 2026-11-09. Control selection waits for covariance closure.
+
+Primary definitions
+https://arxiv.org/html/2607.10134v1, section3 and appendixD.2
+https://arxiv.org/html/2309.00071, sections3.2-3.3
+https://arxiv.org/html/2403.13298v1, section3 (axial image positions)
+
+The language-paper LeRoPE learns alpha_j, with omega_j=base_j*exp(alpha_j),
+shared across heads/layers. Keep the selected main's initialization, optimizer,
+normalization positions, tied embedding and every other model component.
+The inference-only YaRN rule uses r_j=Ltrain*omega_j/(2*pi),
+w_j=clamp((r_j-1)/31,0,1), u=min(1,Ltrain/Ldoc),
+omega'_j=omega_j*(u+w_j*(1-u)),
+g=(1+0.1*ln(max(1,Ldoc/Ltrain)))^2.
+Multiply the COMPLETE real attention score by g before softmax. Do not scale
+Q/K amplitudes: that would scale the squared-imaginary term differently.
+GPU frequency/ramp/rotation and score math stay FP32; no dynamic precision
+fallback, no GPUFP64, no parameter readback in the forward path.
+
+Training has no YaRN intervention. An unextended document must use the exact
+original forward path and rotation table. Reject backward/optimizer calls
+while the inference extension is configured; there is no claimed training
+derivative through its clamped frequency map. Never fabricate a smaller
+Ltrain to obtain a nonidentity transformation, or claim a training-epoch gain
+from this inference-only mechanism.
+
+One-dimensional checkpoint study
+Freeze the then-selected main's105 terminal first99 checkpoints and provenance.
+For each frozen task, derive Ltrain from the actual maximum number of input
+tokens in its training examples. Allocated buffer capacity is NOT Ltrain.
+Report the training and every evaluated split's actual lengths before scoring.
+The short75/long30 retained-pass check uses each original primary split and
+metric at the original terminal checkpoint; no weights or epochs are updated.
+These are checkpoint evaluations, not105 fresh training runs or an estimate
+of the first99 epoch that a changed evaluation rule might have produced.
+Report control and YaRN metrics, including every lost selected-main pass.
+Stop the primary candidate on the first verified lost pass, retaining it and
+marking remaining primary cells unrun. Original-range identity remains an
+implementation fact, not a replacement for extrapolation evidence.
+
+At inference, choose a document's extension from its known input length;
+batch only equal-length documents under one table and temperature. For an
+autoregressive generation metric, fix the declared prompt+generation-limit-1
+capacity for the whole rollout, independent of answers/predictions/EOS. Label
+this fixed-capacity deployment adaptation separately from paper perplexity.
+Use identical grouping/configured capacities for paired control and candidate.
+Token values, labels and future content never determine the extension factor.
+Prefix-causality checks hold the configured document extent fixed; changing
+that extent intentionally changes the positional map even at earlier tokens.
+Score existing longer-context auxiliary splits separately, without using their
+answers to tune constants or altering the original frozen regression task.
+
+Two-dimensional DiffGPT proposal
+Axial, not mixed image RoPE: half of each head's complex pairs encode time,
+half encode feature. Flatten in row-major order p=t*F+f, retaining the ordinary
+causal mask. Let m=d/4, with d the REAL head width, divisible by4. Each axis
+uses base_j=10000^(-j/m), j=0..m-1, and its own zero-initialized log multiplier.
+There remain d/2 parameters total, shared across heads/layers. Time angle is
+t*omega_j; feature angle is f*nu_j. No extra parameters or RNG draws.
+An F=1 case has zero feature angles and cannot establish a feature-axis benefit.
+Require a separate multi-feature case with fixed feature order. Feature indices
+are a modeling convention, not a proven spatial metric.
+During context extension apply YaRN only to time bands, using the true training
+time extent and declared inference time extent. Keep feature bands unchanged;
+apply g once to the complete score. No updates through inference YaRN.
+Ordinary 1D and axial2D are independently labeled controls/candidates. Train
+all requested encoders MASH,LGT,MASH-half with matched native splits, seeds,
+budgets and decoded metrics; no pooling away an encoder regression.
+The exact DiffGPT dataset/seed/budget registration is a separate prerequisite
+to scientific training. Existing codec tests are not model-learning evidence.
+
+Before scientific execution
+Validate CPU frequency/ramp/axis reference, exact identity, positive bounded
+interpolation, full-score temperature, fixed-extent causality, checkpoint
+read-only behavior, and every new training path introduced by axial positions.
+Keep inherited numerical misses and new misses explicit. Freeze executable,
+source/PTX, dataset/length metadata and independent audit before scoring/training.
+The covariance cohort finishes first. Then execute this final research tail,
+integrate the selected validated model into src, verify, commit authored files,
+and stop as requested. No open-ended extra experiments.

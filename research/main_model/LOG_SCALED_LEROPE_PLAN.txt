@@ -1,0 +1,79 @@
+Log-Scaled LeRoPE retest, registered before scientific training, 2026-11-08
+
+The preceding LeRoPE cohort completed all75short and30long cells with zero
+independent audit failures. It was promoted under the standing user rule:
+short geometric-mean epoch ratio0.9946609165143937, no lost main pass.
+Long ratio1.0150994601681524 and all17individual regressions remain recorded.
+The exact selected control for THIS experiment is now
+complex-peri-rms-ordinary-mhc4-lerope-fp16tf32-v1, arm lerope, from
+runs/main-model-lerope-01/lerope. Its independent control audit is
+research/main_model/results/lerope-suite-01/final-audit.json,
+SHA256 c6e33bb035d04d7d2e8e6c8ef8315c36f6453d675f0d06eafc4243a034ff541b.
+The previous standard-RoPE cohort remains historical evidence, not the
+promotion baseline. This plan supersedes only the control/registration choice
+for the log variant in ROTARY_RETEST_PLAN.txt; that compiled plan stays frozen.
+
+Candidate arm: log-lerope. For zero-based absolute position p and band m:
+  angle(p,m)=p*ln(p+1)*10000^(-2m/d)*exp(alpha_m), d=real_head_width.
+Position0 has angle0. There are d/2 shared alpha parameters across Q/K,
+heads and layers, initialized at positive zero with no additional RNG draws.
+Both control and candidate have the same parameter count and identical full
+initial weights, including frequencies, common prefixes and router state.
+Log scaling intentionally changes the initial positional outputs. It is the
+only architecture difference from the newly selected LeRoPE main.
+
+Reuse the EXACT already-validated rotary executable; no model code or PTX
+changes, rebuild, diagnostic binary substitution or repeat scientific cells:
+binary SHA256 b6225c241fdd523acc0e96699ff0b8cfef851cd63d802449f7072a717b190889
+source SHA256 1338beee43f8a3b2c41043069eba1799ecc02a8b2a0f4f43160213f721393019
+PTX/config SHA256 a486b68e0cf6a0e9af1a1a0e76290a9fb0152e7fe8f202383dd162fd330749f8
+Compiled plan SHA256 90222d59a99442290a49dae309766fdd900581f41318aaed3ce89804e83e98dc
+Frozen artifact: research/main_model/results/rotary-validation-final/candidate.
+The generic compiled protocol exposes4arms/420cells. The separate scientific
+experiment.json restricts THIS fresh cohort to log-lerope and105cells.
+experiment.plan_sha256 pins this plan; compiled_plan_sha256 and protocol.json
+pin the original ROTARY_RETEST_PLAN. Do not relabel either archived plan.
+
+Native validation already covers BOTH rotary variants:360implementation
+cases,11CPU tests,five executed GPU tests including192frequency optimizer
+cases,clean memcheck/synccheck,19PTX modules without GPU FP64,exact unchanged
+standard-RoPE control replay,six checked local Lean frequency statements.
+Retain five strict mixed-precision frequency-AD misses out of160directions;
+the all-affine-FP32 diagnostic passes160/160 and is barred from training.
+Also retain inherited386strict AD misses and15337small FP64 optimizer-reference
+differences. Earlier21table failures were corrected before this frozen build;
+their evidence remains. No new training result can erase numerical failures.
+Validation source: results/rotary-validation-{02,03-reference,final}/REPORT.txt.
+Precision bounds cover the tested finite screen, not arbitrary length or alpha.
+
+Keep ordinary causal inverse-width SSMax ln(visible_prefix)/d, no XSA/centering
+or output gate; Peri/embedding/final/QK parameter-free RMS; tied embeddings;
+complex-linear projections; plain complex-product FFN; four-stream mHC with
+20Sinkhorn cycles; depth scaling1/sqrt(2L) after branch RMS. Original static
+FP16-forward/TF32-backward GEMMs accumulate inFP32; other model/optimizer math
+isFP32 with fixed compensated rotary reductions. No dynamic dtype fallback.
+
+Original independent coordinates retain global L2 clip1,AdamW(.9,.95),wd.1,
+peakLR.001,epsilon1e-8,2%warmup,20%cosine decay to1e-8 on original budgets.
+Alpha remains a separate L2clip1,wd0 group with the identical schedule/betas.
+Do not clamp alpha or change budgets. Checkpoints include every weight and
+moment. Buffered writes remain every500epochs and init/first99/budget/STOP.
+
+Fresh root runs/main-model-log-lerope-01. Freeze executable,source,PTX,this
+plan,control audit,independent auditor,helpers and all35data fingerprints
+before launch. Run75short then independent audit,then30long then final audit,
+in suite.json order with seeds0/1/2, unchanged data/samplers,observations,
+held-out first99 metrics and original fixed update budgets. Check full initial
+hashes against the LeRoPE control, not a frequency-free prefix comparison.
+No concurrent GPU science or minute-by-minute metric polling.
+
+Stop and independently audit the first lost verified main task/seed pass.
+Retain the failure and all unrun rows; no silent retries, pooled passes,
+budget extensions or favorable seed selection. Execution failures are distinct
+from budget misses. Honor an explicit user STOP with a clean checkpoint.
+Promotion requires all105verified main passes and geometric-mean short epochs
+strictly below this LeRoPE main. Report every pair,individual regression and
+all long epochs; incomplete tiers have no full-tier geometric mean. Wall time
+does not qualify; first99 is not sustained99. After this experiment continue
+complex-pair AdamW,complex residual routing,phase-sensitive attention scores
+and regularized real/imaginary covariance normalization, separately in order.

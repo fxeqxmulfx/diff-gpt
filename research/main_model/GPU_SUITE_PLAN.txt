@@ -1,0 +1,56 @@
+Full fixed-suite validation of gpu-opt-05, 2026-11-08
+
+The previous goal turn made progress: it produced measured GPU speedups,
+1869 exact placement comparisons and immutable replay/profile evidence.
+This experiment now tests scientific coverage and epochs, not throughput.
+
+Candidate: the already frozen results/gpu-opt-05/combined executable.
+Source SHA256:7fcb3c976c34b6cdc7d53510ca4a27a0484d2e161bc9d208580b2da5c3043737
+PTX SHA256:10b9c9a47e8ae9cfbe37212efef8bd7f361f0185f4ba63c02cf98cd8ce3e5c3b
+Architecture is selected four-stream mHC with ordinary causal SSMax ln(N)/d,
+Q/K RMS, Peri/embedding/final parameter-free RMS, plain complex product,
+standard RoPE, tied embedding/readout and residual scaling after branch RMS.
+Precision is fixed FP16 forward affine products, TF32 backward affine
+products, FP32 accumulation/remaining model math/master weights/moments.
+No runtime precision fallback and no GPU FP64 model/optimizer arithmetic.
+
+Keep all numerical failures visible: 386 strict scalar-AD misses and the
+19-update FP64-optimizer comparison's15337 small differences. They remain
+failed tests. The user permits a declared numerical candidate to undergo
+difficult-task learning tests. Its four-cell hard screen passed independent
+audits but quartic seed1 used44.12% more epochs. No scientific promotion has
+occurred; that earlier screen is not pooled into this cohort.
+
+Run all75 short and30 long task/seed cells of complex_geometry_suite/suite.json,
+in its existing task order, seeds0,1,2 for each task, short before long. All
+cells start from original native initialization; no training state is reused.
+Use the frozen .001 AdamW(.9,.95),wd.1,clip1,WSD2%warmup/20%cosine recipe,
+original data, sampler, exact held-out metric, observation cadence and budgets.
+Keep buffered durable saves at initialization/every500epochs/first99/budget/
+cleanSTOP. Never silently replay an uncertain work window.
+
+Use runs/main-model-mhc-wsd-01/mhc as the control: its75short/30long passes
+were independently audited. Verify the prior audit and all candidate source,
+PTX and executable hashes before launch. Cohort: runs/main-model-gpu-suite-01.
+The frozen runner supports two historical arms and its generic protocol says
+210cells; the separate immutable experiment.json declares only the105mhc
+cells actually requested here. The new independent auditor enforces that
+exact scope and rejects extra or omitted cells. Do not edit the frozen runner.
+
+Audit initial registration, then the completed short suite, then the completed
+long suite. If any main pass is lost within its original budget, stop further
+cells immediately, audit the failure, retain it and mark the rest unrun.
+Execution errors stop the launcher separately; never relabel them budget misses.
+Do not poll training each minute. No concurrent GPU profiling or experiments.
+
+Report every task/seed's first-observed99 epochs, preceding observation, updates,
+accuracy and ratio to main, including regressions. Aggregate each tier only
+when all its cells have valid passes; never report a solved-subset geometric
+mean as a full-suite result. Scientific promotion requires105/105 with zero
+lost main passes and a geometric-mean short-epoch ratio below1. Report the long
+epoch ratio and all regressions as well. Faster updates alone never qualify.
+Passing first99 does not establish sustained99 or convergence guarantees.
+
+After the gate, continue the queued model research using the actually selected
+main. Keep the existing LeRoPE, Log-Scaled LeRoPE and gated-attention queue.
+Rust/Kernite/native tooling only; no Python or subagents.

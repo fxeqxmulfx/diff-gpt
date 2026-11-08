@@ -1,0 +1,16 @@
+[package]
+name = "diffgpt-axial-data-native"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+diffgpt-mash-native = { path = "../mash_native" }
+sha2 = "=0.11.1"
+serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

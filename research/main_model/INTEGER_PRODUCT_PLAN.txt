@@ -1,0 +1,32 @@
+Exact integer-significand product candidate,2026-11-08
+
+Static-precision-03 shows finite current RMS forward/backward controls at raw
+x=2^60,g=+/-2^80 while compensated FP32 products overflow. Normalization alone
+does not justify replacing these raw backward products with that representation.
+Keep those failures and do not promote the compensated raw-dot replacement.
+
+Alternative fixed representation: decompose each FP32 operand into its sign,
+integer significand (at most24bits) and binary exponent. Multiply significands
+with mul.wide.u32, normalize the at-most48-bit product with clz.b64, and construct
+the exact FP64 sign/exponent/fraction bits. Every finite FP32 product lies within
+FP64's normal exponent range; no product rounding is necessary. Zero signs and
+Inf/NaN input classes must be preserved. There are no precision decisions or
+runtime fallbacks; ordinary field predicates implement the fixed format.
+
+The Lean certificate must connect the actual finite IEEE field definitions,
+48-bit product, exponent range and reconstructed FP64 value. Native tests compare
+every finite result bit against both CPU and GPU FP64 multiplication across
+all exponent fields, boundary significands, zeros/subnormals, and1million random
+bit-pattern pairs; nonfinite classes are checked separately. Keep failures.
+
+Only then test a fixed substitution of FP32-origin products in sensitive
+reductions, retaining FP64 accumulation and all subsequent operations/order.
+Inputs that are genuinely FP64 are not eligible for this exact transformation.
+If outputs/adjoints and trained-state replay remain identical, no new learning
+claim is implied. Measure whole-update benefit before selecting an implementation;
+extra integer operations may be slower. The original packed mHC stays selected.
+
+PTX semantics: https://docs.nvidia.com/cuda/parallel-thread-execution/
+mul.wide returns the full double-width integer product; clz.b64 returns the
+64-bit leading-zero count in a32-bit register. Local Kernite forms and runtime
+SM86 support are checked too. Rust/Kernite/Lean only; no Python.

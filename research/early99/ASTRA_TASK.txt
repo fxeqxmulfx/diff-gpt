@@ -1,5 +1,543 @@
 Optimize the model or optimizer for earlier 99% held-out accuracy
 
+FINAL HANDOFF: the requested queue and native integration are complete.
+src/native_transformer exposes 2D-only DiffGPT with inference YaRN and all
+three encoders; generic Model retains 1D. All 18 CPU tests, format/lint/docs,
+exact 100-update checkpoint replay and CUDA memcheck/synccheck passed.
+The selected generic main retains 75 short / 30 long passes. The additional
+36 DiffGPT runs all missed90% within5000updates; retain those failures.
+See src/native_transformer/VALIDATION.txt. Commit authored work and stop.
+No further experiment is queued. Earlier running-state notes are historical.
+
+DIFFGPT COMPLETE:36audited runs,all5000updates,none reached90%. Retain every
+budget miss; best2Dendpoint89.328%forMASH-half,F1,seed17; F2and extrapolation
+are poor. Report:main_model/results/diffgpt-axial-suite-01/FINAL_RESULTS.txt.
+The final experiment queue is closed. Integration45630 verifies the selected
+generic main and user-requested2D-only DiffGPT,then review,commit and stop.
+Do not open new experiments or claim the fixed105passes cover these new tasks.
+
+AXIAL COMPLETE:75/75short,30/30long,zero audit failures/lost passes. Rejected:
+short epochs2.608%more,long8.998%more; all24individual regressions retained.
+See main_model/results/axial-suite-01/FINAL_RESULTS.txt. Generic main stays
+score105/105. Session70504 now runs the36DiffGPT comparisons; integration
+session45630 starts only after their independent audit. Then review,commit
+and stop. DiffGPT remains2D-only by explicit user request.
+
+CLARIFICATION:"for diffgpt, only 2d". Keep1Dgeneric model/checkpoints/research
+control,but native DiffGPT interface must use2Donly and preserve its actual
+training context metadata. Existing registered comparisons stay unchanged.
+
+LATEST USER REQUIREMENT:default DiffGPT to axial2Dtime x feature LeRoPE,
+with inference YaRN using actual training extent.2Dis important to user.
+Keep the registered scientific comparisons unchanged and report all results;
+this deployment preference is distinct from fixed-suite main promotion.
+After all experiments,integrate this native DiffGPT default plus selected
+generic main into src,verify,commit and stop.
+
+LATEST:axialLeRoPE+YaRN short75/75passes,auditclean;2.608%more epochs
+(ratio1.026082606920931,9/55/11earlier/tied/later). No promotion;main unchanged.
+Long30runs,then36DiffGPTcells automatically follow after clean closure.
+Prepare native integration separately,then verify src,commit and stop.
+
+ACTIVE:axial2DLeRoPE+YaRN frozen75short/30long cohort is running under
+launcher70147;terminal waiter84101. Independent registration and numerical,
+checkpoint,max-shape,control-replay and sanitizer checks pass. Main remains
+score105/105. Then finish separate36DiffGPTencoder/axis runs,integrate into
+src,verify,commit and stop. Do not poll partial training metrics each minute.
+
+LATEST RESULT:1DYaRN inference rejected at basis-depth-hard seed0,
+512/512control sequences versus488/512YaRN(95.3125%),actual length64to128.
+60passes retained,44cells unrun by first-loss rule; no training updates.
+Independent audit passed. Continue separately queued axial2D/DiffGPT with
+MASH,LGT,MASH-half,then integrate selected model into src,commit and stop.
+
+LATEST RESULT,2026-11-09:covariance complete75/75short,30/30long,no lost
+passes,zero audit failures. Rejected:short epochs4.009%more,long0.562%more.
+Selected score+phase-mHC105/105 main unchanged. YaRN engineering passes
+837primitive/267integration rows,including240newfrequency AD directions.
+Proceed with inference-only frozen-checkpoint study,axial/DiffGPT,production
+src integration,then commit and stop. Earlier running notes are historical.
+
+LATEST RESULT,2026-11-09:covariance short75/75 audited,zero failures;
+epoch ratio1.0400914663753322,7earlier/17tied/51later. Long30 still running.
+The score105/105 main remains selected. YaRN preparation uses actual training
+lengths and inference-only full-score temperature; no fabricated epoch gain.
+See main_model/LEROPE_YARN_PLAN.txt and main_model/STATUS.txt.
+
+LATEST USER SCOPE: finish score,covariance,LeRoPE+YaRN,then2DLeRoPE+YaRN
+and requested DiffGPT mesh tests; integrate the final selected validated
+model into production src,then commit and stop. Keep Rust/Kernite only and
+the no-lost-main-pass rule. No open-ended research after this explicit queue.
+Latest user steering requests all three DiffGPT encoders:MASH,LGT,MASH-half.
+Keep separate matched-seed/budget results for each encoder,without pooling.
+main_model/queue.json records the dependencies and integration/commit stages.
+
+COVARIANCE BENCHMARK RUNNING: runs/main-model-covariance-01,arm covariance-lerope,
+launcher23106. Native validation,clean CUDA sanitizers and exact100-update
+trained-control replay are complete; independent registration verifies105fresh
+cells. Keep score105/105 as main until the coverage/epoch gate. Retain all
+numerical limitations. Wait for audit boundaries; then follow the explicit
+YaRN/DiffGPT/integration/commit/stop queue. No other scientific candidate runs
+concurrently. Earlier preparation-only notes below are historical.
+
+COVARIANCE PREPARATION: uncentered2x2second-moment normalization,rho1/16,
+epsilon2^-23,no new parameters. Primitive643/643pass; local Lean algebra passes.
+The model comparison exposed missed Peri input call sites,now corrected.
+Validation03 passes forward/causality/reset and990CPU finite differences;
+retain165mixed AD misses and24near-zero FP32 router-read misses(max3.67e-9).
+Finish state/sanitizer/control-replay checks before scientific registration.
+Plan:main_model/COMPLEX_COVARIANCE_PLAN.txt. Current score main remains105/105;
+the queued DiffGPT test will use2DLeRoPE+YaRN with all three encoders.
+
+SCORE COMPLETE AND PROMOTED:75/75short,30/30long,no lost parent pass and zero
+audit failures. Short epochs1.0718% fewer (ratio0.9892822834978684,6/67/2
+earlier/tied/later); long epochs0.9485% more (ratio1.009485064828696,10/3/17).
+All19regressions remain,including quartic901/687/822 ->1248/922/945epochs.
+Promotion follows the registered short-epoch/full-coverage gate. Selected main:
+complex-peri-rms-squared-imaginary-phase-mhc4-lerope-fp16tf32-v1,phase-score-lerope.
+model.json,mhc.json,README,current.sh select the frozen score candidate; exact
+canonical17-epoch dispatch replay passes. Report and previous manifests:
+main_model/results/phase-score-suite-01/FINAL_RESULTS.txt and promotion/.
+Completed2026-11-08T18:23:00Z;10445,29904,85029,dispatch10028 all exited0 and
+are consumed. Preserve all numerical misses; do not restart closed cohorts.
+Next: token-local covariance normalization against this105/105main. The goal
+and explicit final queue remain active; earlier running notes are historical.
+
+Native CPU preparation now supports all three DiffGPT encoders in
+main_model/mash_native:12tests and strictClippy pass,including9408Fibonacci97
+windows per encoder and84672token checks. Evidence is codec-only,not a model
+benchmark; the2DLeRoPE+YaRN study and production integration remain queued.
+No Python execution. See main_model/results/mash-native-preparation-01/REPORT.txt.
+
+SCORE SHORT RESULT:75/75passes,zero audit failures. Epoch ratio0.9892822834978684
+is1.0718% fewer than selected phase-mHC main,6earlier/67tied/2later. Preserve
+both regressions and all75paired rows in main_model/results/phase-score-suite-01/.
+Long is running under10445; short waiter29904 exited0 and is consumed. Terminal
+waiter85029 remains live. No score promotion or complete-long claim yet.
+
+SCORE CANDIDATE RUNNING: runs/main-model-phase-score-01,arm phase-score-lerope,
+launcher10445,terminal waiter85029. Independent registration
+verifies105unrun cells,zero audit failures;17auditor tests and strictClippy pass.
+Run75short then30long against selected phase-mHC105/105,at original budgets;
+reject any lost main pass. Wait on audit boundaries without minute metrics.
+No full learning result or promotion yet. Continue the explicit final queue
+after closure; earlier unstarted notes below are historical.
+
+Score native validation now passes4800primitive cases,990CPU finite differences,
+112optimizer cases,16CPUtests,strictClippy,continuation,maximum shapes,both
+sanitizers and an exact100-update trained-main checkpoint replay. Preserve
+147strict mixed AD misses including6score directions. FixedFP32 diagnostic
+passes26/26score directions and retains24near-zero router misses. Freeze/report:
+main_model/results/phase-score-validation-final/. Independent registration
+passed before the launch above. Preserve all earlier reports.
+The older specification-only notes below are historical.
+
+NEXT QUEUED SCORE IS SPECIFIED,NOT TRAINED: COMPLEX_PHASE_SCORE_PLAN.txt adds
+beta*Im(sum(conj(q)*k))^2/d to the real dot before the unchanged SSMax gain.
+One zero-initialized real coefficient per layer/head; all other selected
+phase-mHC components remain. Fourteen Lean statements pass without warnings
+or extra axioms: main_model/proofs/ComplexPhaseScore.lean. The bound5/4*ln(N)
+assumes exact-real normalized Q/K; it is not stronger than the parent's ln(N)
+and does not prove floating-point behavior or convergence. Native Rust/Kernite
+implementation and validation come next,then the independently registered
+75short/30long comparison. Covariance normalization follows this candidate.
+The current main is the promoted phase-mHC model described below;105/105passes.
+
+PHASE-CONJUGATED mHC COMPLETE AND PROMOTED:75/75short and30/30long passes,
+zero independent audit failures and no lost parent passes. Geometric-mean
+epoch ratios0.9812530105974627 short (1.8747% fewer) and0.884308368553169 long
+(11.5692% fewer); earlier/tied/later38/33/4 and15/5/10. Retain all14individual
+regressions. All105paired epochs and30long rows/plots:
+main_model/results/phase-mhc-suite-01/report-final/. Quartic seeds0/1/2 improve
+1724/2416/1307 to901/687/822epochs. First99 does not establish sustained99.
+Selected main is complex-peri-rms-ordinary-phase-mhc4-lerope-fp16tf32-v1;
+current.sh selects the frozen phase-mhc-validation-final/candidate and arm
+phase-mhc-lerope. Promotion and prior manifests:
+main_model/results/phase-mhc-suite-01/promotion/. Exact dispatch replay passes.
+Launcher14648,short waiter78391 and terminal waiter88902 all exited0 and are
+consumed; completion2026-11-08T16:35:54Z. Do not restart completed cohorts.
+Preserve189extreme primitive failures,203mixed AD misses,147near-zero FP32
+router misses and all inherited numerical limits; promotion is empirical.
+Continue queued phase-sensitive real attention scores,then token-local
+regularized real/imaginary covariance normalization. Keep this new main's
+105verified passes as the control,original data/seeds/budgets and500epoch saves.
+The overall goal stays active. Earlier pending/status notes below are historical.
+
+PHASE-CONJUGATED mHC SHORT RESULT:75/75passes,zero audit failures. Epoch ratio
+0.9812530105974627 means1.8747% fewer than selected LeRoPE main,38earlier/
+33tied/4later. All regressions and paired epochs are retained in
+main_model/results/phase-mhc-suite-01/report-short/. Main stays unchanged until
+the full105-cell coverage check. The registered30long tier began
+2026-11-08T15:58:09Z,launcher14648. Short waiter78391 exited0/consumed;
+terminal waiter88902 remains live. Finish long unless a verified lost main
+pass rejects the candidate or the user stops it,then continue the queue.
+No full-long ratio or105coverage claim yet. Earlier notes are historical.
+
+PHASE-CONJUGATED mHC RUNNING: runs/main-model-phase-mhc-01,launcher14648,
+started2026-11-08T15:41:35Z. Short waiter78391;terminal waiter88902. Independent
+prelaunch audit verifies105unrun cells,zero failures;15auditor tests pass.
+Registration: main_model/results/phase-mhc-suite-01/registration.sha256.
+Run75short then30long at original budgets using the frozen candidate and
+selected ordinary AdamW/WSD. Reject any lost verified main pass. Main remains
+LeRoPE105/105. Preserve all native numerical misses; no full scientific result
+or promotion yet. Wait at audit boundaries/live handles,not minute metrics.
+Continue phase-sensitive scores and covariance normalization afterward.
+The preparation notes below are historical; the research goal remains active.
+
+PHASE-CONJUGATED mHC NATIVE CHECKS FINISHED; NO SCIENTIFIC CELLS YET.
+main_model/phase_mhc_native changes skip mixing to D P D^*,with6Lnew real
+phase coordinates and the selected ordinary AdamW. Candidate/report frozen in
+main_model/results/phase-mhc-validation-final/. Ten Lean statements,13CPU
+tests,1440normalized-state cases,540CPU finite differences,96optimizer cases,
+continuation,maximum shapes,both sanitizers and unchanged-control replay pass.
+The gate-dot-product reassociation repairs8normalized-state misses without
+changing zero-phase main logits/gradients. Retain189extreme primitive failures,
+203strict mixed-precision AD misses and147near-zero FP32 router misses.
+The FP32 diagnostic passes all48phase directions and cannot train.
+Next: independent auditor and105-cell registration,then75short/30long.
+Main stays the audited LeRoPE105/105. Plan and numerical amendment:
+main_model/COMPLEX_PHASE_ROUTING_PLAN.txt. Continue the research goal.
+
+COMPLEX-PAIR ADAMW COMPLETE:105/105passes,zero audit failures. Short epochs
+increase2.4349% (17/47/11 earlier/tied/later); long increase11.7655% (13/0/17).
+Reject for no short-epoch gain; retain all28regressions. Main stays LeRoPE.
+Launcher3084 and terminal waiter79557 exited0 at2026-11-08T14:45:20Z;
+all handles consumed. Do not restart. Report:
+main_model/results/pair-adamw-suite-01/FINAL_RESULTS.txt.
+Next prepare complex constrained residual routing and its exact guarantees,
+using the selected ordinary AdamW/WSD. Continue phase-sensitive scores and
+covariance normalization afterward. Earlier running notes are superseded.
+
+COMPLEX-PAIR ADAMW SHORT RESULT:75/75passes,zero audit failures. Short epoch
+ratio1.024348767237617 means2.4349% more than selected LeRoPE main,with
+17earlier/47tied/11later. It fails the short promotion condition; main remains
+unchanged. The registered30long suite started2026-11-08T14:26:58Z,launcher3084.
+Short waiter99741 exited0/consumed; terminal waiter79557 remains. Report:
+main_model/results/pair-adamw-suite-01/report-short/REPORT.txt. Finish the
+registered long tier unless a verified lost main pass rejects it or the user
+stops it,then continue complex routing,scores and covariance normalization.
+No complete long result or105coverage is established for this candidate yet.
+
+COMPLEX-PAIR ADAMW RUNNING: runs/main-model-pair-adamw-01, launcher3084,
+started2026-11-08T14:16:15Z; short waiter99741,terminal waiter79557.
+Architecture and WSD settings match the selected LeRoPE main105/105; only
+complex-pair second moments change to shared mean-squared magnitude.
+All714new numerical checks,12CPU tests,six GPU tests,10Lean statements and
+both sanitizers pass. Independent prelaunch audit verifies105unrun cells,
+zero failures;14auditor tests pass. Plan: main_model/COMPLEX_PAIR_ADAMW_PLAN.txt;
+registration: main_model/results/pair-adamw-suite-01/registration.sha256.
+Run75short then30long,stop on any lost main pass at the original budget.
+No learning result or promotion yet. Wait at audit boundaries without minute
+metric polling. Continue complex routing,scores and covariance normalization
+afterward. The older preparation/running notes below are superseded.
+
+LOG-SCALED LEROPE COMPLETE:105/105passes,zero audit failures. Short epochs
+increase6.2493% (6/55/14 earlier/tied/later); long increase14.1047% (12/0/18).
+Reject for no short-epoch improvement; retain32regressions. Current main stays
+complex-peri-rms-ordinary-mhc4-lerope-fp16tf32-v1. Launcher92108 and waiter68339
+exited0; do not restart. Report: main_model/results/log-lerope-suite-01/FINAL_RESULTS.txt.
+Next prepare complex-pair AdamW,then complex routing,scores and covariance
+normalization. The following running notes are historical and superseded.
+
+LOG-SCALED LEROPE SHORT RESULT:75/75passes,zero audit failures;6.2493% more
+epochs than current LeRoPE main (ratio1.0624928090104844,6earlier/55tied/14later).
+The short promotion condition fails; main remains LeRoPE. The registered
+30long suite started2026-11-08T13:21:49Z under launcher92108. Continue unless
+a verified lost main pass rejects it or the user explicitly stops it. Report:
+main_model/results/log-lerope-suite-01/report-short/REPORT.txt.
+
+LOG-SCALED LEROPE RUNNING: runs/main-model-log-lerope-01,launcher92108,
+started2026-11-08T13:12:54Z. Short waiter67917 exited0; terminal waiter68339.
+Fresh75short then30long against the newly selected LeRoPE main. Same frozen
+validated Rust/Kernite executable,full parameter initialization and optimizer;
+only angle position factor changes to p*ln(p+1). The prelaunch independent
+audit verifies105unrun cells with zero failures;13auditor tests/Clippy pass.
+Registration: main_model/results/log-lerope-suite-01/registration.sha256.
+Plan: main_model/LOG_SCALED_LEROPE_PLAN.txt. Wait for suite boundaries without
+minute metric polling. Reject any lost main pass,then continue the queue.
+
+LEROPE COMPLETE AND PROMOTED:75/75short+30/30long,zero audit failures and
+no lost main pass. Short epochs decrease0.5339% (7earlier/65tied/3later);
+long epochs increase1.5099% (12earlier/4tied/14later). The registered rule
+qualifies this model; retain all17regressions and five strict numerical
+gradient misses. No uniform-improvement or statistical-significance claim.
+Current main: complex-peri-rms-ordinary-mhc4-lerope-fp16tf32-v1,arm lerope.
+Report: main_model/results/lerope-suite-01/report-final/REPORT.txt.
+Decision: main_model/results/lerope-suite-01/promotion/decision.json.
+Log-Scaled LeRoPE is now registered and running against this exact selected
+main. Continue the additional complex research queue afterward. Do not restart
+the completed LeRoPE cohort.
+The historical running notes below are superseded.
+
+LATEST USER STEERING: "next experiment" stops the multiplicative gate cleanly
+and advances to LeRoPE. Independent stopped audit:75short+4long passes,one
+stopped abs-diff seed1 at1102updates,25unrun long,zero audit failures. Launcher
+22080 exited0. Do not resume. Closed result:
+main_model/results/multiplicative-gate-suite-01/FINAL_RESULTS.txt.
+LeRoPE is validated,frozen and RUNNING in runs/main-model-lerope-01,
+launcher98943,started2026-11-08T12:40:30Z:75short then30long against selected
+main. All360implementation cases,11CPU tests,five GPU tests and six existing
+Lean statements pass. Sanitizers are clean and unchanged-main replay is exact.
+Retain five strict mixed-precision AD misses; the diagnostic passes160/160 and
+cannot train. Earlier21table failures and build errors remain preserved.
+Independent registration audit passes105unrun cells with zero failures.
+Evidence: main_model/results/rotary-validation-final/REPORT.txt and
+main_model/results/lerope-suite-01/registration.sha256. Wait on the live handle
+or audit-file notifications. Log-Scaled LeRoPE follows,then the complex queue.
+The older running notes below are superseded. Main is unchanged.
+
+MULTIPLICATIVE GATE SHORT RESULT:75/75 passes,zero independent audit failures.
+Candidate/main first99 epoch ratio1.1316263831850297 (13.1626% more epochs),
+5earlier/20tied/50later. The epoch promotion requirement fails. Its registered
+30long suite started2026-11-08T12:11:37Z under launcher22080; continue unless a
+verified lost main pass rejects the candidate or the user explicitly stops it.
+No full-long aggregate or105coverage claim yet. Report:
+main_model/results/multiplicative-gate-suite-01/report-short/REPORT.txt.
+Current main remains unchanged. LeRoPE follows this candidate.
+
+LATEST USER STEERING: "next experiment". Complex-linear predictor with real
+sigmoid is stopped,with75short passes,6long passes,one stopped cell,23unrun
+long andzero audit failures. Its short epoch ratio1.0738984051111777 rejects
+promotion; do not resume. Result: main_model/results/complex-gate-suite-01/FINAL_RESULTS.txt.
+The complex multiplicative gate sigmoid(u)*(1+i*v)/sqrt(1+v^2) is validated,
+frozen and RUNNING in runs/main-model-multiplicative-gate-01, launcher22080,
+started2026-11-08T12:02:39Z. Plan: main_model/COMPLEX_MULTIPLICATIVE_GATE_PLAN.txt.
+It runs75short then30long against the unchanged selected main. Native checks:
+664implementation cases,12CPU tests,four executed GPU tests,clean sanitizers,
+exact unchanged-main replay and seven verified local Lean statements. Retain
+six strict mixed-precision AD misses; the FP32 diagnostic passes189/189 and
+cannot train. Independent registration audit passes105unrun cells with zero
+failures. Evidence: main_model/results/multiplicative-gate-validation-final
+and multiplicative-gate-suite-01/registration.sha256. No promotion yet.
+Wait for the live handle or declared suite boundaries without minute polling.
+Continue LeRoPE afterward; the broader research goal remains active.
+This explicit stop supersedes the historical running notes below.
+
+LATEST USER ACTION: "next in queue". Usual real gate is stopped cleanly and
+independently audited:75short passes,6long passes,one stopped cell,23unrun long,
+zero audit failures. Do not resume. No promotion because short epochs increase
+8.1284%. Closed result: research/main_model/results/gated-suite-01/FINAL_RESULTS.txt.
+The complex-linear predictor with real sigmoid is validated and frozen in
+research/main_model/complex_gate_native. Its benchmark is RUNNING in
+runs/main-model-complex-gate-01,launcher53574,75short then30long under the same
+no-lost-main-pass rule. Plan: research/main_model/COMPLEX_GATE_PREDICTOR_PLAN.txt.
+Validation:124implementation cases,12CPU tests,four executed GPU tests,clean
+sanitizers and exact ungated-main replay. Preserve five strict AD misses;
+all-affine-FP32 diagnostic passes189/189 and is forbidden from training.
+Independent prelaunch audit passed105unrun cells. Reports/registration are in
+research/main_model/results/complex-gate-validation-final and complex-gate-suite-01.
+Complex multiplicative gate remains after this candidate, then the rotary
+retests and additional complex queue. Main/current.sh remain unchanged.
+The historical running notes below are superseded by this explicit user stop.
+
+USUAL GATE SHORT RESULT:75/75 independently audited passes,zero audit failures.
+Its geometric-mean candidate/main first99 epoch ratio is1.0812841662,8.1284%
+more epochs,with10earlier/22tied/43later. This misses the short epoch promotion
+gate. Continue its already-running frozen30long suite, stopping only for a
+verified lost pass or an execution/audit error; retain every regression.
+Report: research/main_model/results/gated-suite-01/report-short/REPORT.txt.
+Current main is unchanged. Both complex gate variants remain next in order.
+
+LATEST USER ORDER: gated attention before LeRoPE. Test the usual real gate,
+then both requested complex alternatives: complex-linear predictor with real
+sigmoid, then complex-valued multiplicative gate. Freeze separate definitions
+and registrations; apply the same105-cell no-lost-pass rule to each. Continue
+LeRoPE and Log-Scaled LeRoPE afterward. Current native preparation is
+research/main_model/gated_native; plan: GATED_ATTENTION_PLAN.txt.
+
+USUAL GATE BENCHMARK STARTED: runs/main-model-gated-01, launcher session52021,
+75short followed by30long if coverage holds. Independent prelaunch audit
+verified105unrun cells, source/binary/plan pins and unchanged data/recipe.
+Validation:124implementation cases,11CPU tests,four executed GPU tests and
+clean memory/synchronization sanitizers. Retain nine strict AD misses and
+the inherited numerical-main misses. No learning result or promotion yet.
+Evidence: research/main_model/results/gated-suite-01/registration.sha256 and
+research/main_model/results/gated-validation-final/REPORT.txt. Check the live
+session/status at completion or requested boundaries; no minute polling.
+
+USER-QUEUED COMPLEX RESEARCH: after the three gate variants and both rotary
+retests, test complex-pair AdamW with shared magnitude second moment, complex
+constrained residual routing, phase-sensitive attention scores, and regularized
+real/imaginary covariance normalization, separately and in that order. Preserve
+Peri/embedding/QK normalization and tied weights. Freeze exact mathematics,
+initialization, gradients, precision and control before each experiment.
+Keep the same75short/30long tests, budgets and no-lost-main-pass rule.
+
+CURRENT RESULT: gpu-opt-05 completed75/75short and30/30long, with zero
+independent audit failures and no lost main passes. Geometric-mean epochs
+improve1.7953% short/11.5413% long versus the previous mHC main. The standing
+user promotion rule is satisfied: complex-peri-rms-ordinary-mhc4-fp16tf32-v1
+is selected through main_model/current.sh. All105cells trained from original
+initialization; four hard cells also reproduce their earlier complete metric
+histories and final weight/moment bits, excluding timing. No prior passes were
+pooled. See research/main_model/results/gpu-suite-01/FINAL_RESULTS.txt and
+promotion/decision.json. Preserve every per-cell regression and numerical miss.
+
+CONTINUE THE ACTIVE GOAL: finish the three attention gate experiments, then
+LeRoPE and Log-Scaled LeRoPE, then the complex research queued above.
+Use the newly selected main's105audited
+cells as control, unchanged LR0.001 WSD, fixed datasets/seeds/budgets/observations
+and500-epoch buffered saves. Reject any lost main task/seed pass. Keep all
+normalization, tied weights, mHC and static precision choices. Rust/Kernite
+and native tools only; never execute Python. No subagents.
+
+CURRENT GPU OPTIMIZATION: user explicitly continues GPU work. Latest measured
+candidate gpu-opt-05 uses FP16 forward GEMM, TF32 backward GEMM and FP32
+accumulation/remaining math. Whole updates are 3.462x faster for quartic and
+6.062x for recall versus selected main (three alternating repetitions).
+This is not a time-to-99 or epoch claim. Placement changes are bit-exact to
+the numerical parent across 1869 primitive cases, complete-state replay and
+model-gradient diagnostics; sanitizer checks are clean. Keep the numerical
+parent's strict failures and 44.12% quartic seed1 epoch regression visible.
+The subsequent full105audit and promotion are recorded above. This completes
+the current GPU optimization stage; preserve its exact executable and evidence
+while continuing the queued epoch research in separate candidates.
+See research/main_model/results/gpu-opt-05 and NEXT_RUNTIME_PLAN.txt.
+
+Historical steering and intermediate results follow. The completed full-suite
+audit and selection above supersede their pending-status statements.
+
+LATEST CANDIDATES: tiled, warp-level tensor GEMM; FP16/BF16 forward and
+FP32/TF32 backward, with FP32 accumulation, master weights and optimizer states.
+Compile fixed combinations, measure conversion-inclusive whole updates, and
+retain all numerical and learning failures. The requested 5x/10x gains are
+targets, not results. See research/main_model/TENSOR_TILE_PLAN.txt. No dynamic
+precision selection. Keep optimization ahead of the rotary research queue.
+
+LATEST NUMERICAL DIRECTION: use FP32 or TF32; try avoiding FP64 GPU arithmetic.
+The separate fp32_native candidate converts every model/optimizer GPU module
+to FP32 and audits the generated PTX. TF32 tensor-core GEMM is the next separate
+candidate. Host scheduling and independent reference arithmetic may remain FP64.
+See research/main_model/FP32_PLAN.txt. Do not silently select the candidate;
+record strict-gradient misses and test difficult-task learning as requested.
+
+LATEST STEERING,2026-11-08: continue MORE optimization before rotary research.
+The user permits some precision loss when difficult-task learning is unharmed.
+Bit-identical replay is not required for a declared numerical candidate. Keep
+gradient/finite-value checks, quantify error and test the hardest tasks from
+initialization before advancing. Full promotion retains the no-lost-main-pass
+rule. Plan: research/main_model/MIXED_SINKHORN_PLAN.txt. Any type remains eligible
+in either direction; every precision choice is static, with no runtime fallback.
+
+LATEST EXPLICIT TYPE POLICY: ANY TYPE IS ELIGIBLE IN FORWARD OR BACKWARD.
+Do not impose a type restriction based on computation direction. FP16, BF16,
+TF32, FP32 and FP64 are examples, not an exhaustive whitelist. A type becomes
+eligible for a particular operation when its actual representation, rounding,
+range, accumulation and propagated-error conditions are proved sufficiently
+and the implemented kernel passes the required numerical/gradient checks.
+Choose the fastest validated FIXED precision per operation/specialization.
+NO dynamic precision selection, runtime precision guards, fallback branches,
+or retries. Use a fixed higher-precision implementation wherever a lower type
+cannot meet the requirements. Preserve current mHC normalization, tied weights,
+the LR0.001 recipe, and the strict no-lost-task/seed-pass promotion rule.
+Full plan: research/main_model/ADAPTIVE_PRECISION_PLAN.txt.
+
+CURRENT USER PRIORITY,2026-11-08: profile AND optimize the selected mHC PTX.
+Then use a normalization-aware "edge runner" precision policy, checked in Lean:
+any type in either direction, chosen offline for each fixed operation. Specify
+operand, product, partial-sum, final-accumulator and output types separately.
+Keep guarantees/tolerances, report every failed format and its failing case,
+and preserve scientific coverage. See
+research/main_model/ADAPTIVE_PRECISION_PLAN.txt and OPTIMIZATION_PLAN.txt.
+Seven new Lean error/normalization/cancellation statements pass. Packed Sinkhorn
+and attention-gradient placement pass120bit-exact comparisons, independent
+gradient stress and exact quartic/recall/depth checkpoint replay. Training
+dispatch is validated and selected by current.sh; numerical precision changes
+remain separate candidates. Evidence: main_model/results/mhc-opt-02/REPORT.txt.
+Static screens compare9fixed formats against an exact Rust dot/error oracle.
+The expanded4005case screen rejects direct compensated FP32 raw-normalizer dots:
+even finite RMS forward/backward controls can overflow their raw products.
+An exact integer-product construction is proved in Lean and passes1178603GPU
+pairs plus full-model checks, but its measured gain is under1%; do not select it.
+See static-precision-03,integer-product-01 and integer-model-01 under results.
+Continue static mixed Sinkhorn and other measured-hotspot optimizations before
+returning to the queued epoch research. No reduced-precision kernel is selected.
+
+LATEST EXPLICIT USER SELECTION,2026-11-08: mHC is now the main model.
+Use complex-peri-rms-ordinary-mhc4-v1, model.json benchmark_arm="mhc", with
+the user-selected LR0.001 WSD recipe. Both matched arms passed75/75short and
+30/30long; mHC used10.996% fewer short epochs and19.680% fewer long epochs.
+Epochs to99% determine selection, not runtime. The user explicitly supersedes
+the historical cross-recipe speed restriction for this promotion. Preserve
+the frozen gate/report; record the subsequent decision separately in
+research/main_model/results/mhc-wsd/user-promotion.json. Next candidates use
+mHC as parent/control and must preserve all105 task/seed passes. The current
+priority is the requested unchanged-mHC PTX profile, then continue the queued
+LeRoPE, Log-Scaled LeRoPE and gated-attention research. No Python.
+
+Earlier user steering and completed comparison,2026-11-08
+The user SKIPS LR0.003 and explicitly chooses LR0.001 for the fresh main/mHC
+benchmark. LR0.003 is stopped cleanly at96672updates/5088epochs,seed0; seeds1/2
+remain unrun. Do not resume it. Use research/main_model/MHC_WSD_PLAN.txt and
+wsd_suite_native for the fresh210-cell comparison. Native validation is complete:
+10CPU/5GPU tests,20gradient models/1308directions/29primitives and35-task data
+preflight pass; the independent auditor and promotion gate also pass all tests.
+The fresh comparison is COMPLETE in runs/main-model-mhc-wsd-01; launcher86604
+exited0. Both arms pass75/75short and30/30long; the independent210-cell audit
+has zero failures. Recipe: LR0.001,AdamW(.9,.95),wd.1,clip1,2%warmup/20%cosine.
+mHC uses10.996% fewer short epochs and19.680% fewer long epochs than fresh main
+(all75/30 paired geometric means). Both fresh recipes take more short epochs
+than the historical incumbent (main2.659x,mHC2.366x). The frozen promotion gate
+therefore retains the incumbent architecture; no model has been promoted.
+Exact105/105 main coverage is established under THIS LR0.001 WSD recipe; keep
+the historical old-recipe quartic seed0 miss. Full evidence and all30 long
+epoch pairs: research/main_model/results/mhc-wsd/FINAL_RESULTS.txt and
+long-epochs.tsv. Continue the queued LeRoPE, Log-Scaled LeRoPE and gated-attention
+research at the user's LR0.001, preserving the strict no-lost-pass rule.
+LR0.001 completes3/3 at4506/2895/2848epochs; LR0.002 completes3/3; LR0.01
+completes2/3. All three completed studies have clean audits. The old requests
+to finish LR0.003 or resume the old mHC cohort are explicitly superseded.
+Finish the LR experiment first, then restart BOTH main and mHC from scratch on
+their full75short/30long suites with the same selected optimizer settings.
+If the candidate is better under the no-lost-pass epoch criterion, update the
+current model. Continue research after all this. See
+research/main_model/RESTART_AFTER_LR.txt. This supersedes resuming old cohort02;
+preserve its partial results/checkpoints as separate evidence. The changed old
+STOP prevents the LR launcher's obsolete resume step after its audit/comparison.
+
+Historical priority override,2026-11-08 (completed/superseded above)
+After the LR0.002 WSD run, the user explicitly requested LR0.01 on the same
+task/seeds with all other settings fixed. See research/main_model/WSD_LR01_PLAN.txt.
+LR0.002 completes3/3 at4899/4917/4774epochs; strict audit passes after exact
+JSON float parsing repairs an artifact-reader rounding discrepancy. Preserve
+all original training evidence. Resume mHC only after both LR diagnostics.
+LR0.01 is launched with the same generated PTX/data/init/sampler as LR0.002,
+after3CPU/4GPU checks. Its launcher compares audited results per seed, then
+resumes the exact paused mHC checkpoint and the original remaining long queue.
+The user explicitly forces a three-seed AdamW/WSD retest on the current main
+for (a+b)^4 mod97 only. User settings: beta1=.9,beta2=.95,weight decay=.1,
+warmup2% andcosine decay20% (2000 and20000 of100000 updates).
+Use research/main_model/WSD_PLAN.txt. The current mHC
+cohort is cleanly stopped at seed0/update66082/epoch3478; resume it unchanged
+after the new diagnostic, then continue the previously queued mechanisms.
+This is a known-task diagnostic, not a full-suite optimizer promotion.
+The final native cosine arm is launched in runs/main-model-quartic-wsd-01
+after3CPU/4GPU checks. run_wsd_then_resume.sh audits all3seed outcomes and
+automatically resumes the exact paused main/mHC checkpoint and remaining queue.
+
+User goal and mandatory promotion rule,2026-11-08 (original registration)
+Finish the current main-model/mHC experiments, then continue research for
+fewer epochs. Verify the exact current main model on all75short and30long
+runs first; its expected105/105coverage is not yet a measured result.
+Reject a candidate if ANY task/seed that the current main passes fails within
+the same fixed budget. Preserve that regression and move to the next
+experiment. Aggregate epoch improvements cannot compensate for a lost pass.
+The current210-cell comparison remains frozen and will finish as declared.
+Full rule: research/main_model/RESEARCH_RULES.txt. Use Rust/Kernite only.
+
+Queued user-requested retests,2026-11-08
+After the current main/mHC comparison, retest LeRoPE and Log-Scaled LeRoPE on
+the current ordinary-attention/plain-complex-product main model. The queue is
+research/main_model/queue.json. Keep SSMax and Q/K normalization, use the same
+75-short/30-long protocol and reject any candidate losing a verified main pass.
+Port and validate the old rotary definitions natively; historical architecture
+results cannot substitute for these retests. Wait for current results before
+new implementation or model analysis.
+Then test the additionally requested gated attention: learned head-specific
+element-wise sigmoid on each attention head's output before output projection.
+Keep the current SSMax/QK/RoPE main control and apply the same strict coverage
+rule. Gate implementation details must be frozen and natively validated first.
+
 Objective
 Find a model-internal or optimizer change that reduces the number of training
 epochs before the first observed 99% exact held-out accuracy on the SHORT suite.
@@ -16,6 +554,19 @@ at2648epochs; its exact full75/30-suite coverage remains pending. This user
 selection establishes the main research model without rewriting frozen control
 results or claiming universal convergence. Future experiments start from this
 model unless an explicitly declared comparison requires a historical variant.
+
+Current authorized comparison,2026-11-08
+Add four-stream mHC to that main model, following Transformer.MHC.PeriRMS in
+lean_projects/transformer, and retest BOTH the exact current main model and
+the candidate on all75short and30long cells each. Report epochs to first99
+for every long task/seed, including update counts and budget misses. The
+frozen plan is research/main_model/MHC_PLAN.txt; code is Rust/Kernite only.
+Run main-model-mhc-02 has210declared cells and uses a frozen executable.
+The initial all-log-Sinkhorn cohort01 was explicitly stopped before any long
+cells for an equivalent kernel optimization; preserve it without mixing runs.
+The final kernel passes1308full-model parameter directions and29primitive
+stress cases. Existing Lean proofs bound forward growth,not convergence.
+See research/main_model/STATUS.txt and results/ for execution and audit state.
 
 Shared-model objective: latest user clarification
 Build one architecture for both small and large tasks, rather than switching

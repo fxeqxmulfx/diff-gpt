@@ -1,0 +1,29 @@
+[package]
+name = "main-axial-native"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+bf16-forward = []
+tf32-backward = []
+fused-attention = []
+tiled-transpose = []
+fp32-affine-reference = []
+
+[workspace.metadata.kernite]
+name = "wsd_native"
+
+[dependencies]
+diffgpt-axial-data-native = { path = "../diffgpt_data_native" }
+diffgpt-mash-native = { path = "../mash_native" }
+kernite-cuda = { path = "/home/misha/rust_projects/kgen/crates/cuda" }
+kernite-macros = { path = "/home/misha/rust_projects/kgen/crates/macros" }
+serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+sha2 = "=0.11.1"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

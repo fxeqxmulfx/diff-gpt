@@ -1,0 +1,81 @@
+Complex-linear predictor with real sigmoid attention gate, 2026-11-08
+
+The user requested both complex gate variants after the usual real gate, then
+explicitly requested "next in queue" after the usual gate's audited short
+epoch ratio1.0812841662163595. That cohort was stopped cleanly and remains
+separate evidence:75short passes,6long passes,one stopped run,23unrun long.
+This candidate changes the gate predictor to a complex-linear map; it does
+not use a complex-valued multiplicative gate (that is the following candidate).
+
+Control: selected complex-peri-rms-ordinary-mhc4-fp16tf32-v1, independently
+audited105/105 in results/gpu-suite-01/final-audit.json. Use its exact original
+task/seed epochs and initializations. Do not pool the usual gate's results.
+
+Fixed mathematics:
+  z = existing normalized mHC attention read, viewed as D/2 complex features
+  ell = (A + i B) z
+  gated_a_real = sigmoid(real(ell)) * a_real
+  gated_a_imag = sigmoid(imag(ell)) * a_imag
+  branch = RMS(W_O * concatenate_heads(gated_a))
+Here a is the existing ordinary causal SSMax attention-weighted value sum.
+Each head stores its first d/2 real coordinates followed by d/2 imaginary
+coordinates, exactly as existing complex projections and RoPE. The predictor
+mixes all input heads; each output head retains separate elementwise real
+sigmoid gates. No bias, new norm, doubled gate, or change to attention scores.
+The complex-linear predictor commutes with a common phase rotation. The full
+componentwise sigmoid gate is not phase-equivariant or holomorphic; do not
+claim those properties for the whole attention block.
+
+Store each layer's predictor as the real expansion [[A,-B],[B,A]], respecting
+the per-head grouping. It has D*D stored real entries but D*D/2 independent
+real parameters. Initialize all independent A/B entries to positive zero,
+with exact signed duplicates (-B is negative zero). No RNG draws. Preserve
+all original embedding/projection/router bits. Initial sigmoid values are0.5
+without compensation. Finite branch-RMS epsilon prevents a claim of exact
+initial output equivalence to ungated main. Capacity differs from both main
+and the usual real gate; report independent and stored counts separately.
+
+Contract matrix gradients in independent coordinates before global clip1:
+  dA = G_real,real + G_imag,imag
+  dB = G_imag,real - G_real,imag
+Count each independent coordinate once, with all existing parameters. Use
+the existing real-coordinate AdamW(.9,.95),wd.1,epsilon1e-8,LR.001 WSD,
+2%warmup/20%cosine decay to1e-8 over unchanged budgets. Real and imaginary
+coordinates retain separate second moments in this experiment; the queued
+complex optimizer is a different experiment. Reconstruct weights, first
+moments and sign-free second-moment duplicates exactly after every update.
+Existing real mHC router coordinates keep their original ownership/order.
+
+All new gate affine operations use fixed FP32; original model affines keep
+FP16 forward/TF32 backward with FP32 accumulators. Keep the validated factored
+sigmoid products/adjoints and their unchanged tolerances. No dynamic type
+fallback or GPU FP64. The optional all-affine-FP32 diagnostic cannot train;
+use it only to classify strict numerical misses, retaining every failed check.
+
+Preserve standard RoPE, ordinary inverse-width SSMax, Q/K RMS, parameter-free
+Peri/embedding/final RMS, tied embedding/readout, complex-linear original
+projections, plain complex product, four-stream mHC and post-RMS residual scale.
+
+Before training, validate the predictor against direct scalar complex
+multiplication, common-phase rotation, all independent A/B gradients and
+input adjoints, independent-coordinate clipped AdamW, signed parameter/moment
+ties, zero initialization and unchanged common parameter bits. Test every
+head/layer, saturation and small/large gates, scalar AD in constrained
+directions, gradient reset, causal/prefix invariance, maximum shapes, checkpoint
+continuation, original control replay, sanitizers and PTX types. Archive source,
+binary, kernel and data provenance before the independent registration audit.
+
+Freeze a separate105-cell cohort:75short first in original suite/seed order,
+then30long as the regression check. Preserve all data/seeds/samplers/budgets,
+held-out selection/observations and buffered500-epoch saves plus init/first99/
+budget/STOP. No concurrent GPU training or minute polling. Reject at the first
+verified lost main pass; retain it and label remaining cells unrun. An execution
+error or explicit user stop is not a budget failure and cannot be silently
+retried. A later explicit user instruction can end the cohort early; preserve
+its partial coverage and do not claim a complete result.
+
+Promotion requires105/105 verified passes and full short-suite geometric-mean
+first99 epoch ratio below1 versus selected main. Report all per-cell regressions
+and long epochs; no solved-subset aggregate or throughput-based promotion.
+Afterward, continue the separately registered complex multiplicative gate,
+then both rotary retests and the remaining user-requested complex queue.

@@ -1,0 +1,61 @@
+Fresh paired main/mHC restart with user-selected LR0.001,2026-11-08
+
+The user explicitly requests restarting BOTH full suites after the LR diagnostic,
+skips LR0.003, and selects peak LR0.001. Preserve old cohort02 as separate partial
+evidence; do not resume it or reuse its learned weights/moments. LR0.003 is
+stopped cleanly at96672updates and is excluded from recipe selection.
+
+Run75short and30long cells PER ARM,210total, with seeds0,1,2. All task definitions,
+data fingerprints,splits,dimensions,batches,update budgets,observation cadence,
+autoregressive exact scoring and first99 stopping remain the frozen
+research/complex_geometry_suite/suite.json protocol. Report every long task/seed's
+first99 epochs,updates,observation interval or budget miss. Run the complete
+declared comparison, retaining every failure; no extra seeds or budget changes.
+
+Model architectures and initializations are exactly those in MHC_PLAN.txt and
+the shared current native Engine/layout: ordinary causal inverse-width SSMax,
+Q/K RMS,plain complex product,standard RoPE,tied embedding/readout,parameter-free
+Peri/embedding/final RMS and residual scale1/sqrt(2L) after branch output RMS.
+No XSA or centering. The mHC arm adds the validated four-stream dynamic routing,
+twenty Sinkhorn cycles,FP64 read mixtures/adjoints and post-RMS residual scaling.
+Base initial parameters and sample order are identical between arms. All mHC
+router initializations remain unchanged, using their separate seed+20000 RNG.
+
+Shared optimizer recipe: coordinate AdamW,peak LR0.001,betas(.9,.95),epsilon1e-8,
+weight decay.1. Contract complex matrix gradients before one global independent-
+coordinate L2 clip at1. Include every raw embedding and mHC router coordinate
+exactly once in that norm and in AdamW; retain all complex matrix moment ties.
+The GPU update kernels are the identical kernels validated in the LR0.001 study.
+Extend only the coordinate map to include mHC's unconstrained real parameters.
+
+Each cell uses2% linear warmup,78% stable peak,20% cosine decay to1e-8, relative
+to its ORIGINAL fixed update budget B. B is20000,30000 or100000, so warmup is
+400,600 or2000updates and cooldown is4000,6000 or20000updates. Zero-based t:
+LR=.001*t/(.02B) during warmup; then.001 until t=.8B; then
+LR=1e-8+(.001-1e-8)*(1+cos(pi*(t-.8B)/(B-1-.8B)))/2.
+The zero-rate first update advances moments without moving weights. A partial
+run never rescales the schedule or receives extra exposure.
+
+Before scientific training: native data preflight for all35tasks; all budget
+schedule/JSON round-trip checks; complete independent-coordinate coverage;
+FP64 reference AdamW tests including routing-only gradients and clipping;
+both-arm checkpoint/resume and maximum-shape tests; match the original quartic
+LR0.001 update trajectory and checkpoint scores. Reuse immutable validated model
+kernels and their existing gradient/proof evidence; verify exact model/kernel
+provenance, then run the native model stress suite for the frozen new executable.
+The independent CPU auditor must verify data,sources,initialization,sampling,
+all optimizer settings/rates,state/moment ties,metrics,cadence and stopping.
+Use exact JSON float round trips; retain all engineering failures.
+
+Rust/Kernite only. Buffered observations and durable saves at initialization,
+every500epochs,first99,budget end or explicit clean STOP. Keep immutable source,
+PTX and executable hashes. Never replay an unclean execution window.
+
+After the complete comparison and independent audit, promotion is authorized
+only for verified fewer short-suite epochs without any lost fresh-main or
+already verified incumbent task/seed pass across short and long. Report old
+incumbent comparisons separately; do not pool their results into this cohort.
+Update the current model/default and evidence only when that gate passes.
+Continue queued LeRoPE,Log-Scaled LeRoPE,gated attention and further epoch research
+from the then-current verified incumbent. First99 does not imply sustained99%
+or universal convergence. No promotion is justified by the quartic LR study alone.

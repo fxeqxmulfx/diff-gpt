@@ -1,0 +1,99 @@
+Native transformer integration handoff, 2026-11-09
+
+The selected generic main and the requested 2D-only DiffGPT interface are in
+src/native_transformer. This is a separate Rust/Kernite workspace; the older
+Burn port is not replaced. The final research queue is closed. The remaining
+handoff action is the authorized commit, followed by stopping research.
+
+Interface and checkpoint policy
+DiffGpt creation and checkpoint loading accept only axial time x feature
+LeRoPE. Forecasting uses inference-only YaRN beyond the saved actual training
+time extent. Feature-axis frequencies remain unchanged. Generic Model retains
+1D LeRoPE and explicit context experiments. Existing 1D checkpoints are never
+silently reinterpreted. MASH, LGT and MASH-half are supported.
+
+Training uses FP16 forward affine operands, TF32 backward affine operands and
+FP32 accumulation, norms, master weights and moments. All 23 embedded PTX
+modules contain no GPU FP64 instructions. There is no dynamic precision fallback.
+CPU decoding uses binary64/exact rational references. Buffered checkpoint
+cadence is at least 500 actual training epochs, plus initialization, requested
+milestones, budget completion and explicit stop.
+
+Executed checks
+The following completed on the installed source, not just its earlier draft:
+  cargo fmt --manifest-path src/native_transformer/Cargo.toml --check
+  cargo test --offline --workspace --manifest-path src/native_transformer/Cargo.toml
+  cargo clippy --offline --workspace --manifest-path src/native_transformer/Cargo.toml --all-targets -- -D warnings
+  RUSTDOCFLAGS='-D warnings' cargo doc --offline --workspace --manifest-path src/native_transformer/Cargo.toml --no-deps
+  cargo clippy --offline --manifest-path research/main_model/production_check/Cargo.toml --all-targets -- -D warnings
+  cargo build --offline --release --manifest-path src/native_transformer/Cargo.toml
+  cargo build --offline --release --manifest-path research/main_model/production_check/Cargo.toml
+
+CPU result: 6 model/API and 12 codec tests passed; one CUDA-only unit test is
+ignored by the CPU command. The separate public-API CUDA checker passed for
+generic 1D, axial F1 and axial F2, including all three codecs, zero-LR weight
+preservation, exact save/load continuation, in-range YaRN identity, invalid
+target rejection, and enforcement of the DiffGPT positional/context policy.
+CUDA memcheck and synccheck each reported zero errors on that public-API smoke.
+No Python was executed.
+
+The checker also imported the trained (a+b)^4 mod 97 seed-1 main checkpoint
+and reproduced the next 100 optimizer updates exactly, including a save/load
+after update 50. Initial held-out accuracy matched, and the original checkpoint
+was unchanged. Expected and actual final raw weights/moments SHA256:
+6e719c31b89f1d01c6ec5c919b063c79d947a84a073335590c9f1784292886dc
+This is an integration replay, not a new scientific training comparison.
+
+Local executed evidence is under research/main_model/results/production-integration-01:
+  api/api.json, api/replay.json, memcheck.log, synccheck.log
+  tests.log, format.log, clippy.log, docs.log, checker-clippy.log
+  build-info.json, binaries.sha256, source.sha256, source-final.sha256
+The first source manifest records the executed source before final documentation
+edits and removal of one extra blank line in codec/Cargo.toml. The original
+README and codec manifest are retained beside it. The final manifest records
+the handoff source. No Rust code changed between those manifests. Raw result
+artifacts are intentionally ignored.
+
+Validated dependency: sibling rust_projects/kgen at
+a1b6bc2c956e1a5f35960e26b209e1b6c213096c, Rust 1.99.1, RTX 3050 Laptop SM86.
+Native executable SHA256:
+c0c30209980a2c0b48d5da9258d5aa6f80add276a45f7c8f70ba2f178243f746
+Public-API checker executable SHA256:
+688bfbce496e75f0febf33913013188ecc3982fc651b32d507ffe77f3297aafe
+Embedded PTX bundle SHA256:
+fcd8051927bcccada61ce8f3eb8c22af42f779898d427657f05b0d104b4bf417
+
+Learning results and limits
+The selected generic main retained 75/75 short and 30/30 long passes. Versus
+its phase-mHC parent, geometric-mean short epochs decreased 1.0718% and long
+epochs increased 0.9485%; all 19 individual regressions remain recorded.
+The final axial 2D candidate also retained 105/105, but short epochs increased
+2.6083% and long epochs increased 8.9977% versus the selected main. It was not
+promoted; all 24 individual regressions remain recorded.
+
+The separate DiffGPT experiment completed and independently audited all 36
+registered runs: three encoders, one/two features, three seeds, and 1D/2D.
+Every run exhausted 5000 updates without reaching 90% decoded whole-row
+accuracy. Best 2D endpoint: 89.328231%, MASH-half, F1, seed 17. F2 results
+were poor, and longer-context results do not establish useful extrapolation.
+No first90 epoch ratio exists. The 2D-only interface is a user preference,
+not a claim that these learning failures were solved. Detailed final pairs:
+  research/main_model/results/diffgpt-axial-suite-01/report-final/paired-epochs.tsv
+  research/main_model/results/diffgpt-axial-suite-01/report-final/extrapolation.tsv
+  research/main_model/results/axial-suite-01/report-final/paired-epochs.tsv
+
+Main numerical limits remain: 147 strict mixed-precision AD misses (including
+6 score directions); the fixed FP32 diagnostic passed all 26 score directions
+and retained 24 near-zero router misses. Earlier extreme-state, scalar-AD,
+optimizer-reference and rotary misses remain in model.json and historical
+reports. Finite tests and local exact-real Lean statements are not universal
+floating-point, full-Jacobian or convergence guarantees.
+
+The existing root Burn workspace baseline has two failing port_map tests:
+frozen-reference/script policy violations and a missing map entry for
+src/diff_gpt/interfaces/grokking/plans/mqar_div97_n2_hybrid.json. These failure
+categories existed before integration. The new research shell/JQ scripts also
+conflict with that harness's repository-wide script ban once tracked. The
+baseline, root manifests, port rules and map were preserved; no claim is made
+that the root workspace is green. Its recorded log is
+research/main_model/results/production-workspace-baseline-01/tests.log.

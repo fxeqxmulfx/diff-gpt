@@ -1,0 +1,46 @@
+Axial2DLeRoPE+YaRN, fixed-suite regression candidate,2026-11-09
+Preparation only; execute after covariance and the1DYaRN checkpoint study.
+
+Use the then-selected main as the exact control. Candidate changes positional
+axes only during training and applies the paper's inference-only YaRN rule
+at held-out evaluation. See LEROPE_YARN_PLAN.txt for every frequency/temperature
+formula and DIFFGPT_AXIAL_PLAN.txt for the additional three-encoder study.
+
+Each REAL head width d allocates m=d/4 complex pairs to time and m to feature.
+Each axis uses base_j=10000^(-j/m),zero-initialized log multipliers,shared across
+layers/heads,unchanged frequency-groupclip1/wd0. Total frequency count staysd/2.
+The original35unstructured benchmark datasets each haveF1:time is tokenposition,
+featurecoordinate is0. Half their frequency coordinates therefore have zero
+training derivative. This is an intentional capacity allocation,not an identity
+with the1Dcontrol; do not hide inactive parameters or claim a2Dfeature benefit.
+
+Retain selected Peri/embedding/final/QK normalization,complex product,complex
+linear projections,squared-imaginary SSMax,phase-conjugated4streammHC,residual
+scaling after normalization,tied embedding and staticFP16/TF32/FP32 placement.
+Fresh weights are bit-matched to the control for every task/seed,with no new
+parameters and no additional RNG draws. No optimizer change:LR.001 AdamW/WSD,
+beta(.9,.95),wd.1,clip1,2%warmup,20%cosine to1e-8;frequencies separateclip1/wd0.
+
+Retain the fixed75short/30long cells, original data/sampler/init/budgets and
+first99 observation schedule. Derive actual training extent from maximum input
+length in the train split. Training never applies YaRN. Evaluation groups equal
+document lengths,scales only time frequencies,then multiplies the complete real
+score by(1+.1ln(max(1,Ldoc/Ltrain)))^2. Generation fixes prompt+limit-1 capacity
+for the complete rollout,independent of predictions/answer values. Clear the
+inference mode before the next training forward; backward and optimizer calls
+on an inference graph are rejected,even after its configuration is cleared.
+
+Freeze a separate native executable/source/PTX/experiment after the shared
+rotary/temperature/axis-gradient checks,clean sanitizers,exact control replay,
+checkpoint continuation and maximum-shape checks. An independent auditor must
+check every observation,parameter/source/data pin and claimed first99 bracket.
+Reject at the first verified lost selected-main task/seed pass at its original
+budget; retain the failure and mark later fixed-suite cells unrun. No retry,
+extended budget,pooled pass or changed metric. Report all paired epochs and
+regressions. Promotion requires105retained passes and lower short geometric-mean
+epochs,with long epochs fully reported. Numerical limitations stay explicit.
+
+The additional DiffGPT experiment still reports MASH,LGT,MASH-half separately,
+including the genuine2feature task and contexts2/4/8. It cannot erase a fixed
+suite regression or authorize promotion of a rejected candidate. Finish the
+requested tail,integrate the selected model into src,verify,commit and stop.

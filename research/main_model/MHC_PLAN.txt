@@ -1,0 +1,73 @@
+mHC paired comparison, declared before training, 2026-11-08
+
+Question: does four-stream dynamic manifold-constrained routing improve the
+current complex-peri-rms-ordinary-v1 main model on the frozen short/long suites?
+
+Two arms: main (current exact mathematical model), mhc (only residual routing
+changed). Both use ordinary causal inverse-width SSMax, Q/K RMS, standard RoPE,
+plain complex-product FFN, tied raw embedding/readout, parameter-free Peri-RMS
+and embedding/final RMS. No XSA, centering, radial sigmoid, or LR search.
+
+mHC follows arXiv:2512.24880v2 section 4.2 and the local native Lean adaptation
+Transformer.MHC.PeriRMS: four copied embedding streams; separate dynamic router
+for attention and FFN; flattened 4D RMS; projections to 4 read, 4 write and 16
+skip logits; learned scales and static biases; sigmoid reads, twice-sigmoid
+writes, twenty column-then-row Sinkhorn cycles; unweighted final stream mean.
+The existing 1/sqrt(2L) branch coefficient is after branch RMS, before writing.
+Router RMS epsilon is the main model's 2^-23. Sinkhorn uses log space and FP64
+normalization/recomputed adjoints, without denominator epsilon. FP32 storage
+remains; no claim of exact floating-point double stochasticity.
+
+Initialization: base model parameters are bit-identical between arms, with the
+original native seed. Additional router projections use a separate seed+20000
+native Random Gaussian(0,.02); all three dynamic scales start at .01 as in the
+paper. Read/write biases start at zero, skip biases at 2I (identity preference).
+The paper does not prescribe these projection/bias details; this is one explicit
+adaptation, frozen here. All added parameters train with the existing AdamW,
+including its decay. Real router projections are unconstrained; the existing
+complex projection ties are unchanged. Added parameters: 2L*(96D+27).
+
+Freeze research/complex_geometry_suite/suite.json, its task generators,
+fingerprints, splits, metric definitions (including autoregressive exact
+sequence scoring), seeds 0/1/2, dimensions, training batches, update budgets,
+observation intervals, LR2, warmup50, decay, and first99 stopping. Short: 25x3
+per arm; long: 10x3 per arm. Total 210 cells. Run all declared cells even if an
+arm has misses; no extra seeds or changes based on long results. Report paired
+first99 epochs/updates, miss counts, and all execution failures. Runtime is
+secondary and not a controlled speed benchmark.
+
+Validation before scientific runs: native data fingerprint preflight;
+independent scalar FP64 forward-mode AD for all parameter groups; router
+forward/backward stress including zero/saturated logits and tiny/large stream
+values; finite Sinkhorn row/column residuals; paired base initialization;
+checkpoint/resume consistency; main-control regression. No Python. Preserve
+failed engineering attempts with their source hashes. Check existing Lean
+proofs natively and record scope: exact-real forward bounds, not nonlinear
+Jacobian bounds or training guarantees. Existing CurrentModel Lean docstrings
+mention the older XSA/SwiGLU, but these bounds quantify over arbitrary branches.
+
+I/O: observations buffered in memory; full durable p/m/v checkpoint at epoch0,
+every500epochs, first99/budget/explicit STOP. Retain sources/PTX/data hashes and
+execution windows; never silently replay an unclean cell. GPU cells sequential.
+Evaluation chunk sizes may be lowered equally for both arms for device memory;
+training batches and all evaluated examples remain frozen.
+
+Engineering precision repair before scientific runs: preserve the read mixture
+and its adjoint in FP64 across input RMS, and coefficient adjoints in FP64 across
+Sinkhorn. This avoids losing near-zero gradients when the initial streams are
+identical. Router RMS backward uses the existing stable tangent/radial formula.
+The mathematical architecture is unchanged. Failed stress attempts are retained
+in results/mhc-stress-01 (misaligned vector load) and -02 (rounding in near-zero
+routing derivatives); -03 passes all 1,308 model directions and 29 primitives.
+
+Kernel optimization before the long benchmark: the initial all-log-space
+implementation added substantial per-update overhead. Cohort main-model-mhc-01
+was explicitly stopped and retained, with no long cells run. The replacement
+cohort main-model-mhc-02 starts both arms afresh, with the same mathematical
+architecture and settings. Keep the first column/row cycle in log space, then
+perform the remaining 19 cycles by FP64 positive-space division. After a full
+cycle, row sums are one and column sums are at least1/4; each next normalization
+denominator stays between1/4 and4. The adjoint still differentiates all40
+normalizations, recomputing their probabilities. Recheck against the unchanged
+all-log-space scalar AD oracle, including extreme logits, before restarting.
+No short or long learning outcome is used to change model/optimizer settings.

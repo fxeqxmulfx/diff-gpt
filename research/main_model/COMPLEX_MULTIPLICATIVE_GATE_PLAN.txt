@@ -1,0 +1,83 @@
+Complex-valued multiplicative attention gate, 2026-11-08
+
+The user requested both complex gate alternatives, then explicitly requested
+"next experiment" after the complex-linear predictor with real sigmoid had
+75audited short passes but1.0738984051111777 times main's epochs. That cohort
+was stopped cleanly:75short passes,6long passes,one stopped quartic seed0,
+23unrun long. Preserve it; no resume or full105coverage claim.
+
+Control: selected complex-peri-rms-ordinary-mhc4-fp16tf32-v1 and its exact105
+audited cells in results/gpu-suite-01/final-audit.json. Do not pool either
+previous gate's passes into this candidate.
+
+Fixed new gate, independently for every complex attention feature:
+  z = existing normalized mHC attention read
+  u + i v = (A + i B) z
+  c = 1/sqrt(1+v^2), s = v/sqrt(1+v^2)
+  g = sigmoid(u) * (c + i s)
+  y = g * attention_value_sum
+  branch = RMS(W_O * concatenate_heads(y))
+The phase equals atan(v), in(-pi/2,pi/2). This explicit smooth bounded-phase
+map avoids trigonometric argument reduction. It is one registered candidate,
+not a claim that every complex gate or phase range is represented or optimal.
+No bias, compensation factor or alteration to the attention score.
+
+In exact real arithmetic c^2+s^2=1, so |g|=sigmoid(u)<1 and multiplication by
+this fixed gate cannot increase the norm of the complex attention pair.
+The amplitude derivative is at most1/4; the phase-coordinate derivative of
+g has magnitude sigmoid(u)/(1+v^2),at most1. Check the local algebra in Lean
+before training, with scope explicit: these are not floating-point exactness,
+whole-network Jacobian or convergence guarantees. The whole input-dependent
+gate is not claimed to be holomorphic or globally phase-equivariant.
+
+Keep the previous complex-linear predictor geometry: each head stores its
+real half then imaginary half; each layer mixes all input heads. Independent
+A/B matrices add L*D*D/2 real weights, stored in L*D*D entries with exact
+[[A,-B],[B,A]] ties in that layout. A/B initialize to positive zero with signed
+duplicates and no RNG draws. Then u=v=0,g=0.5+0i. All original parameter bits
+and optimizer-owner order are preserved. Report independent/stored capacity.
+
+Contract A/B gradients before the unchanged global independent-coordinate
+clip1 and AdamW(.9,.95),wd.1,epsilon1e-8,LR.001 WSD with2%warmup/20%cosine to
+1e-8 over original budgets. Real/imaginary moments remain separate. Preserve
+all parameter/moment ties. The queued complex optimizer is a separate change.
+
+Native gate arithmetic is fixed FP32. Compute(c,s) with scaling by
+max(1,abs(v)) to avoid squaring an unbounded phase logit. Retain factored
+sigmoid products and derivatives; do not multiply large values by an already
+rounded subnormal sigmoid or form c^2 before amplitude/adjoint compensation.
+Keep new gate affines FP32 and original model affines FP16 forward/TF32
+backward, with FP32 accumulation/remaining math/weights/moments. No dynamic
+precision fallback or GPU FP64. All-affine-FP32 is diagnostic only and its
+CLI must reject scientific training.
+
+Before training: independent FP64 complex-product and amplitude/phase/input
+adjoints; zero/small/large/saturated amplitudes and phase logits; varied head
+halves and launch tails; both signs and cancellation; norms within a declared
+floating tolerance; in-place adjoints and untouched canaries. Include large
+phase logits whose unscaled square overflows and whose squared reciprocal
+underflows although a compensated gradient is representable. Validate every
+predictor A/B coordinate, input adjoint, full-model constrained scalar-AD
+directions, causal/prefix invariance and gradient reset. Keep every failed
+check and unchanged tolerances across revisions. Classify strict mixed
+precision differences separately from implementation bugs. Run state/optimizer,
+maximum-shape, unchanged-main replay, sanitizer and no-GPU-FP64 checks.
+
+Preserve standard RoPE, ordinary inverse-width SSMax, Q/K RMS, parameter-free
+Peri/embedding/final RMS, tied embedding/readout, plain complex-product FFN,
+four-stream mHC and post-RMS residual scaling. Freeze separate source/PTX/
+binary/plan/data and independent-auditor registration before scientific runs.
+
+Run75short then30long in original task/seed order with unchanged datasets,
+samplers, budgets, selection metrics and observation cadence. Buffer saves
+every500epochs plus initialization/first99/budget/STOP. Reject at the first
+verified lost main task/seed pass, preserving failures and labeling later
+cells unrun. Execution errors and explicit user stops are not budget misses.
+No concurrent GPU experiments, silent retries or minute polling.
+
+Promotion requires all105passes and full short geometric-mean first99 epoch
+ratio below1 versus main. Report every cell, including regressions, and long
+epochs; no solved-subset aggregate or throughput-based promotion. A later
+explicit user stop may end the cohort early without changing missing outcomes.
+After this candidate, continue LeRoPE, Log-Scaled LeRoPE and the additional
+complex optimizer/routing/score/normalization queue.

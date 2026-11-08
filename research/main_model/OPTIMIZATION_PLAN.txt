@@ -1,0 +1,35 @@
+User-requested profile and optimization of selected mHC PTX,2026-11-08
+
+Main is complex-peri-rms-ordinary-mhc4-v1 at LR0.001 WSD,105/105 audited.
+Optimize execution of this exact mathematical model. Epochs to99% remain the
+research selection objective; this is an engineering optimization, not a new
+architecture/optimizer candidate. Never alter or overwrite the closed cohort.
+
+Baseline native Nsight traces/counters: results/mhc-profile-01. Both trained
+checkpoints replay identically with and without tracing. Sinkhorn takes37.38%
+of kernel time on quartic and35.75% on recall. Recall query backward takes24.39%.
+FP64 pipeline activity is about89% in Sinkhorn and84% in recall query backward.
+These kernels duplicate or underuse warp lanes; optimize placement first.
+
+First change: each Sinkhorn warp handles TWO 4x4 matrices, one per half warp,
+instead of calculating one matrix twice. Keep original FP64 arithmetic/order,
+both first-cycle log-space normalizations,19 further cycles,40-step adjoint,
+sigmoid read/write gates,epsilons and all weights/optimizer settings unchanged.
+Check odd row counts and gate/matrix lane mapping. Keep original kernel source
+and executable, and use an isolated optimized_native fork.
+
+Validation before adoption: exact primitive outputs/adjoints versus original
+kernel over varied row counts and extreme inputs; existing independent scalar
+AD model/primitive suite; checkpoint training replay versus original for
+quartic, recall and depth shapes; finite state and unchanged complex ties.
+Prefer bit-identical full-state replay. Any discrepancy requires diagnosis and
+explicit evidence; do not loosen thresholds to obtain a pass. Profile only
+validated variants, with identical real batches, warmup and capture scopes.
+
+Further placement optimizations may target the measured query-gradient and
+Q/K-normalization-gradient hotspots. Each requires separate evidence and an
+unchanged mathematical model. Retain failed attempts. No FP64-to-FP32 reduction,
+fewer Sinkhorn cycles, changed schedule, altered update budget or data changes.
+Only adopt a variant after checks pass and its speed gain is measured. Preserve
+the frozen benchmark results, with optimized executable provenance separate.
+No Python, including reporting. Native Rust/Kernite, Nsight and SQLite only.

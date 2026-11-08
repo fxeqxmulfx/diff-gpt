@@ -1,0 +1,64 @@
+DiffGPT axial LeRoPE + YaRN: additional matched experiment,2026-11-09
+Preparation only; scientific training follows the covariance and1DYaRN stages.
+
+Compare selected-main1DLeRoPE against axial time x feature LeRoPE. Keep all
+other selected model components, initialization and parameter count unchanged.
+Use the axes,band allocation and inference extension in LEROPE_YARN_PLAN.txt.
+The ordinary105-cell regression study is separate: unstructured examples have
+one feature,so their axial candidate allocates half the bands to a zero feature
+coordinate. This is a real change,not an identity. Preserve the no-lost-pass
+rule and existing budgets. DiffGPT results cannot erase a regression there.
+
+Test all3encoders separately:MASH,LGT,MASH-half. Native version4codec source:
+mash_native. No Python execution. Reading the historical Fibonacci97 test
+provides its task definition,not a claim to reproduce its Torch RNG/model/
+ScheduleFreeAdamW history with our different selected model and WSD optimizer.
+
+Additional dataset:
+All9408nonzero(a,b)states of x[t+2]=(x[t]+x[t+1])mod97 form48cycles of196.
+Canonical cycles start from the smallest remaining state. Native Random(seed)
+shuffles48cycle IDs;24cycles train and24are held out,4704states each.
+Seeds11,17,23. This native split differs from Torch randperm; freeze its hashes.
+One-feature task uses each state once. Two-feature task pairs these same states
+with a native shuffled permutation from the SAME partition,seed+20000. Thus
+no feature's held-out trajectory appears in any training column,even shifted.
+Feature order is fixed; the second column is not a known duplicate of the first.
+
+Raw training windows have4rows,order1differences,2observed step rows and1future
+step row,V512,symmetric domain96 per feature. Encode each window from its own
+raw first-row prefix. Flatten row-major. Supervise only the future row; for2
+features teacher forcing includes its first token when predicting its second.
+Evaluation rolls out the entire future row from the observed prefix,retaining
+its own earlier prediction errors. No targets are fed into generated forecasts.
+ModelD128,H1,L1,selected complex FFN width342,tiedembedding and allnormalizers.
+Matched freshinitialization perseed,independent native replacement sampler
+Random(seed+10000),512examples/update,5000updates,observe every50updates.
+Use user-selectedAdamW/WSD:LR.001,beta(.9,.95),wd.1,clip1,warmup2%,cosine20%,
+floor1e-8;frequency groupclip1/wd0. This is not the old test's LR.03 optimizer.
+Do not expand5000updates if the current model fails. Report every failure.
+
+Primary additional metric:whole-row decoded accuracy,using argmax tokens and
+ties-to-even rounding,threshold90%as in the historical one-feature test.
+Report first-observed90%update/epoch bracket and final metrics for every
+encoder,feature count,seed and arm. Keep exact token accuracy as secondary.
+Report actual DiffGPT forecast re-anchoring separately:decode the predicted
+future row from the last observed raw row rather than the original window
+prefix. Never silently equate these two rounding frames.
+
+Also evaluate observed contexts4and8step rows at each run's final checkpoint,
+without parameter updates. For each length report native positions and YaRN
+separately. Trainingextent comes from the actual input length (2forF1;3time
+rows forF2because the second future feature is teacher-forced). Inference's
+declared extent covers its entire rollout:ceil((context*F+F-1)/F).
+YaRN uses time extent foraxial and tokenextent for1D; it is identity below
+the respective trainingextent. No arbitrary extension factor and no tuning
+against the held-out answers. This additional extrapolation metric is not
+the fixed105-cell promotion criterion.
+
+Data/decoder preparation must verify cycle disjointness/closure,all3encoder
+round trips,no clipping and decoded-argmax rounding against native decode.
+Freeze actual data/sampler/init/source/PTX/checkpoint provenance before training.
+Save buffered histories/checkpoints atinit,first90,budget/STOP,and every500
+epochs whenreached. Do not poll minute metrics or run concurrent GPU studies.
+After both positional studies and allrequestedDiffGPTencoders,integrate the
+selected validated code into src,verify,commit authored changes,and stop.

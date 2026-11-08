@@ -1,0 +1,131 @@
+Phase-conjugated mHC on the selected LeRoPE main, 2026-11-08
+
+Next requested candidate after complex-pair AdamW. The optimizer candidate
+passed105/105 but increased short/long epochs2.4349%/11.7655%,so it is rejected.
+Control remains complex-peri-rms-ordinary-mhc4-lerope-fp16tf32-v1,arm lerope,
+runs/main-model-lerope-01/lerope. Control audit:
+results/lerope-suite-01/final-audit.json,SHA256
+c6e33bb035d04d7d2e8e6c8ef8315c36f6453d675f0d06eafc4243a034ff541b.
+Control executable: results/rotary-validation-final/candidate,SHA256
+b6225c241fdd523acc0e96699ff0b8cfef851cd63d802449f7072a717b190889.
+Keep all completed or explicitly stopped cohorts closed.
+
+Isolated implementation: phase_mhc_native. Scientific arm phase-mhc-lerope,
+architecture complex-phase-mhc-lerope. Keep the selected ordinary real-coordinate
+AdamW/WSD,phase_optimizer=false. No shared complex variance,attention gate,
+log-position scaling,XSA,centering or unrelated model/optimizer changes.
+
+Exact candidate,declared before native validation or scientific training:
+For each of2L sublayers,keep the existing input-dependent real4x4 Sinkhorn
+matrix P(x),four sigmoid read gates and four twice-sigmoid write gates.
+Introduce three learned real coordinates a1,a2,a3; fix a0=0 without a parameter.
+Set u_j=(1+i*a_j)/sqrt(1+a_j^2),D=diag(u_0,u_1,u_2,u_3).
+Replace only the skip mixing P by C=D*P*D^*,namely
+  y_i = sum_j P_ij(x) * u_i * conjugate(u_j) * x_j
+        + depth_scale * write_i(x) * RMS(branch).
+The read vector,sum_j read_j(x)*x_j,and router features/projection remain
+unchanged. Each phase is shared across tokens,heads and complex channels in
+one sublayer. Different sublayers have independent coordinates. This is a
+learned phase rotation with phase atan(a),not a new data-dependent phase
+predictor. Fixing stream0 removes the common-phase redundancy. It changes
+singular directions and interference,not the singular values of fixed P.
+The hypothesis is improved use of phase differences between residual streams;
+there is no claim that the complex representation must improve learning.
+
+The complex channel layout remains the existing within-head real-half /
+imaginary-half layout. No real/imaginary component may cross a head boundary.
+The exact derivative du/da=(1/(1+a^2))*i*u determines all phase adjoints.
+For a skip edge z_ij=u_i*conjugate(u_j)*x_j,the derivative at phase l is
+  d z_ij / d a_l = (delta_il-delta_jl)/(1+a_l^2) * i*z_ij.
+Diagonal edge phase derivatives cancel exactly. Input adjoints use conjugate
+edge coefficients; P adjoints use the real inner product with z_ij. Preserve
+the independent derivatives of both read/write gates and P(x),including the
+full Sinkhorn,router projection and router RMS paths.
+
+Initialize every new coordinate to zero. Preserve all existing base/router
+draws and seed+20000 RNG consumption exactly. Append6L phase coordinates after
+the existing router parameters and before the learned LeRoPE frequencies.
+The frequency group moves by6L slots but retains identical values and semantics.
+The expanded and independent parameter counts both increase by6L. Shared
+existing initial parameters,complete common initial states and samplers must
+match control. Initial forward outputs and existing parameter/input gradients
+must match control exactly; test the new phase gradients independently and
+show a nonzero phase effect/gradient away from a symmetric degeneracy.
+
+The new real coordinates join the original base independent-coordinate global
+L2clip1,ordinary AdamW(.9,.95),wd.1 group. No new optimizer kernel or schedule.
+Frequencies retain their separate clip1,wd0 group. PeakLR.001,epsilon1e-8,
+2%warmup and20%cosine-to1e-8 on unchanged task budgets. Real routing coordinates
+have independent second moments; no complex-pair AdamW carryover.
+
+Precision is fixed: original FP16 forward/TF32 backward GEMMs with FP32
+accumulation; all new phase/routing kernels,weights,moments and reductions FP32.
+No GPUFP64 or runtime dtype fallback. Range-safe phase evaluation uses
+  m=max(1,abs(a)),r=1/m,t=a/m,k=1/sqrt(r*r+t*t),u=(r*k,t*k).
+Cache the four phases and the16 complex edge coefficients per sublayer/update.
+Use beta=real(u)^2 for the analytic phase derivative. Stream0 is exactly(1,0);
+diagonal edges are exactly(1,0). These are fixed algebraic choices,not dtype
+fallbacks. CPUFP64 is allowed only for independent references and host schedule.
+
+Before training, prove locally in Lean: normalization of the real phase map,
+unit phase action and inverse,energy preservation,inheritance/equivalence of
+fixed skip-map energy bounds,per-stream norm bound for nonnegative row-normalized
+P,and loss of ordinary constant-stream conservation by concrete counterexample.
+State the conserved phase-aligned mode when rows sum to one. Do not assert
+that20finite Sinkhorn cycles are exactly doubly stochastic,nor that skip bounds
+bound the full input-dependent block Jacobian. Floating-point phase coefficients
+are approximate; exact-real proofs are not FP32 or convergence proofs.
+Use concrete witnesses for conditional statements and report theorem axioms.
+
+Independent Rust/Kernite validation before freezing:
+- CPUFP64 forward,input/branch/P/phase adjoints with independent indexing;
+  widths64/128,heads1/4,rows1/3/5 and non-warp-aligned tails. Include zero,
+  tiny,unit,large and cancelling inputs; phase coordinates0,plus/minus1e-8,
+  .001,1,16,1e10,1e30 and asymmetric/random mixtures. Test positive normalized,
+  nearly singular,identity and permutation skip maps; distinguish the frozen
+  map oracle from the full router differentiation test.
+- Initial declared forward/input/branch/gate bounds:
+  2e-6+2e-5*max(abs(reference),abs(actual)). Phase-gradient bounds:
+  3e-6+2e-5*sum(abs(independent reference terms)). Report every miss without
+  changing these thresholds. Check unit-energy errors <=2e-6 for individual
+  phases and edges; measure finite-matrix norm amplification against the same
+  independent CPU reference,not an assumed exact contraction.
+- Finite differences for every independent phase and all affected read/write/
+  skip/router paths; include phase0 and nonzero phase states. Full-model strict
+  mixed-precision comparisons keep original thresholds and every miss. A fixed
+  all-affine-FP32 diagnostic may isolate quantization and must never train.
+- Verify exact zero-phase control forward/existing-gradient equality,unchanged
+  standard-RoPE mHC control replay,complete optimizer owner coverage and real
+  phase updates against an independent reference. Test changed-batch/length
+  checkpoint continuation,all frozen maximum shapes,tail canaries,memcheck,
+  synccheck and all-module no-GPUFP64 audit. Do not rerun unrelated tests.
+Keep inherited386strict scalar-AD misses,15337small optimizer-reference
+differences and five rotary frequency-AD misses visible; new checks do not
+erase them. Preserve failed preparation/validation attempts.
+
+Then freeze source,PTX,binary,plan,independent audit and data before any fresh
+scientific cell. Run75short then30long in the existing suite/seed order with
+unchanged35datasets,seeds0/1/2,samplers,budgets,held-out first99 metrics and
+observation cadence. Buffered saves every500epochs plus init/first99/budget/STOP.
+No competing GPU experiments,minute metric polling,silent retries,pooled passes
+or increased budgets. Stop on the first verified lost current-main task/seed
+pass; retain that failure and mark remaining cells unrun. Execution errors are
+distinct from budget misses. Otherwise complete both registered suites.
+Promotion requires all105main passes AND fewer geometric-mean short epochs.
+Report all paired epochs,regressions and30long rows; incomplete tiers have no
+full-tier mean. Runtime cannot qualify; first99 is not sustained99.
+After this experiment continue phase-sensitive attention scores and regularized
+real/imaginary covariance normalization,separately in that order.
+
+Numerical implementation amendment before training,2026-11-08:
+The original primitive screen retains188failed extreme-amplitude cases. The
+normalized-state supplement retains8strict gate-adjoint misses among1440cases,
+all the same cancellation-sensitive off-diagonal dot product at depth6,width128.
+Preserve both screens and all thresholds. Reassociate only the skip-gate adjoint
+using its channel-shared edge coefficients:
+  <dy,(c+i*s)x> = c*<dy,x> + s*<dy,i*x>.
+Compute the two FP32 dot products first,then combine once. The first dot keeps
+main's accumulation order,so zero phase c=1,s=0 must still match main exactly.
+No changed forward equation,optimizer,parameterization,dtype or dynamic fallback.
+Recheck the original and normalized screens and complete full-model gradients;
+retain failures of the earlier per-channel-rotation adjoint implementation.

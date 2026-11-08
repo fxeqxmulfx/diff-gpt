@@ -1,0 +1,73 @@
+Fixed-format reduction screening,2026-11-08
+
+All types are eligible in both directions. The initial screen studies eight
+fixed dot-product implementations before attempting whole-model replacement.
+It does not promote an architecture, change optimizer state, or claim that a
+reduction passing these samples certifies an entire operation over all inputs.
+The selected packed-warp main implementation stays unchanged during screening.
+
+Candidates,all with a fixed FP64 final accumulator/output
+0 FP64 products and partial sums, baseline.
+1 FP32 products and partial sums, original FP32 inputs.
+2 FP16 rounded inputs, FP32 products and partial sums.
+3 BF16 rounded inputs, FP32 products and partial sums.
+4 TF32 rounded inputs, FP32 products and partial sums.
+5 FP16 rounded inputs/products/partial sums.
+6 BF16 rounded inputs/products/partial sums.
+7 TF32 rounded inputs/products/partial sums.
+After the completed initial screen, the next frozen screen adds:
+8 Compensated FP32: FP32 product plus FMA product residual, TwoSum partial
+  addition with a second FP32 component, then FP64 combination. All components
+  and instructions are fixed; there is no runtime precision selection.
+Add bounded product cancellation (1+2^-13)*(1-2^-13)-1 to distinguish product
+rounding from addition rounding. Keep the initial927pairs and add these3cases;
+use a fresh output root/executable. Preserve all large-product overflow failures.
+This candidate requires an error bound for the actual compensated algorithm,
+including secondary-component rounding, before any whole-model adoption.
+FP16/BF16 conversions use nearest-even. TF32 uses the actual SM86-supported
+cvt.rna.tf32.f32 (nearest, ties away), declared separately. Narrow partial sums
+use explicit rounding of each FP32 arithmetic result; BF16 arithmetic is not
+misrepresented as native SM90 instructions on the SM86 GPU. This is a numerical
+screen, not a throughput comparison or tensor-core GEMM implementation.
+
+One warp handles one dot. Each lane first sums its strided entries (up to4),
+then a four-lane butterfly forms a low-precision block. Only then are block
+totals converted to FP64 and combined. Head widths16,32,128 are compiled.
+The format is a compile-time constant. No kernel chooses its type from runtime
+values, performs a precision check, retries or invokes a precision fallback.
+
+Input sets: deterministic normalized vectors, exact zero/signed-zero, bounded
+half/bfloat cancellation examples, tiny gradients, large products, and FP32
+subnormals; additionally actual normalized/rotated Q/K and Q/K-normalizer
+input/adjoint vectors from frozen trained mHC checkpoints. Use the exact next
+minibatch at the recorded sampler offset; no updates or new learning results.
+Both forward and backward budgets are tested on every vector pair, with no
+direction-based whitelist. Preserve all inputs, outputs and failed cases.
+
+Predeclared diagnostic budgets (necessary screen, not a full-model guarantee):
+forward |error| <= max(1,|exact dot|)/50000;
+backward |error| <= |exact dot|/2000 +1/10^12.
+These retain the existing nominal2e-5forward and5e-4backward relative scales
+with the existing1e-12gradient floor. Whole-model acceptance still requires
+the original independent AD tolerances, propagation bounds and frozen
+75short/30long no-lost-pass protocol if trajectories change.
+
+The reference sum of FP32 products is exact arbitrary-precision integer
+arithmetic in units2^-298; errors and the diagnostic-budget comparisons are
+exact rational/integer comparisons against the returned FP64 value. Floating
+decimal errors in reports are for display only. FP64 is tested too, not assumed
+to pass. The existing Lean blocked_sum_error theorem supplies the compositional
+contract; a precise final accumulator cannot repair lost partial-sum bits.
+Actual-format range/rounding and downstream propagation proofs are required
+before deployment, beyond this finite screen. Never loosen the budgets to pass.
+
+Rust/Kernite only. All dumps are buffered and written once per screen, with
+source/checkpoint/PTX/executable hashes. This is not per-epoch training I/O.
+
+Screen03adds3072permuted paired-product cancellation vectors with RMS<1 and
+3raw norm-backward dots with x=2^60 and zero-mean g=+/-2^80. In the latter,
+forward energy sums remain within FP32 range but individual x*g products do
+not. Validate actual current RMS forward/backward kernels against the analytic
+tangent derivative g/sqrt(x^2+epsilon). Preserve the original930pairs and all
+9variants. This tests whether normalized forward states suffice to justify
+FP32 raw-gradient products. No tolerance or format is selected at runtime.

@@ -1,0 +1,124 @@
+{
+  "id": "complex-peri-rms-squared-imaginary-phase-mhc4-lerope-fp16tf32-v1",
+  "status": "main_research_model",
+  "parent": "complex-peri-rms-ordinary-phase-mhc4-lerope-fp16tf32-v1",
+  "implementation": "research/main_model/phase_score_native/Cargo.toml",
+  "arm": "phase-score-lerope",
+  "cohort": "runs/main-model-phase-score-01",
+  "changed_component": "squared_imaginary_attention_score; phase_conjugated_residual_routing_unchanged",
+  "streams": 4,
+  "embedding_expansion": "four_identical_copies_after_embedding_RMS",
+  "routers_per_layer": 2,
+  "router_input": "parameter_free_RMS_of_flattened_4D_state",
+  "router_projection": "real_linear_4D_to_24_with_three_learned_scales_and_24_biases",
+  "read": "sigmoid_logits_without_sum_normalization",
+  "write": "twice_sigmoid_logits_times_depth_scaled_branch",
+  "skip": "D_P_Dstar_with_original_20_cycle_real_Sinkhorn_P",
+  "sinkhorn_denominator_epsilon": 0,
+  "depth_scale": "1/sqrt(2L)_after_branch_RMS",
+  "collapse": "unweighted_stream_mean_before_final_RMS_and_tied_readout",
+  "additional_parameters": "2L*(96D+27)+6L",
+  "additional_parameters_D128_L1": 24636,
+  "total_independent_parameters_D128_L1_V97": 135504,
+  "initialization": {
+    "base_weights": "bit_identical_to_ordinary_control_for_each_seed",
+    "router_random_seed": "model_seed+20000",
+    "router_projection_distribution": "Gaussian(0,0.02)",
+    "dynamic_scales": [
+      0.01,
+      0.01,
+      0.01
+    ],
+    "read_write_bias": 0,
+    "skip_bias": "2I",
+    "bias_and_projection_choices": "explicit_adaptation_not_specified_by_the_paper",
+    "phase_coordinates": "positive_zero_without_RNG_draws_after_router_parameters_before_score_coordinates",
+    "score_coordinates": "positive_zero_without_RNG_draws_after_phases_before_frequencies"
+  },
+  "precision": {
+    "parameters_and_moments": "FP32",
+    "base_activations": "FP32",
+    "read_mixture_and_adjoint": "FP32",
+    "coefficient_adjoint": "FP32",
+    "Sinkhorn_normalizations_and_adjoint": "FP32_with_two_word_offset_correction_in_first_log_cycle",
+    "stored_routing_gates_and_residual_streams": "FP32",
+    "router_forward_projection": "FP16_operands_FP32_accumulation",
+    "router_backward_projection": "TF32_operands_FP32_accumulation",
+    "phase_map_and_skip_and_adjoints": "fixed_FP32_range_safe_phase_evaluation_factored_skip_gate_dot"
+  },
+  "frozen_comparison": {
+    "control": "runs/main-model-phase-mhc-01/phase-mhc-lerope",
+    "candidate": "runs/main-model-phase-score-01/phase-score-lerope",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "short_per_model": 75,
+    "long_per_model": 30,
+    "primary_comparison": "epochs_to_first99_and_budget_misses"
+  },
+  "numerical_validation": "research/main_model/results/phase-score-validation-final/REPORT.txt",
+  "proof_scope": "research/main_model/proofs/README.txt",
+  "paper": "arXiv:2512.24880v2_section_4.2",
+  "additional_certificate": {
+    "path": "research/main_model/proofs/MHCNormalization.lean",
+    "claims": 4,
+    "denominator_bound": "[1/4,4]_after_first_cycle_in_exact_real_arithmetic",
+    "floating_point_guarantee": false
+  },
+  "selected_by": "standing_user_authorization_and_independent_epoch_coverage_gate",
+  "selected_on": "2026-11-08",
+  "historical_cohort": "runs/main-model-mhc-02",
+  "promotion": "research/main_model/results/phase-score-suite-01/promotion/decision.json",
+  "coverage": {
+    "short": 75,
+    "long": 30,
+    "audited": true,
+    "recipe": "LR0.001_AdamW_WSD"
+  },
+  "historical_frozen_comparison": {
+    "arms": [
+      "main",
+      "mhc"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "short_per_arm": 75,
+    "long_per_arm": 30,
+    "total_cells": 210,
+    "primary_comparison": "epochs_to_first99_and_budget_misses"
+  },
+  "strict_numerical_reference_checks_all_passed": false,
+  "historical_mhc_manifest": "research/main_model/results/phase-score-suite-01/promotion/mhc-before.json",
+  "additional_frequency_parameters_D128_H4": 16,
+  "underlying_real_skip": "first_compensated_FP32_log_space_column_row_cycle_then_19_FP32_positive_space_cycles",
+  "phase_routing": {
+    "map": "D P D*",
+    "phase": "u_j=(1+i*a_j)/sqrt(1+a_j*a_j)",
+    "fixed_stream0": "1+0i",
+    "real_parameters_per_sublayer": 3,
+    "initialization": 0,
+    "shared_across": [
+      "tokens",
+      "heads",
+      "complex_channels"
+    ],
+    "optimizer": "ordinary_real_coordinate_AdamW_base_clip1_wd0.1",
+    "read_write_maps_changed": false
+  },
+  "additional_phase_routing_parameters_D128_L1": 6,
+  "phase_routing_certificate": {
+    "path": "research/main_model/proofs/ComplexPhaseRouting.lean",
+    "claims": 10,
+    "scope": "exact_real_unit_phase_conjugation_preserves_frozen_P_energy_bounds_and_phase_aligned_mode",
+    "ordinary_constant_streams_preserved": false,
+    "finite_Sinkhorn_exact_double_stochasticity": false,
+    "full_nonlinear_Jacobian_bound": false,
+    "floating_point_guarantee": false
+  },
+  "additional_score_parameters_D128_H4_L1": 4
+}

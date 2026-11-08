@@ -1,0 +1,40 @@
+Latest user instruction,2026-11-08, supersedes the old resume-after-LR plan.
+
+LATEST: the user skips LR0.003 and explicitly selects LR0.001 for the fresh
+paired benchmark. LR0.003 is retained at its clean96672-update stop; do not
+finish/restart it. The fresh full comparison is declared in MHC_WSD_PLAN.txt.
+
+1. COMPLETED: LR0.002,0.01,0.001 quartic studies are independently audited;
+   LR0.003 is skipped by the user and retained at its clean stop. The user
+   explicitly selects LR0.001. Do not require or run a fourth completed study.
+2. COMPLETED: restarted BOTH main and mHC from their prescribed fresh initializations,
+   on all75 short and30 long cells per arm. Use the same selected optimizer
+   settings for both arms, with fixed datasets,seeds,budgets and first99 metric.
+   The complete restart plan and native validation are now frozen. The fresh
+   comparison finished in runs/main-model-mhc-wsd-01 via run_mhc_wsd.sh,
+   launcher86604 exited0. Both arms pass75/75short and30/30long; the complete
+   independent audit has zero failures. See results/mhc-wsd/FINAL_RESULTS.txt.
+3. Preserve runs/main-model-mhc-02 unchanged as historical partial evidence,
+   including its main quartic seed0 miss and stopped mHC checkpoint. Never pool
+   its metrics with the fresh cohort. Changing its STOP text now prevents the
+   running LR launcher's old automatic-resume step from passing its hash check.
+   The LR training/audit/comparison still run to completion before that check.
+4. The user explicitly authorizes updating the current model if the new model
+   is better. Require a verified epoch improvement and no lost task/seed pass
+   against the fresh main control or any already verified incumbent pass.
+   Complete the full declared suites and independent audit before promotion;
+   a single quartic LR diagnostic does not establish full-suite superiority.
+   Update the current model manifest/default and evidence when this gate passes.
+   FINAL: mHC uses10.996%/19.680% fewer short/long epochs than fresh main, but
+   takes2.366x historical-main short epochs. The frozen promotion gate selects
+   the incumbent. Record the new coverage without promoting the architecture.
+5. Continue research after the comparison and any justified promotion. Keep the
+   queued LeRoPE,Log-Scaled LeRoPE and gated-attention experiments, using the then
+   current verified incumbent as their parent. Continue the strict no-lost-pass
+   rule and short-suite epoch objective, with long tasks as a regression check.
+
+Rust/Kernite only; never execute Python. Keep Peri/embedding normalization,
+tied embedding/readout,Q/K normalization and buffered500-epoch saves. This
+restart is explicitly requested; it is not a claim that the old210-cell cohort
+finished. The overall research goal remains active after the LR study and
+after the restarted benchmark.

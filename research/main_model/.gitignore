@@ -1,0 +1,10 @@
+# Rebuildable experiment evidence, binaries, profiles, checkpoints and source captures.
+/results/
+# Alternate Cargo build directories used by static-precision diagnostics.
+target-*/
+# Locally regenerated Lean build logs, axiom inventories and verification hashes.
+/proofs/mhc-*.txt
+/proofs/mhc-*.sha256
+/proofs/mhc-local-validation.json
+# PTX/Kernite outputs may be committed explicitly under the root AGENTS.md exception.
+# Historical audit builds can require their locally regenerated evidence.

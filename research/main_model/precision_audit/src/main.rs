@@ -1,0 +1,616 @@
+//! Independent CPU audit of the four declared FP32 hard cells.
+//! Geometry, sampler, metric, history and checkpoint checks are copied unchanged
+//! from wsd_suite_audit; the cohort gate explicitly accepts this precision fork.
+#[path = "../../../complex_geometry_suite/native/src/random.rs"]
+#[expect(
+    dead_code,
+    reason = "Frozen RNG also exposes methods used only by data generation"
+)]
+mod random;
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::Path,
+};
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+#[path = "../../fp32_native/src/sources.rs"]
+mod candidate_sources;
+fn hash(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
+        .iter()
+        .map(|x| format!("{x:02x}"))
+        .collect()
+}
+fn read(path: &Path) -> Result<Value> {
+    Ok(serde_json::from_slice(&fs::read(path)?)?)
+}
+fn number(v: &Value, k: &str) -> Result<usize> {
+    Ok(v[k].as_u64().ok_or_else(|| format!("missing {k}"))? as usize)
+}
+fn require(ok: bool, message: &str) -> Result<()> {
+    if ok {
+        Ok(())
+    } else {
+        Err(message.to_owned().into())
+    }
+}
+fn archive_hash(root: &Path) -> Result<String> {
+    let mut source = Vec::new();
+    let base = root.join("source");
+    for &(name, _) in candidate_sources::FILES {
+        let body = fs::read(base.join(name))?;
+        source.extend((name.len() as u64).to_le_bytes());
+        source.extend(name.as_bytes());
+        source.extend((body.len() as u64).to_le_bytes());
+        source.extend(body);
+    }
+    Ok(hash(&source))
+}
+
+fn run() -> Result<()> {
+    let args: Vec<_> = std::env::args().collect();
+    require(
+        args.len() == 3,
+        "usage: main-model-precision-audit RUN_ROOT OUTPUT.json",
+    )?;
+    let root = Path::new(&args[1]);
+    let output = Path::new(&args[2]);
+    require(!output.exists(), "refusing to replace an audit")?;
+    let manifest: Value =
+        serde_json::from_str(include_str!("../../../complex_geometry_suite/suite.json"))?;
+    let validated: Value = serde_json::from_str(include_str!(
+        "../../results/mhc-fp32-02/final-ptx/report.json"
+    ))?;
+    let source = read(&root.join("protocol.json"))?;
+    let plan = read(&root.join("screen.json"))?;
+    let declared = json!([
+        {"task":"arithmetic-sum-pow4","seed":1,"tier":"long"},
+        {"task":"arithmetic-sum-pow4","seed":0,"tier":"long"},
+        {"task":"basis-depth-hard","seed":0,"tier":"short"},
+        {"task":"basis-parity24","seed":0,"tier":"long"}
+    ]);
+    require(
+        plan["cells"] == declared && plan["full_suite_promotion"] == false,
+        "declared four-cell scope changed",
+    )?;
+    require(
+        source["source_sha256"] == archive_hash(root)?
+            && source["source_sha256"] == validated["source_sha256"]
+            && source["ptx_sha256"] == validated["ptx_sha256"]
+            && validated["passed"] == true,
+        "source/PTX provenance mismatch",
+    )?;
+    require(
+        source["suite_sha256"]
+            == hash(include_bytes!("../../../complex_geometry_suite/suite.json"))
+            && source["plan_sha256"] == hash(include_bytes!("../../MHC_WSD_PLAN.txt"))
+            && source["peak_lr"] == json!(0.001)
+            && source["betas"] == json!([0.9, 0.95])
+            && source["warmup_fraction"] == json!(0.02)
+            && source["cosine_decay_fraction"] == json!(0.2)
+            && source["weight_decay"] == json!(0.1)
+            && source["global_independent_gradient_clip"] == 1,
+        "frozen suite or recipe changed",
+    )?;
+    require(
+        hash(&fs::read(root.join("fp32-transformer"))?)
+            == hash(include_bytes!("../../results/mhc-fp32-02/fp32-transformer")),
+        "training executable changed",
+    )?;
+    let data = read(&root.join("data-validation.json"))?;
+    require(
+        data["suite_sha256"] == source["suite_sha256"],
+        "dataset suite changed",
+    )?;
+    let mut rows = Vec::new();
+    let mut failures = Vec::new();
+    let mut cache = BTreeMap::new();
+    for cell in declared.as_array().unwrap() {
+        let name = cell["task"].as_str().unwrap();
+        let seed = number(cell, "seed")? as u32;
+        let task = manifest["tasks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == name)
+            .ok_or("unknown task")?;
+        require(task["tier"] == cell["tier"], "tier changed")?;
+        let item = data["checked_tasks"]
+            .as_array()
+            .ok_or("missing validation")?
+            .iter()
+            .find(|r| r["case"] == name)
+            .ok_or("missing case validation")?;
+        require(
+            item["train"] == task["train_examples"]
+                && item["heldout"] == task["heldout_examples"]
+                && item["primary"] == task["selection"]
+                && item["all_frozen_fingerprints_match"] == true,
+            "data size/split/fingerprint mismatch",
+        )?;
+        let n = number(task, "train_examples")?;
+        let batch = number(&task["case"], "batch")?;
+        let budget = number(&task["case"], "max_updates")?;
+        let sampler = cache
+            .entry((n, batch, budget, seed))
+            .or_insert_with(|| sampler_hash(n, batch, budget, seed));
+        match audit_cell(root, task, seed, "mhc", &source, item, sampler) {
+            Ok(mut row) => {
+                let control = read(
+                    &Path::new("runs/main-model-mhc-wsd-01/mhc")
+                        .join(name)
+                        .join(format!("seed{seed}/result.json")),
+                )?;
+                require(control["status"] == "passed", "control pass missing")?;
+                require(
+                    row["base_initial_sha256"] == control["metadata"]["base_initial_sha256"]
+                        && row["sampler_sha256"] == control["metadata"]["sampler_sha256"],
+                    "control initialization or sampler mismatch",
+                )?;
+                row["main_first99_epochs"] = control["first99_epochs"].clone();
+                row["candidate_over_main_epochs"] = json!(
+                    row["first99_epochs"].as_f64().unwrap()
+                        / control["first99_epochs"].as_f64().unwrap()
+                );
+                rows.push(row);
+            }
+            Err(e) => failures.push(format!("{name} seed{seed}: {e}")),
+        }
+    }
+    let passed = failures.is_empty() && rows.len() == 4;
+    fs::write(
+        output,
+        serde_json::to_vec_pretty(
+            &json!({"passed":passed,"scope":"four declared hard cells, not full-suite promotion",
+        "source_sha256":source["source_sha256"],"ptx_sha256":source["ptx_sha256"],"full_suite_promotion":false,
+        "strict_numerical_misses_retained":true,"metadata_note":"inherited dtype label mentions FP64; the separately hashed generated PTX is authoritative and contains no FP64 model/optimizer operations",
+        "rows":rows,"failures":failures}),
+        )?,
+    )?;
+    require(passed, "hard-screen audit failed")?;
+    println!(
+        "four hard cells audited; source, sampler, initialization, history, first99, checkpoint and ties verified"
+    );
+    Ok(())
+}
+
+fn main() -> std::process::ExitCode {
+    match run() {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::ExitCode::FAILURE
+        }
+    }
+}
+
+// CPU-only geometry oracle. Do not depend on the GPU engine or its layout code.
+type ComplexPair = (usize, usize, Option<(usize, usize)>);
+struct Geometry {
+    base_parameters: usize,
+    router_shape: Option<(usize, usize)>,
+    parameters: usize,
+    independent: usize,
+    hidden: usize,
+    // real, imaginary, optional (-imaginary, real) matrix duplicates
+    pairs: Vec<ComplexPair>,
+}
+impl Geometry {
+    fn new(width: usize, heads: usize, layers: usize, vocab: usize, mhc: bool) -> Self {
+        let hidden = ((8 * width + 1) / 3).div_ceil(2) * 2;
+        let per_layer = 4 * width * width + 3 * width * hidden;
+        let parameters = vocab * width + layers * per_layer;
+        let mut pairs = Vec::new();
+        let d = width / heads;
+        for token in 0..vocab {
+            for head in 0..heads {
+                for i in 0..d / 2 {
+                    let re = token * width + head * d + i;
+                    pairs.push((re, re + d / 2, None));
+                }
+            }
+        }
+        for layer in 0..layers {
+            let offset = vocab * width + layer * per_layer;
+            for (base, rows, cols, row_groups, col_groups) in [
+                (offset, 3 * width, width, 3 * heads, heads),
+                (offset + 3 * width * width, width, width, heads, heads),
+                (offset + 4 * width * width, 2 * hidden, width, 2, heads),
+                (
+                    offset + 4 * width * width + 2 * hidden * width,
+                    width,
+                    hidden,
+                    heads,
+                    1,
+                ),
+            ] {
+                let rh = rows / row_groups / 2;
+                let ch = cols / col_groups / 2;
+                for rg in 0..row_groups {
+                    for r in 0..rh {
+                        for cg in 0..col_groups {
+                            for c in 0..ch {
+                                let re = base + (rg * 2 * rh + r) * cols + cg * 2 * ch + c;
+                                let im = re + rh * cols;
+                                pairs.push((re, im, Some((re + ch, im + ch))));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let extra = if mhc {
+            2 * layers * (96 * width + 27)
+        } else {
+            0
+        };
+        Self {
+            base_parameters: parameters,
+            router_shape: if mhc { Some((width, layers)) } else { None },
+            parameters: parameters + extra,
+            independent: 2 * pairs.len() + extra,
+            hidden,
+            pairs,
+        }
+    }
+    fn initial(&self, seed: u32, complex: bool) -> Vec<f32> {
+        let mut rng = random::Random::new(seed);
+        let mut result: Vec<f32> = (0..self.base_parameters)
+            .map(|_| rng.gauss(0., 0.02) as f32)
+            .collect();
+        if complex {
+            for &(re, im, duplicate) in &self.pairs {
+                if let Some((neg_im, copy_re)) = duplicate {
+                    result[neg_im] = -result[im];
+                    result[copy_re] = result[re];
+                }
+            }
+        }
+        if let Some((width, layers)) = self.router_shape {
+            let mut rng = random::Random::new(seed + 20000);
+            for _ in 0..2 * layers {
+                result.extend((0..24 * 4 * width).map(|_| rng.gauss(0., 0.02) as f32));
+                result.extend([0.; 8]);
+                for row in 0..4 {
+                    for col in 0..4 {
+                        result.push(if row == col { 2. } else { 0. });
+                    }
+                }
+                result.extend([0.01; 3]);
+            }
+        }
+        result
+    }
+    fn check_state(&self, state: &[f32], arm: &str) -> Result<()> {
+        require(state.len() == 3 * self.parameters, "state size mismatch")?;
+        require(
+            state.iter().all(|x| x.is_finite()),
+            "nonfinite optimizer state",
+        )?;
+        let (p, rest) = state.split_at(self.parameters);
+        let (m, v) = rest.split_at(self.parameters);
+        require(v.iter().all(|x| *x >= 0.), "negative AdamW variance")?;
+        if arm != "real-product" {
+            for &(re, im, duplicate) in &self.pairs {
+                if let Some((neg_im, copy_re)) = duplicate {
+                    for values in [p, m] {
+                        require(
+                            values[re] == values[copy_re] && values[im] == -values[neg_im],
+                            "broken complex-linear weights or first moments",
+                        )?;
+                    }
+                    require(
+                        v[re] == v[copy_re] && v[im] == v[neg_im],
+                        "broken complex matrix variance ties",
+                    )?;
+                }
+                if arm == "complex-hermitian-phase" {
+                    require(v[re] == v[im], "broken shared complex-pair variance")?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+fn sampler_hash(n: usize, batch: usize, updates: usize, seed: u32) -> String {
+    let mut rng = random::Random::new(seed + 10000);
+    let mut sha = Sha256::new();
+    let mut done = 0;
+    while done < updates {
+        let mut order: Vec<u32> = (0..n as u32).collect();
+        rng.shuffle(&mut order);
+        for chunk in order.chunks(batch) {
+            if done == updates {
+                break;
+            }
+            for value in chunk {
+                sha.update(value.to_le_bytes());
+            }
+            done += 1;
+        }
+    }
+    sha.finalize().iter().map(|x| format!("{x:02x}")).collect()
+}
+fn examples(step: usize, n: usize, batch: usize) -> usize {
+    let per = n.div_ceil(batch);
+    (step / per) * n + ((step % per) * batch).min(n)
+}
+// Independent CPU reconstruction; no training optimizer or CUDA dependency.
+fn expected_rate(budget: usize, step: usize) -> f32 {
+    let t = step.min(budget - 1);
+    let warmup = budget / 50;
+    let start = budget * 4 / 5;
+    if t < warmup {
+        return (0.001 * t as f64 / warmup as f64) as f32;
+    }
+    let decay = if t < start {
+        0.
+    } else {
+        let fraction = (t - start) as f64 / (budget - 1 - start) as f64;
+        (1. - (std::f64::consts::PI * fraction).cos()) / 2.
+    };
+    (0.001 + (1e-8 - 0.001) * decay) as f32
+}
+fn audit_cell(
+    root: &Path,
+    row: &Value,
+    seed: u32,
+    arm: &str,
+    source: &Value,
+    data: &Value,
+    sampler: &str,
+) -> Result<Value> {
+    let name = row["name"].as_str().unwrap();
+    let dir = root.join(arm).join(name).join(format!("seed{seed}"));
+    let result = read(&dir.join("result.json"))?;
+    let protocol = read(&dir.join("protocol.json"))?;
+    let checkpoint = read(&dir.join("checkpoint.json"))?;
+    let execution = read(&dir.join("execution.json"))?;
+    require(
+        protocol["case"] == *row && protocol["seed"] == seed && protocol["arm"] == arm,
+        "declared case/seed/arm changed",
+    )?;
+    require(
+        result["metadata"] == protocol,
+        "result metadata disagrees with protocol",
+    )?;
+    require(
+        protocol["source_sha256"] == source["source_sha256"]
+            && protocol["ptx_sha256"] == source["ptx_sha256"],
+        "source/PTX provenance mismatch",
+    )?;
+    require(
+        checkpoint["source_sha256"] == source["source_sha256"]
+            && checkpoint["ptx_sha256"] == source["ptx_sha256"],
+        "checkpoint provenance mismatch",
+    )?;
+    require(
+        protocol["sampler_sha256"] == sampler,
+        "native sampler fingerprint changed",
+    )?;
+    let initial = fs::read(dir.join("initial.f32"))?;
+    require(
+        protocol["initial_parameters_sha256"] == hash(&initial),
+        "initial parameter hash mismatch",
+    )?;
+    let c = &row["case"];
+    let geometry = Geometry::new(
+        number(c, "width")?,
+        number(c, "heads")?,
+        number(c, "layers")?,
+        number(data, "vocab")?,
+        arm == "mhc",
+    );
+    let params = number(&protocol, "expanded_parameters")?;
+    require(
+        params == geometry.parameters && number(&protocol, "hidden")? == geometry.hidden,
+        "expanded model dimensions changed",
+    )?;
+    let independent = if arm == "real-product" {
+        params
+    } else {
+        geometry.independent
+    };
+    require(
+        number(&protocol, "independent_parameters")? == independent,
+        "independent parameter count changed",
+    )?;
+    require(
+        protocol["learning_rate"].as_f64() == Some(0.001)
+            && protocol["warmup"] == number(c, "max_updates")? / 50
+            && protocol["betas"] == json!([0.9, 0.95])
+            && protocol["epsilon"] == json!(1e-8)
+            && protocol["weight_decay"].as_f64() == Some(0.1f32 as f64)
+            && protocol["schedule"] == "wsd-cosine20"
+            && protocol["warmup_fraction"] == json!(0.02)
+            && protocol["decay_fraction"] == json!(0.2)
+            && protocol["cooldown_start"] == number(c, "max_updates")? * 4 / 5
+            && protocol["schedule_floor"] == json!(1e-8)
+            && protocol["global_independent_gradient_clip"] == 1
+            && protocol["router_coordinates_in_clip_and_adamw"] == (arm == "mhc")
+            && protocol["json_float_roundtrip"] == true
+            && protocol["checkpoint_epochs"] == 500
+            && protocol["gain"].as_f64()
+                == Some(number(c, "heads")? as f64 / number(c, "width")? as f64),
+        "optimizer, gain or save cadence changed",
+    )?;
+    require(
+        protocol["hermitian_xsa"] == false
+            && protocol["ordinary_attention"] == true
+            && protocol["plain_complex_product"] == true
+            && protocol["mhc"] == (arm == "mhc")
+            && protocol["primary"] == data["primary"]
+            && protocol["optimizer"]
+                == if arm.ends_with("-phase") {
+                    "AdamW shared complex-pair variance"
+                } else {
+                    "AdamW separate real/imaginary variances"
+                },
+        "declared architecture, optimizer or primary metric changed",
+    )?;
+    require(initial.len() == 4 * params, "initial state layout mismatch")?;
+    let expected: Vec<u8> = geometry
+        .initial(seed, arm != "real-product")
+        .iter()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    require(
+        initial == expected,
+        "initial weights differ from declared native RNG",
+    )?;
+    require(
+        protocol["base_initial_sha256"] == hash(&initial[..4 * geometry.base_parameters]),
+        "base initialization hash mismatch",
+    )?;
+    let state = fs::read(dir.join("checkpoint.bin"))?;
+    let history = fs::read(dir.join("history.jsonl"))?;
+    require(state.len() == 12 * params, "checkpoint size mismatch")?;
+    require(
+        checkpoint["state_sha256"] == hash(&state)
+            && checkpoint["history_sha256"] == hash(&history),
+        "checkpoint/history integrity failure",
+    )?;
+    geometry.check_state(
+        &state
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|v| f32::from_le_bytes(*v))
+            .collect::<Vec<_>>(),
+        arm,
+    )?;
+    require(
+        execution["clean"] == true
+            && execution["durable_completed"] == execution["possible_completed"],
+        "uncertain execution exposure",
+    )?;
+    let n = number(row, "train_examples")?;
+    let heldout = number(row, "heldout_examples")?;
+    let batch = number(c, "batch")?;
+    let observe = number(c, "observe")?;
+    let budget = number(c, "max_updates")?;
+    let flush = 500 * n.div_ceil(batch);
+    let records: Vec<Value> = history
+        .split(|&v| v == b'\n')
+        .filter(|v| !v.is_empty())
+        .map(serde_json::from_slice)
+        .collect::<std::result::Result<_, _>>()?;
+    require(!records.is_empty(), "empty history")?;
+    let mut previous = 0;
+    let mut previous_seconds = 0.;
+    let mut first = None;
+    for (i, point) in records.iter().enumerate() {
+        let step = number(point, "step")?;
+        let count = examples(step, n, batch);
+        let expected_step = if i == 0 {
+            0
+        } else {
+            (previous + observe)
+                .min(budget)
+                .min((previous / flush + 1) * flush)
+        };
+        require(
+            step == expected_step,
+            "observation cadence/update history changed",
+        )?;
+        require(
+            step <= budget && number(point, "examples")? == count,
+            "budget or example count mismatch",
+        )?;
+        require(
+            point["next_lr"].as_f64() == Some(expected_rate(budget, step) as f64),
+            "recorded WSD learning rate changed",
+        )?;
+        require(
+            (point["epochs"].as_f64().ok_or("missing epochs")? - count as f64 / n as f64).abs()
+                < 1e-9,
+            "epoch denominator changed",
+        )?;
+        let seconds = point["seconds"].as_f64().ok_or("missing time")?;
+        require(seconds >= previous_seconds, "elapsed time went backwards")?;
+        for (which, size) in [("train", n), ("validation", heldout)] {
+            let m = &point[which];
+            require(
+                number(m, "examples")? == size,
+                "incomplete split measurement",
+            )?;
+            let exact = number(m, "exact")?;
+            require(exact <= size, "impossible exact count")?;
+            require(
+                (m["sequence_accuracy"].as_f64().ok_or("missing accuracy")?
+                    - exact as f64 / size as f64)
+                    .abs()
+                    < 1e-12,
+                "accuracy denominator changed",
+            )?;
+            require(
+                m["loss"].as_f64().is_some_and(f64::is_finite),
+                "nonfinite loss",
+            )?;
+        }
+        if first.is_none() && number(&point["validation"], "exact")? * 100 >= 99 * heldout {
+            first = Some((step, point["epochs"].clone()));
+        }
+        previous = step;
+        previous_seconds = seconds;
+    }
+    let last = records.last().unwrap();
+    let completed = number(&result, "completed")?;
+    require(
+        completed == previous
+            && completed == number(&checkpoint, "completed")?
+            && completed == number(&execution, "durable_completed")?,
+        "endpoint/update mismatch",
+    )?;
+    require(
+        result["endpoint"] == *last,
+        "endpoint differs from last observation",
+    )?;
+    require(
+        result["examples"] == checkpoint["examples"] && result["examples"] == last["examples"],
+        "checkpoint sample count mismatch",
+    )?;
+    match result["status"].as_str() {
+        Some("passed") => {
+            let (step, epoch) = first.as_ref().ok_or("pass without threshold crossing")?;
+            require(
+                *step == completed && result["first99_epochs"] == *epoch,
+                "wrong first crossing",
+            )?;
+        }
+        Some("budget_exhausted") => {
+            require(
+                completed == budget && first.is_none() && result["first99_epochs"].is_null(),
+                "incorrect censored budget result",
+            )?;
+        }
+        Some("stopped") => require(
+            first.is_none() && result["first99_epochs"].is_null(),
+            "incorrect stop result",
+        )?,
+        _ => return Err("unknown endpoint status".into()),
+    }
+    let first_prior = if first.is_some() && records.len() > 1 {
+        records[records.len() - 2]["epochs"].clone()
+    } else {
+        json!(0.)
+    };
+    if first.is_some() {
+        require(
+            result["previous_observed_epochs"] == first_prior,
+            "first crossing interval changed",
+        )?;
+    }
+    Ok(
+        json!({"case":name,"tier":row["tier"],"seed":seed,"arm":arm,"status":result["status"],"audit":"passed",
+        "completed":completed,"examples":result["examples"],"epochs":result["epochs"],
+        "first99_epochs":result["first99_epochs"],"previous_observed_epochs":result["previous_observed_epochs"],
+        "sequence_accuracy":last["validation"]["sequence_accuracy"],"train_accuracy":last["train"]["sequence_accuracy"],
+        "seconds":result["seconds"],"observations":records.len(),"initial_parameters_sha256":protocol["initial_parameters_sha256"],
+        "expanded_parameters":params,"independent_parameters":independent,"base_initial_sha256":protocol["base_initial_sha256"],
+        "sampler_sha256":protocol["sampler_sha256"],"checkpoint_sha256":checkpoint["state_sha256"],
+        "history_sha256":checkpoint["history_sha256"],"source_sha256":protocol["source_sha256"]}),
+    )
+}

@@ -1,0 +1,57 @@
+Priority quartic AdamW/WSD retest, requested by the user, 2026-11-08
+
+Retest only (a+b)^4 mod97 with the current main model, seeds0,1,2. This is an
+explicitly requested diagnostic on a known long task, not short-suite selection
+or evidence of full75/30 coverage. Preserve the existing main/mHC comparison;
+pause it at a clean checkpoint and resume it unchanged after this diagnostic.
+
+Model: complex-peri-rms-ordinary-v1. Import the current main native Engine and
+layout directly: ordinary causal inverse-width SSMax, Q/K RMS, standard RoPE,
+plain complex-product FFN, parameter-free Peri/embedding/final RMS, post-RMS
+scale1/sqrt(2L), tied embedding/readout. No XSA, centering or mHC. D128,H4,L1,
+hidden342,V97; same base initialization std0.02 and seeds as the frozen main.
+
+Recipe: AdamW/WSD with the user's explicit settings: beta1=.9,beta2=.95,
+weight decay=.1,2% linear warmup and20% cosine decay. At100000 total updates,
+warmup2000,stable78000,decay20000. The clipped coordinate kernel uses matching
+beta2 bias correction. Arm: adamw-wsd-cosine20-warmup2000.
+Coordinate AdamW: peak LR0.002, betas(.9,.95), epsilon1e-8, weight decay0.1.
+Contract complex matrix gradients before global independent-gradient L2 clipping
+at1 and AdamW. The tied embedding/readout updates once. This retests the whole
+recipe with the user's beta2,warmup,decay overrides and clipping; it is not
+schedule-only. The preliminary beta2=.99 validation is retained as superseded;
+no scientific training occurred with that version, the1000-update warmup or
+the preliminary sqrt-decay version. Preserve their superseded validation logs.
+
+Zero-based update t: rate=.002*t/2000 for t<2000; then.002 through t80000.
+For t>=80000, u=(t-80000)/19999 and
+rate=1e-8+(.002-1e-8)*(1+cos(pi*u))/2.
+Final scheduled update99999 has rate1e-8.
+The zero-rate first update advances moment histories without moving weights.
+
+Frozen task/split/data seed1,4704 train/4705 validation, batch256 with96-row
+tails; sampler seed+10000; full held-out exact accuracy observed every19updates.
+Cap100000updates per seed. Stop at the first observed99% (the active goal's
+criterion), preserving its preceding observation. The historical study instead
+continued after99%; the stopping difference does not change the trajectory
+before first99. No sustained99% claim. Retain all failures and every seed.
+Epochs are actual training examples/4704. No LR search or budget extension.
+
+Validation before training: verify frozen data/initialization and sample order;
+replay the current main's saved quartic checkpoint; compare clipped AdamW p/m/v
+against an independent scalar FP64 reference at warmup/cooldown boundaries;
+test bit-identical save/restore across the96-row tail and refusal of unclean
+windows. Check the full100000-rate schedule against an independent formula.
+Native CPU audit checks archived sources/PTX, data/initial/sample fingerprints,
+complete histories, exact metrics, state constraints and first99/budget status.
+
+All code/tests/training/reporting use Rust/Kernite/native tools; no Python.
+Observations are buffered; durable state/history writes at initialization,
+every500epochs, first99, budget end or explicit clean STOP only. Immutable
+compiled executable and full source archive identify this separate cohort.
+After all3 results and their audit, resume the paused mHC cell with its exact
+old executable and saved p/m/v/sample position, then finish its remaining queue.
+
+Historical recipe successes used real XSA and a radial product, and preceded
+later main-model gradient repairs. They do not establish an optimizer winner
+for this current main model or permit tuning the general search on long data.

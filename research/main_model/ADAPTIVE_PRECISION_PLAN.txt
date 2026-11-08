@@ -1,0 +1,118 @@
+Static precision policy,2026-11-08
+
+COMPLETED SELECTION: gpu-opt-05 is now the selected numerical main after
+75/75short and30/30long independently audited passes with no lost main pass.
+Geometric-mean epochs improve1.7953% short/11.5413% long against prior mHC.
+Results: results/gpu-suite-01/FINAL_RESULTS.txt; selection: promotion/decision.json
+within that result directory. Precision remains static FP16-forward/TF32-backward
+affine operands and FP32 accumulation/other model math/weights/moments. The
+386strict scalar-AD misses and15337small FP64 optimizer reference differences
+remain failed comparisons. Selection rests on the declared empirical coverage
+and epoch gate, not a new floating-point theorem or uniform per-seed gain.
+
+LATEST MEASURED RESULT: gpu-opt-05 is a fixed FP16-forward/TF32-backward
+numerical candidate with exact placement optimizations. Three alternating
+whole-update medians show 3.462x quartic/6.062x recall speedups versus selected
+main. All 1869 primitive placement checks and full-state/gradient comparisons
+equal the numerical parent; these do not erase its strict numerical misses.
+The four-cell parent learning audit retains a 44.12% quartic seed1 epoch
+regression. Subsequent full105coverage and promotion are recorded above.
+No FP64 operations or dynamic precision selection are used in candidate GPU
+model/optimizer kernels. Geometry alone selects the direct GEMM output store.
+See results/gpu-opt-05/REPORT.txt and gpu_opt_native/README.txt.
+
+LATEST REQUEST: FP16 or BF16 forward GEMM; FP32 or TF32 backward GEMM.
+Use tiled shared operands and warp tensor instructions with FP32 accumulation.
+Norms, reductions, master weights and moments remain FP32 in these candidates.
+TENSOR_TILE_PLAN.txt defines four fixed combinations and numerical/timing gates.
+No dynamic precision selection. The measured results above supersede the
+original 5x target; 10x has not been achieved.
+
+LATEST IMPLEMENTATION PREFERENCE: use FP32 or TF32; try to avoid FP64 in the
+GPU model and optimizer. FP32_PLAN.txt defines the current candidate. The prior
+any-type eligibility policy remains general research context; the active
+implementation follows this newer FP32/TF32 instruction. CPU-only independent
+oracles and host schedule/report calculations are outside the GPU restriction.
+
+LATEST USER STEERING: pursue more optimization; some rounding loss is acceptable
+if difficult-task training is unharmed. Bit-exact replay is an advantage, not a
+mandatory gate for numerical candidates. Keep explicit error/gradient checks,
+test difficult tasks from original initialization, and preserve all verified
+main passes before full promotion. MIXED_SINKHORN_PLAN.txt is the next step.
+
+AUTHORITATIVE TYPE RULE: ANY TYPE IS ELIGIBLE IN FORWARD OR BACKWARD.
+No direction-based precision whitelist. FP16/BF16/TF32/FP32/FP64 are examples;
+other representations are eligible if their actual numerical semantics and
+range/error conditions are sufficiently proved and the implemented kernels
+pass required validation. Select the fastest passing fixed specialization.
+Keep precision decisions offline: no runtime checks, branches, fallback paths,
+or retries to choose a numerical type. An operation that needs higher precision
+uses that precision unconditionally. This supersedes narrower format lists
+and forward/backward restrictions in earlier notes.
+
+Interpret "edge runner" as OFFLINE selection of a fixed numerical implementation
+for each operation/kernel specialization. Compile and validate candidates, then
+retain the fastest passing variant. Compile-time specialization is allowed;
+the executed kernel must not select a precision based on runtime values.
+The relative-error theorem below is an offline certification tool, not a runtime
+guard. Failed candidates remain recorded and cannot become the default.
+
+Keep the selected mHC model, normalization, tied weights and LR0.001 WSD.
+Any type is eligible for operands, products, partial sums, final accumulation,
+saved activations, adjoints and outputs in either forward or backward. Register
+each role separately: a precise final sum does not certify a low-precision
+partial sum. Each selected combination needs its own numerical contract and
+implemented-kernel validation. Higher precision is used unconditionally wherever
+required by that operation's verified error bounds.
+TF32 is a tensor-core multiplication precision with FP32 storage/accumulation,
+not a separate general-purpose storage/accumulator format.
+Master weights/optimizer state retain the current FP32 layout unless separately
+declared and justified. Do not change the learned architecture or epoch protocol.
+
+Checked Lean certificate: proofs/AdaptivePrecision.lean,7theorems, no sorry or
+extra axioms, lean-adaptive-precision-03.log. It imports the actual current
+Transformer.MHC.PeriRMS and Precision.ArithmeticError definitions.
+  - Block and final-accumulator errors add; a precise final sum cannot undo
+    error in a low-precision block.
+  - A dot error<=eta enlarges the normalized SSMax envelope to
+    log(N)*(1+eta/d). The existing norm bounds are useful and retained.
+  - Given a certified absolute error B, the sufficient condition
+    (1+tau)*B <= tau*abs(approx) guarantees relative error<=tau.
+    Establish this condition offline over the declared operating domain;
+    any computed bounds must be rounded conservatively.
+  - Actual IEEE FP16/BF16 examples with representable summands and RMS<1 lose
+    an entire small cancellation result. Norm bounds alone do not certify
+    low-precision reduction accuracy.
+These are mathematical contracts; they do not certify an unspecified GPU
+operation or prove training convergence. Every instantiated kernel must justify
+its conversion/product/reduction/normalization error and finite-value range.
+
+Execution order: finish the exact placement optimizations under
+OPTIMIZATION_PLAN.txt, then test static precision changes separately. Screen each
+primitive, actual forward/backward values from trained checkpoints, and the unchanged independent scalar
+AD full-model suite, including cancellation/tiny gradients/extreme inputs/causal
+tails. Keep all failed formats, failing cases and measured errors. Report each
+fixed variant's pass/fail result across the complete declared validation set.
+Existing tolerances cannot be loosened to pass. Measure whole-update benefit,
+including conversions and data movement required by that fixed implementation.
+
+Only a validated runtime improvement may become the default implementation.
+If a mixed-precision path changes checkpoint replay, describe that explicitly
+and retain it as a separate numerical candidate; use the fixed short/long
+no-lost-pass protocol before a scientific promotion. Bit-identical placement
+optimizations preserve the recorded learning evidence. Do not rerun the closed
+210-cell cohort or modify its artifacts. Continue queued model research after
+this requested profiling/optimization work. Rust/Kernite/Lean only; no Python.
+
+Measured progress: exact placement optimization is selected by current.sh;
+see results/mhc-opt-02/REPORT.txt. Static screens01through03 preserve all cases
+and use an exact BigInt dot/error oracle. Compensated FP32 passes3906/4005 but
+fails99range cases, including3where the actual selected RMS forward/backward
+remains finite. A direct raw-dot replacement is rejected. RawGradientRange.lean
+proves that normalized activation bounds alone do not control these products.
+ExactWideProduct.lean certifies all finite FP32 products using fixed integer
+significands and FP64 outputs.1178603GPU pairs and complete-model validation
+pass, but under1% measured update benefit does not warrant selecting this path.
+See results/static-precision-03,integer-product-01 and integer-model-01.
+Continue fixed mixed Sinkhorn and remaining measured hotspots. Numerical
+contracts concern declared operations/domains; training safety is empirical.
