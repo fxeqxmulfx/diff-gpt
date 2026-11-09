@@ -1,0 +1,22 @@
+[package]
+name = "diffgpt-old-recheck"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[workspace.metadata.kernite]
+name = "diffgpt_old_recheck"
+
+[dependencies]
+kernite-cuda = { path = "../../../../../rust_projects/kgen/crates/cuda" }
+kernite-macros = { path = "../../../../../rust_projects/kgen/crates/macros" }
+diffgpt-axial-data-native = { path = "../../main_model/diffgpt_data_native" }
+diffgpt-mash-native = { path = "../../main_model/mash_native" }
+serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+sha2 = "=0.11.1"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

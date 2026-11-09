@@ -1,0 +1,45 @@
+Historical MASH-half Fibonacci recheck, 2026-11-09
+
+User: "recheck, old can solve?"
+Verify the old successful architecture with a fresh Rust/Kernite execution.
+The historical result is recorded at GPT commit 90544cd: seeds 11/17/23 reach
+90% after 1050/1150/1450 updates. That is historical evidence, not a fresh replay.
+Its source is Peri-RMS with embedding/final/QK RMS, real SwiGLU hidden341,
+real XSA, standard RoPE, 1/sqrt(head_dim) attention, residual gain1 and tied
+embedding/readout. D128/H1/L1/V512 gives262016 independent parameters.
+
+Fresh scope: MASH-half, one feature, Fibonacci mod97, two observed differences,
+held-out whole cycles, seeds11/17/23,5000updates,B512,observe50. Use the same
+native data and replacement-sampler hashes as the failed additional DiffGPT
+cohort, checked before training. No two-feature or new-ramp training in this
+recheck. The production DiffGPT API remains2D-only; this historical-control
+executable retains the old1D RoPE architecture deliberately.
+
+Historical recipe: ScheduleFreeAdamW,lr0.03,beta1=.9,beta2=.98,wd1,eps1e-8,
+10-update warmup,no gradient clipping,no cosine. Evaluate the average x,
+train at query y. Preserve z and v. Matrix init N(0,.02); attention/FFN output
+projections use .02/sqrt(2L). Native Gaussian RNG is not Torch's initialization
+or random-draw ordering. Data and sampler are matched to the new failed study,
+not Torch randperm. This is an architecture/recipe recheck, not a bit-exact
+reproduction of the historical1050/1150/1450 ledger.
+
+All GPU arithmetic is fixed FP32, including forward and backward affine;
+no GPU FP64 or adaptive fallback. CPU FP64 forward/AD and optimizer references
+are validation only. Reuse validated Kernite operations, correcting constants
+and dimensions in an isolated executable. XSA's algebraically equivalent
+centered form and corrected adjoints remain; exact-zero constant-prefix guards
+can differ from historical Torch cancellation roundoff. State this limitation.
+
+Before training: compare logits/loss and gradients against independent scalar
+FP64 forward-mode AD, validate the new ScheduleFree update and mode switches
+against an explicit (x,z,v) CPU recurrence, and check save/load continuation.
+Run memory/synchronization sanitizers on the numerical validation, check all
+embedded PTX for GPU FP64, and freeze source/binary/PTX/data provenance.
+Retain misses and do not relax tolerances to launch. A failed validation blocks
+scientific training until its implementation problem is fixed.
+
+All scientific runs keep their original5000-update budget, no retries/tuning.
+Record first-observed90 and final decoded accuracy independently for each seed.
+Buffer history and save at initialization, first90, at least500epochs between
+periodic saves, final budget or explicit STOP. Preserve all earlier failures.
+No model promotion or production changes follow automatically from this check.
