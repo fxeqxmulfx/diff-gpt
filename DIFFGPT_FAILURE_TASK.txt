@@ -1,11 +1,20 @@
-Task: explain and fix the current main's DiffGPT Fibonacci learning failure
+Problem: current main's DiffGPT Fibonacci learning failure
 Recorded: 2026-11-10
-Status: open; this task records follow-up work, not completed diagnosis.
+Status: open; the cause is not established.
 
-Objective
-Determine why the selected complex main misses a learning target that the
-older real transformer reaches. Establish the cause with controlled native
-experiments, then validate a correction without losing existing main passes.
+Problem statement
+The selected complex main misses the DiffGPT Fibonacci learning target that
+the older real transformer reaches under its historical training recipe.
+The observed regression remains unexplained.
+Open question: why not 99% in test?
+
+Use flat spectrum and extend it if you need.
+Reference: https://github.com/fxeqxmulfx/transformer/blob/main/review/flat_spectrum.md
+Lean source: https://github.com/fxeqxmulfx/transformer/tree/main/src/Transformer/Grokking/FlatSpectrum
+
+Use Kernite for runs. After completing the work, add new tests.
+You may fix Kernite if needed.
+Kernite: https://github.com/fxeqxmulfx/kernite
 
 Established evidence
 The additional DiffGPT study ran 36 cells: 3 encoders (MASH, LGT, MASH-half),
@@ -35,8 +44,8 @@ Passing older baseline
 - Parameter-free Peri, embedding, final and per-head Q/K RMS normalization.
 - ScheduleFreeAdamW: LR 0.03, betas (0.9,0.98), weight decay 1,
   epsilon 1e-8, warmup 10 updates, no clipping or cosine schedule.
-- Train with query weights y; evaluate/save average weights x; preserve
-  optimizer z, v, mode and counters for continuation.
+- Training uses query weights y; evaluation and checkpoints use average
+  weights x.
 - Fixed FP32 GPU arithmetic. Output projection initialization uses
   0.02/sqrt(2L), as in the historical baseline.
 
@@ -52,84 +61,17 @@ Failing current baseline
 - FP16 forward affine operands, TF32 backward affine operands; FP32
   accumulation, remaining model math, master weights and moments.
 
-What is known about why
+Limits of the evidence
 The cause is not established. The evidence establishes a finite-budget
 learning/generalization regression, not an inability to represent the rule.
 Architecture, optimizer, schedule, initialization, independent parameter count
-and arithmetic precision changed together. A 30x difference in peak learning
-rate is a useful diagnostic lead, not proof that learning rate caused failure.
+and arithmetic precision changed together. The 30x difference in peak learning
+rate does not establish that learning rate caused the failure.
 Both positional arms fail, so axial 2D alone cannot explain the regression.
 Matching data/sampler hashes and the older passes establish that this dataset
 is solvable; they do not prove every current-model implementation is correct.
 
-Investigation
-1. Inspect and replay the existing checkpoints/histories first. Verify the
-   data, sampler, normalization, loss mask, argmax decoding and rounding
-   identities. Compare training and held-out loss, token accuracy and decoded
-   accuracy at the original 50-update cadence. Separate failure to fit training
-   data from failure to generalize. Report clipping frequency, update sizes,
-   score/phase/frequency evolution and any nonfinite values where available;
-   obtain additional instrumentation only in explicitly registered fresh runs.
-
-2. Cross the two complete training recipes on the two frozen architectures:
-     old architecture + old recipe: existing passing baseline;
-     old architecture + current recipe: new diagnostic;
-     current 1D architecture + old recipe: new diagnostic;
-     current 1D architecture + current recipe: existing failing baseline.
-   Run the two missing combinations on seeds 11/17/23. Preserve the exact
-   archived initial weights and example order within each architecture when
-   changing recipes. Do not claim equivalent initialization across different
-   parameterizations. For current-model frequencies retain weight decay 0;
-   otherwise apply the chosen recipe's optimizer, schedule and clipping to
-   all independent coordinates. Record that frequency-group adaptation.
-   Validate ScheduleFree updates and x/y evaluation modes for the complex
-   parameter layout against an independent Rust reference before training.
-   These crosses test recipe bundles, not an isolated optimizer or LR effect.
-
-3. Use the cross results to register focused follow-ups. If the recipe bundle
-   changes the outcome, separate optimizer/averaging, LR, clipping, weight
-   decay, betas and schedule with one-factor matched controls. Test fixed FP32
-   affine arithmetic separately from the current mixed-precision policy,
-   keeping the architecture, initial state, samples and recipe fixed.
-   If an architecture gap remains, isolate attention score/temperature and
-   XSA versus ordinary aggregation, SwiGLU versus complex product,
-   unrestricted real versus complex-linear projections, residual routing/
-   scaling, and standard versus learned rotary frequencies. Record parameter
-   counts and initialization changes; use capacity-matched controls where
-   possible. A recovery implicates the changed factor under the tested
-   conditions; report interactions and do not assert a unique cause without
-   evidence. Do not select configurations by repeatedly tuning held-out cells.
-
-4. Confirm a proposed correction on all three one-feature MASH-half seeds,
-   then evaluate all original 36 DiffGPT cells and the fixed 105-cell main
-   regression suite before proposing promotion. Report every cell, regression,
-   budget miss and execution error. Apply the existing main epoch/coverage
-   promotion rule separately; a new-task recovery cannot erase a lost pass.
-   Keep the production DiffGPT 2D positional policy and checkpoint metadata;
-   historical 1D controls remain isolated research experiments.
-
-Fixed protocol and deliverables
-Use Rust and Kernite-generated PTX only; never execute Python. Keep the
-original cycle-disjoint splits, encoders, domains, V512, B512, seeds, 5000
-updates and 50-update observations. No extra budget or silent retries.
-Preserve primary whole-row decoded accuracy, exact token accuracy as secondary,
-and original-window versus forecast-reanchored decoding as separate metrics.
-Validate changed kernels, adjoints, optimizer updates, checkpoint continuation
-and CUDA memory/synchronization behavior before scientific comparisons.
-Freeze source/binary/PTX/data/sampler identities and preregister fresh arms.
-Reuse completed controls when provenance matches; preserve earlier failures.
-Buffer histories; save initialization, first90, final/explicit stop and periodic
-checkpoints no more frequently than every 500 epochs. Run GPU studies serially
-and respect existing work. Commit authored task/source/protocol files only;
-regenerable results/checkpoints stay out of commits, with the repository's
-explicit exception for PTX and Kernite outputs.
-
-Deliver a per-seed comparison, a causal explanation limited to tested evidence,
-and either a validated correction or a precise account of unresolved causes.
-Do not describe CPU tests, sanitizer passes or the older 105-cell suite as
-successful learning on the failing additional DiffGPT tasks.
-
-Evidence and implementation entry points (repository-relative)
+Evidence references (repository-relative)
 research/diffgpt_old_recheck/README.txt
 research/diffgpt_old_recheck/PLAN.txt
 research/diffgpt_old_recheck/native/
