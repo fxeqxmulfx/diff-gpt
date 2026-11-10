@@ -12,6 +12,27 @@ Use flat spectrum and extend it if you need.
 Reference: https://github.com/fxeqxmulfx/transformer/blob/main/review/flat_spectrum.md
 Lean source: https://github.com/fxeqxmulfx/transformer/tree/main/src/Transformer/Grokking/FlatSpectrum
 
+Newer AdamW/complex-model analysis to use
+Read the later AD1-AD5, DP1-DP3, FF1-FF4, CL1-CL4 and FM1-FM4 sections of
+the flat-spectrum review.
+Local checkout: /home/misha/lean_projects/transformer (read at ae801acc).
+Additional Lean source:
+https://github.com/fxeqxmulfx/transformer/tree/main/src/Transformer/Grokking/GradientEvidence
+- MainAdamMoments/MainAdamMotion: for the current beta1=.9, beta2=.95,
+  m^2 <= (19/14)*v for arbitrary exact-real gradient histories. The resulting
+  motion bounds apply separately to independent real/imaginary coordinates.
+- FutureMomentCone/FutureDirectionNorm/FutureAdamTube: saved moments and the
+  known schedule give future forcing bounds without reading future gradients.
+- CECocoercivity/MomentumPotential/CEMomentumControl: actual partial CE on
+  unused-class contrasts controls arbitrary saved momentum through a potential
+  under an explicit step condition.
+- FeatureMetricCE/FeatureMetricMomentum/FeatureMetricControl: fixed feature
+  scaling shared across unused classes extends that result. Class-dependent
+  Adam scaling, tied encoder gradients, decay and execution remainders remain
+  explicit; centering does not commute with the actual Adam diagonal.
+The latest feature-metric study audited all 144 saved-state cases.
+The associated learning cohorts use (a+b)^3 mod97 with 64 unused classes.
+
 Use Kernite for runs. After completing the work, add new tests.
 You may fix Kernite if needed.
 Kernite: https://github.com/fxeqxmulfx/kernite
@@ -61,15 +82,37 @@ Failing current baseline
 - FP16 forward affine operands, TF32 backward affine operands; FP32
   accumulation, remaining model math, master weights and moments.
 
-Limits of the evidence
-The cause is not established. The evidence establishes a finite-budget
-learning/generalization regression, not an inability to represent the rule.
-Architecture, optimizer, schedule, initialization, independent parameter count
-and arithmetic precision changed together. The 30x difference in peak learning
-rate does not establish that learning rate caused the failure.
-Both positional arms fail, so axial 2D alone cannot explain the regression.
-Matching data/sampler hashes and the older passes establish that this dataset
-is solvable; they do not prove every current-model implementation is correct.
+Candidate experiment: complex-pair AdamW
+Consider a matched Rust/Kernite test of complex-pair AdamW on the failing
+current model.
+After contracting tied gradients and applying the unchanged global L2 clip,
+keep componentwise m'=0.9*m+0.1*g, but use one shared second moment per
+independent complex pair:
+  v'=0.95*v+0.05*((g_re^2+g_im^2)/2).
+Use the MEAN squared-magnitude convention, the existing bias corrections and
+epsilon, and the same denominator for both components. Pair only actual
+complex embedding/projection parameters; real router parameters and learned
+frequency parameters retain ordinary real AdamW and their existing groups.
+Initialize fresh states; preserve the required matrix ties and shared-variance
+checkpoint invariant. Reuse and audit the existing implementation where useful.
+
+First isolate the optimizer change on one-feature MASH-half mod97, seeds
+11/17/23, with the same 5000-update budget, data/sampler/initialization hashes,
+architecture, positional interpretation, precision, clipping, LR and schedule.
+Use the saved axial 2D arm as the primary matched comparison; any 1D comparison
+is a separate research arm and must not reinterpret native 2D checkpoints.
+Report train/test decoded whole-row accuracy, losses, first90/first99 at the
+same observation cadence, final metrics, regressions and checkpoint replay.
+Preserve the original results and report first crossings and sustained accuracy
+separately. Any later LR/schedule or other change is a separately declared arm.
+
+The earlier complex-pair candidate passed 105/105 cells in a different suite
+but required 2.4349% more short and 11.7655% more long epochs, so it was rejected
+for main promotion. Derive the corresponding moment bounds for the
+shared-variance recurrence.
+Add native regression tests for the shared-variance scalar reference, complex
+ownership/tie contraction, real/frequency exclusions, phase rotations and exact
+checkpoint continuation.
 
 Evidence references (repository-relative)
 research/diffgpt_old_recheck/README.txt
@@ -83,3 +126,16 @@ research/main_model/results/diffgpt-axial-suite-01/FINAL_RESULTS.txt
 research/main_model/results/diffgpt-axial-suite-01/report-final/paired-epochs.tsv
 research/main_model/model.json
 src/native_transformer/README.txt
+research/main_model/COMPLEX_PAIR_ADAMW_PLAN.txt
+research/main_model/proofs/ComplexPairAdamW.lean
+research/main_model/pair_adamw_native/
+research/main_model/results/pair-adamw-suite-01/FINAL_RESULTS.txt
+
+Additional references (relative to lean_projects/transformer)
+review/flat_spectrum.md
+src/Transformer/Grokking/GradientEvidence/
+experiments/geometry_dynamics/README.md
+experiments/geometry_persistence/README.md
+experiments/future_forcing/README.md
+experiments/ce_lyapunov/README.md
+experiments/ce_metric/README.md
