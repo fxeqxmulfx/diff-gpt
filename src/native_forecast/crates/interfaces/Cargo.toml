@@ -1,0 +1,20 @@
+[package]
+name = "diff-gpt-forecast-interfaces"
+description = "The command line of the forecasting pipeline: it parses and wires, nothing more."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "forecast"
+path = "src/main.rs"
+
+[dependencies]
+diff-gpt-forecast-domain.workspace = true
+diff-gpt-forecast-application.workspace = true
+diff-gpt-forecast-infrastructure.workspace = true
+
+[lints]
+workspace = true

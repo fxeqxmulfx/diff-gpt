@@ -1,0 +1,15 @@
+[package]
+name = "diff-gpt-forecast-infrastructure"
+description = "Files, threads and kernels behind the ports of the forecasting pipeline."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+diff-gpt-forecast-domain.workspace = true
+diff-gpt-forecast-application.workspace = true
+
+[lints]
+workspace = true

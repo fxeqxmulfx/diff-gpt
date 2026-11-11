@@ -1,0 +1,46 @@
+# The forecasting pipeline of diff-gpt in Rust and Kernite: the synthetic corpus
+# (a port of TempoPFN's generators), the pretraining of DiffGPT on it and the
+# scoring on GIFT-Eval and fev-bench. An independent workspace in clean
+# architecture, beside src/native_transformer and the Burn port of crates/.
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/domain",
+    "crates/application",
+    "crates/infrastructure",
+    "crates/interfaces",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT AND Apache-2.0"
+publish = false
+
+[workspace.metadata.kernite]
+name = "diff_gpt_forecast"
+
+[workspace.dependencies]
+diff-gpt-forecast-domain = { path = "crates/domain" }
+diff-gpt-forecast-application = { path = "crates/application" }
+diff-gpt-forecast-infrastructure = { path = "crates/infrastructure" }
+
+[workspace.lints.rust]
+# Forbidden in the domain and the application; the infrastructure allows it in
+# the modules that call kernels, each with its reason.
+unsafe_code = "deny"
+missing_docs = "deny"
+unused_qualifications = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+debug = "line-tables-only"
+
+[profile.test]
+opt-level = 2
