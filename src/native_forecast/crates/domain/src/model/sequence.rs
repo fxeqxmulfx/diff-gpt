@@ -10,10 +10,10 @@
 //! - the attention of the first position gives exactly zero
 //!   (`FirstZeroQKAttention`): a token that attends to itself alone has
 //!   nothing left once its own value is projected out;
-//! - so do the positions that repeat the first token from the start
-//!   (`PrefixStableBlock`), whose states are that of the first, as long as
-//!   no head's value at the first position is under the epsilon of the
-//!   projection.
+//! - so do the positions that repeat the first token, and its level bin if
+//!   the model has bins, from the start (`PrefixStableBlock`), whose states
+//!   are that of the first, as long as no head's value at the first
+//!   position is under the epsilon of the projection.
 //!
 //! Left out, since they change the rounding and not the function: the
 //! double-precision backward pass of the RMS normalizations
@@ -27,11 +27,14 @@ use super::math::{
 };
 use super::{Config, Matrix, Product};
 
-/// The rows of scores and of attention weights a product makes at once.
-/// Row `t` needs its first `t + 1` columns only, so a product over a band
-/// of rows stops at the band's last column, and the bands together do
-/// little more than half the work of the square.
-const BAND: usize = 48;
+/// The width of the bands the products of attention are made in. Position
+/// `t` attends to positions `0..=t` only, so the scores and the weights are
+/// triangles, and a band of rows stops at its last column, or a band of
+/// columns starts at its first row: the bands together do `1 + BAND / T`
+/// of the work of the triangle, half the square. A product packs its
+/// operands anew for each band, which wider bands do less often; around 96
+/// the two costs together are least for 500 to 1500 positions.
+const BAND: usize = 96;
 
 /// What the backward pass needs of a block's forward pass.
 struct Kept {
@@ -138,8 +141,9 @@ pub struct Workspace {
     capacity: usize,
     cos: Vec<f32>,
     sin: Vec<f32>,
-    /// The tokens of the last forward pass.
+    /// The tokens of the last forward pass, and their level bins.
     tokens: Vec<u32>,
+    bins: Vec<u32>,
     /// The residual stream: a row of `width` a position.
     stream: Vec<f32>,
     blocks: Vec<Kept>,
@@ -174,6 +178,7 @@ impl Workspace {
             cos,
             sin,
             tokens: Vec::with_capacity(capacity),
+            bins: Vec::with_capacity(capacity),
             stream: vec![0.0; capacity * config.width],
             blocks: (0..config.layers)
                 .map(|_| Kept::new(&config, capacity))
@@ -204,15 +209,25 @@ impl Workspace {
         &self.logits[..self.tokens.len() * self.config.vocab]
     }
 
-    /// Runs the model on `tokens`.
+    /// Runs the model on `tokens`, each with the bin of the level it leads
+    /// to in `bins` if the model has bins; `bins` is empty if it has none.
     ///
     /// # Panics
     ///
     /// If `parameters` are not those of the model, there is no token or
-    /// more than the capacity, or a token is outside the vocabulary.
-    pub fn forward<P: Product>(&mut self, product: &mut P, parameters: &[f32], tokens: &[u32]) {
+    /// more than the capacity, there is not a bin for each token of a model
+    /// with bins, or a token or a bin is outside its vocabulary.
+    pub fn forward<P: Product>(
+        &mut self,
+        product: &mut P,
+        parameters: &[f32],
+        tokens: &[u32],
+        bins: &[u32],
+    ) {
         let config = self.config;
         assert_eq!(parameters.len(), config.parameters(), "another model");
+        let binned = if config.bins > 0 { tokens.len() } else { 0 };
+        assert_eq!(bins.len(), binned, "the bins of {} tokens", tokens.len());
         assert!(
             !tokens.is_empty() && tokens.len() <= self.capacity,
             "{} tokens in a workspace of {}",
@@ -223,17 +238,27 @@ impl Workspace {
         let (hidden, half) = (config.hidden(), config.head() / 2);
         self.tokens.clear();
         self.tokens.extend_from_slice(tokens);
+        self.bins.clear();
+        self.bins.extend_from_slice(bins);
         let stream = &mut self.stream[..t * d];
         for (row, token) in stream.chunks_mut(d).zip(tokens) {
             let token = *token as usize;
             assert!(token < config.vocab, "token {token} of {}", config.vocab);
             row.copy_from_slice(&parameters[token * d..][..d]);
         }
+        let of_bins = &parameters[config.bin_embedding()..];
+        for (row, bin) in stream.chunks_mut(d).zip(bins) {
+            let bin = *bin as usize;
+            assert!(bin < config.bins, "bin {bin} of {}", config.bins);
+            for (slot, value) in row.iter_mut().zip(&of_bins[bin * d..][..d]) {
+                *slot += value;
+            }
+        }
         let scale = 1.0 / (dh as f32).sqrt();
-        let mut stable = tokens
-            .iter()
-            .take_while(|token| **token == tokens[0])
-            .count();
+        let same = |position: &usize| {
+            tokens[*position] == tokens[0] && bins.get(*position) == bins.first()
+        };
+        let mut stable = (0..t).take_while(same).count();
         for (layer, kept) in self.blocks.iter_mut().enumerate() {
             let at = config.block(layer);
             rms(stream, d, &mut kept.norm1[..t * d], &mut kept.inverse1[..t]);
@@ -268,16 +293,25 @@ impl Workspace {
             for head in 0..heads {
                 let weights = &mut kept.weights[head * t * t..][..t * t];
                 for (start, end) in bands(t) {
+                    // The scores of a band of keys, for the queries from
+                    // its first on: the many queries are read along their
+                    // rows, and the few keys are the operand turned.
                     product.multiply_spaced(
-                        &mut weights[start * t..],
+                        &mut weights[start * t + start..],
                         t,
                         Matrix::spaced(
                             &kept.qkv[start * 3 * d + head * dh..],
-                            end - start,
+                            t - start,
                             dh,
                             3 * d,
                         ),
-                        Matrix::spaced(&kept.qkv[d + head * dh..], end, dh, 3 * d).transposed(),
+                        Matrix::spaced(
+                            &kept.qkv[start * 3 * d + d + head * dh..],
+                            end - start,
+                            dh,
+                            3 * d,
+                        )
+                        .transposed(),
                         false,
                     );
                 }
@@ -482,13 +516,15 @@ impl Workspace {
                 }
                 back.attended[..kept.stable * dh].fill(0.0);
                 for (start, end) in bands(t) {
-                    // At the weights of the band: its attended gradients by
-                    // the values it sees.
+                    // At the weights on a band of values: the attended
+                    // gradients of the positions from its first on, by the
+                    // values.
                     product.multiply_spaced(
-                        &mut back.weights[start * t..],
+                        &mut back.weights[start * t + start..],
                         t,
-                        Matrix::new(&back.attended[start * dh..end * dh], end - start, dh),
-                        Matrix::spaced(values.data(), end, dh, 3 * d).transposed(),
+                        Matrix::new(&back.attended[start * dh..t * dh], t - start, dh),
+                        Matrix::spaced(&values.data()[start * 3 * d..], end - start, dh, 3 * d)
+                            .transposed(),
                         false,
                     );
                     // At the values of the band: the attended gradients of
@@ -582,6 +618,13 @@ impl Workspace {
                 *slot += value;
             }
         }
+        let of_bins = &mut gradient[config.bin_embedding()..];
+        for (row, bin) in at_stream.chunks(d).zip(&self.bins) {
+            let slots = &mut of_bins[*bin as usize * d..][..d];
+            for (slot, value) in slots.iter_mut().zip(row) {
+                *slot += value;
+            }
+        }
     }
 }
 
@@ -596,7 +639,14 @@ mod tests {
         width: 8,
         heads: 2,
         layers: 2,
+        bins: 5,
     };
+
+    /// The bin of each token: the same for the same token, so that a
+    /// repeated token repeats its input.
+    fn bins(tokens: &[u32]) -> Vec<u32> {
+        tokens.iter().map(|token| (token * 3) % 5).collect()
+    }
 
     /// Weights wide enough for every part of the model to bend.
     fn weights(seed: u64) -> Vec<f32> {
@@ -618,7 +668,7 @@ mod tests {
         let weights: Vec<f32> = (0..tokens.len())
             .map(|position| 0.5 + (position % 3) as f32 * 0.25)
             .collect();
-        workspace.forward(&mut Plain, parameters, tokens);
+        workspace.forward(&mut Plain, parameters, tokens, &bins(tokens));
         workspace.loss(&targets, &weights)
     }
 
@@ -636,6 +686,9 @@ mod tests {
             edges.extend([block.projection, block.expansion, block.contraction]);
             edges.push(CONFIG.block(layer + 1).qkv);
         }
+        // The last is the embedding of the bins.
+        assert_eq!(edges.last(), Some(&CONFIG.bin_embedding()));
+        edges.push(CONFIG.parameters());
         let mut rng = Rng::from_key(&[seed, 99]);
         for (matrix, range) in edges.windows(2).enumerate() {
             let mut direction = vec![0.0_f32; parameters.len()];
@@ -683,18 +736,23 @@ mod tests {
         let parameters = weights(4);
         let mut workspace = Workspace::new(CONFIG, 60);
         let mut sequence = tokens(60, 4);
-        workspace.forward(&mut Plain, &parameters, &sequence);
+        workspace.forward(&mut Plain, &parameters, &sequence, &bins(&sequence));
         let whole = workspace.logits().to_vec();
         assert_eq!(whole.len(), 60 * CONFIG.vocab);
         // The logits tell positions apart.
         assert!(whole[..CONFIG.vocab] != whole[CONFIG.vocab..2 * CONFIG.vocab]);
         // The same tokens without the last ten, and with others after them.
-        workspace.forward(&mut Plain, &parameters, &sequence[..50]);
+        workspace.forward(
+            &mut Plain,
+            &parameters,
+            &sequence[..50],
+            &bins(&sequence[..50]),
+        );
         assert_eq!(workspace.logits(), &whole[..50 * CONFIG.vocab]);
         sequence[50..]
             .iter_mut()
             .for_each(|token| *token = (*token + 1) % 11);
-        workspace.forward(&mut Plain, &parameters, &sequence);
+        workspace.forward(&mut Plain, &parameters, &sequence, &bins(&sequence));
         assert_eq!(
             &workspace.logits()[..50 * CONFIG.vocab],
             &whole[..50 * CONFIG.vocab]
@@ -708,7 +766,7 @@ mod tests {
         let mut workspace = Workspace::new(CONFIG, 12);
         let mut sequence = vec![3_u32; 12];
         sequence[8..].copy_from_slice(&[1, 3, 3, 9]);
-        workspace.forward(&mut Plain, &parameters, &sequence);
+        workspace.forward(&mut Plain, &parameters, &sequence, &bins(&sequence));
         let logits = workspace.logits().to_vec();
         let (first, vocab) = (&logits[..CONFIG.vocab], CONFIG.vocab);
         for position in 1..8 {
@@ -722,8 +780,44 @@ mod tests {
         assert!(&logits[9 * vocab..][..vocab] != first);
         // The first position is the model without attention: its logits are
         // those of a sequence of one token.
-        workspace.forward(&mut Plain, &parameters, &sequence[..1]);
+        workspace.forward(
+            &mut Plain,
+            &parameters,
+            &sequence[..1],
+            &bins(&sequence[..1]),
+        );
         assert_eq!(workspace.logits(), first);
+        // A repeated token whose bin changes is another input: the state is
+        // kept only up to it.
+        let mut levels = bins(&sequence);
+        levels[5] = (levels[0] + 1) % 5;
+        workspace.forward(&mut Plain, &parameters, &sequence, &levels);
+        let logits = workspace.logits();
+        assert_eq!(&logits[4 * vocab..][..vocab], first);
+        assert!(&logits[5 * vocab..][..vocab] != first);
+        assert!(&logits[6 * vocab..][..vocab] != first);
+    }
+
+    #[test]
+    fn a_model_without_bins_reads_tokens_alone() {
+        let config = Config { bins: 0, ..CONFIG };
+        let parameters = &weights(7)[..config.parameters()];
+        let sequence = tokens(8, 7);
+        let mut workspace = Workspace::new(config, 8);
+        workspace.forward(&mut Plain, parameters, &sequence, &[]);
+        let alone = workspace.logits().to_vec();
+        // The same blocks with an embedding of bins that is zero.
+        let mut padded = parameters.to_vec();
+        padded.resize(CONFIG.parameters(), 0.0);
+        let mut binned = Workspace::new(CONFIG, 8);
+        binned.forward(&mut Plain, &padded, &sequence, &bins(&sequence));
+        assert_eq!(binned.logits(), alone);
+        // And its gradient has no part for them.
+        let targets = tokens(8, 8);
+        workspace.loss(&targets, &[0.125; 8]);
+        let mut gradient = vec![0.0_f32; config.parameters()];
+        workspace.backward(&mut Plain, parameters, &mut gradient);
+        assert!(gradient.iter().any(|g| g.abs() > 1e-3));
     }
 
     #[test]
@@ -731,7 +825,7 @@ mod tests {
         let parameters = weights(6);
         let sequence = tokens(6, 6);
         let mut workspace = Workspace::new(CONFIG, 6);
-        workspace.forward(&mut Plain, &parameters, &sequence);
+        workspace.forward(&mut Plain, &parameters, &sequence, &bins(&sequence));
         // The cross-entropy of uniform weights on one position is that of
         // its row alone.
         let row: Vec<f64> = workspace.logits()[2 * 11..3 * 11]
@@ -754,7 +848,12 @@ mod tests {
         let mut gradient = vec![0.0_f32; parameters.len()];
         workspace.backward(&mut Plain, &parameters, &mut gradient);
         let mut cut = vec![0.0_f32; parameters.len()];
-        workspace.forward(&mut Plain, &parameters, &sequence[..3]);
+        workspace.forward(
+            &mut Plain,
+            &parameters,
+            &sequence[..3],
+            &bins(&sequence[..3]),
+        );
         let again = workspace.loss(&[99, 99, 4], &[0.0, 0.0, 1.0]);
         workspace.backward(&mut Plain, &parameters, &mut cut);
         assert!((again - loss).abs() < 1e-6);

@@ -23,23 +23,18 @@ const NC: usize = 2048;
 /// Floats in a line of the cache.
 const LINE: usize = 16;
 
-/// `count` floats of `matrix` from `(row, column)` on, along the row if
-/// `along_row`, else down the column, into every `stride`-th float of `to`.
-fn copy(
-    matrix: Matrix<'_>,
-    row: usize,
-    column: usize,
-    along_row: bool,
-    to: &mut [f32],
-    stride: usize,
-) {
-    let (row_step, column_step) = matrix.steps();
-    let first = row * row_step + column * column_step;
-    let step = if along_row { column_step } else { row_step };
-    let count = to.len().div_ceil(stride);
-    let from = &matrix.data()[first..=first + (count - 1) * step];
-    for (slot, value) in to.iter_mut().step_by(stride).zip(from.iter().step_by(step)) {
-        *slot = *value;
+/// The line a matrix lacks past its last row or column.
+static ZEROS: [f32; KC] = [0.0; KC];
+
+/// Weaves lines of floats of one length: `to` takes the first float of
+/// each line, then the second of each, and so on. A matrix is either rows
+/// in lines or, as a transpose, columns in lines ([`Matrix`]); a sliver
+/// needs the floats of its step together.
+fn weave<const LINES: usize>(lines: [&[f32]; LINES], to: &mut [f32]) {
+    for (step, to) in to.as_chunks_mut::<LINES>().0.iter_mut().enumerate() {
+        for (slot, line) in to.iter_mut().zip(&lines) {
+            *slot = line[step];
+        }
     }
 }
 
@@ -184,15 +179,38 @@ impl Gemm {
         first_step: usize,
         steps: usize,
     ) {
+        let ((row_step, column_step), data) = (a.steps(), a.data());
         let slivers = self.left.chunks_mut(MR * steps).take(rows.div_ceil(MR));
         for (sliver, packed) in slivers.enumerate() {
-            for line in 0..MR {
-                let row = sliver * MR + line;
-                let to = &mut packed[line..];
-                if row < rows {
-                    copy(a, first_row + row, first_step, true, to, MR);
-                } else {
-                    to.iter_mut().step_by(MR).for_each(|slot| *slot = 0.0);
+            let row = first_row + sliver * MR;
+            let height = MR.min(first_row + rows - row);
+            if row_step != 1 {
+                // Each row is a line of the floats: the lines are woven.
+                let lines: [&[f32]; MR] = core::array::from_fn(|line| {
+                    if line < height {
+                        &data[(row + line) * row_step + first_step * column_step..][..steps]
+                    } else {
+                        &ZEROS[..steps]
+                    }
+                });
+                weave(lines, packed);
+                continue;
+            }
+            // The rows lie side by side, as in a transpose: a step of the
+            // sliver is a piece of one line, and the floats are read in the
+            // order they lie in.
+            let first = row + first_step * column_step;
+            if height == MR {
+                for (step, to) in packed.as_chunks_mut::<MR>().0.iter_mut().enumerate() {
+                    let from = &data[first + step * column_step..][..MR];
+                    let from: &[f32; MR] = from.try_into().expect("a sliver's rows");
+                    to.copy_from_slice(from);
+                }
+            } else {
+                for (step, to) in packed.as_chunks_mut::<MR>().0.iter_mut().enumerate() {
+                    let (taken, rest) = to.split_at_mut(height);
+                    taken.copy_from_slice(&data[first + step * column_step..][..height]);
+                    rest.fill(0.0);
                 }
             }
         }
@@ -209,27 +227,37 @@ impl Gemm {
         first_column: usize,
         columns: usize,
     ) {
+        let ((row_step, column_step), data) = (b.steps(), b.data());
         let right = &mut self.right[self.start..];
         let slivers = right.chunks_mut(NR * steps).take(columns.div_ceil(NR));
         for (sliver, packed) in slivers.enumerate() {
-            let column = sliver * NR;
-            let width = NR.min(columns - column);
-            if b.steps().1 == 1 {
-                // Rows of `b` lie in a line: a step at a time.
-                for (step, to) in packed.chunks_mut(NR).enumerate() {
-                    let (taken, rest) = to.split_at_mut(width);
-                    copy(b, first_step + step, first_column + column, true, taken, 1);
-                    rest.fill(0.0);
+            let column = first_column + sliver * NR;
+            let width = NR.min(first_column + columns - column);
+            if column_step != 1 {
+                // Each column is a line of the floats, as in a transpose.
+                let lines: [&[f32]; NR] = core::array::from_fn(|line| {
+                    if line < width {
+                        &data[(column + line) * column_step + first_step * row_step..][..steps]
+                    } else {
+                        &ZEROS[..steps]
+                    }
+                });
+                weave(lines, packed);
+                continue;
+            }
+            // Each row is a line: a step of the sliver is a piece of one.
+            let first = first_step * row_step + column;
+            if width == NR {
+                for (step, to) in packed.as_chunks_mut::<NR>().0.iter_mut().enumerate() {
+                    let from = &data[first + step * row_step..][..NR];
+                    let from: &[f32; NR] = from.try_into().expect("a sliver's columns");
+                    to.copy_from_slice(from);
                 }
             } else {
-                // Columns of `b` lie in a line: a column at a time.
-                for line in 0..NR {
-                    let to = &mut packed[line..];
-                    if line < width {
-                        copy(b, first_step, first_column + column + line, false, to, NR);
-                    } else {
-                        to.iter_mut().step_by(NR).for_each(|slot| *slot = 0.0);
-                    }
+                for (step, to) in packed.as_chunks_mut::<NR>().0.iter_mut().enumerate() {
+                    let (taken, rest) = to.split_at_mut(width);
+                    taken.copy_from_slice(&data[first + step * row_step..][..width]);
+                    rest.fill(0.0);
                 }
             }
         }
@@ -398,6 +426,7 @@ mod tests {
             width: 32,
             heads: 4,
             layers: 2,
+            bins: 0,
         };
         let mut rng = Rng::from_key(&[5]);
         let parameters: Vec<f32> = (0..config.parameters())
@@ -413,14 +442,14 @@ mod tests {
             (loss, gradient)
         };
         let (plain_loss, plain) = run(&mut |workspace, gradient| {
-            workspace.forward(&mut Plain, &parameters, &tokens);
+            workspace.forward(&mut Plain, &parameters, &tokens, &[]);
             let loss = workspace.loss(&targets, &weights);
             workspace.backward(&mut Plain, &parameters, gradient);
             loss
         });
         let mut gemm = Gemm::new();
         let (fast_loss, fast) = run(&mut |workspace, gradient| {
-            workspace.forward(&mut gemm, &parameters, &tokens);
+            workspace.forward(&mut gemm, &parameters, &tokens, &[]);
             let loss = workspace.loss(&targets, &weights);
             workspace.backward(&mut gemm, &parameters, gradient);
             loss
@@ -435,6 +464,185 @@ mod tests {
         for (fast, plain) in fast.iter().zip(&plain) {
             assert!((fast - plain).abs() < 1e-4 * scale, "{fast} and {plain}");
         }
+    }
+
+    /// A product that keeps the time and the work of its kinds of products.
+    struct Timed {
+        inner: Gemm,
+        /// Seconds and operations of the products of weights whose left
+        /// operand is read along its rows, of those whose left operand is
+        /// a transpose, and of the bands of attention.
+        kinds: [(f64, f64); 3],
+    }
+
+    impl Product for Timed {
+        fn multiply_spaced(
+            &mut self,
+            c: &mut [f32],
+            stride: usize,
+            a: Matrix<'_>,
+            b: Matrix<'_>,
+            keep: bool,
+        ) {
+            // A head of the model measured is 64 wide, and no product of
+            // its weights has that width.
+            let kind = if a.columns() == 64 || b.columns() == 64 {
+                2
+            } else {
+                usize::from(a.steps().0 == 1)
+            };
+            let start = std::time::Instant::now();
+            self.inner.multiply_spaced(c, stride, a, b, keep);
+            self.kinds[kind].0 += start.elapsed().as_secs_f64();
+            self.kinds[kind].1 += (2 * a.rows() * a.columns() * b.columns()) as f64;
+        }
+    }
+
+    /// Where the time of a training sequence goes on one thread:
+    /// `cargo test --release -p diff-gpt-forecast-infrastructure sequence_speed -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "a measurement, not a check"]
+    fn sequence_speed() {
+        let config = Config {
+            vocab: 256,
+            width: 256,
+            heads: 4,
+            layers: 6,
+            bins: 0,
+        };
+        let length = 1412;
+        let mut rng = Rng::from_key(&[1]);
+        let parameters = config.initial(&mut rng);
+        let tokens: Vec<u32> = (0..length)
+            .map(|_| rng.index(config.vocab) as u32)
+            .collect();
+        let weights = vec![1.0_f32; length];
+        let mut workspace = Workspace::new(config, length);
+        let mut gradient = vec![0.0_f32; config.parameters()];
+        let mut product = Timed {
+            inner: Gemm::new(),
+            kinds: [(0.0, 0.0); 3],
+        };
+        for turn in 0..3 {
+            product.kinds = [(0.0, 0.0); 3];
+            let start = std::time::Instant::now();
+            workspace.forward(&mut product, &parameters, &tokens, &[]);
+            let forward = start.elapsed().as_secs_f64();
+            let in_forward = product.kinds;
+            workspace.loss(&tokens, &weights);
+            let lost = start.elapsed().as_secs_f64();
+            workspace.backward(&mut product, &parameters, &mut gradient);
+            let all = start.elapsed().as_secs_f64();
+            let estimate = 2.0 * (config.products(length) * length) as f64;
+            println!(
+                "turn {turn}: {all:.3} s, {:.1} GFLOPS by the estimate; forward {forward:.3} s, loss {:.3} s, backward {:.3} s",
+                estimate / all / 1e9,
+                lost - forward,
+                all - lost
+            );
+            let names = ["rows", "transposed", "bands"];
+            let mut inside = 0.0;
+            for (kind, name) in names.iter().enumerate() {
+                let (seconds, flops) = product.kinds[kind];
+                inside += seconds;
+                println!(
+                    "  {name:<10} {seconds:.3} s  {:6.1} GFLOPS  ({:.3} s of it forward)",
+                    flops / seconds / 1e9,
+                    in_forward[kind].0
+                );
+            }
+            println!("  outside the products: {:.3} s", all - inside);
+        }
+    }
+
+    /// The speed of each product of one attention head of 64 channels at
+    /// 1412 positions, band by band as the model makes them:
+    /// `cargo test --release -p diff-gpt-forecast-infrastructure band_speed -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "a measurement, not a check"]
+    fn band_speed() {
+        let (t, dh, d3, band) = (1412_usize, 64_usize, 768_usize, 96_usize);
+        let mut gemm = Gemm::new();
+        let qkv = floats(t * d3, 1);
+        let mut weights = floats(t * t, 2);
+        let narrow = floats(t * dh, 3);
+        let mut out = vec![0.0_f32; t * dh];
+        let bands: Vec<(usize, usize)> = (0..t)
+            .step_by(band)
+            .map(|start| (start, (start + band).min(t)))
+            .collect();
+        let work = bands
+            .iter()
+            .map(|(start, end)| 2 * (end - start) * end * dh)
+            .sum::<usize>() as f64;
+        let mut time = |name: &str, run: &mut dyn FnMut(&mut Gemm)| {
+            let mut best = f64::INFINITY;
+            for _ in 0..5 {
+                let start = std::time::Instant::now();
+                run(&mut gemm);
+                best = best.min(start.elapsed().as_secs_f64());
+            }
+            println!(
+                "{name:<28} {:6.2} ms  {:5.1} GFLOPS",
+                best * 1e3,
+                work / best / 1e9
+            );
+        };
+        time("scores: Q K^T", &mut |gemm| {
+            for &(start, end) in &bands {
+                gemm.multiply_spaced(
+                    &mut weights[start * t + start..],
+                    t,
+                    Matrix::spaced(&qkv[start * d3..], t - start, dh, d3),
+                    Matrix::spaced(&qkv[start * d3 + 256..], end - start, dh, d3).transposed(),
+                    false,
+                );
+            }
+        });
+        time("at the weights: dA V^T", &mut |gemm| {
+            for &(start, end) in &bands {
+                gemm.multiply_spaced(
+                    &mut weights[start * t + start..],
+                    t,
+                    Matrix::new(&narrow[start * dh..t * dh], t - start, dh),
+                    Matrix::spaced(&qkv[start * d3 + 512..], end - start, dh, d3).transposed(),
+                    false,
+                );
+            }
+        });
+        let weights = floats(t * t, 4);
+        time("attended: P V", &mut |gemm| {
+            for &(start, end) in &bands {
+                gemm.multiply(
+                    &mut out[start * dh..end * dh],
+                    Matrix::spaced(&weights[start * t..], end - start, end, t),
+                    Matrix::spaced(&qkv[512..], end, dh, d3),
+                    false,
+                );
+            }
+        });
+        time("at the values: P^T dA", &mut |gemm| {
+            for &(start, end) in &bands {
+                gemm.multiply(
+                    &mut out[start * dh..end * dh],
+                    Matrix::spaced(&weights[start * t + start..], t - start, end - start, t)
+                        .transposed(),
+                    Matrix::new(&narrow[start * dh..t * dh], t - start, dh),
+                    false,
+                );
+            }
+        });
+        time("at the keys: dS^T Q", &mut |gemm| {
+            for &(start, end) in &bands {
+                gemm.multiply(
+                    &mut out[start * dh..end * dh],
+                    Matrix::spaced(&weights[start * t + start..], t - start, end - start, t)
+                        .transposed(),
+                    Matrix::spaced(&qkv[start * d3..], t - start, dh, d3),
+                    false,
+                );
+            }
+        });
     }
 
     /// The speed of a product on one thread:

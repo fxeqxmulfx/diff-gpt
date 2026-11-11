@@ -3,6 +3,7 @@
 
 mod args;
 mod corpus;
+mod train;
 
 use std::process::ExitCode;
 
@@ -10,19 +11,20 @@ use diff_gpt_forecast_application::Result;
 
 use crate::args::Options;
 
-fn run(mut arguments: impl Iterator<Item = String>) -> Result<()> {
-    let command = (arguments.next(), arguments.next());
-    let command = (command.0.as_deref(), command.1.as_deref());
-    let options = |arguments| Options::parse(arguments);
-    match command {
-        (Some("corpus"), Some("check")) => corpus::check(options(arguments)?),
-        (Some("corpus"), Some("generate")) => corpus::generate(options(arguments)?),
-        _ => Err(format!("usage:\n{}", corpus::USAGE).into()),
+fn run(arguments: &[String]) -> Result<()> {
+    let words: Vec<&str> = arguments.iter().map(String::as_str).collect();
+    let options = |rest: &[&str]| Options::parse(rest.iter().map(|word| (*word).to_owned()));
+    match words.as_slice() {
+        ["corpus", "check", rest @ ..] => corpus::check(options(rest)?),
+        ["corpus", "generate", rest @ ..] => corpus::generate(options(rest)?),
+        ["train", rest @ ..] => train::train(options(rest)?),
+        _ => Err(format!("usage:\n{}\n{}", corpus::USAGE, train::USAGE).into()),
     }
 }
 
 fn main() -> ExitCode {
-    match run(std::env::args().skip(1)) {
+    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    match run(&arguments) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("forecast: {error}");

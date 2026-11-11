@@ -14,6 +14,10 @@
 //! - Every matrix is drawn from a normal distribution of deviation 0.02, and
 //!   none has a bias.
 //!
+//! One addition, off unless asked for: a second embedding, of the bin of
+//! the level a token leads to ([`crate::codec`]), added to the token's at
+//! the input. It is not tied to the readout, which predicts tokens alone.
+//!
 //! Here the model is its arithmetic on one sequence, forward and backward
 //! ([`sequence`]), over a port for the matrix product ([`Product`]), which
 //! the infrastructure fills with kernels. The domain's own product,
@@ -42,6 +46,9 @@ pub struct Config {
     pub heads: usize,
     /// The number of blocks.
     pub layers: usize,
+    /// The number of level bins with an embedding of their own, added to
+    /// the token's at the input; 0 for a model of tokens alone.
+    pub bins: usize,
 }
 
 /// Where the matrices of a block lie among the parameters: each is rows of
@@ -118,10 +125,17 @@ impl Config {
         }
     }
 
+    /// Where the embedding of the level bins lies: after the blocks,
+    /// `bins` rows of `width`.
+    #[must_use]
+    pub const fn bin_embedding(&self) -> usize {
+        self.embedding() + self.layers * self.block_size()
+    }
+
     /// The number of parameters.
     #[must_use]
     pub const fn parameters(&self) -> usize {
-        self.embedding() + self.layers * self.block_size()
+        self.bin_embedding() + self.bins * self.width
     }
 
     /// Fresh parameters: independent normal draws of deviation [`INITIAL`].
@@ -134,12 +148,12 @@ impl Config {
 
     /// The multiply-adds of the matrix products of one token in training,
     /// forward and backward, in a sequence of `length` tokens: three times
-    /// those of the forward pass, which are one per parameter, the embedding
-    /// counted once as the readout, and `2 · length · width` per block for
-    /// the scores and the attended values.
+    /// those of the forward pass, which are one per parameter of a matrix,
+    /// the embedding counted once as the readout, and `2 · length · width`
+    /// per block for the scores and the attended values.
     #[must_use]
     pub const fn products(&self, length: usize) -> usize {
-        3 * (self.parameters() + self.layers * 2 * length * self.width)
+        3 * (self.bin_embedding() + self.layers * 2 * length * self.width)
     }
 }
 
@@ -322,6 +336,7 @@ mod tests {
             width: 24,
             heads: 3,
             layers: 2,
+            bins: 0,
         };
         config.check().expect("valid");
         assert_eq!((config.head(), config.hidden()), (8, 64));
@@ -332,6 +347,14 @@ mod tests {
         assert_eq!(first.contraction - first.expansion, 24 * 128);
         assert_eq!(config.block(1).qkv - first.contraction, 64 * 24);
         assert_eq!(config.parameters(), config.block(2).qkv);
+        let binned = Config { bins: 10, ..config };
+        assert_eq!(binned.bin_embedding(), config.parameters());
+        assert_eq!(binned.parameters(), config.parameters() + 240);
+        assert_eq!(binned.products(7), config.products(7));
+        assert_eq!(
+            config.products(7),
+            3 * (config.parameters() + 2 * 2 * 7 * 24)
+        );
         let weights = config.initial(&mut Rng::from_key(&[1]));
         assert_eq!(weights.len(), config.parameters());
         let spread = (weights.iter().map(|w| f64::from(*w).powi(2)).sum::<f64>()

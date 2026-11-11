@@ -29,7 +29,7 @@ fn split(options: &mut Options) -> Result<Split> {
     Split::named(&name).ok_or_else(|| format!("no split {name:?}").into())
 }
 
-fn sources(options: &mut Options) -> Result<Vec<Source>> {
+pub fn sources(options: &mut Options) -> Result<Vec<Source>> {
     let Some(names) = options.take_list("sources") else {
         return Ok(Source::ALL.to_vec());
     };
@@ -39,7 +39,7 @@ fn sources(options: &mut Options) -> Result<Vec<Source>> {
         .collect()
 }
 
-fn threads(options: &mut Options) -> Result<Threads> {
+pub fn threads(options: &mut Options) -> Result<Threads> {
     let count = options.take("threads", Threads::available().count())?;
     Ok(Threads::new(count))
 }

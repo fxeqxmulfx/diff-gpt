@@ -67,6 +67,77 @@ impl Executor for Serial {
     }
 }
 
+/// Workers that run a job side by side, each on a processor of its own. A
+/// use case that needs the same worker to come back to its own memory, as
+/// the trainer does, numbers its work by the worker.
+pub trait Crew: Sync {
+    /// The number of workers.
+    fn size(&self) -> usize;
+
+    /// Runs `job(worker)` for every worker, `0` to `size − 1`, at once if
+    /// it can, and returns when all have finished.
+    fn all(&self, job: &(dyn Fn(usize) + Sync));
+}
+
+/// The crew whose workers take their turns one after another.
+#[derive(Clone, Copy, Debug)]
+pub struct InTurn(pub usize);
+
+impl Crew for InTurn {
+    fn size(&self) -> usize {
+        self.0
+    }
+
+    fn all(&self, job: &(dyn Fn(usize) + Sync)) {
+        (0..self.0).for_each(job);
+    }
+}
+
+/// Where a run keeps what it reports and what it goes on from: named texts
+/// and tables. A write replaces what the name held, all of it or nothing.
+pub trait RunStore {
+    /// The text under `name`, if there is one.
+    ///
+    /// # Errors
+    ///
+    /// If the store cannot be read.
+    fn text(&self, name: &str) -> Result<Option<String>>;
+
+    /// Puts `text` under `name`.
+    ///
+    /// # Errors
+    ///
+    /// If the store cannot be written.
+    fn write_text(&self, name: &str, text: &str) -> Result<()>;
+
+    /// Adds `text` to the end of the text under `name`.
+    ///
+    /// # Errors
+    ///
+    /// If the store cannot be written.
+    fn append_text(&self, name: &str, text: &str) -> Result<()>;
+
+    /// The table under `name`, if there is one.
+    ///
+    /// # Errors
+    ///
+    /// If the store cannot be read.
+    fn table(&self, name: &str) -> Result<Option<Table>>;
+
+    /// Puts `table` under `name`.
+    ///
+    /// # Errors
+    ///
+    /// If the store cannot be written.
+    fn write_table(&self, name: &str, table: &Table) -> Result<()>;
+}
+
+/// The time a run has taken.
+pub trait Clock {
+    /// The seconds since the clock was started.
+    fn seconds(&self) -> f64;
+}
+
 /// A corpus of series to read: some sources of some splits.
 pub trait SeriesReader: Sync {
     /// The number of series of `source` in `split`.
@@ -108,5 +179,16 @@ mod tests {
         }
         assert_ne!(Split::Train.id(), Split::Holdout.id());
         assert_eq!(Serial.map(4, |index| index * index), [0, 1, 4, 9]);
+    }
+
+    #[test]
+    fn a_crew_in_turn_runs_every_worker_once() {
+        let seen = std::sync::Mutex::new(Vec::new());
+        let crew = InTurn(3);
+        crew.all(&|worker| seen.lock().expect("no panic").push(worker));
+        assert_eq!(
+            (crew.size(), seen.into_inner().expect("no panic")),
+            (3, vec![0, 1, 2])
+        );
     }
 }

@@ -4,6 +4,7 @@
 //! - [`random`]: the keyed random streams every source draws from;
 //! - [`numeric`]: small numerical tools;
 //! - [`calendar`]: civil dates and TempoPFN's sampling frequencies;
+//! - [`codec`]: the tokens of a series, in the units of its context;
 //! - [`linalg`]: dot products and Cholesky factorizations;
 //! - [`model`]: the transformer on one sequence, forward and backward, and
 //!   its optimizer;
@@ -17,6 +18,7 @@
 #![forbid(unsafe_code)]
 
 pub mod calendar;
+pub mod codec;
 pub mod eigen;
 pub mod linalg;
 pub mod model;

@@ -26,6 +26,8 @@ Layout: clean architecture, each crate depending only on those above it
       eigen.rs           eigenvectors of a symmetric matrix (dsytrd, then QL)
       calendar.rs        civil dates; TempoPFN's frequencies, start dates and
                          date ranges
+      codec.rs           the tokens of a series: steps on a level grid in the
+                         units of the window's context, and level bins
       synth/             the sources, one module each; Source names them
           gpytorch.rs    gpytorch's kernels and operators in float32, for gp
           pyo.rs         pyo's oscillators, noises and filters, for the audio
@@ -41,12 +43,19 @@ Layout: clean architecture, each crate depending only on those above it
           sequence.rs    the forward pass, the loss and the backward pass
           optimizer.rs   schedule-free AdamW
   crates/application     the use cases and their ports; no thread, no unsafe
-      ports.rs           Executor, SeriesReader, SeriesWriter, Split
+      ports.rs           Executor, Crew, SeriesReader, SeriesWriter, RunStore,
+                         Clock, Split
       corpus.rs          generate the shards; check a source against a reference
+      windows.rs         the windows of a corpus as sequences to train on
+      training.rs        a step of the optimizer on a batch shared out among
+                         the workers of a crew
+      pretrain.rs        a pretraining run: plan, history, state to go on from
   crates/infrastructure  what stands behind the ports
       npy.rs             float32 tables as .npy files
       corpus_files.rs    the reference corpus and this workspace's shards
       threads.rs         the executor on the threads of the process
+      crew.rs            a worker on each core, bound there through Kernite
+      run_files.rs       a run's directory of texts and tables; its clock
       kernels.rs         the micro-kernel of the matrix product, in Kernite
       gemm.rs            the blocked product around it, on one thread
   crates/interfaces      the `forecast` command: it parses and wires
@@ -64,6 +73,9 @@ Commands (from the repository root; CPUs 27 and 55 stay free for the desktop)
       corpus generate --split train --shards 16 --shard-series 4096
   taskset -c 0-26,28-54 src/native_forecast/target/release/forecast \
       corpus generate --split holdout --shards 1 --shard-series 4096
+
+  taskset -c 0-26,28-54 src/native_forecast/target/release/forecast \
+      train --output runs/native/<name> --steps 10000 --every 250
 
 `corpus check` compares, for each source, the series this workspace makes
 with as many of datasets/tempopfn-synthetic/npy/<split>/<source>.npy, feature
@@ -100,18 +112,55 @@ its tests compare the gradient of every matrix with central differences. All
 its matrix products go through the port `Product`: attention makes its
 products in bands of 48 rows, since row t needs only its first t + 1 columns.
 
+One addition is off unless asked for (`--bins N`): a second input embedding,
+of the bin of the level a token leads to, added to the token's. The tokens
+are steps; a model that reads steps alone has to add them up to know where
+the series is, and the bin tells it (domain/src/codec.rs).
+
 The infrastructure fills the port with a product blocked as BLIS blocks it
 around a 6 x 16 micro-kernel written in Kernite (x86-64-v3: AVX2 and FMA).
-On one core of this machine (Xeon E5-2680 v4) it runs at 72 to 86 GFLOPS on
-the shapes of a 5M-parameter model at 512 positions, and at 52 on the
-narrow products of one attention head:
+On one core of this machine (Xeon E5-2680 v4, the other cores idle) it runs
+at 72 to 90 GFLOPS on the shapes of a 5M-parameter model, and at 60 to 71 on
+the bands of one attention head at 1412 positions; a whole training sequence
+of that model, forward and backward, takes 1.03 s, of which 0.16 s outside
+the products:
 
   cd src/native_forecast
   taskset -c 5 cargo test --release -p diff-gpt-forecast-infrastructure \
       speed -- --ignored --nocapture
 
-Not there yet: the threads that train sequences side by side, the tokens of a
-series, the pretraining use case and the scoring.
+Training
+--------
+
+`forecast train` is `synthetic_pretrain.py` without its forecast scores yet:
+windows of the train split, each in the units of a prefix of itself
+(application/src/windows.rs), schedule-free AdamW with that script's
+settings, and at every evaluation the loss of fixed holdout windows at the
+optimizer's averaged point. A run directory holds run.txt (the plan and the
+domain of the tokens), history.csv, state.npy and last.npy; the same command
+on a directory that holds a run goes on from its state, and ends at the same
+parameters as an unbroken run.
+
+The tokens differ from Python's in one thing: a step beyond the vocabulary
+is caught up by the tokens after it instead of being lost (codec.rs).
+
+A step shares its sequences out among workers, one on each core and bound to
+it, each with arrays of its own that its core's socket holds; the gradients
+are then summed and the optimizer stepped by the same workers, each on its
+stretch of the parameters. Measured on this machine, the 4.8M-parameter
+model (256 wide, 6 layers, 4 heads, 256 tokens) at 1412 positions:
+
+  27 workers, one a core, batch 27     1.19e12 FLOP/s   21,800 tokens/s
+  54 workers, two a core, batch 54     1.25e12 FLOP/s   22,800 tokens/s
+
+with the holdout evaluations in the time, and FLOPs counted as
+`GPT.estimate_flops` counts them (6 a parameter and 12 a layer, a channel
+and a position, for each token). The Python trainer ran the same model at
+3.8e11 FLOP/s on one socket and at 6.2e11 on the GPU
+(runs/screen10/evidence10.txt).
+
+Not there yet: the forecasts of the holdout windows and their scores, the
+benchmarks, and the GPU.
 
 Sources ported, and how they compare with TempoPFN's
 ----------------------------------------------------
