@@ -42,6 +42,13 @@ pub const fn civil_from_days(days: i64) -> (i64, i64, i64) {
     (year, month, day)
 }
 
+/// Whether the day of the timestamp `ns` is the last of its month.
+#[must_use]
+pub const fn month_end(ns: i64) -> bool {
+    let days = ns.div_euclid(DAY);
+    civil_from_days(days).1 != civil_from_days(days + 1).1
+}
+
 /// The calendar fields of a timestamp that the seasonal components read.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Fields {
@@ -251,6 +258,45 @@ impl Frequency {
         rng.integer(earliest, latest.max(earliest) + 1)
     }
 
+    /// The `count` timestamps of `pd.date_range(start, periods=count)` at this
+    /// frequency: steps from `start` for a fixed number of seconds; from the
+    /// first Sunday at or after `start` for weeks; the ends of the months,
+    /// quarters or years from the first at or after `start`, at its time of
+    /// day.
+    #[must_use]
+    pub fn dates(self, start: i64, count: usize) -> Vec<i64> {
+        if let Some(step) = self.step() {
+            let first = if matches!(self, Self::W) {
+                start + (6 - fields(start).weekday) * DAY
+            } else {
+                start
+            };
+            return (0..count as i64)
+                .map(|index| first + index * step)
+                .collect();
+        }
+        let months = match self {
+            Self::M => 1,
+            Self::Q => 3,
+            _ => 12,
+        };
+        let (year, month, _) = civil_from_days(start.div_euclid(DAY));
+        let in_day = start.rem_euclid(DAY);
+        // Months are counted from year 0; a period ends with a month whose
+        // number the months of a period divide.
+        let mut ending = year * 12 + month - 1;
+        while (ending + 1) % months != 0 {
+            ending += 1;
+        }
+        (0..count as i64)
+            .map(|index| {
+                let after = ending + index * months + 1;
+                let first = days_from_civil(after.div_euclid(12), after.rem_euclid(12) + 1, 1);
+                (first - 1) * DAY + in_day
+            })
+            .collect()
+    }
+
     /// Moves `start` back to the last instant on the grid of the frequency,
     /// as the `rollback` of the pandas offset does: to a Sunday for weeks,
     /// nowhere for the frequencies of a fixed number of seconds.
@@ -269,6 +315,49 @@ impl Frequency {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn date_ranges_follow_pandas() {
+        let at = |year, month, day, hour: i64| {
+            days_from_civil(year, month, day) * DAY + hour * 60 * MINUTE
+        };
+        // 2024-02-27 was a Tuesday.
+        let start = at(2024, 2, 27, 5);
+        assert_eq!(
+            Frequency::D.dates(start, 4),
+            [start, start + DAY, start + 2 * DAY, start + 3 * DAY]
+        );
+        assert_eq!(Frequency::T15.dates(start, 2)[1], start + 15 * MINUTE);
+        // Weeks start on the first Sunday at or after the start.
+        assert_eq!(
+            Frequency::W.dates(start, 3),
+            [at(2024, 3, 3, 5), at(2024, 3, 10, 5), at(2024, 3, 17, 5)]
+        );
+        assert_eq!(
+            Frequency::W.dates(at(2024, 3, 3, 5), 1),
+            [at(2024, 3, 3, 5)]
+        );
+        // Month, quarter and year ends, the leap day among them.
+        assert_eq!(
+            Frequency::M.dates(start, 3),
+            [at(2024, 2, 29, 5), at(2024, 3, 31, 5), at(2024, 4, 30, 5)]
+        );
+        assert_eq!(
+            Frequency::Q.dates(start, 4),
+            [
+                at(2024, 3, 31, 5),
+                at(2024, 6, 30, 5),
+                at(2024, 9, 30, 5),
+                at(2024, 12, 31, 5)
+            ]
+        );
+        assert_eq!(
+            Frequency::A.dates(at(2023, 12, 31, 0), 2),
+            [at(2023, 12, 31, 0), at(2024, 12, 31, 0)]
+        );
+        assert!(month_end(at(2024, 2, 29, 23)) && !month_end(at(2024, 2, 28, 23)));
+        assert!(month_end(at(1899, 12, 31, 0)) && !month_end(at(1900, 1, 1, 0)));
+    }
 
     #[test]
     fn dates_convert_both_ways() {

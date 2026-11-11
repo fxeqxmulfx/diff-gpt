@@ -6,12 +6,16 @@
 //! for them, since some sources couple the series of a chunk.
 
 pub mod anomaly;
+pub mod audio;
 pub mod bumps;
 pub mod cauker;
 pub mod forecast_pfn;
+pub mod gp;
+pub mod gpytorch;
 pub mod kernel_synth;
 pub mod kernels;
 pub mod ou;
+pub mod pyo;
 pub mod sawtooth;
 pub mod sinewave;
 pub mod spike;
@@ -30,6 +34,9 @@ pub const CHUNK: usize = 64;
 pub enum Source {
     /// The prior of ForecastPFN: trends and calendar seasonalities.
     ForecastPfn,
+    /// Draws from Gaussian processes of composite kernels, with the rounding
+    /// of gpytorch in float32.
+    Gp,
     /// KernelSynth: draws from Gaussian processes of composite kernels.
     Kernel,
     /// Sawtooth waves.
@@ -46,12 +53,21 @@ pub enum Source {
     CaukerUnivariate,
     /// Regime-switching Ornstein-Uhlenbeck processes.
     OuProcess,
+    /// pyo: a slow saw, noise of a varying level and a decaying sine.
+    AudioFinancialVolatility,
+    /// pyo: brown noise through a bank of low-passes.
+    AudioMultiScaleFractal,
+    /// pyo: saws, bursts of noise and envelopes.
+    AudioNetworkTopology,
+    /// pyo: sines under envelopes that metronomes restart.
+    AudioStochasticRhythm,
 }
 
 impl Source {
     /// Every source, in the order of TempoPFN's `configs/example.yaml`.
-    pub const ALL: [Self; 9] = [
+    pub const ALL: [Self; 14] = [
         Self::ForecastPfn,
+        Self::Gp,
         Self::Kernel,
         Self::Sawtooth,
         Self::Sinewave,
@@ -60,6 +76,10 @@ impl Source {
         Self::Spike,
         Self::CaukerUnivariate,
         Self::OuProcess,
+        Self::AudioFinancialVolatility,
+        Self::AudioMultiScaleFractal,
+        Self::AudioNetworkTopology,
+        Self::AudioStochasticRhythm,
     ];
 
     /// The name of the source in TempoPFN and in the corpus.
@@ -67,6 +87,7 @@ impl Source {
     pub const fn name(self) -> &'static str {
         match self {
             Self::ForecastPfn => "forecast_pfn",
+            Self::Gp => "gp",
             Self::Kernel => "kernel",
             Self::CaukerUnivariate => "cauker_univariate",
             Self::Sawtooth => "sawtooth",
@@ -75,6 +96,10 @@ impl Source {
             Self::Anomaly => "anomaly",
             Self::Spike => "spike",
             Self::OuProcess => "ou_process",
+            Self::AudioFinancialVolatility => "audio_financial_volatility",
+            Self::AudioMultiScaleFractal => "audio_multi_scale_fractal",
+            Self::AudioNetworkTopology => "audio_network_topology",
+            Self::AudioStochasticRhythm => "audio_stochastic_rhythm",
         }
     }
 
@@ -91,6 +116,7 @@ impl Source {
     pub const fn id(self) -> u64 {
         match self {
             Self::ForecastPfn => 0,
+            Self::Gp => 1,
             Self::Kernel => 2,
             Self::CaukerUnivariate => 8,
             Self::Sawtooth => 3,
@@ -99,6 +125,10 @@ impl Source {
             Self::Anomaly => 6,
             Self::Spike => 7,
             Self::OuProcess => 9,
+            Self::AudioFinancialVolatility => 10,
+            Self::AudioMultiScaleFractal => 11,
+            Self::AudioNetworkTopology => 12,
+            Self::AudioStochasticRhythm => 13,
         }
     }
 
@@ -108,6 +138,7 @@ impl Source {
     pub const fn weight(self) -> f64 {
         match self {
             Self::ForecastPfn
+            | Self::Gp
             | Self::Kernel
             | Self::Sawtooth
             | Self::Sinewave
@@ -116,6 +147,8 @@ impl Source {
             | Self::Spike
             | Self::CaukerUnivariate => 1.0,
             Self::OuProcess => 3.0,
+            Self::AudioFinancialVolatility | Self::AudioMultiScaleFractal => 0.1,
+            Self::AudioNetworkTopology | Self::AudioStochasticRhythm => 0.5,
         }
     }
 
@@ -141,6 +174,7 @@ impl Source {
             _ => {}
         }
         let one = |rng: &mut Rng| match self {
+            Self::Gp => gp::GaussianProcess::default().series(rng, length),
             Self::Kernel => kernel_synth::KernelSynth::default().series(rng, length),
             Self::CaukerUnivariate | Self::ForecastPfn => unreachable!("made above"),
             Self::Sawtooth => sawtooth::Sawtooth::default().series(rng, length),
@@ -149,6 +183,12 @@ impl Source {
             Self::Anomaly => anomaly::Anomaly::default().series(rng, length),
             Self::Spike => spike::Spike::default().series(rng, length),
             Self::OuProcess => ou::Ou::default().series(rng, length),
+            Self::AudioFinancialVolatility => {
+                audio::FinancialVolatility::default().series(rng, length)
+            }
+            Self::AudioMultiScaleFractal => audio::MultiScaleFractal::default().series(rng, length),
+            Self::AudioNetworkTopology => audio::NetworkTopology::default().series(rng, length),
+            Self::AudioStochasticRhythm => audio::StochasticRhythm::default().series(rng, length),
         };
         (0..CHUNK as u64)
             .map(|index| one(&mut rng.fork(index)))

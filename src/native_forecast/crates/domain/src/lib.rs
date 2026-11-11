@@ -5,6 +5,9 @@
 //! - [`numeric`]: small numerical tools;
 //! - [`calendar`]: civil dates and TempoPFN's sampling frequencies;
 //! - [`linalg`]: dot products and Cholesky factorizations;
+//! - [`single`]: the Cholesky factorization in single precision, with its
+//!   failures;
+//! - [`eigen`]: the eigenvectors of a symmetric matrix;
 //! - [`synth`]: the synthetic sources, ports of TempoPFN's generators;
 //! - [`table`]: series of one length, as the corpus stores them;
 //! - [`stats`]: features of a series and the comparison of two corpora.
@@ -12,9 +15,11 @@
 #![forbid(unsafe_code)]
 
 pub mod calendar;
+pub mod eigen;
 pub mod linalg;
 pub mod numeric;
 pub mod random;
+pub mod single;
 pub mod stats;
 pub mod synth;
 pub mod table;
