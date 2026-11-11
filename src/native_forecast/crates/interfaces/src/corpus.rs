@@ -14,13 +14,15 @@ use crate::args::Options;
 
 /// The usage of the commands of this module.
 pub const USAGE: &str = "\
-forecast corpus check    [--reference DIR] [--split train|holdout] [--sources A,B,…]
-                         [--series N] [--level P] [--threads N]
+forecast corpus check    [--reference DIR] [--root DIR] [--split train|holdout]
+                         [--sources A,B,…] [--series N] [--level P] [--threads N]
     Compare the series each source makes with those of the reference corpus,
     feature by feature (two-sample Kolmogorov-Smirnov); fail if any differs.
+    The augmented sources read the generators' shards under --root.
 forecast corpus generate [--root DIR] [--split train|holdout] [--sources A,B,…]
                          [--shards N] [--shard-series N] [--length N] [--threads N]
-    Write the shards of the corpus that are not there yet.";
+    Write the shards of the corpus that are not there yet: the generators'
+    first, which the augmented sources read.";
 
 fn split(options: &mut Options) -> Result<Split> {
     let name: String = options.take("split", "train".to_owned())?;
@@ -81,6 +83,7 @@ pub fn check(mut options: Options) -> Result<()> {
         "reference",
         PathBuf::from("datasets/tempopfn-synthetic/npy"),
     )?;
+    let root: PathBuf = options.take("root", PathBuf::from("datasets/tempopfn-rust"))?;
     let split = split(&mut options)?;
     let sources = sources(&mut options)?;
     let series = options.take("series", 4096_usize)?;
@@ -88,17 +91,24 @@ pub fn check(mut options: Options) -> Result<()> {
     let threads = threads(&mut options)?;
     options.finish()?;
 
-    let reference = Reference::new(reference);
-    let mut differing = Vec::new();
-    for source in sources {
-        let check = corpus::check(&threads, &reference, split, source, series, level)?;
-        print_check(&check);
-        differing.extend(
+    let checks = corpus::check_all(
+        &threads,
+        &Reference::new(reference),
+        &Shards::new(root),
+        split,
+        &sources,
+        series,
+        level,
+        print_check,
+    )?;
+    let differing: Vec<String> = checks
+        .iter()
+        .flat_map(|check| {
             check
                 .failures()
-                .map(|feature| format!("{}/{}", source.name(), feature.feature)),
-        );
-    }
+                .map(|feature| format!("{}/{}", check.source.name(), feature.feature))
+        })
+        .collect();
     if differing.is_empty() {
         println!("every feature of every source agrees with the reference");
         Ok(())

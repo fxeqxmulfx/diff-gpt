@@ -29,6 +29,8 @@ Layout: clean architecture, each crate depending only on those above it
       synth/             the sources, one module each; Source names them
           gpytorch.rs    gpytorch's kernels and operators in float32, for gp
           pyo.rs         pyo's oscillators, noises and filters, for the audio
+          augment/       the two offline augmentations: scalers, mixtures,
+                         the edits of one series, convolutions, the pipelines
       table.rs           series of one length, as the corpus stores them
       stats.rs           18 features of a series; two-sample Kolmogorov-Smirnov
   crates/application     the use cases and their ports; no thread, no unsafe
@@ -51,13 +53,18 @@ Commands (from the repository root; CPUs 27 and 55 stay free for the desktop)
       corpus check --series 65536
   taskset -c 0-26,28-54 src/native_forecast/target/release/forecast \
       corpus generate --split train --shards 16 --shard-series 4096
+  taskset -c 0-26,28-54 src/native_forecast/target/release/forecast \
+      corpus generate --split holdout --shards 1 --shard-series 4096
 
 `corpus check` compares, for each source, the series this workspace makes
 with as many of datasets/tempopfn-synthetic/npy/<split>/<source>.npy, feature
 by feature, and fails if a Kolmogorov-Smirnov distance exceeds the critical
 one at the level asked for (1e-3 by default). `corpus generate` writes
 datasets/tempopfn-rust/<split>/<source>/shard_<k>.npy and skips the shards
-that are there.
+that are there. The generators are made first: the two augmented sources read
+them back (`--root`, datasets/tempopfn-rust by default, also for the check).
+The whole corpus, 16 sources of 65,536 train and 4,096 holdout series of
+2,048 steps, takes 45 minutes on 54 threads and 8.6 GB.
 
 The corpus is deterministic
 ---------------------------
@@ -66,26 +73,29 @@ Chunk c (64 series, as TempoPFN's driver asks its generators for them) of a
 source of a split is drawn from the stream of the key
 [VERSION, split, source, c] (application/src/corpus.rs), so a series depends
 neither on the size of the shards, nor on the other sources, nor on the
-threads. The streams are not NumPy's: a port is checked in distribution, not
-draw by draw.
+threads; a series of an augmented source depends besides on the generators'
+series it reads, the first N of each in the same split, N being the number
+of series the corpus gives a source. The streams are not NumPy's: a port is
+checked in distribution, not draw by draw.
 
 Sources ported, and how they compare with TempoPFN's
 ----------------------------------------------------
 
 TempoPFN has 16 sources: 14 generators and 2 offline augmentations of their
-output. Ported so far, each with the parameters that TempoPFN's
-continuous_generation.py gives it:
+output. All are ported, the generators with the parameters that TempoPFN's
+continuous_generation.py gives them:
 
   forecast_pfn, gp, kernel, sawtooth, sinewave, step, anomaly, spike,
   cauker_univariate, ou_process, audio_financial_volatility,
-  audio_multi_scale_fractal, audio_network_topology, audio_stochastic_rhythm
-
-These are the 14 generators; the two augmentations are not ported yet.
+  audio_multi_scale_fractal, audio_network_topology, audio_stochastic_rhythm,
+  augmented_per_sample_2048, augmented_temp_batch_2048
 
 Check of 2026-11-11, `corpus check --series 65536` (all 65,536 train series
 of the reference against 65,536 of this workspace, critical distance 0.0108
-at level 1e-3): every one of the 18 features of every one of these fourteen
-sources agrees (the largest distance of gp is 0.0084). cauker_univariate
+at level 1e-3): every one of the 18 features of every one of the sixteen
+sources agrees (the largest distance of gp is 0.0084, of
+augmented_per_sample_2048 0.0059, of augmented_temp_batch_2048 0.0074), the
+augmented ones made from this workspace's generators. cauker_univariate
 makes six series from each random model, so only the first series of each
 model is compared: 11,264 against 11,264, critical distance 0.0260. The 4,096
 holdout series agree as well (critical distance 0.0431).
@@ -96,6 +106,24 @@ matrices.
 
 What the ports keep of their sources, beyond the documented behaviour:
 
+  augmented_per_sample_2048, augmented_temp_batch_2048
+      TempoPFN's offline_per_sample_iid_augmentations.py and
+      offline_temp_batch_augmentations.py, with the transforms of its
+      src/data/augmentations.py and the scalers of src/data/scalers.py. A
+      series comes from a generator chosen by the proportions of the two
+      scripts (cauker 2, step and two audio sources 0.1, network topology
+      0.5, the rest 1). The first source augments one series at a time: an
+      optional scaler, a mixture with up to ten other series before the edits
+      and one after, two to six kinds of edits, a random convolution, and it
+      starts again until the result differs from the series by 0.05 of its
+      interquartile range. The second augments 64 series at once and keeps
+      one of those that changed as much. Differences from the scripts: a
+      generator's series is taken at a random row of what the corpus holds,
+      where the scripts read their files in a cycle; and the frequency and
+      the start date of a series, which the calendar edits need and the
+      shards do not store, are drawn again from the key of its chunk
+      (`Source::calendars`), for forecast_pfn exactly those it was made
+      with.
   gp
       The series of the reference are shaped by the rounding of gpytorch in
       float32, so the port does that arithmetic entry by entry. The squared

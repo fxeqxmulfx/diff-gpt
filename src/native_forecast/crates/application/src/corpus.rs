@@ -3,10 +3,15 @@
 //!
 //! Chunk `c` of a source of a split is drawn from the random stream of the
 //! key `[VERSION, split, source, c]`, so a series does not depend on the size
-//! of the shards, on the other sources or on the threads that make it.
+//! of the shards, on the other sources or on the threads that make it. The
+//! two augmenting sources make their series from those of the generators: a
+//! chunk of theirs depends, besides, on how many series of each generator
+//! the corpus is to have ([`Base`]).
 
+use diff_gpt_forecast_domain::calendar::Frequency;
 use diff_gpt_forecast_domain::random::Rng;
 use diff_gpt_forecast_domain::stats::{self, FeatureComparison, Features};
+use diff_gpt_forecast_domain::synth::augment::{Drawn, PROPORTIONS, Pool};
 use diff_gpt_forecast_domain::synth::{CHUNK, Source};
 use diff_gpt_forecast_domain::table::Table;
 
@@ -17,11 +22,129 @@ use crate::ports::{Executor, SeriesReader, SeriesWriter, Split};
 /// A change to a source that changes its series takes a new version.
 pub const VERSION: u64 = 1;
 
-/// The series of chunk `chunk` of `source` in `split`.
+/// The stream of chunk `chunk` of `source` in `split`.
+fn stream(split: Split, source: Source, chunk: usize) -> Rng {
+    Rng::from_key(&[VERSION, split.id(), source.id(), chunk as u64])
+}
+
+/// The series of chunk `chunk` of `source` in `split`. An augmenting source
+/// takes its base series from `base`; without one it makes them on the spot,
+/// slowly, and they are other series than a corpus holds.
 #[must_use]
-pub fn chunk(split: Split, source: Source, chunk: usize, length: usize) -> Vec<Vec<f64>> {
-    let mut rng = Rng::from_key(&[VERSION, split.id(), source.id(), chunk as u64]);
-    source.chunk(&mut rng, length)
+pub fn chunk(
+    split: Split,
+    source: Source,
+    chunk: usize,
+    length: usize,
+    base: Option<&Base>,
+) -> Vec<Vec<f64>> {
+    let mut rng = stream(split, source, chunk);
+    match base {
+        Some(base) => source.chunk_from(&mut rng, length, &mut base.pool()),
+        None => source.chunk(&mut rng, length),
+    }
+}
+
+/// The first series of every generator in a split, held in memory with the
+/// calendar of each: what the augmenting sources make their series from.
+#[derive(Clone, Debug)]
+pub struct Base {
+    stocks: Vec<Stock>,
+}
+
+/// The series of one generator, with the frequency and the first timestamp
+/// of each.
+#[derive(Clone, Debug)]
+struct Stock {
+    source: Source,
+    series: Table,
+    calendars: Vec<(Frequency, i64)>,
+}
+
+impl Base {
+    /// Reads from `corpus` the first `series` series of every generator in
+    /// `split`, which must be series of `length` steps.
+    ///
+    /// # Errors
+    ///
+    /// If the corpus holds fewer series of a generator, or series of another
+    /// length, or cannot be read.
+    pub fn load<E: Executor, R: SeriesReader>(
+        executor: &E,
+        corpus: &R,
+        split: Split,
+        series: usize,
+        length: usize,
+    ) -> Result<Self> {
+        let mut stocks = Vec::with_capacity(PROPORTIONS.len());
+        for (source, _) in PROPORTIONS {
+            let held = corpus.series(split, source)?;
+            if held < series || series == 0 {
+                return Err(format!(
+                    "{}/{} holds {held} series and the augmented sources need {series}: \
+                     generate the generators first",
+                    split.name(),
+                    source.name()
+                )
+                .into());
+            }
+            let table = corpus.read(split, source, 0, series)?;
+            if table.length() != length {
+                return Err(format!(
+                    "{}/{} holds series of {} steps, not {length}",
+                    split.name(),
+                    source.name(),
+                    table.length()
+                )
+                .into());
+            }
+            let calendars = executor
+                .map(series.div_ceil(CHUNK), |index| {
+                    source.calendars(&stream(split, source, index), length)
+                })
+                .into_iter()
+                .flatten()
+                .take(series)
+                .collect();
+            stocks.push(Stock {
+                source,
+                series: table,
+                calendars,
+            });
+        }
+        Ok(Self { stocks })
+    }
+
+    /// A pool that hands out these series, each as likely as another of its
+    /// source. (TempoPFN reads its files in turn: every series as often.)
+    #[must_use]
+    pub fn pool(&self) -> impl Pool + '_ {
+        Rows { base: self }
+    }
+}
+
+/// The pool of a [`Base`].
+struct Rows<'a> {
+    base: &'a Base,
+}
+
+impl Pool for Rows<'_> {
+    fn draw(&mut self, source: Source, rng: &mut Rng) -> Drawn {
+        let stock = self
+            .base
+            .stocks
+            .iter()
+            .find(|stock| stock.source == source)
+            .expect("the base holds every generator");
+        let place = rng.index(stock.series.rows());
+        let (frequency, start) = stock.calendars[place];
+        Drawn {
+            values: stock.series.row(place).to_vec(),
+            frequency,
+            start,
+            place,
+        }
+    }
 }
 
 /// The size of a corpus to make.
@@ -35,35 +158,53 @@ pub struct Shape {
     pub shards: usize,
 }
 
-/// Writes the shards of `sources` in `split` that `writer` does not hold yet,
-/// and returns how many it wrote.
+impl Shape {
+    /// The number of series of each source.
+    #[must_use]
+    pub const fn series(&self) -> usize {
+        self.shards * self.chunks_per_shard * CHUNK
+    }
+}
+
+/// Writes the shards of `sources` in `split` that `corpus` does not hold yet,
+/// and returns how many it wrote. The generators come first: an augmenting
+/// source then reads from `corpus` as many series of each generator as it is
+/// to have itself.
 ///
 /// # Errors
 ///
-/// If a shard cannot be written.
-pub fn generate<E: Executor, W: SeriesWriter>(
+/// If a shard cannot be written, or an augmenting source lacks series of a
+/// generator.
+pub fn generate<E: Executor, C: SeriesWriter + SeriesReader>(
     executor: &E,
-    writer: &W,
+    corpus: &C,
     split: Split,
     sources: &[Source],
     shape: Shape,
     mut progress: impl FnMut(Source, usize),
 ) -> Result<usize> {
     let mut written = 0;
-    for &source in sources {
+    let mut base: Option<Base> = None;
+    let (augmenting, generators): (Vec<Source>, Vec<Source>) =
+        sources.iter().partition(|source| source.augments());
+    for source in generators.into_iter().chain(augmenting) {
         for shard in 0..shape.shards {
-            if writer.has(split, source, shard) {
+            if corpus.has(split, source, shard) {
                 continue;
+            }
+            if source.augments() && base.is_none() {
+                let series = shape.series();
+                base = Some(Base::load(executor, corpus, split, series, shape.length)?);
             }
             let first = shard * shape.chunks_per_shard;
             let chunks = executor.map(shape.chunks_per_shard, |index| {
-                chunk(split, source, first + index, shape.length)
+                chunk(split, source, first + index, shape.length, base.as_ref())
             });
             let mut table = Table::new(shape.length);
             for series in chunks.iter().flatten() {
                 table.push(series);
             }
-            writer.write(split, source, shard, &table)?;
+            corpus.write(split, source, shard, &table)?;
             written += 1;
             progress(source, shard);
         }
@@ -98,11 +239,12 @@ impl SourceCheck {
 
 /// Compares the first `series` series of `source` in `split`, as this crate
 /// makes them, with as many of `reference`, feature by feature; `level` is
-/// the probability with which a feature of equal distributions fails.
+/// the probability with which a feature of equal distributions fails. An
+/// augmenting source takes its base series from `base`.
 ///
 /// # Errors
 ///
-/// If the reference cannot be read.
+/// If the reference cannot be read, or an augmenting source has no base.
 pub fn check<E: Executor, R: SeriesReader>(
     executor: &E,
     reference: &R,
@@ -110,7 +252,11 @@ pub fn check<E: Executor, R: SeriesReader>(
     source: Source,
     series: usize,
     level: f64,
+    base: Option<&Base>,
 ) -> Result<SourceCheck> {
+    if source.augments() && base.is_none() {
+        return Err(format!("{} needs the series of the generators", source.name()).into());
+    }
     // The test takes independent series: of the series that share a model,
     // only the first is compared, in the reference and in the candidate.
     let independent = |row: usize| (row % CHUNK).is_multiple_of(source.group());
@@ -123,7 +269,7 @@ pub fn check<E: Executor, R: SeriesReader>(
     let chunks = series.div_ceil(CHUNK);
     let candidate_features: Vec<Features> = executor
         .map(chunks, |index| {
-            chunk(split, source, index, table.length())
+            chunk(split, source, index, table.length(), base)
                 .iter()
                 .enumerate()
                 .filter(|&(place, _)| index * CHUNK + place < series && independent(place))
@@ -144,6 +290,52 @@ pub fn check<E: Executor, R: SeriesReader>(
         critical: stats::ks_critical(reference_features.len(), candidate_features.len(), level),
         features: stats::compare(&reference_features, &candidate_features),
     })
+}
+
+/// Checks each of `sources` as [`check`] does, reporting each as it is done.
+/// The augmenting sources make their series as [`generate`] does for a
+/// corpus of `series` series a source, rounded up to whole chunks: from as
+/// many series of each generator, read from `corpus`.
+///
+/// # Errors
+///
+/// If the reference cannot be read, or `corpus` lacks series of a generator
+/// that an augmenting source needs.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the parts of a check: where from, what and how strictly"
+)]
+pub fn check_all<E: Executor, R: SeriesReader, C: SeriesReader>(
+    executor: &E,
+    reference: &R,
+    corpus: &C,
+    split: Split,
+    sources: &[Source],
+    series: usize,
+    level: f64,
+    mut report: impl FnMut(&SourceCheck),
+) -> Result<Vec<SourceCheck>> {
+    let mut base: Option<Base> = None;
+    let mut checks = Vec::with_capacity(sources.len());
+    for &source in sources {
+        if source.augments() && base.is_none() {
+            let length = reference.read(split, source, 0, 1)?.length();
+            let rows = series.div_ceil(CHUNK) * CHUNK;
+            base = Some(Base::load(executor, corpus, split, rows, length)?);
+        }
+        let check = check(
+            executor,
+            reference,
+            split,
+            source,
+            series,
+            level,
+            base.as_ref(),
+        )?;
+        report(&check);
+        checks.push(check);
+    }
+    Ok(checks)
 }
 
 #[cfg(test)]
@@ -255,8 +447,8 @@ mod tests {
                 .read(Split::Holdout, Source::Sinewave, 0, count)
                 .expect("held"),
         );
-        let train = chunk(Split::Train, Source::Sinewave, 0, 256);
-        assert_ne!(train, chunk(Split::Holdout, Source::Sinewave, 0, 256));
+        let train = chunk(Split::Train, Source::Sinewave, 0, 256, None);
+        assert_ne!(train, chunk(Split::Holdout, Source::Sinewave, 0, 256, None));
     }
 
     #[test]
@@ -283,6 +475,7 @@ mod tests {
             Source::Sawtooth,
             512,
             1e-4,
+            None,
         )
         .expect("checked");
         // The same split gives the very same series: every distance is 0.
@@ -305,6 +498,7 @@ mod tests {
             Source::Sawtooth,
             512,
             1e-4,
+            None,
         )
         .expect("checked");
         assert_eq!(other.failures().count(), 0, "{:?}", other.failures().next());
@@ -312,7 +506,7 @@ mod tests {
 
         // Sine waves under the name of the sawtooth source fail the check.
         let wrong = Memory::default();
-        let sines = chunk(Split::Train, Source::Sinewave, 0, 512);
+        let sines = chunk(Split::Train, Source::Sinewave, 0, 512, None);
         let mut table = Table::new(512);
         for _ in 0..8 {
             for series in &sines {
@@ -322,8 +516,104 @@ mod tests {
         wrong
             .write(Split::Train, Source::Sawtooth, 0, &table)
             .expect("written");
-        let failed =
-            check(&Serial, &wrong, Split::Train, Source::Sawtooth, 512, 1e-4).expect("checked");
+        let failed = check(
+            &Serial,
+            &wrong,
+            Split::Train,
+            Source::Sawtooth,
+            512,
+            1e-4,
+            None,
+        )
+        .expect("checked");
         assert!(failed.failures().count() > 3);
+    }
+
+    #[test]
+    fn the_augmenting_sources_are_made_last_from_the_generators_of_the_corpus() {
+        let memory = Memory::default();
+        let shape = Shape {
+            length: 256,
+            chunks_per_shard: 1,
+            shards: 2,
+        };
+        // Asked for first, the augmenting sources are still written last.
+        let sources: Vec<Source> = Source::ALL.iter().rev().copied().collect();
+        let mut order = Vec::new();
+        generate(
+            &Serial,
+            &memory,
+            Split::Train,
+            &sources,
+            shape,
+            |source, _| {
+                order.push(source);
+            },
+        )
+        .expect("written");
+        assert_eq!(order.len(), 32);
+        assert!(order[..28].iter().all(|source| !source.augments()));
+        assert!(order[28..].iter().all(|source| source.augments()));
+
+        // The corpus holds what the check makes: the same base, the same
+        // streams.
+        let series = shape.series();
+        let mut reported = 0;
+        let checks = check_all(
+            &Serial,
+            &memory,
+            &memory,
+            Split::Train,
+            &[Source::AugmentedPerSample, Source::AugmentedTempBatch],
+            series,
+            1e-4,
+            |_| reported += 1,
+        )
+        .expect("checked");
+        assert_eq!((checks.len(), reported), (2, 2));
+        for check in &checks {
+            assert_eq!(check.candidate_series, series);
+            assert!(check.features.iter().all(|feature| feature.distance == 0.0));
+        }
+
+        // An augmented series is none of the generators' series.
+        let base = Base::load(&Serial, &memory, Split::Train, series, 256).expect("loaded");
+        let augmented = memory
+            .read(Split::Train, Source::AugmentedTempBatch, 0, series)
+            .expect("held");
+        let mut pool = base.pool();
+        let drawn = pool.draw(Source::Sawtooth, &mut Rng::from_key(&[5]));
+        assert_eq!(drawn.values.len(), 256);
+        assert!(drawn.place < series);
+        assert!(augmented.iter().all(|row| row != drawn.values.as_slice()));
+
+        // Without the generators there is nothing to augment.
+        let alone = check(
+            &Serial,
+            &memory,
+            Split::Train,
+            Source::AugmentedPerSample,
+            series,
+            1e-4,
+            None,
+        );
+        assert!(alone.is_err());
+        let empty = Memory::default();
+        let failed = generate(
+            &Serial,
+            &empty,
+            Split::Train,
+            &[Source::AugmentedTempBatch],
+            shape,
+            |_, _| {},
+        );
+        let message = failed.expect_err("no generator").to_string();
+        assert!(
+            message.contains("generate the generators first"),
+            "{message}"
+        );
+        // Series of another length are refused.
+        assert!(Base::load(&Serial, &memory, Split::Train, series, 512).is_err());
+        assert!(Base::load(&Serial, &memory, Split::Train, series + 1, 256).is_err());
     }
 }

@@ -1,12 +1,14 @@
 //! The synthetic sources: Rust ports of the generators of TempoPFN
 //! (<https://github.com/automl/TempoPFN>, Apache-2.0, commit `5969ec6`), each
-//! with the parameters that TempoPFN's `continuous_generation.py` gives it.
+//! with the parameters that TempoPFN's `continuous_generation.py` gives it,
+//! and of the two offline augmentations of their series ([`augment`]).
 //!
 //! A source makes its series in chunks of [`CHUNK`], as TempoPFN's driver asks
 //! for them, since some sources couple the series of a chunk.
 
 pub mod anomaly;
 pub mod audio;
+pub mod augment;
 pub mod bumps;
 pub mod cauker;
 pub mod forecast_pfn;
@@ -21,6 +23,7 @@ pub mod sinewave;
 pub mod spike;
 pub mod step;
 
+use crate::calendar::Frequency;
 use crate::random::Rng;
 
 /// The length of the series of the corpus.
@@ -28,6 +31,10 @@ pub const LENGTH: usize = 2048;
 
 /// The number of series a source makes at a time.
 pub const CHUNK: usize = 64;
+
+/// The word that keys the stream of the calendars of a chunk, apart from the
+/// streams of its series.
+const CALENDAR: u64 = u64::MAX;
 
 /// A source of the corpus.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -61,11 +68,16 @@ pub enum Source {
     AudioNetworkTopology,
     /// pyo: sines under envelopes that metronomes restart.
     AudioStochasticRhythm,
+    /// Series of the generators above, scaled, mixed and edited one by one.
+    AugmentedPerSample,
+    /// Series of the generators above, scaled, mixed and edited in batches of
+    /// which one series is kept.
+    AugmentedTempBatch,
 }
 
 impl Source {
     /// Every source, in the order of TempoPFN's `configs/example.yaml`.
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 16] = [
         Self::ForecastPfn,
         Self::Gp,
         Self::Kernel,
@@ -80,9 +92,12 @@ impl Source {
         Self::AudioMultiScaleFractal,
         Self::AudioNetworkTopology,
         Self::AudioStochasticRhythm,
+        Self::AugmentedPerSample,
+        Self::AugmentedTempBatch,
     ];
 
-    /// The name of the source in TempoPFN and in the corpus.
+    /// The name of the source in TempoPFN and in the corpus. The augmented
+    /// sources carry the length of the series of TempoPFN's corpus.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
@@ -100,6 +115,8 @@ impl Source {
             Self::AudioMultiScaleFractal => "audio_multi_scale_fractal",
             Self::AudioNetworkTopology => "audio_network_topology",
             Self::AudioStochasticRhythm => "audio_stochastic_rhythm",
+            Self::AugmentedPerSample => "augmented_per_sample_2048",
+            Self::AugmentedTempBatch => "augmented_temp_batch_2048",
         }
     }
 
@@ -129,6 +146,8 @@ impl Source {
             Self::AudioMultiScaleFractal => 11,
             Self::AudioNetworkTopology => 12,
             Self::AudioStochasticRhythm => 13,
+            Self::AugmentedPerSample => 14,
+            Self::AugmentedTempBatch => 15,
         }
     }
 
@@ -149,6 +168,7 @@ impl Source {
             Self::OuProcess => 3.0,
             Self::AudioFinancialVolatility | Self::AudioMultiScaleFractal => 0.1,
             Self::AudioNetworkTopology | Self::AudioStochasticRhythm => 0.5,
+            Self::AugmentedPerSample | Self::AugmentedTempBatch => 2.0,
         }
     }
 
@@ -162,9 +182,30 @@ impl Source {
         }
     }
 
-    /// A chunk of [`CHUNK`] series of `length` steps.
+    /// Whether the source makes its series from those of the other sources:
+    /// it then takes them from an [`augment::Pool`].
+    #[must_use]
+    pub const fn augments(self) -> bool {
+        matches!(self, Self::AugmentedPerSample | Self::AugmentedTempBatch)
+    }
+
+    /// A chunk of [`CHUNK`] series of `length` steps. An augmenting source
+    /// has its base series made on the spot ([`augment::Fresh`]), which is
+    /// slow: see [`Self::chunk_from`].
     #[must_use]
     pub fn chunk(self, rng: &mut Rng, length: usize) -> Vec<Vec<f64>> {
+        self.chunk_from(rng, length, &mut augment::Fresh::new(length))
+    }
+
+    /// A chunk of [`CHUNK`] series of `length` steps; an augmenting source
+    /// takes its base series, which must have that length, from `pool`.
+    #[must_use]
+    pub fn chunk_from(
+        self,
+        rng: &mut Rng,
+        length: usize,
+        pool: &mut dyn augment::Pool,
+    ) -> Vec<Vec<f64>> {
         // Two sources couple the series of a chunk.
         match self {
             Self::CaukerUnivariate => return cauker::CauKer::corpus().chunk(rng, length, CHUNK),
@@ -173,7 +214,7 @@ impl Source {
             }
             _ => {}
         }
-        let one = |rng: &mut Rng| match self {
+        let mut one = |rng: &mut Rng| match self {
             Self::Gp => gp::GaussianProcess::default().series(rng, length),
             Self::Kernel => kernel_synth::KernelSynth::default().series(rng, length),
             Self::CaukerUnivariate | Self::ForecastPfn => unreachable!("made above"),
@@ -189,9 +230,32 @@ impl Source {
             Self::AudioMultiScaleFractal => audio::MultiScaleFractal::default().series(rng, length),
             Self::AudioNetworkTopology => audio::NetworkTopology::default().series(rng, length),
             Self::AudioStochasticRhythm => audio::StochasticRhythm::default().series(rng, length),
+            Self::AugmentedPerSample => augment::pipelines::PerSample::default().series(rng, pool),
+            Self::AugmentedTempBatch => augment::pipelines::TempBatch::default().series(rng, pool),
         };
         (0..CHUNK as u64)
             .map(|index| one(&mut rng.fork(index)))
+            .collect()
+    }
+
+    /// The sampling frequency and the first timestamp of each series of the
+    /// chunk that [`Self::chunk`] draws from a stream in the state of `rng`:
+    /// TempoPFN's driver stores them beside the series, and the calendar edit
+    /// of an augmentation reads them. Those of ForecastPFN are the ones its
+    /// series were made with; the others are drawn alike, apart from the
+    /// series.
+    #[must_use]
+    pub fn calendars(self, rng: &Rng, length: usize) -> Vec<(Frequency, i64)> {
+        let mut rng = rng.clone();
+        if self == Self::ForecastPfn {
+            return forecast_pfn::ForecastPfn::calendars(&mut rng, length, CHUNK);
+        }
+        let mut rng = Rng::from_key(&[rng.next_u64(), rng.next_u64(), CALENDAR]);
+        (0..CHUNK)
+            .map(|_| {
+                let frequency = Frequency::select(&mut rng, length);
+                (frequency, frequency.start(&mut rng, length))
+            })
             .collect()
     }
 }
@@ -210,6 +274,8 @@ mod tests {
         ids.dedup();
         assert_eq!(ids.len(), Source::ALL.len());
         assert_eq!(Source::named("no such source"), None);
+        let augmenting = Source::ALL.iter().filter(|source| source.augments());
+        assert_eq!(augmenting.count(), 2);
     }
 
     #[test]
@@ -227,5 +293,32 @@ mod tests {
             );
             assert_ne!(chunk[0], chunk[1]);
         }
+    }
+
+    #[test]
+    fn the_calendars_of_a_chunk_are_reproducible_and_apart_from_its_series() {
+        for source in [Source::ForecastPfn, Source::Sinewave] {
+            let rng = Rng::from_key(&[2, source.id()]);
+            let calendars = source.calendars(&rng, LENGTH);
+            assert_eq!(calendars.len(), CHUNK);
+            assert_eq!(calendars, source.calendars(&rng, LENGTH));
+            // Hours to weeks suit 2048 steps; a series ends before 2200.
+            for (frequency, start) in &calendars {
+                assert!(frequency.step().is_some(), "{frequency:?}");
+                assert!(
+                    *start < crate::calendar::days_from_civil(2200, 1, 1) * crate::calendar::DAY
+                );
+            }
+            let mut distinct: Vec<i64> = calendars.iter().map(|(_, start)| *start).collect();
+            distinct.sort_unstable();
+            distinct.dedup();
+            assert_eq!(distinct.len(), CHUNK);
+        }
+        // ForecastPFN's are the first draws of the streams of its series.
+        let mut rng = Rng::from_key(&[3]);
+        let calendars = Source::ForecastPfn.calendars(&rng, 512);
+        let mut first = rng.fork(0);
+        let frequency = Frequency::select(&mut first, 512);
+        assert_eq!(calendars[0], (frequency, frequency.start(&mut first, 512)));
     }
 }

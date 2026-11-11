@@ -157,14 +157,28 @@ impl Calendar {
 }
 
 impl ForecastPfn {
+    /// The frequency and the start of a series: the first draws of its
+    /// stream.
+    fn calendar(rng: &mut Rng, length: usize) -> (Frequency, i64) {
+        let frequency = Frequency::select(rng, length);
+        (frequency, frequency.start(rng, length))
+    }
+
+    /// The frequency and the start that each series of the chunk
+    /// [`Self::chunk`] draws from `rng` begins with.
+    pub fn calendars(rng: &mut Rng, length: usize, count: usize) -> Vec<(Frequency, i64)> {
+        (0..count as u64)
+            .map(|index| Self::calendar(&mut rng.fork(index), length))
+            .collect()
+    }
+
     /// A chunk of `count` series of `length` steps: each with its frequency
     /// and start, some mixed with each other.
     pub fn chunk(&self, rng: &mut Rng, length: usize, count: usize) -> Vec<Vec<f64>> {
         let mut series: Vec<Vec<f64>> = (0..count as u64)
             .map(|index| {
                 let mut rng = rng.fork(index);
-                let frequency = Frequency::select(&mut rng, length);
-                let start = frequency.start(&mut rng, length);
+                let (frequency, start) = Self::calendar(&mut rng, length);
                 self.series(&mut rng, length, start, frequency)
             })
             .collect();
