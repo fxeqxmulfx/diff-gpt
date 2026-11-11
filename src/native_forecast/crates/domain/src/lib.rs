@@ -5,6 +5,8 @@
 //! - [`numeric`]: small numerical tools;
 //! - [`calendar`]: civil dates and TempoPFN's sampling frequencies;
 //! - [`linalg`]: dot products and Cholesky factorizations;
+//! - [`model`]: the transformer on one sequence, forward and backward, and
+//!   its optimizer;
 //! - [`single`]: the Cholesky factorization in single precision, with its
 //!   failures;
 //! - [`eigen`]: the eigenvectors of a symmetric matrix;
@@ -17,6 +19,7 @@
 pub mod calendar;
 pub mod eigen;
 pub mod linalg;
+pub mod model;
 pub mod numeric;
 pub mod random;
 pub mod single;

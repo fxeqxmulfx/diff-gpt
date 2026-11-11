@@ -19,6 +19,7 @@ version = "0.1.0"
 dependencies = [
  "diff-gpt-forecast-application",
  "diff-gpt-forecast-domain",
+ "kernite-macros",
 ]
 
 [[package]]
@@ -28,4 +29,63 @@ dependencies = [
  "diff-gpt-forecast-application",
  "diff-gpt-forecast-domain",
  "diff-gpt-forecast-infrastructure",
+]
+
+[[package]]
+name = "kernite"
+version = "0.3.2"
+dependencies = [
+ "kernite-build",
+ "kernite-lang",
+ "kernite-ptx",
+ "kernite-x86",
+]
+
+[[package]]
+name = "kernite-build"
+version = "0.3.2"
+dependencies = [
+ "kernite-lang",
+]
+
+[[package]]
+name = "kernite-compile"
+version = "0.3.2"
+dependencies = [
+ "kernite-core",
+]
+
+[[package]]
+name = "kernite-core"
+version = "0.3.2"
+
+[[package]]
+name = "kernite-lang"
+version = "0.3.2"
+
+[[package]]
+name = "kernite-macros"
+version = "0.3.2"
+dependencies = [
+ "kernite",
+]
+
+[[package]]
+name = "kernite-ptx"
+version = "0.3.2"
+dependencies = [
+ "kernite-build",
+ "kernite-compile",
+ "kernite-core",
+ "kernite-lang",
+]
+
+[[package]]
+name = "kernite-x86"
+version = "0.3.2"
+dependencies = [
+ "kernite-build",
+ "kernite-compile",
+ "kernite-core",
+ "kernite-lang",
 ]

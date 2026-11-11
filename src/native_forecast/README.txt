@@ -33,6 +33,13 @@ Layout: clean architecture, each crate depending only on those above it
                          the edits of one series, convolutions, the pipelines
       table.rs           series of one length, as the corpus stores them
       stats.rs           18 features of a series; two-sample Kolmogorov-Smirnov
+      model/             DiffGPT's transformer on one sequence
+          mod.rs         the sizes and the layout of the parameters; Product,
+                         the port for the matrix product, and its definition
+          math.rs        exp, RMS normalization, RoPE, causal softmax, SwiGLU,
+                         the exclusive projection, each with its backward map
+          sequence.rs    the forward pass, the loss and the backward pass
+          optimizer.rs   schedule-free AdamW
   crates/application     the use cases and their ports; no thread, no unsafe
       ports.rs           Executor, SeriesReader, SeriesWriter, Split
       corpus.rs          generate the shards; check a source against a reference
@@ -40,6 +47,8 @@ Layout: clean architecture, each crate depending only on those above it
       npy.rs             float32 tables as .npy files
       corpus_files.rs    the reference corpus and this workspace's shards
       threads.rs         the executor on the threads of the process
+      kernels.rs         the micro-kernel of the matrix product, in Kernite
+      gemm.rs            the blocked product around it, on one thread
   crates/interfaces      the `forecast` command: it parses and wires
 
 Commands (from the repository root; CPUs 27 and 55 stay free for the desktop)
@@ -77,6 +86,32 @@ threads; a series of an augmented source depends besides on the generators'
 series it reads, the first N of each in the same split, N being the number
 of series the corpus gives a source. The streams are not NumPy's: a port is
 checked in distribution, not draw by draw.
+
+The model
+---------
+
+The model is `GPT` of src/diff_gpt/domain/model/gpt.py, the transformer of
+DiffGPT: tied embedding and readout, pre-norm blocks with parameter-free RMS
+normalization, attention with queries and keys normalized per head, RoPE, a
+fixed temperature and the exclusive projection (the attended value loses its
+component along the token's own value), SwiGLU, no bias anywhere. The domain
+states it once, forward and backward, for one sequence (model/sequence.rs);
+its tests compare the gradient of every matrix with central differences. All
+its matrix products go through the port `Product`: attention makes its
+products in bands of 48 rows, since row t needs only its first t + 1 columns.
+
+The infrastructure fills the port with a product blocked as BLIS blocks it
+around a 6 x 16 micro-kernel written in Kernite (x86-64-v3: AVX2 and FMA).
+On one core of this machine (Xeon E5-2680 v4) it runs at 72 to 86 GFLOPS on
+the shapes of a 5M-parameter model at 512 positions, and at 52 on the
+narrow products of one attention head:
+
+  cd src/native_forecast
+  taskset -c 5 cargo test --release -p diff-gpt-forecast-infrastructure \
+      speed -- --ignored --nocapture
+
+Not there yet: the threads that train sequences side by side, the tokens of a
+series, the pretraining use case and the scoring.
 
 Sources ported, and how they compare with TempoPFN's
 ----------------------------------------------------

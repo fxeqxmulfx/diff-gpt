@@ -26,6 +26,9 @@ name = "diff_gpt_forecast"
 diff-gpt-forecast-domain = { path = "crates/domain" }
 diff-gpt-forecast-application = { path = "crates/application" }
 diff-gpt-forecast-infrastructure = { path = "crates/infrastructure" }
+# Kernite, from the checkout beside the repositories, as src/native_transformer
+# takes it.
+kernite-macros = { path = "../../../../rust_projects/kgen/crates/macros" }
 
 [workspace.lints.rust]
 # Forbidden in the domain and the application; the infrastructure allows it in
