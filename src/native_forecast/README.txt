@@ -21,6 +21,8 @@ Layout: clean architecture, each crate depending only on those above it
   crates/domain          pure computation; no file, thread or clock; no unsafe
       random.rs          xoshiro256++ streams keyed by words, and the samplers
       numeric.rs         linspace, rounding as NumPy, a radix-2 FFT
+      linalg.rs          dot products; blocked pivoted Cholesky (as LAPACK dpstrf)
+      calendar.rs        civil dates; TempoPFN's frequencies and start dates
       synth/             the sources, one module each; Source names them
       table.rs           series of one length, as the corpus stores them
       stats.rs           18 features of a series; two-sample Kolmogorov-Smirnov
@@ -69,10 +71,26 @@ TempoPFN has 16 sources: 14 generators and 2 offline augmentations of their
 output. Ported so far, each with the parameters that TempoPFN's
 continuous_generation.py gives it:
 
-  sawtooth, sinewave, step, anomaly, spike, ou_process
+  forecast_pfn, kernel, sawtooth, sinewave, step, anomaly, spike,
+  cauker_univariate, ou_process
 
 Check of 2026-11-11, `corpus check --series 65536` (all 65,536 train series
 of the reference against 65,536 of this workspace, critical distance 0.0108
-at level 1e-3): every one of the 18 features of every one of these six
-sources agrees. The same holds for the 4,096 holdout series (critical
-distance 0.0431).
+at level 1e-3): every one of the 18 features of every one of these nine
+sources agrees. cauker_univariate makes six series from each random model,
+so only the first series of each model is compared: 11,264 against 11,264,
+critical distance 0.0260. The 4,096 holdout series agree as well.
+
+What the ports keep of their sources, beyond the documented behaviour:
+
+  kernel, cauker_univariate
+      The reference corpus was made with diff-gpt's stand-ins for TempoPFN's
+      modules (src/diff_gpt/infrastructure/corpus/tempopfn): the Gaussian
+      processes are drawn through a pivoted Cholesky factorization that
+      stops at the numerical rank, and the roots of a CauKer model have
+      independent noises. The ports follow the stand-ins.
+  forecast_pfn
+      The limits on a series are 300, not the 500 the driver asks for; a
+      rejected series is redrawn with a frequency taken among eleven, of
+      which monthly, quarterly and yearly always fail; the trend counts
+      whole days, so it is a staircase within a day. See the module.

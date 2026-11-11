@@ -111,17 +111,23 @@ pub fn check<E: Executor, R: SeriesReader>(
     series: usize,
     level: f64,
 ) -> Result<SourceCheck> {
+    // The test takes independent series: of the series that share a model,
+    // only the first is compared, in the reference and in the candidate.
+    let independent = |row: usize| (row % CHUNK).is_multiple_of(source.group());
     let available = reference.series(split, source)?;
     let table = reference.read(split, source, 0, series.min(available))?;
+    let rows: Vec<usize> = (0..table.rows()).filter(|&row| independent(row)).collect();
     let reference_features: Vec<Features> =
-        executor.map(table.rows(), |row| stats::features(table.row(row)));
+        executor.map(rows.len(), |index| stats::features(table.row(rows[index])));
 
     let chunks = series.div_ceil(CHUNK);
     let candidate_features: Vec<Features> = executor
         .map(chunks, |index| {
             chunk(split, source, index, table.length())
                 .iter()
-                .map(|values| {
+                .enumerate()
+                .filter(|&(place, _)| index * CHUNK + place < series && independent(place))
+                .map(|(_, values)| {
                     let single: Vec<f32> = values.iter().map(|&value| value as f32).collect();
                     stats::features(&single)
                 })
@@ -129,7 +135,6 @@ pub fn check<E: Executor, R: SeriesReader>(
         })
         .into_iter()
         .flatten()
-        .take(series)
         .collect();
 
     Ok(SourceCheck {

@@ -98,7 +98,8 @@ impl Rng {
     /// If the range is empty.
     pub fn integer(&mut self, low: i64, high: i64) -> i64 {
         assert!(low < high, "empty range {low}..{high}");
-        low + self.below(high.abs_diff(low)) as i64
+        // The offset may exceed `i64::MAX`; the sum never leaves the range.
+        low.wrapping_add(self.below(high.abs_diff(low)) as i64)
     }
 
     /// An index below `bound`.

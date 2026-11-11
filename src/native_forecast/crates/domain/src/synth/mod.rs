@@ -6,6 +6,11 @@
 //! for them, since some sources couple the series of a chunk.
 
 pub mod anomaly;
+pub mod bumps;
+pub mod cauker;
+pub mod forecast_pfn;
+pub mod kernel_synth;
+pub mod kernels;
 pub mod ou;
 pub mod sawtooth;
 pub mod sinewave;
@@ -23,6 +28,10 @@ pub const CHUNK: usize = 64;
 /// A source of the corpus.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Source {
+    /// The prior of ForecastPFN: trends and calendar seasonalities.
+    ForecastPfn,
+    /// KernelSynth: draws from Gaussian processes of composite kernels.
+    Kernel,
     /// Sawtooth waves.
     Sawtooth,
     /// Sums of modulated sinusoids.
@@ -33,18 +42,23 @@ pub enum Source {
     Anomaly,
     /// A few wide spikes on a constant baseline.
     Spike,
+    /// CauKer: the nodes of random structural causal models.
+    CaukerUnivariate,
     /// Regime-switching Ornstein-Uhlenbeck processes.
     OuProcess,
 }
 
 impl Source {
     /// Every source, in the order of TempoPFN's `configs/example.yaml`.
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 9] = [
+        Self::ForecastPfn,
+        Self::Kernel,
         Self::Sawtooth,
         Self::Sinewave,
         Self::Step,
         Self::Anomaly,
         Self::Spike,
+        Self::CaukerUnivariate,
         Self::OuProcess,
     ];
 
@@ -52,6 +66,9 @@ impl Source {
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
+            Self::ForecastPfn => "forecast_pfn",
+            Self::Kernel => "kernel",
+            Self::CaukerUnivariate => "cauker_univariate",
             Self::Sawtooth => "sawtooth",
             Self::Sinewave => "sinewave",
             Self::Step => "step",
@@ -73,6 +90,9 @@ impl Source {
     #[must_use]
     pub const fn id(self) -> u64 {
         match self {
+            Self::ForecastPfn => 0,
+            Self::Kernel => 2,
+            Self::CaukerUnivariate => 8,
             Self::Sawtooth => 3,
             Self::Sinewave => 4,
             Self::Step => 5,
@@ -87,15 +107,42 @@ impl Source {
     #[must_use]
     pub const fn weight(self) -> f64 {
         match self {
-            Self::Sawtooth | Self::Sinewave | Self::Step | Self::Anomaly | Self::Spike => 1.0,
+            Self::ForecastPfn
+            | Self::Kernel
+            | Self::Sawtooth
+            | Self::Sinewave
+            | Self::Step
+            | Self::Anomaly
+            | Self::Spike
+            | Self::CaukerUnivariate => 1.0,
             Self::OuProcess => 3.0,
+        }
+    }
+
+    /// The number of consecutive series of a chunk that come from one random
+    /// model and so depend on each other: 1 where the series are independent.
+    #[must_use]
+    pub const fn group(self) -> usize {
+        match self {
+            Self::CaukerUnivariate => cauker::CauKer::NODES,
+            _ => 1,
         }
     }
 
     /// A chunk of [`CHUNK`] series of `length` steps.
     #[must_use]
     pub fn chunk(self, rng: &mut Rng, length: usize) -> Vec<Vec<f64>> {
+        // Two sources couple the series of a chunk.
+        match self {
+            Self::CaukerUnivariate => return cauker::CauKer::corpus().chunk(rng, length, CHUNK),
+            Self::ForecastPfn => {
+                return forecast_pfn::ForecastPfn::default().chunk(rng, length, CHUNK);
+            }
+            _ => {}
+        }
         let one = |rng: &mut Rng| match self {
+            Self::Kernel => kernel_synth::KernelSynth::default().series(rng, length),
+            Self::CaukerUnivariate | Self::ForecastPfn => unreachable!("made above"),
             Self::Sawtooth => sawtooth::Sawtooth::default().series(rng, length),
             Self::Sinewave => sinewave::SineWave::default().series(rng, length),
             Self::Step => step::Step::default().series(rng, length),
@@ -127,14 +174,16 @@ mod tests {
 
     #[test]
     fn a_chunk_is_reproducible_and_finite() {
+        // Shorter series than the corpus has, to keep the test quick.
+        let length = LENGTH / 8;
         for source in Source::ALL {
-            let chunk = source.chunk(&mut Rng::from_key(&[1, source.id()]), LENGTH);
+            let chunk = source.chunk(&mut Rng::from_key(&[1, source.id()]), length);
             assert_eq!(chunk.len(), CHUNK);
-            assert!(chunk.iter().all(|series| series.len() == LENGTH));
+            assert!(chunk.iter().all(|series| series.len() == length));
             assert!(chunk.iter().flatten().all(|value| value.is_finite()));
             assert_eq!(
                 chunk,
-                source.chunk(&mut Rng::from_key(&[1, source.id()]), LENGTH)
+                source.chunk(&mut Rng::from_key(&[1, source.id()]), length)
             );
             assert_ne!(chunk[0], chunk[1]);
         }
