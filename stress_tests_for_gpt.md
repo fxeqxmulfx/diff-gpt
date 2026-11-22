@@ -1,4 +1,4 @@
-# Stress tests for GPT: the 165-case sweep
+# Stress tests for GPT
 
 This is a task-by-task guide to the original 165-case grokking and generalization
 sweep. It includes the tasks outside the later 35-task short/long benchmark,
@@ -13,6 +13,30 @@ does **not** establish that the current
 Rust/Kernite main model has passed all 165 cases. The current model and its
 separate 35-task results are documented in
 [`research/main_model/README.txt`](research/main_model/README.txt).
+
+## Long-context text generation
+
+| Case | Evaluation splits | Metric | Model result |
+| --- | --- | --- | --- |
+| `mrcr-v2-8needle` | Google DeepMind MRCR V2, eight needles. 484 prompts up to 128K tokens and 310 at 1M. | Mean certificate-checked character match ratio per split | Pending |
+
+Each prompt asks for a particular occurrence of the same topic, format and
+style. The input is the complete released text. The evaluator accepts one
+completion per published row, records model identity and tool access, and
+checks the source digest. This extension has its own registry. The historical
+training sweep below contains its original 165 cases.
+[Case registry](research/text_stress/cases.json) · [Dataset and reference grader](https://github.com/google-deepmind/eval_hub/tree/d5637d5cfb420a040ad550b2125c6aa23f71f9e4/eval_hub/mrcr_v2) · [Native harness and Lean sources](https://github.com/fxeqxmulfx/transformer/tree/8a03a1095297374e70c2ff1ea7a6c382de1633be/experiments/mrcr_v2)
+
+Set `TRANSFORMER_ROOT` to a checkout containing the native harness. Run the
+same commands with `split=at-1m` for the pointwise 1M result.
+
+```sh
+split=upto-128k
+run=research/text_stress/mrcr-v2-8needle.sh
+"$run" verify "$split" runs/mrcr-v2
+"$run" prompts "$split" runs/mrcr-v2 > "runs/mrcr-v2/$split.prompts.jsonl"
+"$run" score "$split" runs/mrcr-v2 "runs/mrcr-v2/$split.responses.jsonl" MODEL_ID no-tools
+```
 
 ## How to read this catalog
 

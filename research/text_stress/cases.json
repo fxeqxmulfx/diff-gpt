@@ -1,0 +1,14 @@
+{
+  "mrcr-v2-8needle": {
+    "protocol": "text-generation-evaluation",
+    "metric": "mean_match_ratio",
+    "splits": {"upto-128k": 484, "at-1m": 310},
+    "runner": "research/text_stress/mrcr-v2-8needle.sh",
+    "native_source": {
+      "repository": "https://github.com/fxeqxmulfx/transformer",
+      "revision": "8a03a1095297374e70c2ff1ea7a6c382de1633be",
+      "manifest": "experiments/mrcr_v2/Cargo.toml",
+      "lean": "src/Transformer/MRCR.lean"
+    }
+  }
+}
